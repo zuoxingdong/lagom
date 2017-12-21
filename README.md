@@ -1,2 +1,2 @@
 # Policy Gradients in PyTorch
-<img scr='logs/tmp.png' width='300'>
+<img src='logs/tmp.png' width='300'>
