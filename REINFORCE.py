@@ -1,5 +1,4 @@
 import torch
-from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from utils import normalize_vec
@@ -10,8 +9,17 @@ class REINFORCEAgent(object):
         self.optimizer = optimizer
         
     def choose_action(self, state):
-        # Convert state into Variable and FloatTensor with batch dimension
-        state = Variable(torch.FloatTensor(state)).unsqueeze(0)
+        """
+        Action selection according to internal policies
+        
+        Args:
+            state: A dictionary with keys of different kind of data. 
+                    Possible keys: ['observation', 'current_state', 'goal_state']
+            
+        Returns:
+            output: A dictionary with keys of different kind of data.
+                    Possible keys: ['action', 'log_prob']
+        """
         # Compute probability distribution over actions via softmax
         action_probs = self.policy(state)
         # Sample an action according to categorical distribution

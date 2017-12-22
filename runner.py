@@ -43,7 +43,7 @@ class Runner(object):
             #done = False  # avoid Gym warning
             for t in range(num_step):  # Iterate over the number of time steps
                 # Agent chooses an action
-                output_agent = self.agent.choose_action(state)
+                output_agent = self.agent.choose_action(self._make_policy_input(state))
                 # Unpack dictionary for the output from the agent
                 action = output_agent.get('action', None)
                 logprob_action = output_agent.get('log_prob', None)
@@ -72,3 +72,13 @@ class Runner(object):
             data_batch.append(epi_data)
             
         return data_batch
+    
+    def _make_policy_input(self, state):
+        data = {}
+        
+        data['observation'] = state
+        data['current_state'] = self.env.unwrapped.state
+        if self.agent.policy.policy_type == 'goal':
+            data['goal_state'] = self.env.goal_states
+        
+        return data
