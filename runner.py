@@ -27,7 +27,7 @@ class Runner(object):
             # Dictionary for the data in current episode
             epi_data = {}
             # Initialize all necessary data
-            epi_data['states'] = []
+            epi_data['observations'] = []
             epi_data['rewards'] = []
             epi_data['returns'] = []
             epi_data['actions'] = []
@@ -36,14 +36,14 @@ class Runner(object):
             epi_data['dones'] = []
             
             # Reset the environment
-            state = self.env.reset()
+            obs = self.env.reset()
             # Record state
-            epi_data['states'].append(state)
+            epi_data['observations'].append(obs)
             
             #done = False  # avoid Gym warning
             for t in range(num_step):  # Iterate over the number of time steps
                 # Agent chooses an action
-                output_agent = self.agent.choose_action(self._make_policy_input(state))
+                output_agent = self.agent.choose_action(self._make_policy_input(obs))
                 # Unpack dictionary for the output from the agent
                 action = output_agent.get('action', None)
                 logprob_action = output_agent.get('log_prob', None)
@@ -53,9 +53,9 @@ class Runner(object):
                 epi_data['logprob_actions'].append(logprob_action)
                 epi_data['state_values'].append(state_value)
                 # Execute the action in the environment
-                state, reward, done, info = self.env.step(action)
+                obs, reward, done, info = self.env.step(action)
                 # Record data
-                epi_data['states'].append(state)
+                epi_data['observations'].append(obs)
                 epi_data['rewards'].append(reward)
                 epi_data['dones'].append(done)
                 # Stop data collection once the episode terminated
@@ -64,21 +64,18 @@ class Runner(object):
             # Calculate returns according to the rewards and gamma
             epi_data['returns'] = calculate_return(epi_data['rewards'], self.gamma)
             
-            ######
-            # TODO: maybe erase the states after done, e.g. set to 0
-            ######
-            
             # Record data for current episode
             data_batch.append(epi_data)
             
         return data_batch
     
-    def _make_policy_input(self, state):
+    def _make_policy_input(self, obs):
         data = {}
         
-        data['observation'] = state
-        data['current_state'] = self.env.unwrapped.state
-        if self.agent.policy.policy_type == 'goal':
+        data['observation'] = obs
+        if hasattr(self.env.unwrapped, 'state'):
+            data['current_state'] = self.env.unwrapped.state
+        if hasattr(self.env.unwrapped, 'goal_states'):
             data['goal_state'] = self.env.goal_states
         
         return data
