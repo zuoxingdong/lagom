@@ -3,22 +3,35 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+from Agent import Agent
 from utils import normalize_vec
 
-class ActorCriticAgent(object):
+class ActorCriticAgent(Agent):
     def __init__(self, policy, optimizer):
-        self.policy = policy
-        self.optimizer = optimizer
+        super().__init__(policy, optimizer)
         
-    def choose_action(self, state):
-        # Convert state into Variable and FloatTensor with batch dimension
-        state = Variable(torch.FloatTensor(state)).unsqueeze(0)
-        # Compute probability distribution over actions via softmax and state value function
-        action_probs, state_values = self.policy(state)
+    def choose_action(self, x):
+        """
+        Action selection according to internal policies
+        
+        Args:
+            x: A dictionary with keys of different kind of data. 
+                    Possible keys: ['observation', 'current_state', 'goal_state']
+            
+        Returns:
+            output: A dictionary with keys of different kind of data.
+                    Possible keys: ['action', 'log_prob']
+        """
+        out_policy = self.policy(x)
+        
+        # Unpack output from policy network
+        action_probs = out_policy.get('action_probs', None)
+        state_value = out_policy.get('state_value', None)
+        
         # Sample an action according to categorical distribution
         action_dist = Categorical(action_probs)
+        # Sample an action and calculate its log-probability according to distribution
         action = action_dist.sample()
-        # log-probability of action
         logprob_action = action_dist.log_prob(action)
         
         # Convert action from Variable to scalar value
@@ -28,7 +41,7 @@ class ActorCriticAgent(object):
         output = {}
         output['action'] = action
         output['log_prob'] = logprob_action
-        output['state_value'] = state_values
+        output['state_value'] = state_value
 
         return output
         
