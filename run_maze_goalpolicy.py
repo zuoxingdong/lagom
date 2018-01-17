@@ -1,6 +1,6 @@
 import gym
 
-from gym_maze.envs import MazeEnv
+from gym_maze.envs import SparseMazeEnv
 from gym_maze.envs import RandomBlockMazeGenerator
 
 import numpy as np
@@ -12,9 +12,12 @@ import os
 import torch
 import torch.optim as optim
 
-from REINFORCE import REINFORCEAgent
-from policies import CategoricalMLPPolicy, CategoricalMLPGoalPolicy
-from runner import Runner
+########
+# TODO: make setup.py, then this file to examples folder 
+########
+from lagom.agents import REINFORCEAgent
+from lagom.core.policies import CategoricalMLPGoalPolicy
+from lagom.runner import Runner
 
 # Parse hyperparameters from command line
 parser = argparse.ArgumentParser(description='REINFORCE')
@@ -26,22 +29,25 @@ parser.add_argument('--seed', type=int, default=543,
                     help='random seed (default: 543)')
 parser.add_argument('--render', action='store_true', 
                     help='render the environment')
-parser.add_argument('--log-interval', type=int, default=100, 
-                    help='interval between training status logs (default: 100)')
-parser.add_argument('--goal_policy', action='store_true', 
-                    help='use goal-conditional policy')
+parser.add_argument('--log-interval', type=int, default=10,
+                    help='interval between training status logs (default: 10)')
 args = parser.parse_args()
 
 # Create environment
-maze = RandomBlockMazeGenerator(maze_size=6, obstacle_ratio=0.0)
-env = MazeEnv(maze, action_type='VonNeumann', render_trace=False)
+maze = RandomBlockMazeGenerator(maze_size=4, obstacle_ratio=0.0)
+env = SparseMazeEnv(maze, action_type='VonNeumann', render_trace=False)
 env.init_state = [1, 1]
-env.goal_states = [[6, 6]]
+env.goal_states = [[4, 4]]  #[[6, 6]]
 
 # Set random seed
 env.seed(args.seed)
 torch.manual_seed(args.seed)    
 
+# Some parameters
+epochs = 5
+max_steps_per_epi = 50  # Max time step per episode
+num_epi_per_batch = 1000  # Number of episodes per data batch
+fc_sizes = [16]
         
 def main():
     # Create environment specification
@@ -51,13 +57,9 @@ def main():
     env_spec['action_dim'] = env.action_space.n
     env_spec['goal_dim'] = None
     
-    # Create a policy network
-    if args.goal_policy:
-        env_spec['goal_dim'] = np.array(env.goal_states).reshape(-1).shape[0]
-        policy = CategoricalMLPGoalPolicy(env_spec, fc_sizes=[32])
-    else:
-        policy = CategoricalMLPPolicy(env_spec, fc_sizes=[32])
-    
+    # Create a goal-conditional policy
+    env_spec['goal_dim'] = np.array(env.goal_states).reshape(-1).shape[0]
+    policy = CategoricalMLPGoalPolicy(env_spec, fc_sizes=fc_sizes, predict_value=False)
     # Create an optimzer
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
     # Create an agent
@@ -65,12 +67,13 @@ def main():
     # Create a Runner
     runner = Runner(agent, env, args.gamma)
     
+    # Data collection by interacting with environment
     log_epi_rewards = []
-    for epi in range(1000):
-        # Collect batch of data via runner
-        data_batch = runner.run(30, 1)
+    for epi in range(epochs):  # training epochs
+        # Collect one data batch
+        data_batch = runner.run(max_steps_per_epi, num_epi_per_batch)
         # Train agent over batch of data
-        losses = agent.train(data_batch, normalize_r=True)
+        losses = agent.train(data_batch, standardize_r=True)
         
         epi_rewards = np.sum(data_batch[0]['rewards'])
         
