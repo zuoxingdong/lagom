@@ -1,4 +1,4 @@
-class Agent(object):
+class BaseAgent(object):
     def __init__(self, policy, optimizer):
         self.policy = policy
         self.optimizer = optimizer
