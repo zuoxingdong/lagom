@@ -1,4 +1,6 @@
-from utils import calculate_return
+from lagom.core.processor import CalcReturn
+
+from lagom.agents.RandomAgent import RandomAgent
 
 
 class Runner(object):
@@ -62,7 +64,7 @@ class Runner(object):
                 if done:
                     break
             # Calculate returns according to the rewards and gamma
-            epi_data['returns'] = calculate_return(epi_data['rewards'], self.gamma)
+            epi_data['returns'] = CalcReturn(self.gamma).process(epi_data['rewards'])
             
             # Record data for current episode
             data_batch.append(epi_data)
@@ -77,5 +79,9 @@ class Runner(object):
             data['current_state'] = self.env.unwrapped.state
         if hasattr(self.env.unwrapped, 'goal_states'):
             data['goal_state'] = self.env.goal_states
+            
+        # If the agent is RandomAgent, then make it accessible to Gym environment for sampling actions
+        if isinstance(self.agent, RandomAgent):
+            data['env'] = self.env
         
         return data

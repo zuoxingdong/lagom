@@ -1,10 +1,10 @@
 import torch
 from torch.distributions import Categorical
 
-from Agent import Agent
-from utils import normalize_vec
+from lagom.agents.BaseAgent import BaseAgent
+from lagom.core.processor import Standardize
 
-class REINFORCEAgent(Agent):
+class REINFORCEAgent(BaseAgent):
     def __init__(self, policy, optimizer):
         super().__init__(policy, optimizer)
         
@@ -42,13 +42,13 @@ class REINFORCEAgent(Agent):
                 
         return output
         
-    def train(self, data_batch, normalize_r=False):
+    def train(self, data_batch, standardize_r=False):
         """
         Update the agent for one step according to optimizer for collected batch of data 
         
         Args:
             data_batch: Collected batch of data outputs from Runner
-            normalize_r: If True, then normalize the rewards
+            standardize_r: If True, then standardize the rewards
             
         Returns:
             batch_policy_loss: Loss for the policy network in the data batch
@@ -58,8 +58,8 @@ class REINFORCEAgent(Agent):
         # Iterate over batch of trajectories
         for epi_data in data_batch:
             R = epi_data['returns']
-            if normalize_r:
-                R = normalize_vec(R)
+            if standardize_r:  # encourage/discourage half of performed actions
+                R = Standardize().process(R)
             
             # Calculate loss for the policy
             policy_loss = []

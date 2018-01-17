@@ -3,10 +3,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from Agent import Agent
-from utils import normalize_vec
+from lagom.agents.BaseAgent import BaseAgent
+from lagom.core.processor import Standardize
 
-class ActorCriticAgent(Agent):
+class ActorCriticAgent(BaseAgent):
     def __init__(self, policy, optimizer):
         super().__init__(policy, optimizer)
         
@@ -45,13 +45,13 @@ class ActorCriticAgent(Agent):
 
         return output
         
-    def train(self, data_batch, normalize_r=False):
+    def train(self, data_batch, standardize_r=False):
         """
         Update the agent for one step according to optimizer for collected batch of data 
 
         Args:
             data_batch: Collected batch of data outputs from Runner
-            normalize_r: If True, then normalize the rewards
+            standardize_r: If True, then standardize the rewards
 
         Returns:
             A dictionary with keys indicating different losses
@@ -63,10 +63,9 @@ class ActorCriticAgent(Agent):
 
         # Iterate over batch of trajectories
         for epi_data in data_batch:
-            if normalize_r:
-                R = normalize_vec(epi_data['returns'])
-            else:
-                R = epi_data['returns']
+            R = epi_data['returns']
+            if standardize_r:
+                R = Standardize().process(R)
 
             # Calculate loss for the policy
             policy_loss = []

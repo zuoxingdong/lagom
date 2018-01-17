@@ -20,7 +20,7 @@ class Plotter(object):
     
     def plot(self, title, xlabel, ylabel, log_x=False, log_y=False):
         # Create a figure
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots(1, 1, figsize=[6, 4])
         
         for D in self.data:
             # Unpack data
@@ -46,13 +46,15 @@ class Plotter(object):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         
+        # Adjust subplots to avoid label overlapping
+        fig.tight_layout()
         return fig
     
     def _plot_uncertainty(self, ax, mu, sigma, scales, alphas, facecolor):
         num_points = mu.shape[0]
         for scale, alpha in zip(scales, alphas):
             ax.fill_between(range(num_points), 
-                                 mu - scale*sigma, 
-                                 mu + scale*sigma,
-                                 facecolor=facecolor, 
-                                 alpha=alpha)
+                            mu - scale*sigma, 
+                            mu + scale*sigma,
+                            facecolor=facecolor, 
+                            alpha=alpha)
