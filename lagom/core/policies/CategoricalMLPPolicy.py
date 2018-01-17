@@ -36,7 +36,7 @@ class CategoricalMLPGoalPolicy(BaseMLPPolicy):
         super().__init__(self.env_spec, self.fc_sizes, self.predict_value)
         
         # Goal-conditional policy: augment first layer with goal as additional input
-        in_features = self.fc_layers.fc0.in_features + self.env_spec['goal_dim']
+        in_features = self.fc_layers.fc0.in_features + self.env_spec.get('goal_dim')
         out_features = self.fc_layers.fc0.out_features
         self.fc_layers.fc0 = nn.Linear(in_features, out_features)
         

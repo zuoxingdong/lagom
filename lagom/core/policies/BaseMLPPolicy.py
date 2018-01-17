@@ -17,7 +17,7 @@ class BaseMLPPolicy(nn.Module):
         Base class for fully connected network (or Multi-Layer Perceptron)
         
         Args:
-            env_spec: A list of specifications of the environment.
+            env_spec (EnvSpec): Specifications of the environment.
             fc_sizes: A list of number of hidden neurons for fully connected layer.
         """
         super().__init__()
@@ -26,7 +26,7 @@ class BaseMLPPolicy(nn.Module):
         self.fc_layers = nn.Sequential()
         for i, size in enumerate(fc_sizes):
             if i == 0:  # first hidden layer
-                in_features = env_spec['obs_dim']
+                in_features = env_spec.get('obs_dim')
             else:  # number of out_features from previous layer as in_features for current layer
                 in_features = self.fc_layers[i-1].out_features
             # Add FC layer
@@ -34,7 +34,7 @@ class BaseMLPPolicy(nn.Module):
             
         # Action head
         in_features = fc_sizes[-1]
-        out_features = env_spec['action_dim']
+        out_features = env_spec.get('action_dim')
         self.action_head = nn.Linear(in_features, out_features)
         
         # Value head
