@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-from lagom.core.policies import BaseMLPPolicy
+from lagom.core.policies.mlp_policies import BaseMLPPolicy
 
 
 class CategoricalMLPPolicy(BaseMLPPolicy):

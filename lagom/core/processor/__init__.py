@@ -1,4 +1,4 @@
-from lagom.core.processor.BaseProcessor import BaseProcessor
+from lagom.core.processor.base import BaseProcessor
 from lagom.core.processor.clip import Clip
 from lagom.core.processor.normalize import Normalize
 from lagom.core.processor.standardize import Standardize

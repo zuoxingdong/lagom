@@ -1,6 +1,6 @@
 from lagom.core.processor import CalcReturn
 
-from lagom.agents.RandomAgent import RandomAgent
+from lagom.agents import RandomAgent
 
 
 class Runner(object):
