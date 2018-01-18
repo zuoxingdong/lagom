@@ -6,5 +6,5 @@ class BaseAgent(object):
     def choose_action(self, state):
         raise NotImplementedError
         
-    def train(self, data_batch, normalize_r=False):
+    def learn(self, data_batch, standardize_r=False):
         raise NotImplementedError

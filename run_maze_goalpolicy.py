@@ -20,9 +20,12 @@ from lagom.core.policies import CategoricalMLPGoalPolicy
 from lagom.core.utils import Logger
 from lagom.runner import Runner
 from lagom.envs import EnvSpec
+from lagom.trainer import SimpleTrainer
 
 # Parse hyperparameters from command line
 parser = argparse.ArgumentParser(description='REINFORCE')
+parser.add_argument('--ID', type=int, default=1, 
+                    help='Unique job ID, e.g. for a unique hyperparameter setting')
 parser.add_argument('--lr', type=float, default=1e-2, 
                     help='learning rate (default: 1e-2)')
 parser.add_argument('--gamma', type=float, default=0.99, 
@@ -39,28 +42,28 @@ args = parser.parse_args()
 maze = RandomBlockMazeGenerator(maze_size=4, obstacle_ratio=0.0)
 env = SparseMazeEnv(maze, action_type='VonNeumann', render_trace=False)
 env.init_state = [1, 1]
-env.goal_states = [[4, 4]]  #[[6, 6]]
+env.goal_states = [[4, 4]]
 
 # Set random seed
 env.seed(args.seed)
 torch.manual_seed(args.seed)    
 
-# Some hyperparameters
-hyps = {}
-num_iter = 5
-T = 50  # Max time step per episode
-num_episodes = 1000  # Number of episodes per training iteration
-fc_sizes = [16]
+# More manual settings/hyperparameters
+args.num_iter = 5
+args.T = 50  # Max time step per episode
+args.num_episodes = 1000  # Number of episodes per training iteration
+args.fc_sizes = [16]
+args.predict_value = False
+args.standardize_r = True
 
 # Create logger
-log_dir = 'logs/'
-logger = Logger(log_dir=log_dir)
+logger = Logger(path='logs/', dump_mode=['screen'])
         
 def main():
     # Create environment specification
     env_spec = EnvSpec(env)
     # Create a goal-conditional policy
-    policy = CategoricalMLPGoalPolicy(env_spec, fc_sizes=fc_sizes, predict_value=False)
+    policy = CategoricalMLPGoalPolicy(env_spec, fc_sizes=args.fc_sizes, predict_value=args.predict_value)
     # Create an optimzer
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
     # Create an agent
@@ -68,32 +71,22 @@ def main():
     # Create a Runner
     runner = Runner(agent, env, args.gamma)
     
-    # Data collection by interacting with environment
-    log_epi_rewards = []
-    for epi in range(num_iter):  # training iterations
-        # Collect one data batch
-        data_batch = runner.run(T, num_episodes)
-        # Train agent over batch of data
-        losses = agent.train(data_batch, standardize_r=True)
-        
-        batch_return = [np.sum(data['rewards']) for data in data_batch]
-        average_return = np.mean(batch_return)
-        std_return = np.std(batch_return)
-        min_return = np.min(batch_return)
-        max_return = np.max(batch_return)
-        
-        log_epi_rewards.append(average_return)
-        
-        # Loggings
-        if epi == 0 or (epi + 1) % args.log_interval == 0:
-            logger.log_train_iter(epi + 1, data_batch, losses, num_episodes)
-            logger.dump_train_iter()
-            
-            
+    # Training phase
+    trainer = SimpleTrainer(agent, runner, args, logger)
+    trainer.train()
     
-    # Save the loggings
-    file_str = os.path.join(log_dir, 'seed_{:d}_lr_{:f}'.format(args.seed, args.lr))
-    np.save(file_str, log_epi_rewards)
+    # Save all loggings to a .npy file
+    np.save(os.path.join(logger.get_path(), 'ID_{:d}'.format(args.ID)), 
+            logger.get_metriclog())
     
 if __name__ == '__main__':
     main()
+    
+    
+    
+    
+    
+
+        
+
+

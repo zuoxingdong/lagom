@@ -1,4 +1,4 @@
-from lagom.agents.BaseAgent import BaseAgent
+from lagom.agents.base import BaseAgent
 
 
 class RandomAgent(BaseAgent):
@@ -17,5 +17,5 @@ class RandomAgent(BaseAgent):
         
         return output
         
-    def train(self, data_batch, normalize_r=False):
+    def learn(self, data_batch, standardize_r=False):
         pass
