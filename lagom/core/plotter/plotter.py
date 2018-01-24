@@ -1,6 +1,7 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator  # Useful for integer axis
 
 
 class Plotter(object):
@@ -18,7 +19,7 @@ class Plotter(object):
         
         self.data.append(D)
     
-    def plot(self, title, xlabel, ylabel, log_x=False, log_y=False):
+    def plot(self, title, xlabel, ylabel, xlim=None, ylim=None, log_x=False, log_y=False, integer_x=False, integer_y=False):
         # Create a figure
         fig, ax = plt.subplots(1, 1, figsize=[6, 4])
         
@@ -30,17 +31,27 @@ class Plotter(object):
             sigma = np.std(data, axis=0)
             
             # Plot the curve
-            ax.plot(mu, color=D['color'], label=D['label'])
+            ax.plot(range(1, mu.shape[0]+1), mu, color=D['color'], label=D['label'])
             # Plot uncertainty with shaded area
             if D['uncertainty']:
                 self._plot_uncertainty(ax, mu, sigma, D['scales'], D['alphas'], D['color'])
         
         ax.legend()
         
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
+        
         if log_x:
             ax.set_xscale('log')
         if log_y:
             ax.set_yscale('log')
+            
+        if integer_x:
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        if integer_y:
+            ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         
         ax.set_title(title)
         ax.set_xlabel(xlabel)
@@ -53,7 +64,7 @@ class Plotter(object):
     def _plot_uncertainty(self, ax, mu, sigma, scales, alphas, facecolor):
         num_points = mu.shape[0]
         for scale, alpha in zip(scales, alphas):
-            ax.fill_between(range(num_points), 
+            ax.fill_between(range(1, num_points+1), 
                             mu - scale*sigma, 
                             mu + scale*sigma,
                             facecolor=facecolor, 

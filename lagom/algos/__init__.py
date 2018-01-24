@@ -1,0 +1,1 @@
+from lagom.algos.base import BaseAlgorithm

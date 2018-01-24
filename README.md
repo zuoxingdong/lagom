@@ -1,4 +1,4 @@
-# lagom: A flexible framework in PyTorch for developing and benchmarking reinforcement learning algorithms. 
+# lagom: A light and flexible framework in PyTorch for developing and benchmarking reinforcement learning algorithms. 
 <img src='logs/tmp.png' width='300'>
 
 # TODO:

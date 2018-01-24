@@ -1,1 +1,1 @@
-from lagom.core.plotter import Plotter
+from lagom.core.plotter.plotter import Plotter
