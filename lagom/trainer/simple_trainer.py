@@ -24,30 +24,27 @@ class SimpleTrainer(BaseTrainer):
             if self.logger is not None:
                 if iter_num == 0 or (iter_num + 1) % self.args.log_interval == 0:
                     self.logger.log_metric('Loss', 
-                                           [losses['total_loss'].data[0], '{:<f}'], 
+                                           losses['total_loss'].data[0], 
                                            iter_num + 1)
                     self.logger.log_metric('Num Episodes', 
-                                           [self.args.num_episodes, '{:<d}'], 
+                                           self.args.num_episodes,
                                            iter_num + 1)
                     
                     batch_return = [np.sum(data['rewards']) for data in data_batch]
                     self.logger.log_metric('Average Return', 
-                                           [np.mean(batch_return), '{:<f}'], 
+                                           np.mean(batch_return),
                                            iter_num + 1)
                     self.logger.log_metric('Std Return', 
-                                           [np.std(batch_return), '{:<f}'], 
+                                           np.std(batch_return),
                                            iter_num + 1)
                     self.logger.log_metric('Min Return', 
-                                           [np.min(batch_return), '{:<f}'], 
+                                           np.min(batch_return),
                                            iter_num + 1)
                     self.logger.log_metric('Max Return', 
-                                           [np.max(batch_return), '{:<f}'], 
+                                           np.max(batch_return),
                                            iter_num + 1)
                     
                     # Dump all the loggings
                     self.logger.dump_metric(iter_num + 1)
     
-    
-    
-    
-    
+        

@@ -27,31 +27,41 @@ class Logger(logging.Logger):
     def log_info(self, name, val):
         self.infolog[name] = val
         
-    def log_metric(self, name, val, iter_num):
+    def log_metric(self, name, val, iter_num=None):
         # Initialize if such item not existed
         if name not in self.metriclog:
             self.metriclog[name] = OrderedDict()
             
-        # Append a new value to the category
-        self.metriclog[name][iter_num] = val
+        # Add a new value with given metric name, with iteration number if available
+        if iter_num is not None:
+            self.metriclog[name][iter_num] = val
+        else:
+            self.metriclog[name] = val
         
-    def dump_metric(self, iter_num):
+    def dump_metric(self, iter_num=None):
+        #############
+        # TODO: Now only support iteration as subcateory, make more generic dumping print
+        #############
         if 'screen' in self.dump_mode:
-            name_format = '\t{:<30}'  # align items in each iteration to the left
-                
-            print('{:->50}'.format(' '))  # separation line between each iteration
-            print('Iteration # {:<d}'.format(iter_num))
+            print('{:->60}'.format('-'))  # separation line
             
-            # Iterate over all metrics
+            if iter_num is not None:
+                print('Iteration # {:<d}'.format(iter_num))
+            
+            # Print all metrics
             for name in self.metriclog.keys():
-                [val, val_format] = self.metriclog[name][iter_num]
-                print((name_format + val_format).format(name, val))
-            
-    def get_metriclog(self):
-        return self.metriclog
+                if iter_num is not None:
+                    val = self.metriclog[name][iter_num]
+                    name_format = '\t{:<30}'
+                else:
+                    val = self.metriclog[name]
+                    name_format = '{:<30}'
+                    
+                print((name_format + '{:<}').format(name, val))
     
-    def get_path(self):
-        return self.path
+    def save_metriclog(self, filename):
+        """Save metric loggings to a .npy file"""
+        np.save(os.path.join(self.path, filename), self.metriclog)
         
     def clear(self):
         self.infolog.clear()
