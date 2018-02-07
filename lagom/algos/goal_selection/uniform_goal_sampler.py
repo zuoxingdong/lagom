@@ -6,7 +6,7 @@ class UniformGoalSampler(object):
         self.env = env
         
         # Get all indicies for free locations in state space
-        self.free_space = np.where(env.maze == 0)
+        self.free_space = np.where(env.get_source_env().maze == 0)
         self.free_space = list(zip(self.free_space[0], self.free_space[1]))
         
         # Define goal space as free state space

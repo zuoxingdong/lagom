@@ -45,7 +45,7 @@ class Runner(object):
             #done = False  # avoid Gym warning
             for t in range(num_step):  # Iterate over the number of time steps
                 # Agent chooses an action
-                output_agent = self.agent.choose_action(self._make_policy_input(obs))
+                output_agent = self.agent.choose_action(self._make_input(obs))
                 # Unpack dictionary for the output from the agent
                 action = output_agent.get('action', None)
                 logprob_action = output_agent.get('log_prob', None)
@@ -71,17 +71,9 @@ class Runner(object):
             
         return data_batch
     
-    def _make_policy_input(self, obs):
+    def _make_input(self, obs):
         data = {}
         
         data['observation'] = obs
-        if hasattr(self.env.unwrapped, 'state'):
-            data['current_state'] = self.env.unwrapped.state
-        if hasattr(self.env.unwrapped, 'goal_states'):
-            data['goal_state'] = self.env.goal_states
-            
-        # If the agent is RandomAgent, then make it accessible to Gym environment for sampling actions
-        if isinstance(self.agent, RandomAgent):
-            data['env'] = self.env
         
         return data
