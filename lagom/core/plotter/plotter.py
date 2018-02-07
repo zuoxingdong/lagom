@@ -1,5 +1,7 @@
 import numpy as np
 
+import seaborn as sns
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator  # Useful for integer axis
 
@@ -7,6 +9,9 @@ from matplotlib.ticker import MaxNLocator  # Useful for integer axis
 class Plotter(object):
     def __init__(self):
         self.data = []
+        
+        # Call heatmap from Seaborn
+        self.heatmap = sns.heatmap
         
     def add_curve(self, data, color, label, uncertainty=False, scales=None, alphas=None):
         D = {}

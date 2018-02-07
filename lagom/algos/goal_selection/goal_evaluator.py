@@ -8,7 +8,7 @@ from lagom.evaluator import SimpleEvaluator
 class GoalEvaluator(BaseEvaluator):
     def evaluate(self):
         # Get all indicies for free locations in state space
-        free_space = np.where(self.runner.env.maze == 0)
+        free_space = np.where(self.runner.env.get_source_env().maze == 0)
         free_space = list(zip(free_space[0], free_space[1]))
         
         # Define goal space as free state space
@@ -17,7 +17,7 @@ class GoalEvaluator(BaseEvaluator):
         # Evaluate the performance of current agent over all feasible goals
         for goal in goal_space:
             # Set environment with specific goal 
-            self.runner.env.goal_states = [goal]
+            self.runner.env.get_source_env().goal_states = [goal]
             
             # Evaluate
             eval_logger = Logger(path=self.logger.path, dump_mode=[])

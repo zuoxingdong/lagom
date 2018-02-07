@@ -14,7 +14,7 @@ class REINFORCEAgent(BaseAgent):
         
         Args:
             x: A dictionary with keys of different kind of data. 
-                    Possible keys: ['observation', 'current_state', 'goal_state']
+                    Possible keys: ['observation']
             
         Returns:
             output: A dictionary with keys of different kind of data.
