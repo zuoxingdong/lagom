@@ -1,6 +1,6 @@
 import gym
 
-from gym_maze.envs import SparseMazeEnv
+from gym_maze.envs import MazeEnv
 from gym_maze.envs import RandomBlockMazeGenerator
 
 import numpy as np
@@ -11,9 +11,13 @@ from multiprocessing import Process
 
 import torch
 
+from lagom.envs import GymEnv
+from lagom.envs.wrappers import FlattenObservation, SparseReward
 from lagom.experiment.base import BaseExperiment
 from lagom.core.utils import Logger
 from lagom.core.plotter import Plotter
+
+from lagom.algos.goal_selection.utils import GoalMaze
 ##############
 # TODO: change name to goal selection experiment and move to goal selection folder
 ##############
@@ -27,9 +31,14 @@ class SimpleExperiment(BaseExperiment):
             args.ID = i  # unique job ID (unique settings), e.g. unique logging file
             
             args.gamma = 0.99
-            args.num_iter = 5
-            args.num_episodes = 100  # Number of episodes per training iteration
+            
+            args.num_outer_iter = 10000  # length of sequence of goals to train
+            args.num_iter = 1  # number of training iterations for each goal
+            args.num_episodes = 1#50  # Number of episodes per training iteration
+            args.eval_num_episodes = 10  # Number of episodes per evaluation iteration
+            
             args.T = 100  # Max time step per episode
+            args.use_optimal_T = True#True  # True: args.T will be modified to optimal steps before rollout for each new goal
             
             args.fc_sizes = [16]
             args.predict_value = False
@@ -38,8 +47,6 @@ class SimpleExperiment(BaseExperiment):
             args.render = False
             
             args.log_interval = 1
-            
-            args.num_outer_iter = 3  # length of sequence of goals to train
             
             # Random settings
             args.seed = np.random.randint(low=0, high=99999)
@@ -57,9 +64,13 @@ class SimpleExperiment(BaseExperiment):
         
         # Create environment
         maze = RandomBlockMazeGenerator(maze_size=4, obstacle_ratio=0.0)
-        env = SparseMazeEnv(maze, action_type='VonNeumann', render_trace=False)
-        env.init_state = [1, 1]
-        #env.goal_states = [[4, 4]]
+        env = MazeEnv(maze, action_type='VonNeumann', render_trace=False)
+        env = GymEnv(env)  # Gym wrapper
+        env = GoalMaze(env)  # flattened observation (coordiantes) augmented with goal coordinates
+        env = SparseReward(env)  # sparse reward function
+        
+        # Set fixed initial state
+        env.get_source_env().init_state = [1, 1]
         
         # Create batches of args to run in parallel with Process
         for i in range(0, len(self.list_args), num_process):

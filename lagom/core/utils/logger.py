@@ -39,9 +39,6 @@ class Logger(logging.Logger):
             self.metriclog[name] = val
         
     def dump_metric(self, iter_num=None):
-        #############
-        # TODO: Now only support iteration as subcateory, make more generic dumping print
-        #############
         if 'screen' in self.dump_mode:
             print('{:->60}'.format('-'))  # separation line
             

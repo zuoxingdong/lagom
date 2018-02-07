@@ -15,12 +15,12 @@ class SimpleEvaluator(BaseEvaluator):
         
     def evaluate(self):
         # Collect one data batch
-        data_batch = self.runner.run(self.args.T, self.args.num_episodes)
+        data_batch = self.runner.run(self.args.T, self.args.eval_num_episodes)
 
         # Loggings
         if self.logger is not None:
             self.logger.log_metric('Num Episodes', 
-                                   self.args.num_episodes)
+                                   self.args.eval_num_episodes)
 
             batch_return = [np.sum(data['rewards']) for data in data_batch]
             self.logger.log_metric('Average Return', 
