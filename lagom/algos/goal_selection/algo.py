@@ -42,12 +42,12 @@ class GoalSelection(BaseAlgorithm):
         #goal_sampler = LinearGoalSampler([[1, 2], [2, 2], [2, 3], [3, 3], [3, 4], [4, 4]])
         
         for iter_num in range(args.num_outer_iter):
-            print('\n# Outer Iteration # {:<5d}'.format(iter_num + 1))
+            print(f'\n# Outer Iteration # {iter_num+1:<5d}/{args.num_outer_iter:<5d}')
             
             # Sample a goal
             goal = goal_sampler.sample()
             
-            print('# Sampled Goal {}'.format(goal))
+            print(f'# Sampled Goal {goal}')
             
             # Set environment with sampled goal 
             runner.env.get_source_env().goal_states = [goal]
@@ -77,8 +77,8 @@ class GoalSelection(BaseAlgorithm):
 
             all_succ_rate = list(eval_logger.metriclog['Average Return over all goals'].values())
             mean_succ_rate = np.mean(all_succ_rate)
-            print('\n# Success rate over goal space: {:<}'.format(mean_succ_rate))
-            print('# Average Return over all goals: {}'.format(all_succ_rate))
+            print(f'\n# Success rate over goal space: {mean_succ_rate:<}')
+            print(f'# Average Return over all goals: {all_succ_rate}')
             
             # Logging for all success rate and its mean
             logger.log_metric('Average Return over all goals', all_succ_rate, (iter_num, tuple(goal)))
