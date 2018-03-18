@@ -1,1 +1,1 @@
-from lagom.experiment import BaseExperiment
+from lagom.algo import BaseAlgorithm
