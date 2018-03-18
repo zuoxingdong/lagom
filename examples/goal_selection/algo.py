@@ -14,9 +14,9 @@ from lagom.envs import EnvSpec
 from lagom.algos import BaseAlgorithm
 from lagom.trainer import SimpleTrainer
         
-from lagom.algos.goal_selection.goal_evaluator import GoalEvaluator
-from lagom.algos.goal_selection.uniform_goal_sampler import UniformGoalSampler
-from lagom.algos.goal_selection.linear_goal_sampler import LinearGoalSampler
+from goal_evaluator import GoalEvaluator
+from uniform_goal_sampler import UniformGoalSampler
+from linear_goal_sampler import LinearGoalSampler
 
 
 class GoalSelection(BaseAlgorithm):
