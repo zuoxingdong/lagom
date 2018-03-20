@@ -11,4 +11,4 @@ class GoalMaze(ObservationWrapper):
     @property
     def observation_space(self):
         # Update observation space
-        return Box(0, self.env.get_source_env().maze_size[0]-1, shape=(4,))
+        return Box(0, self.env.get_source_env().maze_size[0]-1, shape=(4,), dtype=np.float32)

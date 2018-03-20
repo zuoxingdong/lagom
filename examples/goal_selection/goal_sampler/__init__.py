@@ -1,0 +1,2 @@
+from linear_goal_sampler import LinearGoalSampler
+from uniform_goal_sampler import UniformGoalSampler

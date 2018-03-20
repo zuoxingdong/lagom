@@ -48,6 +48,7 @@ class GridConfig(Config):
         for i, list_c in enumerate(product(*self.config_settings.values())):
             # Set up one configuration
             config = OrderedDict()
+            # Assign a unique ID, useful for Logger class
             config['ID'] = i
             for key, c in zip(self.config_settings.keys(), list_c):
                 config[key] = c

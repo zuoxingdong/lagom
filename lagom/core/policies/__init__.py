@@ -1,1 +1,2 @@
-from lagom.core.policies.mlp_policies import *
+from lagom.core.policies.categorical_mlp_policy import CategoricalMLPPolicy
+from lagom.core.policies.gaussian_mlp_policy import GaussianMLPPolicy
