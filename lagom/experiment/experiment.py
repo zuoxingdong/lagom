@@ -6,10 +6,8 @@ from multiprocessing import Process
 
 
 class BaseExperiment(object):
-    def __init__(self, env_settings=None):
-        self.env_settings = env_settings
-        self.env = self._make_env(self.env_settings)
-        
+    def __init__(self):
+        self.env = self._make_env()
         self.list_configs = self._configure()
         
         self.list_algos = []
@@ -24,25 +22,19 @@ class BaseExperiment(object):
         """
         self.list_algos.append(algo)
     
-    def _configure(self, config_type):
+    def _configure(self):
         """
         Generate all configurations, e.g. hyperparameters and algorithm settings
-            
-        Args:
-            config_type (str): Type for hyperparameter search; ['grid', 'random']
-            
+        
         Returns:
             list_configs (list): list of configurations, each is a Config object
         """
         raise NotImplementedError
         
-    def _make_env(self, settings=None):
+    def _make_env(self):
         """
         User-defined environment
         
-        Args:
-            settings (dict)[optional]: The environment settings
-            
         Returns:
             env (Env object): user-defined environment
         """

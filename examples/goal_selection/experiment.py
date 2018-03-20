@@ -1,7 +1,3 @@
-import numpy as np
-
-from argparse import Namespace
-
 from gym_maze.envs import MazeEnv
 from gym_maze.envs import UMazeGenerator
 
@@ -10,16 +6,19 @@ from lagom.experiment import GridConfig
 from lagom.envs import GymEnv
 from lagom.envs.wrappers import SparseReward
 
+import torch.nn.functional as F
+
 from utils import GoalMaze
 
 
 class Experiment(BaseExperiment):
-    def _configure(self, num_configs):
+    def _configure(self):
         config = GridConfig()
         
-        config.add('seed', range(10))  # random seeds
+        config.add('seed', list(range(10)))  # random seeds
         
-        config.add('fc_sizes', [16])
+        config.add('hidden_sizes', [16])
+        config.add('hidden_nonlinearity', [F.relu])
         config.add('lr', [1e-2])  # learning rate of policy network
         config.add('gamma', [0.99])  # discount factor
         config.add('T', [100])  # Max time step per episode
@@ -37,7 +36,7 @@ class Experiment(BaseExperiment):
         
         return config.make_configs()
             
-    def _make_env(self, settings=None):
+    def _make_env(self):
         # Create environment
         maze = UMazeGenerator(len_long_corridor=5, len_short_corridor=2, width=2, wall_size=1)
         env = MazeEnv(maze, action_type='VonNeumann', render_trace=False)
