@@ -3,11 +3,21 @@ from lagom.core.processor import BaseProcessor
 
 class CalcReturn(BaseProcessor):
     def __init__(self, gamma):
+        """
+        Args:
+            gamma (float): discounted factor in (0, 1]
+        """
         self.gamma = gamma
         
     def process(self, x):
         """
         Compute returns for an episode
+        
+        Args:
+            x (list): a list of rewards for each time step
+            
+        Returns:
+            returns (list): a list of discounted returns for each time step
         """
         returns = []
         R = 0

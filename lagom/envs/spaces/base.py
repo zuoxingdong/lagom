@@ -3,14 +3,19 @@ import numpy as np
 
 class Space(object):
     """
-    Base class for observation and action space applied to general Env.
+    Base class for observation and action space e.g. applied to Env.
     """
-    def __init__(self, shape):
+    def __init__(self, dtype=None, shape=None):
+        if dtype is None:
+            self.dtype = None
+        else:
+            self.dtype = np.dtype(dtype)  # create a dtype object
+
         if shape is None:
             self.shape = None
         else:
             self.shape = tuple(shape)
-            
+                        
     @property
     def flat_dim(self):
         """

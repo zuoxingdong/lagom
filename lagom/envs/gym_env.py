@@ -42,11 +42,20 @@ class GymEnv(Env):
         return self._convert_gym_space(self.env.action_space)
     
     def _convert_gym_space(self, space):
+        """
+        Enforce the space dtype to lagom spaces
+        
+        Args:
+            space (gym Space): gym version of spaces
+            
+        Returns:
+            converted space (lagom Space)
+        """
         if isinstance(space, gym.spaces.Box):
-            return Box(low=space.low, high=space.high)
+            return Box(low=space.low, high=space.high, dtype=space.dtype)
         elif isinstance(space, gym.spaces.Discrete):
             return Discrete(n=space.n)
         elif isinstance(space, gym.spaces.Tuple):
             return Product([self._convert_gym_space(s) for s in space.spaces])
         else:
-            raise NotImplementedError
+            raise TypeError('Currently only Box, Discrete and Tuple spaces are supported. ')

@@ -21,17 +21,17 @@ class Experiment(BaseExperiment):
         config.add('hidden_nonlinearity', [F.relu])
         config.add('lr', [1e-2])  # learning rate of policy network
         config.add('gamma', [0.99])  # discount factor
-        config.add('T', [100])  # Max time step per episode
+        config.add('T', [1])  # Max time step per episode
         config.add('use_optimal_T', [True])  # True: args.T will be modified to optimal steps before rollout for each new goal
-        config.add('predict_value', [False])
-        config.add('standardize_r', [True])
+        config.add('predict_value', [False])  # Value function head
+        config.add('standardize_r', [True])  # standardize returns in [-1, 1], more stable learning
         
-        config.add('num_outer_iter', [5])  # length of sequence of goals to train
-        config.add('num_iter', [1])  # number of training iterations for each goal
-        config.add('num_episodes', [1])  # Number of episodes per training iteration
-        config.add('eval_num_episodes', [10])  # Number of episodes per evaluation iteration
+        config.add('num_goal', [5])  # length of sequence of goals to train
+        config.add('train_iter', [1])  # number of training iterations
+        config.add('eval_iter', [1])  # number of evaluation iterations
+        config.add('train_num_epi', [1])  # Number of episodes per training iteration
+        config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
         
-        config.add('render', [False])
         config.add('log_interval', [1])
         
         return config.make_configs()
