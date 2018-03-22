@@ -12,11 +12,11 @@ class Product(Space):
         Define a product of elementary spaces.
         
         Example:
-            Product((Discrete(5), Box(-1.0, 1.0, shape=(2, 3))))
+            Product((Discrete(5), Box(-1.0, 1.0, dtype=np.float32, shape=(2, 3))))
         """
         self.spaces = tuple(spaces)
         
-        super().__init__(None)
+        super().__init__(None, None)
         
     def sample(self):
         return tuple([space.sample() for space in self.spaces])
@@ -30,7 +30,7 @@ class Product(Space):
     
     @property
     def flat_dim(self):
-        return int(np.sum([space.flat_dim for space in self.spaces]))  # avoid type of np.int64
+        return int(np.sum([space.flat_dim for space in self.spaces]))  # PyTorch Tensor dimension only accepts raw int type
     
     def flatten(self, x):
         return np.concatenate([space.flatten(x_part)  for x_part, space in zip(x, self.spaces)])

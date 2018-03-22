@@ -5,7 +5,7 @@ class Env(object):
         Execute the given action for one time step through the environment's dynamics. 
         
         Args:
-            actions (object): a given action to the environment
+            action (object): a given action to the environment
             
         Returns:
             observation (object): The current observation agent receives after executing the given action.
@@ -53,7 +53,7 @@ class Env(object):
     def get_source_env(self):
         """
         Return the original environment object. 
-        Useful for several wrappers, to access the information from original environment. 
+        Useful for sequential wrappers, to access the information from original environment. 
         """
         raise NotImplementedError
         
