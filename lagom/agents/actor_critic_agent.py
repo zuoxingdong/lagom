@@ -7,31 +7,25 @@ from lagom.agents.base import BaseAgent
 from lagom.core.processor import Standardize
 
 class ActorCriticAgent(BaseAgent):
-    def __init__(self, policy, optimizer):
-        super().__init__(policy, optimizer)
+    """
+    Actor-Critic with value network
+    """
+    def __init__(self, policy, optimizer, config):
+        self.policy = policy
+        self.optimizer = optimizer
         
-    def choose_action(self, x):
-        """
-        Action selection according to internal policies
+        super().__init__(config)
         
-        Args:
-            x: A dictionary with keys of different kind of data. 
-                    Possible keys: ['observation']
-            
-        Returns:
-            output: A dictionary with keys of different kind of data.
-                    Possible keys: ['action', 'log_prob']
-        """
-        out_policy = self.policy(x)
-        
+    def choose_action(self, obs):
+        out_policy = self.policy(obs)
         # Unpack output from policy network
         action_probs = out_policy.get('action_probs', None)
         state_value = out_policy.get('state_value', None)
         
         # Sample an action according to categorical distribution
         action_dist = Categorical(action_probs)
-        # Sample an action and calculate its log-probability according to distribution
         action = action_dist.sample()
+        # Calculate log-probability according to distribution
         logprob_action = action_dist.log_prob(action)
         
         # Convert action from Variable to scalar value
@@ -40,31 +34,19 @@ class ActorCriticAgent(BaseAgent):
         # Dictionary of output data
         output = {}
         output['action'] = action
-        output['log_prob'] = logprob_action
+        output['logprob_action'] = logprob_action
         output['state_value'] = state_value
 
         return output
         
-    def learn(self, data_batch, standardize_r=False):
-        """
-        Update the agent for one step according to optimizer for collected batch of data 
-
-        Args:
-            data_batch: Collected batch of data outputs from Runner
-            standardize_r: If True, then standardize the rewards
-
-        Returns:
-            A dictionary with keys indicating different losses
-                batch_policy_loss: Loss for the policy network in the data batch
-                batch_value_loss: Loss for the value head in the data batch
-        """
+    def learn(self, batch_data):
         batch_policy_loss = []
         batch_value_loss = []
 
         # Iterate over batch of trajectories
-        for epi_data in data_batch:
+        for epi_data in batch_data:
             R = epi_data['returns']
-            if standardize_r:
+            if self.config['standardize_r']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
                 R = Standardize().process(R)
 
             # Calculate loss for the policy

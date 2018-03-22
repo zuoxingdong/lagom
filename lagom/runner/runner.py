@@ -1,54 +1,50 @@
 from lagom.core.processor import CalcReturn
 
-from lagom.agents import RandomAgent
-
 
 class Runner(object):
     """Data collection for an agent in an environment."""
     def __init__(self, agent, env, gamma):
         self.agent = agent
         self.env = env
-        
+        # Discount factor
         self.gamma = gamma
         
-    def run(self, num_step, num_epi):
+    def run(self, T, num_epi):
         """
         Run the agent in the environment and collect all necessary data
         
         Args:
-            num_step: Number of time steps
-            num_epi: Number of episodes
+            T (int): Number of time steps
+            num_epi (int): Number of episodes
             
         Returns:
-            batch_data: A list of dictionaries. 
-                        Each dictionary indicates the data for one episode.
-                        The keys of dictionary indicate different kinds of data.
+            batch_data (list of dict): Each dictionary indicates the data for one episode.
+                                The keys of dictionary indicate different kinds of data.
         """
-        data_batch = []
+        batch_data = []
         for epi in range(num_epi):  # Iterate over the number of episodes
             # Dictionary for the data in current episode
             epi_data = {}
             # Initialize all necessary data
             epi_data['observations'] = []
-            epi_data['rewards'] = []
-            epi_data['returns'] = []
             epi_data['actions'] = []
             epi_data['logprob_actions'] = []
             epi_data['state_values'] = []
+            epi_data['rewards'] = []
+            epi_data['returns'] = []
             epi_data['dones'] = []
             
             # Reset the environment
             obs = self.env.reset()
-            # Record state
+            # Record initial state
             epi_data['observations'].append(obs)
             
-            #done = False  # avoid Gym warning
-            for t in range(num_step):  # Iterate over the number of time steps
+            for t in range(T):  # Iterate over the number of time steps
                 # Agent chooses an action
                 output_agent = self.agent.choose_action(self._make_input(obs))
-                # Unpack dictionary for the output from the agent
+                # Unpack dictionary of the output from the agent
                 action = output_agent.get('action', None)
-                logprob_action = output_agent.get('log_prob', None)
+                logprob_action = output_agent.get('logprob_action', None)
                 state_value = output_agent.get('state_value', None)
                 # Record the output from the agent
                 epi_data['actions'].append(action)
@@ -67,13 +63,21 @@ class Runner(object):
             epi_data['returns'] = CalcReturn(self.gamma).process(epi_data['rewards'])
             
             # Record data for current episode
-            data_batch.append(epi_data)
+            batch_data.append(epi_data)
             
-        return data_batch
+        return batch_data
     
     def _make_input(self, obs):
-        data = {}
+        """
+        User-defined function to process the input data for the agent to choose action
         
-        data['observation'] = obs
+        Args:
+            obs (object): observations
+            
+        Returns:
+            data (Variable): input data for the action selection
+        
+        """
+        data = Variable(torch.FloatTensor(obs).unsqueeze(0))
         
         return data

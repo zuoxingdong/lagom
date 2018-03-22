@@ -16,7 +16,7 @@ class Discrete(Space):
         """
         self.n = n
         
-        super().__init__(None)
+        super().__init__(int, None)
         
     def sample(self):
         return np.random.randint(self.n)
