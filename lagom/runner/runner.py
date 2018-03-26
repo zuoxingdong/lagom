@@ -1,3 +1,6 @@
+import torch
+from torch.autograd import Variable
+
 from lagom.core.processor import CalcReturn
 
 
