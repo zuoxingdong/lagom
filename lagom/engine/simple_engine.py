@@ -4,7 +4,8 @@ from lagom.engine import BaseEngine
 
 
 class SimpleEngine(BaseEngine):
-    """Simple Engine: 
+    """
+    Simple Engine: 
         Iteratively:
             1. Collect one batch of data from runner
             2. Train: One learning update of the agent
