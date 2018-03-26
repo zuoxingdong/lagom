@@ -1,12 +1,16 @@
 import numpy as np
+
+from .base import BaseGoalSampler
+
         
+class UniformGoalSampler(BaseGoalSampler):
+    def __init__(self, runner, config):
+        super().__init__(runner, config)
         
-class UniformGoalSampler(object):
-    def __init__(self, env):
-        self.env = env
+        self.env = self.runner.env
         
         # Get all indicies for free locations in state space
-        self.free_space = np.where(env.get_source_env().maze == 0)
+        self.free_space = np.where(self.env.get_source_env().maze == 0)
         self.free_space = list(zip(self.free_space[0], self.free_space[1]))
         
         # Define goal space as free state space

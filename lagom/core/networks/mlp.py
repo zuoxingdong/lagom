@@ -54,7 +54,7 @@ class MLP(nn.Module):
             x = self.hidden_nonlinearity(layer(x))
         
         # Output layer
-        if self.out_dim is not None:
+        if self.output_dim is not None:
             x = self.output_layer(x)
             if self.output_nonlinearity is not None:
                 x = self.output_nonlinearity(x)

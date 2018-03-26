@@ -1,8 +1,8 @@
 import numpy as np
 
-from gym_maze.envs.Astar_solver import AstarSolver
-
 from lagom.engine import BaseEngine
+
+from utils import get_optimal_steps
 
     
 class GoalEngine(BaseEngine):
@@ -12,7 +12,7 @@ class GoalEngine(BaseEngine):
         
         # Set max time steps as optimal trajectories (consistent with A* solution)
         if self.config['use_optimal_T']:
-            self.config['T'] = self._get_optimal_steps(self.runner.env)
+            self.config['T'] = get_optimal_steps(self.runner.env)
             print(f'A* optimal steps: {self.config["T"]}')
         
         # Training
@@ -28,7 +28,7 @@ class GoalEngine(BaseEngine):
             batch_discounted_returns = [data['returns'][0] for data in batch_data]
             
             # Loggings
-            key_goal = ('Sampled goal', goal_iter, goal)
+            key_goal = ('Sampled goal', goal_iter, tuple(goal))
             if i == 0 or (i + 1) % self.config['log_interval'] == 0:
                 self.logger.log(self.config['ID'], 
                                 [key_goal, ('Train Iteration', i+1), 'Total loss'], 
@@ -73,7 +73,7 @@ class GoalEngine(BaseEngine):
             
             # Set max time steps as optimal trajectories (consistent with A* solution)
             if self.config['use_optimal_T']:
-                self.config['T'] = self._get_optimal_steps(self.runner.env)
+                self.config['T'] = get_optimal_steps(self.runner.env)
                 print(f'A* optimal steps: {self.config["T"]}')
             
             # Evaluate
@@ -85,33 +85,19 @@ class GoalEngine(BaseEngine):
             average_return_all_goal.append([g, np.mean(batch_returns)])
         
         # Loggings
-        key_goal = ('Sampled goal', goal_iter, goal)
+        key_goal = ('Sampled goal', goal_iter, tuple(goal))
         success_rate_goal_space = [success_rate for g, success_rate in average_return_all_goal]
+        mean_success_rate_goal_space = np.mean(success_rate_goal_space)
         self.logger.log(self.config['ID'], 
                         [key_goal, 'Eval', 'All success rate'], 
                         average_return_all_goal)
         self.logger.log(self.config['ID'], 
                         [key_goal, 'Eval', 'Mean success rate'], 
-                        np.mean(average_return_all_goal))
+                        mean_success_rate_goal_space)
         
         # Dump
         print('# Evaluation: ')
-        print(f'\tMean success rate over goal space: {np.mean(success_rate_goal_space)}')
+        print(f'\tMean success rate over goal space: {mean_success_rate_goal_space}')
         print(f'\tAll success rate over goal space: {success_rate_goal_space}')
         
-    def _get_optimal_steps(self, env):
-        env.reset()
-        
-        # Solve maze by A* search from current state to goal
-        solver = AstarSolver(env.get_source_env(), env.get_source_env().goal_states[0])
-        
-        if not solver.solvable():
-            raise Error('The maze is not solvable given the current state and the goal state')
-
-        num_optimal_steps = len(solver.get_actions())
-        
-        if num_optimal_steps == 0:  # for initial state, A* gives 0 step leading to numerical problem.
-            num_optimal_steps = 2  # For initial position, optimally 2 steps needed
-        
-        return num_optimal_steps
     
