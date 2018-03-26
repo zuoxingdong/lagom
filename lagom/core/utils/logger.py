@@ -24,7 +24,7 @@ class Logger(logging.Logger):
         if not self.path.exists():
             self.path.mkdir()
             
-        # Storage of loggings
+        # Very important to use OrderedDict, e.g. consistent with training iterations
         self.logs = OrderedDict()
         
     def log(self, config_ID, key_hierarchy, val):

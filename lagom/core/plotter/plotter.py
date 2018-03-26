@@ -13,7 +13,13 @@ class Plotter(object):
         # Call heatmap from Seaborn
         self.heatmap = sns.heatmap
         
-    def add_curve(self, data, color, label, uncertainty=False, scales=None, alphas=None):
+    def add_curve(self, 
+                  data, 
+                  color, 
+                  label, 
+                  uncertainty=False, 
+                  scales=None, 
+                  alphas=None):
         D = {}
         D['data'] = np.array(data)  # DType: numpy array
         D['color'] = color
@@ -24,7 +30,16 @@ class Plotter(object):
         
         self.data.append(D)
     
-    def plot(self, title, xlabel, ylabel, xlim=None, ylim=None, log_x=False, log_y=False, integer_x=False, integer_y=False):
+    def plot(self, 
+             title, 
+             xlabel, 
+             ylabel, 
+             xlim=None, 
+             ylim=None, 
+             log_x=False, 
+             log_y=False, 
+             integer_x=False, 
+             integer_y=False):
         # Create a figure
         fig, ax = plt.subplots(1, 1, figsize=[6, 4])
         
