@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 
 import torch.optim as optim
@@ -8,13 +10,10 @@ from lagom.core.policies import CategoricalMLPPolicy
 from lagom.core.utils import Logger
 from lagom.runner import Runner
 from lagom.envs import EnvSpec
-        
+
+from goal_sampler import SWUCBgGoalSampler
+
 from engine import GoalEngine
-from goal_sampler.uniform_goal_sampler import UniformGoalSampler
-from goal_sampler.linear_goal_sampler import LinearGoalSampler
-from goal_sampler.rejection_goal_sampler import RejectionGoalSampler
-from goal_sampler.rejection_l2_goal_sampler import RejectionL2GoalSampler
-from goal_sampler.rejection_astar_goal_sampler import RejectionAstarGoalSampler
 
 
 class GoalSelection(BaseAlgorithm):
@@ -41,12 +40,25 @@ class GoalSelection(BaseAlgorithm):
             # Sample a goal
             goal = goal_sampler.sample()
             print(f'\nSampled Goal ({iter_num+1}/{config["num_goal"]}): {goal}')
+            if isinstance(goal_sampler, SWUCBgGoalSampler):
+                agent_old = deepcopy(agent)
             
             # Train the sampled goal
             engine.train(iter_num, goal)
             
+            # For SW-UCB-g goal sampler
+            if isinstance(goal_sampler, SWUCBgGoalSampler):
+                # Calculate reward from learning progress signal
+                reward = goal_sampler._calculate_reward(agent_old, agent, env, config, goal)
+                # Update the sampler
+                goal_sampler.update(reward)
+            
             # Evaluation over all goals
             engine.eval(iter_num, goal)
+            
+            
+            print(goal_sampler.infos)
+            
             
         # Put the logger into the Queue (shared memory) for Processes of Experiment
         logger_queue.put(logger)
