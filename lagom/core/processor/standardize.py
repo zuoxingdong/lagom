@@ -17,8 +17,10 @@ class Standardize(BaseProcessor):
         Returns:
             out (numpy array): standardize data
         """
-        
         x = self._make_input(x)
+        # Return clipped value if only one element, avoid zero output
+        if x.shape[0] == 1:
+            return np.clip(x, -1, 1)
         
         # Calculate mean and std for input vector
         mean = x.mean()
