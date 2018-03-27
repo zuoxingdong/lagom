@@ -48,7 +48,7 @@ class REINFORCEAgent(BaseAgent):
             policy_loss = []
             for log_prob, r in zip(epi_data['logprob_actions'], R):
                 policy_loss.append(-log_prob*r)
-                
+            
             # Batched loss for each episode
             batch_policy_loss.append(torch.cat(policy_loss).sum())
             

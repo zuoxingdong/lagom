@@ -16,9 +16,11 @@ class Normalize(BaseProcessor):
             
         Returns:
             out (numpy array): normalized data
-        """
-        
+        """    
         x = self._make_input(x)
+        # Return clipped value if only one element, avoid zero output
+        if x.shape[0] == 1:
+            return np.clip(x, 0, 1)
         
         # Calculate the min and max values for input vector
         min_val = x.min()
