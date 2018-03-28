@@ -34,10 +34,10 @@ class Experiment(BaseExperiment):
         
         config.add('goal_sampler', [SWUCBgGoalSampler])  # different goal samplers
         
-        config.add('num_goal', [4])  # length of sequence of goals to train
-        config.add('train_iter', [2])  # number of training iterations
+        config.add('num_goal', [10])  # length of sequence of goals to train
+        config.add('train_iter', [1])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
-        config.add('train_num_epi', [30])  # Number of episodes per training iteration
+        config.add('train_num_epi', [5])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
         
         config.add('log_interval', [1])
