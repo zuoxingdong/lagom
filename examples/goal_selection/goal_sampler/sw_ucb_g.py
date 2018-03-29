@@ -4,7 +4,6 @@ from collections import deque
 from collections import OrderedDict
 
 from .base import BaseGoalSampler
-from utils import get_optimal_steps
 
 from lagom.runner import Runner
 
@@ -253,7 +252,7 @@ class SWUCBgGoalSampler(BaseGoalSampler):
         
         # Set max time steps as optimal trajectories (consistent with A* solution)
         if config['use_optimal_T']:
-            T = get_optimal_steps(env)
+            T = self.runner.env.all_steps[tuple(goal)]
         else:
             T = config['T']
             
