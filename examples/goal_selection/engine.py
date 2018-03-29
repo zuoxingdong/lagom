@@ -2,8 +2,6 @@ import numpy as np
 
 from lagom.engine import BaseEngine
 
-from utils import get_optimal_steps
-
     
 class GoalEngine(BaseEngine):
     def train(self, goal_iter, goal):
@@ -12,8 +10,7 @@ class GoalEngine(BaseEngine):
         
         # Set max time steps as optimal trajectories (consistent with A* solution)
         if self.config['use_optimal_T']:
-            self.config['T'] = get_optimal_steps(self.runner.env)
-            print(f'A* optimal steps: {self.config["T"]}')
+            self.config['T'] = self.runner.env.all_steps[tuple(goal)]
         
         # Training
         for i in range(self.config['train_iter']):  # training iterations
@@ -73,8 +70,7 @@ class GoalEngine(BaseEngine):
             
             # Set max time steps as optimal trajectories (consistent with A* solution)
             if self.config['use_optimal_T']:
-                self.config['T'] = get_optimal_steps(self.runner.env)
-                print(f'A* optimal steps: {self.config["T"]}')
+                self.config['T'] = self.runner.env.all_steps[tuple(g)]
             
             # Evaluate
             # Collect one batch of data from runner

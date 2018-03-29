@@ -57,9 +57,9 @@ class GoalSelection(BaseAlgorithm):
             engine.eval(iter_num, goal)
             
             
-            print(goal_sampler.infos)
+            #print(goal_sampler.infos)
             
-            
+        
         # Put the logger into the Queue (shared memory) for Processes of Experiment
         logger_queue.put(logger)
             

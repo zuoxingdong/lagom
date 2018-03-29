@@ -2,8 +2,6 @@ import numpy as np
 
 from .base import BaseGoalSampler
 from .uniform_goal_sampler import UniformGoalSampler
-
-from utils import get_optimal_steps
         
         
 class RejectionGoalSampler(BaseGoalSampler):
@@ -53,7 +51,7 @@ class RejectionGoalSampler(BaseGoalSampler):
 
         # Set max time steps as optimal trajectories (consistent with A* solution)
         if self.config['use_optimal_T']:
-            self.config['T'] = get_optimal_steps(self.runner.env)
+            self.config['T'] = self.runner.env.all_steps[tuple(goal)]
 
         # Evaluate
         # Collect one batch of data from runner

@@ -9,6 +9,7 @@ from lagom.envs.wrappers import SparseReward
 import torch.nn.functional as F
 
 from utils import GoalMaze
+from utils import get_all_optimal_steps
 
 from goal_sampler import UniformGoalSampler
 from goal_sampler import RejectionGoalSampler
@@ -24,17 +25,17 @@ class Experiment(BaseExperiment):
         config.add('seed', list(range(1)))  # random seeds
         
         config.add('hidden_sizes', [[16]])
-        config.add('hidden_nonlinearity', [F.relu])
+        config.add('hidden_nonlinearity', [F.tanh])
         config.add('lr', [1e-2])  # learning rate of policy network
         config.add('gamma', [0.99])  # discount factor
         config.add('T', [30])  # Max time step per episode
-        config.add('use_optimal_T', [True])  # True: args.T will be modified to optimal steps before rollout for each new goal
+        config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [False])  # Value function head
         config.add('standardize_r', [True])  # standardize returns in [-1, 1], more stable learning
         
-        config.add('goal_sampler', [SWUCBgGoalSampler])  # different goal samplers
+        config.add('goal_sampler', [UniformGoalSampler])  # different goal samplers
         
-        config.add('num_goal', [10])  # length of sequence of goals to train
+        config.add('num_goal', [1000])  # length of sequence of goals to train
         config.add('train_iter', [1])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
         config.add('train_num_epi', [5])  # Number of episodes per training iteration
@@ -54,5 +55,8 @@ class Experiment(BaseExperiment):
         
         # Set fixed initial state
         env.get_source_env().init_state = [6, 1]
+        
+        # Compute all optimal steps according to A*
+        env.all_steps = get_all_optimal_steps(env)
         
         return env

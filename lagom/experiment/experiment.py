@@ -3,14 +3,15 @@ import torch
 import numpy as np
 
 from multiprocessing import Process
-from multiprocessing import Queue
+from multiprocessing import Manager
 
 
 class BaseExperiment(object):
     def __init__(self, logger=None):
         self.logger = logger
-        self.env = self._make_env()
+        
         self.list_configs = self._configure()
+        self.env = self._make_env()
         
         self.algos = []
     
@@ -54,7 +55,7 @@ class BaseExperiment(object):
             raise ValueError('The number of process should not be larger than the number of configurations.')   
         
         # Shared memory across processes, useful to logger for different configs
-        logger_queue = Queue()
+        logger_queue = Manager().Queue()  # use Manager().Queue() instead of Queue to avoid deadlock
         
         # Create batches of configs to run in parallel with Process
         for i in range(0, len(self.list_configs), num_process):
@@ -78,19 +79,26 @@ class BaseExperiment(object):
                     process = Process(target=algo.run, args=[self.env, config, logger_queue])
                     process.start()
                     list_process.append(process)
-                
+                    
             # Join the processes
+            # NOTE: when using shared memory, use Manager().Queue() instead of Queue to avoid deadlock
             [process.join() for process in list_process]
             
         # Merge all loggers
         self._merge_loggers(logger_queue)
         
     def _merge_loggers(self, logger_queue):
-        while not logger_queue.empty():
+        for i in range(logger_queue.qsize()):
             # Get logger from the Queue
             logger = logger_queue.get()
+            
             # Initialize dictionary for each algorithm
             if not logger.name in self.logger.logs:
                 self.logger.logs[logger.name] = {}
+                
+            # Get ID key
+            ID_key = list(logger.logs.keys())[0]
+            
             # Merge logging dictionaries
-            self.logger.logs[logger.name] = {**self.logger.logs[logger.name], **logger.logs}
+            self.logger.logs[logger.name][ID_key] = logger.logs[ID_key]
+            
