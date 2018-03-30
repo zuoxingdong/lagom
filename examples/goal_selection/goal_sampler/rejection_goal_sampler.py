@@ -8,7 +8,7 @@ class RejectionGoalSampler(BaseGoalSampler):
     def __init__(self, runner, config):
         super().__init__(runner, config)
         
-        self.uniform_sampler = UniformGoalSampler(self.runner.env)
+        self.uniform_sampler = UniformGoalSampler(self.runner, self.config)
         
     def sample(self, low=0.3, high=0.7, max_samples=10000):
         """
