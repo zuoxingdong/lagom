@@ -16,8 +16,8 @@ experiment = Experiment(logger)
 experiment.add_algo(algo)
 
 start_time = time()
-experiment.benchmark(num_process=1)
+experiment.benchmark(num_process=40)
 print(f'\nTotal time: {time() - start_time:.2f} s')
 
 # Save loggings
-logger.save()
+experiment.save_logger()

@@ -22,7 +22,7 @@ class Experiment(BaseExperiment):
     def _configure(self):
         config = GridConfig()
         
-        config.add('seed', list(range(1)))  # random seeds
+        config.add('seed', list(range(10)))  # random seeds
         
         config.add('hidden_sizes', [[16]])
         config.add('hidden_nonlinearity', [F.tanh])
@@ -33,7 +33,7 @@ class Experiment(BaseExperiment):
         config.add('predict_value', [False])  # Value function head
         config.add('standardize_r', [True])  # standardize returns in [-1, 1], more stable learning
         
-        config.add('goal_sampler', [UniformGoalSampler])  # different goal samplers
+        config.add('goal_sampler', [SWUCBgGoalSampler, UniformGoalSampler, RejectionGoalSampler, RejectionAstarGoalSampler])  # different goal samplers
         
         config.add('num_goal', [1000])  # length of sequence of goals to train
         config.add('train_iter', [1])  # number of training iterations
