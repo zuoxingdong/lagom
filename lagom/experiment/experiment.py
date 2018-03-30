@@ -102,3 +102,7 @@ class BaseExperiment(object):
             # Merge logging dictionaries
             self.logger.logs[logger.name][ID_key] = logger.logs[ID_key]
             
+    def save_logger(self):
+        self.logger.save()
+        np.save(f'logs/{self.logger.name}_configs', self.list_configs)
+            
