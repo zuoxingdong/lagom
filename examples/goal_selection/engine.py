@@ -55,12 +55,8 @@ class GoalEngine(BaseEngine):
                                  indent='')
         
     def eval(self, goal_iter, goal):
-        # Get all indicies for free locations in state space
-        free_space = np.where(self.runner.env.get_source_env().maze == 0)
-        free_space = list(zip(free_space[0], free_space[1]))
-        
         # Define goal space as free state space
-        goal_space = free_space
+        goal_space = self.runner.env.free_space
         
         # Evaluate the performance of current agent over all feasible goals
         average_return_all_goal = []

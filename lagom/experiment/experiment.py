@@ -1,17 +1,21 @@
-import torch
-
 import numpy as np
 
+from pathlib import Path
+import os
+
+from itertools import product
+
 from multiprocessing import Process
-from multiprocessing import Manager
+from multiprocessing import Pool
 
 
 class BaseExperiment(object):
-    def __init__(self, logger=None):
-        self.logger = logger
-        
+    def __init__(self):
         self.list_configs = self._configure()
-        self.env = self._make_env()
+        
+        # Make env for each config
+        for config in self.list_configs:
+            config['env'] = self._make_env(config)
         
         self.algos = []
     
@@ -34,9 +38,12 @@ class BaseExperiment(object):
         """
         raise NotImplementedError
         
-    def _make_env(self):
+    def _make_env(self, config):
         """
-        User-defined environment
+        User-defined environment for a given configuration
+        
+        Args:
+            config (dict): a configuration
         
         Returns:
             env (Env object): user-defined environment
@@ -52,10 +59,30 @@ class BaseExperiment(object):
                     Note that an individual process opens internally for each algorithm in the list. 
         """
         if num_process > len(self.list_configs):
-            raise ValueError('The number of process should not be larger than the number of configurations.')   
+            raise ValueError('The number of process should not be larger than the number of configurations.')
         
-        # Shared memory across processes, useful to logger for different configs
-        logger_queue = Manager().Queue()  # use Manager().Queue() instead of Queue to avoid deadlock
+        
+        # Create a pool for multiprocessing
+        pool = Pool(num_process)    
+        
+        # Run experiments that an individual process for each configuration and each algorithm
+        for config in self.list_configs:
+            # Print all the configurations
+            print(f'{"#":#^50}')
+            [print(f'# {key}: {val}') for key, val in config.items()]
+            print(f'{"#":#^50}')
+            
+            # Run each algorithm for the specific configuration
+            for algo in self.algos:
+                pool.apply_async(algo.run, args=[config])
+        
+        # No more process can be added
+        pool.close()
+        # Wait all processes finished
+        pool.join()
+        
+            
+        """
         
         # Create batches of configs to run in parallel with Process
         for i in range(0, len(self.list_configs), num_process):
@@ -69,40 +96,19 @@ class BaseExperiment(object):
                 [print(f'# {key}: {val}') for key, val in config.items()]
                 print(f'{"#":#^50}')
 
-                # Set random seed, e.g. PyTorch, environment, numpy
-                self.env.seed(config['seed'])
-                torch.manual_seed(config['seed'])
-                np.random.seed(config['seed'])
-
                 # Run each algorithm for the specific configuration
                 for algo in self.algos:
-                    process = Process(target=algo.run, args=[self.env, config, logger_queue])
-                    process.start()
+                    process = Process(target=algo.run, args=[config])
                     list_process.append(process)
                     
-            # Join the processes
+            # Start the processes
+            [process.start() for process in list_process]
+                    
+            # Wait the processes
             # NOTE: when using shared memory, use Manager().Queue() instead of Queue to avoid deadlock
             [process.join() for process in list_process]
-            
-        # Merge all loggers
-        self._merge_loggers(logger_queue)
+        """
         
-    def _merge_loggers(self, logger_queue):
-        for i in range(logger_queue.qsize()):
-            # Get logger from the Queue
-            logger = logger_queue.get()
-            
-            # Initialize dictionary for each algorithm
-            if not logger.name in self.logger.logs:
-                self.logger.logs[logger.name] = {}
-                
-            # Get ID key
-            ID_key = list(logger.logs.keys())[0]
-            
-            # Merge logging dictionaries
-            self.logger.logs[logger.name][ID_key] = logger.logs[ID_key]
-            
-    def save_logger(self):
-        self.logger.save()
-        np.save(f'logs/{self.logger.name}_configs', self.list_configs)
+    def save_configs(self):
+        np.save('logs/experiment_configs', self.list_configs)
             

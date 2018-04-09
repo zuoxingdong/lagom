@@ -76,9 +76,12 @@ class Logger(logging.Logger):
         else:
             print(f'{indent}{key}: {log}')
 
-    def save(self):
+    def save(self, name=None):
         """Save loggings to a compressed .npz file"""
-        np.savez_compressed(self.path/self.name, self.logs)
+        if name is None:
+            np.savez_compressed(self.path/self.name, self.logs)
+        else:
+            np.savez_compressed(self.path/name, self.logs)
         
     def clear(self):
         """Remove all loggings"""

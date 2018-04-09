@@ -1,7 +1,7 @@
-from lagom.core.processor import BaseProcessor
+from lagom.core.preprocessors import BasePreprocessor
 
 
-class CalcReturn(BaseProcessor):
+class CalcReturn(BasePreprocessor):
     def __init__(self, gamma):
         """
         Args:

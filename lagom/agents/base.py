@@ -23,13 +23,13 @@ class BaseAgent(object):
         """
         raise NotImplementedError
         
-    def learn(self, batch_data):
+    def learn(self, batch):
         """
         Learning rule about how agent updates itself given a batch of data.
         The output is a dictionary containing useful items, i.e. total_loss, batched_policy_loss
         
         Args:
-            batch_data (list): a batch of data to train the agent, each for one episode
+            batch (list of Episode): a list of episodes to train the agent
         Returns:
             output (dict): a dictionary with possible keys
                             e.g. [total_loss, batched_policy_loss]

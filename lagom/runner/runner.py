@@ -1,11 +1,14 @@
+from .transition import Transition
+from .episode import Episode
+
+
 import torch
 from torch.autograd import Variable
 
-from lagom.core.processor import CalcReturn
-
-
 class Runner(object):
-    """Data collection for an agent in an environment."""
+    """
+    Data collection for an agent in an environment.
+    """
     def __init__(self, agent, env, gamma):
         self.agent = agent
         self.env = env
@@ -21,54 +24,48 @@ class Runner(object):
             num_epi (int): Number of episodes
             
         Returns:
-            batch_data (list of dict): Each dictionary indicates the data for one episode.
-                                The keys of dictionary indicate different kinds of data.
+            batch (list of Episode): list of episodes, each is an object of Episode
         """
-        batch_data = []
-        for epi in range(num_epi):  # Iterate over the number of episodes
-            # Dictionary for the data in current episode
-            epi_data = {}
-            # Initialize all necessary data
-            epi_data['observations'] = []
-            epi_data['actions'] = []
-            epi_data['logprob_actions'] = []
-            epi_data['state_values'] = []
-            epi_data['rewards'] = []
-            epi_data['returns'] = []
-            epi_data['dones'] = []
+        batch = []
+        for _ in range(num_epi):  # Iterate over the number of episodes
+            # Create an episode object
+            episode = Episode()
             
-            # Reset the environment
+            # Reset the environment and returns initial state
             obs = self.env.reset()
-            # Record initial state
-            epi_data['observations'].append(obs)
             
             for t in range(T):  # Iterate over the number of time steps
-                # Agent chooses an action
+                # Action selection by agent
                 output_agent = self.agent.choose_action(self._make_input(obs))
-                # Unpack dictionary of the output from the agent
-                action = output_agent.get('action', None)
-                logprob_action = output_agent.get('logprob_action', None)
-                state_value = output_agent.get('state_value', None)
-                # Record the output from the agent
-                epi_data['actions'].append(action)
-                epi_data['logprob_actions'].append(logprob_action)
-                epi_data['state_values'].append(state_value)
-                # Execute the action in the environment
-                obs, reward, done, info = self.env.step(action)
-                # Record data
-                epi_data['observations'].append(obs)
-                epi_data['rewards'].append(reward)
-                epi_data['dones'].append(done)
-                # Stop data collection once the episode terminated
+                
+                # Unpack output from agent
+                action = output_agent['action']
+                
+                # Action execution in the environment
+                obs_next, reward, done, info = self.env.step(action)
+                
+                # Create a transition
+                transition = Transition(s=obs, a=action, r=reward, s_next=obs_next)
+                # Record more information about the transition
+                transition.add_info('done', done)
+                for key, val in output_agent.items():  # record other information from agent
+                    if key != 'action':  # action already recorded
+                        transition.add_info(key, val)
+                
+                # Add transition to the episode
+                episode.add_transition(transition)
+                
+                # Terminate when episode finishes
                 if done:
                     break
-            # Calculate returns according to the rewards and gamma
-            epi_data['returns'] = CalcReturn(self.gamma).process(epi_data['rewards'])
+                    
+                # Update obs after transition, for next iteration to feed into agent
+                obs = obs_next
             
-            # Record data for current episode
-            batch_data.append(epi_data)
-            
-        return batch_data
+            # Append episode to the batch
+            batch.append(episode)
+
+        return batch
     
     def _make_input(self, obs):
         """
