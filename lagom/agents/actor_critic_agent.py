@@ -4,7 +4,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from lagom.agents.base import BaseAgent
-from lagom.core.processor import Standardize
+from lagom.core.preprocessors import Standardize
 
 class ActorCriticAgent(BaseAgent):
     """

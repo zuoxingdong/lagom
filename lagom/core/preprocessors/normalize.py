@@ -1,32 +1,32 @@
 import numpy as np
 
-from lagom.core.processor import BaseProcessor
+from lagom.core.preprocessors import BasePreprocessor
 
 
-class Standardize(BaseProcessor):
+class Normalize(BasePreprocessor):
     def __init__(self, eps=np.finfo(np.float32).eps):
         self.eps = eps
     
     def process(self, x):
         """
-        Standardize the input data: Subtracted by mean and divided by standard deviation
+        Normalize the input data: Subtracted by minimal and divided by range (maximal - minimal)
         
         Args:
             x (numpy array): input data.
             
         Returns:
-            out (numpy array): standardize data
-        """
+            out (numpy array): normalized data
+        """    
         x = self._make_input(x)
         # Return clipped value if only one element, avoid zero output
         if x.shape[0] == 1:
-            return np.clip(x, -1, 1)
+            return np.clip(x, 0, 1)
         
-        # Calculate mean and std for input vector
-        mean = x.mean()
-        std = x.std()
+        # Calculate the min and max values for input vector
+        min_val = x.min()
+        max_val = x.max()
         
-        out = (x - mean)/(std + self.eps)
+        out = (x - min_val)/(max_val - min_val + self.eps)
         
         return out
     
@@ -34,7 +34,7 @@ class Standardize(BaseProcessor):
         # make sure DType as numpy array
         if type(x) is not np.ndarray:
             x = np.array(x)
-            
+         
         # TODO: Currently only deal with single vector, maybe vectorization in Agent code ?
         # Add batch dimension if single vector
         #if len(x.shape) == 1:
