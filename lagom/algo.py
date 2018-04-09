@@ -9,13 +9,11 @@ class BaseAlgorithm(object):
         """
         self.name = name
         
-    def run(self, env, config, logger):
+    def run(self, config):
         """
-        Run the algorithm with given environment and configurations
+        Run the algorithm with given configurations
         
         Args:
-            env (Env): environment object
             config (OrderedDict): dictionary of configurations
-            logger (Logger): logger for current run of the algorithm
         """
         raise NotImplementedError

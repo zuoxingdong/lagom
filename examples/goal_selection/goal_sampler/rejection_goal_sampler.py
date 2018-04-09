@@ -10,7 +10,7 @@ class RejectionGoalSampler(BaseGoalSampler):
         
         self.uniform_sampler = UniformGoalSampler(self.runner, self.config)
         
-    def sample(self, low=0.3, high=0.7, max_samples=10000):
+    def sample(self, low=0.2, high=0.8, max_samples=10000):
         """
         Rejection sampling of goal with lower and upper bounds of goal quality measure
         

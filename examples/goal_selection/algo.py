@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 
+import torch
 import torch.optim as optim
 
 from lagom import BaseAlgorithm
@@ -11,13 +12,22 @@ from lagom.core.utils import Logger
 from lagom.runner import Runner
 from lagom.envs import EnvSpec
 
+from lagom.utils import set_global_seeds
+
 from goal_sampler import SWUCBgGoalSampler
 
 from engine import GoalEngine
 
 
 class GoalSelection(BaseAlgorithm):
-    def run(self, env, config, logger_queue):
+    def run(self, config):
+        # Take out the environment
+        env = config['env']
+        
+        # Set random seed, e.g. PyTorch, environment, numpy
+        env.seed(config['seed'])
+        set_global_seeds(config['seed'])
+        
         # Create a logger with algorithm name
         logger = Logger(name=f'{self.name}')
         # Create environment specification
@@ -42,7 +52,7 @@ class GoalSelection(BaseAlgorithm):
             print(f'\nSampled Goal ({iter_num+1}/{config["num_goal"]}): {goal}')
             if isinstance(goal_sampler, SWUCBgGoalSampler):
                 agent_old = deepcopy(agent)
-            
+                
             # Train the sampled goal
             engine.train(iter_num, goal)
             
@@ -52,14 +62,13 @@ class GoalSelection(BaseAlgorithm):
                 reward = goal_sampler._calculate_reward(agent_old, agent, env, config, goal)
                 # Update the sampler
                 goal_sampler.update(reward)
-            
+                
             # Evaluation over all goals
             engine.eval(iter_num, goal)
             
             
             #print(goal_sampler.infos)
             
-        
-        # Put the logger into the Queue (shared memory) for Processes of Experiment
-        logger_queue.put(logger)
+        # Save the logger
+        logger.save(name=f'{self.name}_ID_{config["ID"]}')
             

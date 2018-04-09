@@ -1,9 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-################################################################################
-# TODO: Add more configurations, e.g. batch/weight/layer norm, initializations #
-################################################################################
 
 class MLP(nn.Module):
     """
@@ -14,7 +11,7 @@ class MLP(nn.Module):
                  hidden_sizes, 
                  hidden_nonlinearity, 
                  output_dim=None, 
-                 output_nonlinearity=None):
+                 output_nonlinearity=None,):
         """
         Set up MLP with configurations
         
@@ -47,6 +44,9 @@ class MLP(nn.Module):
         # Output layer
         if self.output_dim is not None:
             self.output_layer = nn.Linear(self.hidden_sizes[-1], self.output_dim)
+            
+        # Initialize parameters
+        self._init_params()
         
     def forward(self, x):
         # Forward pass till last hidden layer
@@ -60,3 +60,32 @@ class MLP(nn.Module):
                 x = self.output_nonlinearity(x)
                 
         return x
+    
+    def _init_params(self):
+        """
+        Initialize the network parameters, weights, biases
+        
+        Orthogonal weight initialization and zero bias initialization
+        """
+        # Initialization for hidden layers
+        for layer in self.hidden_layers:
+            # Calculate gain for the nonlinearity
+            gain = nn.init.calculate_gain(self.hidden_nonlinearity.__name__)
+            # Weight initialization
+            nn.init.orthogonal(layer.weight, gain=gain)
+            # Bias initialization
+            nn.init.constant(layer.bias, 0.0)
+            
+        # Initialization for output layer
+        if self.output_dim is not None:  # existence of output layer
+            if self.output_nonlinearity is not None:  # existence of output nonlinearity
+                # Calculate gain for the nonlinearity
+                gain = nn.init.calculate_gain(self.output_nonlinearity.__name__)
+                # Weight initialization
+                nn.init.orthogonal(self.output_layer.weight, gain=gain)
+            else:  # identity, no nonlinearity
+                # Weight initialization
+                nn.init.orthogonal(self.output_layer.weight, gain=0.01)  # used in OpenAI baselines
+            
+            # Bias initialization
+            nn.init.constant(self.output_layer.bias, 0.0)

@@ -1,4 +1,4 @@
-class BaseProcessor(object):
+class BasePreprocessor(object):
     def process(self, x):
         """
         Process the input data

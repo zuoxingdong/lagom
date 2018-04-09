@@ -1,9 +1,9 @@
 import numpy as np
 
-from lagom.core.processor import BaseProcessor
+from lagom.core.preprocessors import BasePreprocessor
 
 
-class Clip(BaseProcessor):
+class Clip(BasePreprocessor):
     def __init__(self, min_bound, max_bound):
         self.min_bound = min_bound
         self.max_bound = max_bound
