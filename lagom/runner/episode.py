@@ -1,3 +1,7 @@
+import torch
+
+import numpy as np
+
 from lagom.core.preprocessors import CalcReturn
 
 
@@ -7,7 +11,9 @@ class Episode(object):
     
     e.g. other info includes length, success and so on.
     """
-    def __init__(self):
+    def __init__(self, gamma):
+        self.gamma = gamma  # discount factor
+        
         self.transitions = []
         self.info = {}
         
@@ -49,8 +55,30 @@ class Episode(object):
     def all_r(self):
         return [transition.r for transition in self.transitions]
     
-    def get_returns(self, gamma):
-        return CalcReturn(gamma).process(self.all_r)
+    @property
+    def all_returns(self):
+        return CalcReturn(self.gamma).process(self.all_r)
+    
+    @property
+    def all_TD(self):
+        """
+        Returns all TD errors, for each time step
+        """
+        # Get all rewards
+        all_r = np.array(self.all_r)
+
+        # Get all state values
+        all_v = self.all_info('state_value')
+        # convert to numpy if dtype: torch.Tensor 
+        all_v = np.array([v.tolist()[0] if torch.is_tensor(v) else v for v in all_v])
+
+        # Get all next state values, final terminal state with zero state value
+        all_next_v = np.append(all_v[1:], [0])
+
+        # Calculate TD error
+        all_TD = all_r + self.gamma*all_next_v - all_v
+
+        return all_TD.tolist()
     
     def all_info(self, name):
         """

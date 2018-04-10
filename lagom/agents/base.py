@@ -35,3 +35,22 @@ class BaseAgent(object):
                             e.g. [total_loss, batched_policy_loss]
         """
         raise NotImplementedError
+        
+    def save(self, filename):
+        """
+        Save the current parameters of the agent. 
+        
+        Args:
+            filename (str): name of the file
+        """
+        raise NotImplementedError
+        
+    def load(self, filename):
+        """
+        Load the parameters of the agent from a file
+        
+        Args:
+            filename (str): name of the file
+        
+        """
+        raise NotImplementedError
