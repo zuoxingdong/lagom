@@ -1,9 +1,9 @@
 from .transition import Transition
 from .episode import Episode
 
-
 import torch
 from torch.autograd import Variable
+
 
 class Runner(object):
     """

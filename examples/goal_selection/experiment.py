@@ -30,6 +30,10 @@ class Experiment(BaseExperiment):
         config.add('hidden_nonlinearity', [F.tanh])
         config.add('lr', [2e-2])  # learning rate of policy network
         config.add('gamma', [0.99])  # discount factor
+        config.add('GAE_lambda', [0.95])  # GAE lambda
+        config.add('value_coef', [0.5])  # value function loss coefficient
+        config.add('entropy_coef', [0.0])  # policy entropy loss coefficient
+        config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
         config.add('T', [20])  # Max time step per episode
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [False])  # Value function head
