@@ -69,6 +69,8 @@ class GoalSelection(BaseAlgorithm):
                 
             # Evaluation over all goals
             engine.eval(iter_num, goal)
+            #engine.eval(iter_num, goal)
+            
             
             
             #print(goal_sampler.infos)
