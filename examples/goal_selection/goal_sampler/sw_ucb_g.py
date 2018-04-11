@@ -265,8 +265,8 @@ class SWUCBgGoalSampler(BaseGoalSampler):
         # Calculate value estimate
         D_old = runner_old.run(T, num_epi)
         D_new = runner_new.run(T, num_epi)
-        r_old = np.mean([np.sum(d['rewards']) for d in D_old])
-        r_new = np.mean([np.sum(d['rewards']) for d in D_new])
+        r_old = np.mean([np.sum(episode.all_r) for episode in D_old])
+        r_new = np.mean([np.sum(episode.all_r) for episode in D_new])
         
         print(f'########### {r_old}, {r_new}')
         

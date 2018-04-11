@@ -73,6 +73,9 @@ class GoalEngine(BaseEngine):
             # Collect one batch of data from runner
             batch_data = self.runner.run(self.config['T'], self.config['eval_num_epi'])
             
+            
+            #print(f'@@@@@@@@@@@@@goal {g}:  {np.sum(batch_data[0].all_r)}\n')
+            
             # Useful metrics
             batch_returns = [np.sum(episode.all_r) for episode in batch_data]
             average_return_all_goal.append([g, np.mean(batch_returns)])

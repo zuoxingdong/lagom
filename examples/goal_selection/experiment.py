@@ -38,12 +38,12 @@ class Experiment(BaseExperiment):
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [True])  # Value function head
         
-        config.add('goal_sampler', [UniformGoalSampler])  # different goal samplers
+        config.add('goal_sampler', [UniformGoalSampler, RejectionGoalSampler])  # different goal samplers
         
-        config.add('num_goal', [2])  # length of sequence of goals to train
+        config.add('num_goal', [100])  # length of sequence of goals to train
         config.add('train_iter', [1])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
-        config.add('train_num_epi', [1])  # Number of episodes per training iteration
+        config.add('train_num_epi', [5])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
         
         config.add('init_state', [[6, 1]])  # initial position for each created environment
