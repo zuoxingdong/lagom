@@ -1,8 +1,7 @@
+import torch
+
 from .transition import Transition
 from .episode import Episode
-
-import torch
-from torch.autograd import Variable
 
 
 class Runner(object):
@@ -29,7 +28,7 @@ class Runner(object):
         batch = []
         for _ in range(num_epi):  # Iterate over the number of episodes
             # Create an episode object
-            episode = Episode()
+            episode = Episode(self.gamma)
             
             # Reset the environment and returns initial state
             obs = self.env.reset()
@@ -42,7 +41,7 @@ class Runner(object):
                 action = output_agent['action']
                 
                 # Action execution in the environment
-                obs_next, reward, done, info = self.env.step(action)
+                obs_next, reward, done, info = self.env.step(action.item())  # item() retrieve raw data
                 
                 # Create a transition
                 transition = Transition(s=obs, a=action, r=reward, s_next=obs_next)
@@ -75,9 +74,9 @@ class Runner(object):
             obs (object): observations
             
         Returns:
-            data (Variable): input data for the action selection
+            data (Tensor): input data for the action selection
         
         """
-        data = Variable(torch.FloatTensor(obs).unsqueeze(0))
+        data = torch.Tensor(obs).unsqueeze(0)
         
         return data

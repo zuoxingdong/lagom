@@ -19,10 +19,10 @@ class SimpleEngine(BaseEngine):
             # Collect one batch of data from runner
             batch_data = self.runner.run(self.config['T'], self.config['train_num_epi'])
             # Update agent by learning over the batch of data
-            losses = self.agent.learn(batch_data)
+            output_learn = self.agent.learn(batch_data)
             
             # Useful metrics
-            total_loss = losses['total_loss'].data[0]
+            total_loss = output_learn['loss'].data[0]
             batch_returns = [np.sum(data['rewards']) for data in batch_data]
             batch_discounted_returns = [data['returns'][0] for data in batch_data]
             

@@ -29,8 +29,8 @@ class CategoricalMLPPolicy(MLP):
         out_features = self.env_spec.action_space.flat_dim
         self.action_head = nn.Linear(in_features, out_features)
         # Initialization of action head, used in OpenAI baselines
-        nn.init.orthogonal(self.action_head.weight, gain=0.01)  # weight
-        nn.init.constant(self.action_head.bias, 0.0)  # bias
+        nn.init.orthogonal_(self.action_head.weight, gain=0.01)  # weight
+        nn.init.constant_(self.action_head.bias, 0.0)  # bias
         
         # Value head
         if self.config['predict_value']:
@@ -38,8 +38,8 @@ class CategoricalMLPPolicy(MLP):
             out_features = 1
             self.value_head = nn.Linear(in_features, out_features)
             # Initialization of value head, used in OpenAI baselines
-            nn.init.orthogonal(self.value_head.weight, gain=1.0)  # weight
-            nn.init.constant(self.value_head.bias, 0.0)  # bias
+            nn.init.orthogonal_(self.value_head.weight, gain=1.0)  # weight
+            nn.init.constant_(self.value_head.bias, 0.0)  # bias
         
     def forward(self, x):
         # Forward pass by internal MLP network
