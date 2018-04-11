@@ -61,29 +61,6 @@ class BaseExperiment(object):
         if num_process > len(self.list_configs):
             raise ValueError('The number of process should not be larger than the number of configurations.')
         
-        
-        # Create a pool for multiprocessing
-        pool = Pool(num_process)    
-        
-        # Run experiments that an individual process for each configuration and each algorithm
-        for config in self.list_configs:
-            # Print all the configurations
-            print(f'{"#":#^50}')
-            [print(f'# {key}: {val}') for key, val in config.items()]
-            print(f'{"#":#^50}')
-            
-            # Run each algorithm for the specific configuration
-            for algo in self.algos:
-                pool.apply_async(algo.run, args=[config])
-        
-        # No more process can be added
-        pool.close()
-        # Wait all processes finished
-        pool.join()
-        
-            
-        """
-        
         # Create batches of configs to run in parallel with Process
         for i in range(0, len(self.list_configs), num_process):
             batch_configs = self.list_configs[i : i+num_process]  # slicing can deal with smaller last batch
@@ -99,15 +76,12 @@ class BaseExperiment(object):
                 # Run each algorithm for the specific configuration
                 for algo in self.algos:
                     process = Process(target=algo.run, args=[config])
+                    process.start()
                     list_process.append(process)
-                    
-            # Start the processes
-            [process.start() for process in list_process]
                     
             # Wait the processes
             # NOTE: when using shared memory, use Manager().Queue() instead of Queue to avoid deadlock
             [process.join() for process in list_process]
-        """
         
     def save_configs(self):
         np.save('logs/experiment_configs', self.list_configs)

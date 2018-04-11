@@ -24,7 +24,7 @@ class Experiment(BaseExperiment):
     def _configure(self):
         config = GridConfig()
         
-        config.add('seed', list(range(10)))  # random seeds
+        config.add('seed', list(range(1)))  # random seeds
         
         config.add('hidden_sizes', [[16]])
         config.add('hidden_nonlinearity', [F.tanh])
@@ -36,15 +36,14 @@ class Experiment(BaseExperiment):
         config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
         config.add('T', [20])  # Max time step per episode
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
-        config.add('predict_value', [False])  # Value function head
-        config.add('standardize_r', [True])  # standardize returns in [-1, 1], more stable learning
+        config.add('predict_value', [True])  # Value function head
         
-        config.add('goal_sampler', [RejectionGoalSampler])  # different goal samplers
+        config.add('goal_sampler', [UniformGoalSampler])  # different goal samplers
         
-        config.add('num_goal', [2000])  # length of sequence of goals to train
+        config.add('num_goal', [2])  # length of sequence of goals to train
         config.add('train_iter', [1])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
-        config.add('train_num_epi', [5])  # Number of episodes per training iteration
+        config.add('train_num_epi', [1])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
         
         config.add('init_state', [[6, 1]])  # initial position for each created environment

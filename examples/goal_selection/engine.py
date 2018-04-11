@@ -16,20 +16,21 @@ class GoalEngine(BaseEngine):
         for i in range(self.config['train_iter']):  # training iterations
             # Collect one batch of data from runner
             batch_data = self.runner.run(self.config['T'], self.config['train_num_epi'])
+            
             # Update agent by learning over the batch of data
-            losses = self.agent.learn(batch_data)
+            output_learn = self.agent.learn(batch_data)
             
             # Useful metrics
-            total_loss = losses['total_loss'].data[0]
-            batch_returns = [np.sum(data['rewards']) for data in batch_data]
-            batch_discounted_returns = [data['returns'][0] for data in batch_data]
+            loss = output_learn['loss'].item()
+            batch_returns = [np.sum(episode.all_r) for episode in batch_data]
+            batch_discounted_returns = [episode.returns for episode in batch_data]
             
             # Loggings
             key_goal = ('Sampled goal', goal_iter, tuple(goal))
             if i == 0 or (i + 1) % self.config['log_interval'] == 0:
                 self.logger.log(self.config['ID'], 
-                                [key_goal, ('Train Iteration', i+1), 'Total loss'], 
-                                total_loss)
+                                [key_goal, ('Train Iteration', i+1), 'Loss'], 
+                                loss)
                 self.logger.log(self.config['ID'], 
                                 [key_goal, ('Train Iteration', i+1), 'Num Episodes'], 
                                 len(batch_data))
@@ -73,7 +74,7 @@ class GoalEngine(BaseEngine):
             batch_data = self.runner.run(self.config['T'], self.config['eval_num_epi'])
             
             # Useful metrics
-            batch_returns = [np.sum(data['rewards']) for data in batch_data]
+            batch_returns = [np.sum(episode.all_r) for episode in batch_data]
             average_return_all_goal.append([g, np.mean(batch_returns)])
         
         # Loggings
