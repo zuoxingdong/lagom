@@ -58,7 +58,7 @@ class RejectionGoalSampler(BaseGoalSampler):
         batch_data = self.runner.run(self.config['T'], self.config['eval_num_epi'])
 
         # Useful metrics
-        batch_returns = [np.sum(data['rewards']) for data in batch_data]
+        batch_returns = [np.sum(episode.all_r) for episode in batch_data]
         measure = np.mean(batch_returns)  # success rate
         
         return measure

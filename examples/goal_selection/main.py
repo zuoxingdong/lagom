@@ -17,7 +17,7 @@ experiment.add_algo(algo)
 
 start_time = time()
 
-experiment.benchmark(num_process=1)
+experiment.benchmark(num_process=2)
 print(f'\nTotal time: {time() - start_time:.2f} s')
 
 # Save all configurations
