@@ -2,7 +2,7 @@ import torch
 
 import numpy as np
 
-from lagom.core.preprocessors import CalcReturn
+from lagom.core.preprocessors import ExponentialFactorCumSum
 
 
 class Episode(object):
@@ -57,7 +57,11 @@ class Episode(object):
     
     @property
     def all_returns(self):
-        return CalcReturn(self.gamma).process(self.all_r)
+        return ExponentialFactorCumSum(self.gamma).process(self.all_r)
+    
+    @property
+    def returns(self):
+        return self.all_returns[0]
     
     @property
     def all_TD(self):
@@ -69,8 +73,8 @@ class Episode(object):
 
         # Get all state values
         all_v = self.all_info('state_value')
-        # convert to numpy if dtype: torch.Tensor 
-        all_v = np.array([v.tolist()[0] if torch.is_tensor(v) else v for v in all_v])
+        # Retrive each item if dtype: torch.Tensor 
+        all_v = np.array([v.item() if torch.is_tensor(v) else v for v in all_v])
 
         # Get all next state values, final terminal state with zero state value
         all_next_v = np.append(all_v[1:], [0])
@@ -90,10 +94,7 @@ class Episode(object):
         Returns:
             list of specified information for all transitions
         """
-        info = [transition.info.get(name, None) for transition in self.transitions]
-        
-        if None in info:
-            raise KeyError(f'The key {name} should exist in all transition info dictionary. ')
+        info = [transition.info[name] for transition in self.transitions]
         
         return info
     

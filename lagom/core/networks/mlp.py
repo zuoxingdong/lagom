@@ -72,9 +72,9 @@ class MLP(nn.Module):
             # Calculate gain for the nonlinearity
             gain = nn.init.calculate_gain(self.hidden_nonlinearity.__name__)
             # Weight initialization
-            nn.init.orthogonal(layer.weight, gain=gain)
+            nn.init.orthogonal_(layer.weight, gain=gain)
             # Bias initialization
-            nn.init.constant(layer.bias, 0.0)
+            nn.init.constant_(layer.bias, 0.0)
             
         # Initialization for output layer
         if self.output_dim is not None:  # existence of output layer
@@ -82,10 +82,10 @@ class MLP(nn.Module):
                 # Calculate gain for the nonlinearity
                 gain = nn.init.calculate_gain(self.output_nonlinearity.__name__)
                 # Weight initialization
-                nn.init.orthogonal(self.output_layer.weight, gain=gain)
+                nn.init.orthogonal_(self.output_layer.weight, gain=gain)
             else:  # identity, no nonlinearity
                 # Weight initialization
-                nn.init.orthogonal(self.output_layer.weight, gain=0.01)  # used in OpenAI baselines
+                nn.init.orthogonal_(self.output_layer.weight, gain=0.01)  # used in OpenAI baselines
             
             # Bias initialization
-            nn.init.constant(self.output_layer.bias, 0.0)
+            nn.init.constant_(self.output_layer.bias, 0.0)
