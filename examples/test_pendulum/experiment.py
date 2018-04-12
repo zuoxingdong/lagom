@@ -26,13 +26,13 @@ class Experiment(BaseExperiment):
         config.add('GAE_lambda', [0.99])  # GAE lambda
         config.add('value_coef', [0.5])  # value function loss coefficient
         config.add('entropy_coef', [0.0])  # policy entropy loss coefficient
-        config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
+        #config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
         config.add('T', [10000])  # Max time step per episode
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [True])  # Value function head
         
         
-        config.add('train_iter', [300])  # number of training iterations
+        config.add('train_iter', [2])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
         config.add('train_num_epi', [1])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration

@@ -47,7 +47,7 @@ class CategoricalMLPPolicy(MLP):
         
         # Action head
         action_scores = self.action_head(x)
-        action_probs = F.softmax(action_scores, dim=1)
+        action_probs = F.softmax(action_scores, dim=-1)  # compute probabilities over last dimension
         
         # Value head
         if self.config['predict_value']:
