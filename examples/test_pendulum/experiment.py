@@ -1,5 +1,7 @@
 import numpy as np
 
+import gym
+
 from gym_maze.envs import MazeEnv
 from gym_maze.envs import UMazeGenerator
 
@@ -9,16 +11,6 @@ from lagom.envs import GymEnv
 from lagom.envs.wrappers import SparseReward
 
 import torch.nn.functional as F
-
-from utils import GoalMaze
-from utils import get_all_optimal_steps
-
-from goal_sampler import LinearGoalSampler
-from goal_sampler import UniformGoalSampler
-from goal_sampler import RejectionGoalSampler
-from goal_sampler import RejectionL2GoalSampler
-from goal_sampler import RejectionAstarGoalSampler
-from goal_sampler import SWUCBgGoalSampler
 
 
 class Experiment(BaseExperiment):
@@ -35,16 +27,14 @@ class Experiment(BaseExperiment):
         config.add('value_coef', [0.5])  # value function loss coefficient
         config.add('entropy_coef', [0.0])  # policy entropy loss coefficient
         config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
-        config.add('T', [20])  # Max time step per episode
+        config.add('T', [10000])  # Max time step per episode
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [True])  # Value function head
         
-        config.add('goal_sampler', [LinearGoalSampler([[6, 2], [6, 3], [6, 4], [6, 5], [5, 5], [4, 5]]*50)])  # different goal samplers
         
-        config.add('num_goal', [6*50])  # length of sequence of goals to train
-        config.add('train_iter', [1])  # number of training iterations
+        config.add('train_iter', [300])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
-        config.add('train_num_epi', [5])  # Number of episodes per training iteration
+        config.add('train_num_epi', [1])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
         
         config.add('init_state', [[6, 1]])  # initial position for each created environment
@@ -53,6 +43,13 @@ class Experiment(BaseExperiment):
         
         return config.make_configs()
             
+    def _make_env(self, config):
+        env = gym.make('CartPole-v0')
+        env = GymEnv(env)
+        
+        return env
+        
+    """
     def _make_env(self, config):
         # Create environment
         maze = UMazeGenerator(len_long_corridor=5, len_short_corridor=2, width=2, wall_size=1)
@@ -75,3 +72,4 @@ class Experiment(BaseExperiment):
         env.free_space = list(zip(free_space[0], free_space[1]))
         
         return env
+"""

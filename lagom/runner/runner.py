@@ -14,17 +14,18 @@ class Runner(object):
         # Discount factor
         self.gamma = gamma
         
-    def run(self, T, num_epi):
+    def run(self, T, num_epi, mode):
         """
         Run the agent in the environment and collect all necessary data
         
         Args:
             T (int): Number of time steps
             num_epi (int): Number of episodes
+            mode (str): option to select an action, ['sampling', 'greedy']
             
         Returns:
             batch (list of Episode): list of episodes, each is an object of Episode
-        """
+        """ 
         batch = []
         for _ in range(num_epi):  # Iterate over the number of episodes
             # Create an episode object
@@ -35,7 +36,7 @@ class Runner(object):
             
             for t in range(T):  # Iterate over the number of time steps
                 # Action selection by agent
-                output_agent = self.agent.choose_action(self._make_input(obs))
+                output_agent = self.agent.choose_action(self._make_input(obs), mode)
                 
                 # Unpack output from agent
                 action = output_agent['action']

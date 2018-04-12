@@ -9,13 +9,14 @@ class BaseAgent(object):
         """
         self.config = config
         
-    def choose_action(self, obs):
+    def choose_action(self, obs, mode):
         """
-        The agent selects an action based on given observation. 
+        The agent selects an action based on given observation and mode for sampling or greedy. 
         The output is a dictionary containing useful items, e.g. action, logprob_action, state_value
         
         Args:
             obs (object): agent's observation
+            mode (str): option to select an action, ['sampling', 'greedy']
             
         Returns:
             output (dict): a dictionary with possible keys 
