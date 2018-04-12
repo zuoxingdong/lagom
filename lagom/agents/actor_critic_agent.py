@@ -80,45 +80,49 @@ class ActorCriticAgent(BaseAgent):
             entropy_loss = []
             
             # iterate over time steps
-            for logprob, V, Q in zip(log_probs, Vs, Qs):
+            for logprob, V, Q, entropy in zip(log_probs, Vs, Qs, entropies):
                 advantage_estimate = Q - V.item()
                 policy_loss.append(-logprob*advantage_estimate)
-                value_loss.append(F.mse_loss(V, torch.Tensor([Q])))
+                value_loss.append(F.mse_loss(V, torch.Tensor([Q]).unsqueeze(0)).unsqueeze(0))
+                entropy_loss.append(-entropy)
             
+            # Sum up losses for each time step
+            policy_loss = torch.cat(policy_loss).sum()
+            value_loss = torch.cat(value_loss).sum()
+            entropy_loss = torch.cat(entropy_loss).sum()
             
+            # Calculate total loss
+            total_loss = policy_loss + self.config['value_coef']*value_loss# + self.config['entropy_coef']*entropy_loss
             
+            # Record all losses for current episode
+            batch_policy_loss.append(policy_loss)
+            batch_value_loss.append(value_loss)
+            batch_entropy_loss.append(entropy_loss)
+            batch_total_loss.append(total_loss)
             
-            
-            R = epi_data['returns']
-            if self.config['standardize_r']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
-                R = Standardize().process(R)
-
-            # Calculate loss for the policy
-            policy_loss = []
-            value_loss = []
-            for log_prob, value, r in zip(epi_data['logprob_actions'], epi_data['state_values'], R):
-                advantage_estimate = r - value.data[0][0]
-                policy_loss.append(-log_prob*advantage_estimate)
-                value_loss.append(F.smooth_l1_loss(value, Variable(torch.FloatTensor([r]))))
-
-            # Batched loss for each episode
-            batch_policy_loss.append(torch.cat(policy_loss).sum())
-            batch_value_loss.append(torch.cat(value_loss).sum())
-
-        # Compute total loss over the batch (average over batch)
-        total_loss = torch.mean(torch.cat(batch_policy_loss) + torch.cat(batch_value_loss))
-
+        # Average total loss over the batch
+        # TODO: keep track of new feature to cat zero dimensional Tensor
+        batch_total_loss = [total_loss.unsqueeze(0) for total_loss in batch_total_loss]
+        loss = torch.cat(batch_total_loss).mean()
+        
         # Zero-out gradient buffer
         self.optimizer.zero_grad()
         # Backward pass and compute gradients
-        total_loss.backward()
+        loss.backward()
+        # Clip gradient norms if required
+        if 'max_grad_norm' in self.config:
+            nn.utils.clip_grad_norm(self.policy.parameters(), self.config['max_grad_norm'])
+        # Update learning rate scheduler
+        #self.lr_scheduler.step()
         # Update for one step
         self.optimizer.step()
-
+        
         # Output dictionary for different losses
         output = {}
-        output['total_loss'] = total_loss
+        output['loss'] = loss
         output['batch_policy_loss'] = batch_policy_loss
         output['batch_value_loss'] = batch_value_loss
+        output['batch_entropy_loss'] = batch_entropy_loss
+        output['batch_total_loss'] = batch_total_loss
 
         return output
