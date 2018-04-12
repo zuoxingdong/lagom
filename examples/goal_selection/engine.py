@@ -15,7 +15,9 @@ class GoalEngine(BaseEngine):
         # Training
         for i in range(self.config['train_iter']):  # training iterations
             # Collect one batch of data from runner
-            batch_data = self.runner.run(self.config['T'], self.config['train_num_epi'])
+            batch_data = self.runner.run(self.config['T'], 
+                                         self.config['train_num_epi'], 
+                                         mode='sampling')
             
             # Update agent by learning over the batch of data
             output_learn = self.agent.learn(batch_data)
@@ -71,10 +73,9 @@ class GoalEngine(BaseEngine):
             
             # Evaluate
             # Collect one batch of data from runner
-            batch_data = self.runner.run(self.config['T'], self.config['eval_num_epi'])
-            
-            
-            #print(f'@@@@@@@@@@@@@goal {g}:  {np.sum(batch_data[0].all_r)}\n')
+            batch_data = self.runner.run(self.config['T'], 
+                                         self.config['eval_num_epi'], 
+                                         mode='sampling')
             
             # Useful metrics
             batch_returns = [np.sum(episode.all_r) for episode in batch_data]

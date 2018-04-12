@@ -6,10 +6,10 @@ sys.path.append('/home/zuo/Code/lagom/')
 from time import time
 
 from experiment import Experiment
-from algo import GoalSelection
+from algo import Algorithm
 
 
-algo = GoalSelection(name='goal_selection')
+algo = Algorithm(name='test')
 experiment = Experiment()
 
 experiment.add_algo(algo)

@@ -10,7 +10,7 @@ class RejectionGoalSampler(BaseGoalSampler):
         
         self.uniform_sampler = UniformGoalSampler(self.runner, self.config)
         
-    def sample(self, low=0.2, high=0.8, max_samples=10000):
+    def sample(self, low=0.3, high=0.7, max_samples=10000):
         """
         Rejection sampling of goal with lower and upper bounds of goal quality measure
         
@@ -55,10 +55,15 @@ class RejectionGoalSampler(BaseGoalSampler):
 
         # Evaluate
         # Collect one batch of data from runner
-        batch_data = self.runner.run(self.config['T'], self.config['eval_num_epi'])
+        batch_data = self.runner.run(self.config['T'], 
+                                     10,  # num episodes to get a probability estimate
+                                     mode='sampling')  # if greedy, then no measure in (0, 1) but only binary
 
         # Useful metrics
         batch_returns = [np.sum(episode.all_r) for episode in batch_data]
         measure = np.mean(batch_returns)  # success rate
+        
+        
+        #print(f'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@{goal}: {measure}')
         
         return measure
