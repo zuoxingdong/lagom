@@ -14,7 +14,6 @@ experiment = Experiment()
 
 experiment.add_algo(algo)
 
-
 start_time = time()
 
 experiment.benchmark(num_process=1)
