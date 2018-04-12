@@ -263,8 +263,8 @@ class SWUCBgGoalSampler(BaseGoalSampler):
         runner_new = Runner(agent_new, env, config['gamma'])
         
         # Calculate value estimate
-        D_old = runner_old.run(T, num_epi)
-        D_new = runner_new.run(T, num_epi)
+        D_old = runner_old.run(T, num_epi, mode='greedy')
+        D_new = runner_new.run(T, num_epi, mode='greedy')
         r_old = np.mean([np.sum(episode.all_r) for episode in D_old])
         r_new = np.mean([np.sum(episode.all_r) for episode in D_new])
         

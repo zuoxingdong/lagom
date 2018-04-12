@@ -19,21 +19,32 @@ class A2CAgent(BaseAgent):
         
         super().__init__(config)
         
-    def choose_action(self, obs):
+    def choose_action(self, obs, mode):
+        assert mode == 'sampling' or mode == 'greedy'
+        
         out_policy = self.policy(obs)
         # Unpack output from policy network
         action_probs = out_policy['action_probs']
         state_value = out_policy['state_value']
         
-        # Sample an action according to categorical distribution
+        # Create a categorical distribution
+        # TODO: automatic distribution select according to action space
         action_dist = Categorical(action_probs)
-        action = action_dist.sample()
-        # Calculate log-probability according to distribution
-        logprob_action = action_dist.log_prob(action)
         # Calculate entropy of the policy conditional on state
         entropy = action_dist.entropy()
         # Calculate perplexity of the policy, i.e. exp(entropy)
         perplexity = action_dist.perplexity()
+        
+        if mode == 'greedy':  # greedily select an action, useful for evaluation
+            action = torch.argmax(action_probs, 1)
+            logprob_action = None  # due to greedy selection, no log-probability available
+        elif mode == 'sampling':  # sample an action according to distribution
+            action = action_dist.sample()
+            logprob_action = action_dist.log_prob(action)  # calculate log-probability
+            
+            
+            #print(f'#######{action_probs}')
+            #print(f'!!!!!!!{action.item()}')
         
         # Dictionary of output data
         output = {}
