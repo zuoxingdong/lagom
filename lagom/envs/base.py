@@ -34,7 +34,15 @@ class Env(object):
                         - 'rgb_array': numpy array with shape [x, y, 3] for RGB values.
         """
         raise NotImplementedError
+    
+    def close(self):
+        """
+        This will be automatically called when garbage collected or program exited. 
         
+        Override this method to do any further cleanup. 
+        """
+        return
+    
     def seed(self, seed):
         """
         Set the random seed of the environment. 
@@ -44,18 +52,12 @@ class Env(object):
         """
         raise NotImplementedError
         
-    def clean(self):
+    @property
+    def unwrapped(self):
         """
-        Clean up.
+        Unwrap this environment. Useful for sequential wrappers applied, it can access information from the original environment. 
         """
-        raise NotImplementedError
-        
-    def get_source_env(self):
-        """
-        Return the original environment object. 
-        Useful for sequential wrappers, to access the information from original environment. 
-        """
-        raise NotImplementedError
+        return self
         
     @property
     def T(self):

@@ -34,10 +34,6 @@ class Algorithm(BaseAlgorithm):
         # Create a goal-conditional policy
         policy = CategoricalMLPPolicy(env_spec, config)
         
-        print(policy)
-        print(policy.action_head.weight)
-        print(torch.random.get_rng_state())
-        
         # Create an optimzer
         optimizer = optim.RMSprop(policy.parameters(), lr=config['lr'], alpha=0.99, eps=1e-5)
         # Learning rate scheduler
@@ -45,8 +41,8 @@ class Algorithm(BaseAlgorithm):
         lambda_f = lambda epoch: 1 - epoch/max_epoch  # decay learning rate for each training epoch
         lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
         # Create an agent
-        agent = ActorCriticAgent(policy, optimizer, lr_scheduler, config)
-        #agent = A2CAgent(policy, optimizer, lr_scheduler, config)
+        #agent = ActorCriticAgent(policy, optimizer, lr_scheduler, config)
+        agent = A2CAgent(policy, optimizer, lr_scheduler, config)
         # Create a Runner
         runner = Runner(agent, env, config['gamma'])
         # Create an engine (training and evaluation)

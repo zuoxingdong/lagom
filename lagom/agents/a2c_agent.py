@@ -65,6 +65,9 @@ class A2CAgent(BaseAgent):
         for episode in batch:  # Iterate over batch of episodes
             # Get all returns
             Qs = episode.all_returns
+            # Standardize returns to [-1, 1], prevent loss explosion of value head
+            # Very important, otherwise cannot learn good policy at all !
+            Qs = Standardize().process(Qs)
             # Get all values
             Vs = episode.all_info('state_value')
             # Get all action log-probabilities
