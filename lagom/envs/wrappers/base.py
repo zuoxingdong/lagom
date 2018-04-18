@@ -17,14 +17,18 @@ class Wrapper(Env):
     def render(self, mode='human'):
         return self.env.render(mode)
     
+    def close(self):
+        return self.env.close()
+    
     def seed(self, seed=None):
         return self.env.seed(seed)
     
-    def clean(self):
-        return self.env.clean()
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        return self.env.compute_reward(achieved_goal, desired_goal, info)
     
-    def get_source_env(self):
-        return self.env.get_source_env()
+    @property
+    def unwrapped(self):
+        return self.env.unwrapped
     
     @property
     def T(self):

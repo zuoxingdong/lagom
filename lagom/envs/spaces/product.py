@@ -12,7 +12,7 @@ class Product(Space):
         Define a product of elementary spaces.
         
         Example:
-            Product((Discrete(5), Box(-1.0, 1.0, dtype=np.float32, shape=(2, 3))))
+            Product((Discrete(5), Box(-1.0, 1.0, shape=(2, 3), dtype=np.float32)))
         """
         self.spaces = tuple(spaces)
         
@@ -23,8 +23,6 @@ class Product(Space):
     
     def contains(self, x):
         x = tuple(x)  # ensure tuple type
-        
-        print(x)
         
         return np.all([space.contains(x_part) for x_part, space in zip(x, self.spaces)])
     
