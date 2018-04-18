@@ -35,14 +35,14 @@ class Experiment(BaseExperiment):
         config.add('value_coef', [0.5])  # value function loss coefficient
         config.add('entropy_coef', [0.0])  # policy entropy loss coefficient
         config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
-        config.add('T', [20])  # Max time step per episode
+        config.add('T', [200])  # Max time step per episode
         config.add('use_optimal_T', [False])  # True: args.T will be modified to optimal steps before rollout for each new goal
         config.add('predict_value', [True])  # Value function head
         
-        config.add('goal_sampler', [LinearGoalSampler([[6, 2], [6, 3], [6, 4], [6, 5], [5, 5], [4, 5]]*50)])  # different goal samplers
+        config.add('goal_sampler', [UniformGoalSampler, RejectionGoalSampler, SWUCBgGoalSampler])  # different goal samplers
         
-        config.add('num_goal', [6*50])  # length of sequence of goals to train
-        config.add('train_iter', [1])  # number of training iterations
+        config.add('num_goal', [70])  # length of sequence of goals to train
+        config.add('train_iter', [3])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
         config.add('train_num_epi', [5])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration

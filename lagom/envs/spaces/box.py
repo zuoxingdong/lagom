@@ -7,16 +7,17 @@ class Box(Space):
     """
     A continuous space in R^n. Each dimension is bounded by low/high.
     """
-    def __init__(self, low, high, dtype, shape=None):
+    def __init__(self, low, high, shape=None, dtype=None):
         """
         Define the bound for the space. 
         
         Two cases:
             1. Identical bound for each dimension: 
-                Box(low=-1.0, high=1.0, dtype=np.float32, shape=(2, 3))
+                Box(low=-1.0, high=1.0, shape=(2, 3), dtype=np.float32)
             2. Separate bound for each dimension: 
                 Box(low=np.array([-1.0, -2.0]), high=np.array([3.0, 4.0]), dtype=np.float32)
         """
+        assert dtype is not None, 'dtype must be explicitly provided. '
         if shape is None:  # Case 2
             assert low.shape == high.shape
             
@@ -34,7 +35,7 @@ class Box(Space):
         self.low = self.low.astype(dtype)
         self.high = self.high.astype(dtype)
             
-        super().__init__(dtype, shape)
+        super().__init__(shape, dtype)
         
     def sample(self):
         return np.random.uniform(low=self.low, high=self.high, size=self.shape).astype(self.dtype)

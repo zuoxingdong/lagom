@@ -19,11 +19,11 @@ class Experiment(BaseExperiment):
         
         config.add('seed', list(range(1)))  # random seeds
         
-        config.add('hidden_sizes', [[16]])
+        config.add('hidden_sizes', [[32]])
         config.add('hidden_nonlinearity', [F.tanh])
         config.add('lr', [1e-2])  # learning rate of policy network
         config.add('gamma', [0.995])  # discount factor
-        config.add('GAE_lambda', [0.99])  # GAE lambda
+        config.add('GAE_lambda', [0.86])  # GAE lambda
         config.add('value_coef', [0.5])  # value function loss coefficient
         config.add('entropy_coef', [0.0])  # policy entropy loss coefficient
         #config.add('max_grad_norm', [0.5])  # clipping for max gradient norm
@@ -32,7 +32,7 @@ class Experiment(BaseExperiment):
         config.add('predict_value', [True])  # Value function head
         
         
-        config.add('train_iter', [2])  # number of training iterations
+        config.add('train_iter', [50])  # number of training iterations
         config.add('eval_iter', [1])  # number of evaluation iterations
         config.add('train_num_epi', [1])  # Number of episodes per training iteration
         config.add('eval_num_epi', [10])  # Number of episodes per evaluation iteration
