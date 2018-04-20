@@ -54,7 +54,7 @@ class GymEnv(Env):
             converted space (lagom Space)
         """
         if isinstance(space, gym.spaces.Box):
-            return Box(low=space.low, high=space.high, shape=space.shape, dtype=space.dtype)
+            return Box(low=space.low, high=space.high, dtype=space.dtype)  # Don't give shape
         elif isinstance(space, gym.spaces.Dict):
             return Dict(dict([(key, self._convert_gym_space(space)) for key, space in space.spaces.items()]))
         elif isinstance(space, gym.spaces.Discrete):
