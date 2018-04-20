@@ -11,7 +11,7 @@ class MLP(nn.Module):
                  hidden_sizes, 
                  hidden_nonlinearity, 
                  output_dim=None, 
-                 output_nonlinearity=None,):
+                 output_nonlinearity=None):
         """
         Set up MLP with configurations
         
