@@ -18,11 +18,11 @@ class PartialFlattenDict(ObservationWrapper):
         
         # Calculate dimensionality
         shape = (int(np.sum([spaces[key].flat_dim for key in self.keys])), )
-        self.observation_space = Box(low=-np.inf, high=np.inf, shape=shape, dtype=np.float32)
+        self._observation_space = Box(low=-np.inf, high=np.inf, shape=shape, dtype=np.float32)
         
     def process_observation(self, observation):
         return np.concatenate([observation[key].ravel() for key in self.keys])
     
     @property
     def observation_space(self):
-        return self.observation_space
+        return self._observation_space
