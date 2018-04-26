@@ -7,7 +7,7 @@ from .mlp import MLP
 
 class CNN(nn.Module):
     """
-    Convolutional neural networks, from DeepMind Nature paper. 
+    Convolutional neural networks. 
     """
     def __init__(self, 
                  input_channel, 
