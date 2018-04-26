@@ -20,7 +20,12 @@ class DummyVecEnv(VecEnv):
         self.actions = actions
         
     def step_wait(self):
-        outputs = [env.step(action) for env, action in zip(self.envs, self.actions)]
+        outputs = []
+        for env, action in zip(self.envs, self.actions):
+            observation, reward, done, info = env.step(action)
+            if done:
+                observation = env.reset()
+            outputs.append([observation, reward, done, info])
         observations, rewards, dones, infos = zip(*outputs)
         
         observations = self._process_observations(observations)
