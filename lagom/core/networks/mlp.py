@@ -49,6 +49,9 @@ class MLP(nn.Module):
         self._init_params()
         
     def forward(self, x):
+        # Enforce the shape of x to be consistent with first layer
+        x = x.view(-1, self.input_dim)
+        
         # Forward pass till last hidden layer
         for layer in self.hidden_layers:
             x = self.hidden_nonlinearity(layer(x))
@@ -85,7 +88,7 @@ class MLP(nn.Module):
                 nn.init.orthogonal_(self.output_layer.weight, gain=gain)
             else:  # identity, no nonlinearity
                 # Weight initialization
-                nn.init.orthogonal_(self.output_layer.weight, gain=0.01)  # used in OpenAI baselines
+                nn.init.orthogonal_(self.output_layer.weight, gain=1)  # gain=1 due to identity
             
             # Bias initialization
             nn.init.constant_(self.output_layer.bias, 0.0)
