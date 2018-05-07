@@ -2,7 +2,7 @@
 
 #############################
 # Install Anaconda with env #
-# Date: April 7, 2018  	    #
+# Date: May 7, 2018  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -14,6 +14,7 @@ export ANACONDA=Anaconda3-5.1.0-Linux-x86_64.sh  # Check new version
 export ENV_NAME=RL_server  # name of Anaconda environment
 
 # Download and install Anaconda
+# Select NO to append the installation path to /.bashrc
 wget https://repo.continuum.io/archive/$ANACONDA
 chmod +x ./$ANACONDA  # make it executable
 ./$ANACONDA  # New version: don't choose yes to append PATH variable
@@ -25,6 +26,9 @@ echo ". $HOME/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
 
 # Alias for conda command
 export CONDA=$HOME/anaconda3/bin/conda
+
+# Update Anaconda to latest version
+$CONDA update -n base conda
 
 # Create an Anaconda environment
 $CONDA create -n $ENV_NAME
