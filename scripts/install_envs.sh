@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: April 7, 2018  	    #
+# Date: May 7, 2018  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -11,7 +11,6 @@ set -e
 
 # Create list of variables
 export ENV_NAME=RL_server  # name of Anaconda environment
-export PYTORCH=http://download.pytorch.org/whl/cu80/torch-0.3.1-cp36-cp36m-linux_x86_64.whl  # Check cuda version
 
 # Alias of conda command
 export CONDA=$HOME/anaconda3/bin/conda
@@ -30,15 +29,22 @@ echo "export CUDA_HOME=/usr/local/cuda" >> ~/.bashrc
 echo "# PKG_CONFIG" >> ~/.bashrc
 echo "export PKG_CONFIG_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib/pkgconfig/" >> ~/.bashrc
 
-# Install packages and dependencies
-# IPython, Numpy, Matplotlib, Scikit-image
-$CONDA install -y ipython numpy matplotlib scikit-image
-# Update pip
+# Install IPython to enforce all later command in Python 3 context
+$CONDA install -y ipython
+
+# Upgrade pip and install some dependencies
 pip install --upgrade pip
+pip install cmake cython msgpack
+
+# Install Numpy, matplotlib, scikit-image
+$CONDA install -y numpy matplotlib scikit-image
+
 # Jupyterlab
 pip install jupyterlab
-# PyTorch
-pip install $PYTORCH
+
+# PyTorch nightly version
+$CONDA install -c pytorch pytorch-nightly
 pip install torchvision
+
 # OpenAI Gym
 pip install gym
