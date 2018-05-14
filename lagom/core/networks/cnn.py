@@ -26,7 +26,7 @@ class CNN(nn.Module):
         
         Args:
             input_channel (int): the number of channels of the input, e.g. color channel
-            input_shape (list): [Height, Width] of the input, to calculate the 
+            input_shape (list): [Height, Width] of the input
             conv_kernels (list): a list of number of kernels (filters or feature maps), for each convolutional layer. 
             conv_kernel_sizes (list): a list of kernel sizes, [int or tuple], for each convolutional layer. 
             conv_strides (list): a list of strides, for each convolutional layer. 
@@ -71,7 +71,7 @@ class CNN(nn.Module):
         # MLP
         if self.hidden_sizes is not None:
             # Temporary forward pass to determine MLP input_dim
-            input_dim = self._conv_out_dim()
+            input_dim = self._calculate_conv_flatten_dim()
             # Create MLP
             self.MLP = MLP(input_dim=input_dim,
                            hidden_sizes=self.hidden_sizes, 
@@ -96,17 +96,36 @@ class CNN(nn.Module):
         return x
         
     def _conv_forward(self, x):
+        """
+        Forward pass of all convolutional layers
+        
+        Args:
+            x (Tensor): input tensor
+        
+        Returns:
+            output Tensor of final convolutional layer (after nonlinearity)
+        """
         for conv in self.conv_layers:
             x = self.conv_nonlinearity(conv(x))
             
         return x
     
-    def _conv_out_dim(self):
-        x = torch.zeros(1, self.input_channel, *self.input_shape)
-        x = self._conv_forward(x)
-        out_dim = x.view(1, -1).size(1)
+    def _calculate_conv_flatten_dim(self):
+        """
+        Calculate the flattened dimension of the output of last convolutional layer via a temporary forward pass
+        The flattend dimension is used to define the first fully connected layer
         
-        return out_dim
+        Returns:
+            dim (int): the flattened dimension of the output of last convolutional layer
+        """
+        # Create a temporary input tensor, i.e. zero tensor
+        x = torch.zeros(1, self.input_channel, *self.input_shape)
+        # Forward pass via all convolutional layers
+        x = self._conv_forward(x)
+        # Calculate the flattened dimension
+        dim = x.view(1, -1).size(1)
+        
+        return dim
         
     def _init_params(self):
         """

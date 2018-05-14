@@ -7,7 +7,7 @@ class Experiment(BaseExperiment):
         config = GridConfig()
         
         config.add('batch_size', [128])
-        config.add('num_epochs', [1])
+        config.add('num_epochs', [100])
         config.add('seed', [1])
         config.add('log_interval', [100])
         config.add('cuda', [True])
