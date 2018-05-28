@@ -190,7 +190,7 @@ class MDN(nn.Module):
         
         return loss
     
-    def sample(self, log_pi, mu, std):
+    def sample(self, log_pi, mu, std, greedy=False):
         """
         Sampling from Gaussian mixture using reparameterization trick.
         
@@ -201,6 +201,7 @@ class MDN(nn.Module):
             log_pi (Tensor): log-scale mixing coefficients, shape [N, K]
             mu (Tensor): mean of Gaussian mixtures, shape [N, K, D]
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
+            greedy (bool): If True then greedily sample the mixing coefficients. 
         
         Returns:
             x (Tensor): sampled data, shape [N, D]
