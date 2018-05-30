@@ -101,10 +101,16 @@ class ConvVAE(nn.Module):
                            hidden_nonlinearity=self.encoder_hidden_nonlinearity, 
                            output_dim=None, 
                            output_nonlinearity=None)
+        
+        # Create latent variable
         # Last layer of encoder network to output mean and log-variance for latent variable
-        self.mu_head = nn.Linear(in_features=self.encoder_hidden_sizes[-1], 
+        if self.encoder_hidden_sizes is None:  # Encoder directly map Conv features to latent variable
+            in_features = self.encoder._calculate_conv_flatten_dim()
+        else:  # Encoder has fully connected layers with Conv features before mapping to latent variable
+            in_features = self.encoder_hidden_sizes[-1]
+        self.mu_head = nn.Linear(in_features=in_features, 
                                  out_features=self.latent_dim)
-        self.logvar_head = nn.Linear(in_features=self.encoder_hidden_sizes[-1], 
+        self.logvar_head = nn.Linear(in_features=in_features, 
                                      out_features=self.latent_dim)
         
         # Create decoder network
@@ -155,6 +161,11 @@ class ConvVAE(nn.Module):
                 though variance must be non-negative. 
         """
         x = self.encoder(x)
+        
+        # Flatten the Conv features if there is no fully connected layer in encoder
+        if self.encoder_hidden_sizes is None:
+            x = x.view(x.size(0), -1)
+        
         mu = self.mu_head(x)
         logvar = self.logvar_head(x)
         
