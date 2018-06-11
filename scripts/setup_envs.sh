@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: May 7, 2018  	    #
+# Date: June 11, 2018  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -10,7 +10,7 @@
 set -e
 
 # Create list of variables
-export ENV_NAME=RL_server  # name of Anaconda environment
+export ENV_NAME=RL  # name of Anaconda environment
 
 # Alias of conda command
 export CONDA=$HOME/anaconda3/bin/conda
@@ -42,9 +42,8 @@ $CONDA install -y numpy matplotlib scikit-image
 # Jupyterlab
 pip install jupyterlab
 
-# PyTorch nightly version
-$CONDA install -c pytorch pytorch-nightly
-pip install torchvision
+# PyTorch
+$CONDA install pytorch torchvision -c pytorch
 
 # OpenAI Gym
 pip install gym

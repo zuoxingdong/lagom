@@ -15,7 +15,8 @@ class VAE(nn.Module):
                  encoder_nonlinearity, 
                  latent_dim, 
                  decoder_sizes, 
-                 decoder_nonlinearity):
+                 decoder_nonlinearity, 
+                 decoder_output_nonlinearity):
         """
         Set up VAE with configurations
         
@@ -26,6 +27,8 @@ class VAE(nn.Module):
             latent_dim (int): latent dimension
             decoder_sizes (list): a list of sizes for decoder hidden layers
             decoder_nonlinearity (nn.functional): nonlinearity for decoder hidden layers
+            decoder_output_nonlinearity (nn.functional): nonlinearity 
+                for final decoder transposed convolutional layer. e.g. sigmoid for BCE loss
         """
         super().__init__()
         
@@ -35,6 +38,7 @@ class VAE(nn.Module):
         self.latent_dim = latent_dim
         self.decoder_sizes = decoder_sizes
         self.decoder_nonlinearity = decoder_nonlinearity
+        self.decoder_output_nonlinearity = decoder_output_nonlinearity
         
         # Create encoder network
         self.encoder = MLP(input_dim=self.input_dim, 
@@ -51,7 +55,7 @@ class VAE(nn.Module):
                            hidden_sizes=self.decoder_sizes, 
                            hidden_nonlinearity=self.decoder_nonlinearity, 
                            output_dim=self.input_dim, 
-                           output_nonlinearity=None)
+                           output_nonlinearity=self.decoder_output_nonlinearity)
         
         # Initialize parameters for newly defined layers
         self._init_params()
@@ -88,6 +92,10 @@ class VAE(nn.Module):
                 though variance must be non-negative. 
         """
         x = self.encoder(x)
+        # Enforce features have shape [N, D], useful for ConvVAE
+        x = x.view(x.size(0), -1)
+        
+        # Forward pass via mu and logvar heads
         mu = self.mu_head(x)
         logvar = self.logvar_head(x)
         
@@ -104,8 +112,6 @@ class VAE(nn.Module):
             x (Tensor): the reconstruction of the input
         """
         x = self.decoder(z)
-        # Use sigmoid to constraint all values in (0, 1)
-        x = F.sigmoid(x)
         
         return x
     
@@ -136,9 +142,6 @@ class VAE(nn.Module):
             return mu
         
     def forward(self, x):
-        # Enforce the shape of x to be consistent with first layer
-        x = x.view(-1, self.input_dim)
-        
         # Forward pass through encoder to get mu and logvar for latent variable
         mu, logvar = self.encode(x)
         # Sample latent variable by reparameterization trick
@@ -148,7 +151,7 @@ class VAE(nn.Module):
         
         return reconstructed_x, mu, logvar
     
-    def calculate_loss(self, reconstructed_x, x, mu, logvar):
+    def calculate_loss(self, reconstructed_x, x, mu, logvar, reconstruction_loss_type='BCE'):
         """
         Calculate the VAE loss function
         VAE_loss = Reconstruction_loss + KL_loss
@@ -162,21 +165,38 @@ class VAE(nn.Module):
             x (Tensor): ground-truth x
             mu (Tensor): mean of the latent variable
             logvar (Tensor): log-variance of the latent variable
+            loss_type (str): Type of reconstruction loss, supported ['BCE', 'MSE']
         
         Returns:
             loss (Tensor): VAE loss
         """
+        # Reshape the reconstruction as [N, D]
+        N = reconstructed_x.shape[0]
+        reconstructed_x = reconstructed_x.view(N, -1)
         # Enforce the shape of x is the same as reconstructed x
         x = x.view_as(reconstructed_x)
         
         # Calculate reconstruction loss
-        reconstruction_loss = F.binary_cross_entropy(reconstructed_x, 
-                                                     x, 
-                                                     size_average=False)  # summed up losses
-        # Calculate KL loss
+        if reconstruction_loss_type == 'BCE':
+            reconstruction_loss = F.binary_cross_entropy(reconstructed_x, 
+                                                         x, 
+                                                         reduce=False)  # all losses for [N, D]
+        elif reconstruction_loss_type == 'MSE':
+            reconstruction_loss = F.mse_loss(reconstructed_x, 
+                                             x, 
+                                             reduce=False)  # all losses for [N, D]
+        # sum up loss for each data item, with shape [N]
+        reconstruction_loss = reconstruction_loss.sum(1)
+            
+        # Calculate KL loss for each element
         # Gaussian: 0.5*sum(1 + log(sigma^2) - mu^2 - sigma^2)
-        KL_loss = -0.5*torch.sum(1 + logvar - mu**2 - logvar.exp())
+        KL_loss = -0.5*torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1)
         
+        # Average losses over batch
+        reconstruction_loss = reconstruction_loss.mean()
+        KL_loss = KL_loss.mean()
+        
+        # Compute total loss
         loss = reconstruction_loss + KL_loss
         
-        return loss
+        return loss, reconstruction_loss, KL_loss
