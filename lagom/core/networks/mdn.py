@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,7 +20,7 @@ class MDN(nn.Module):
     Specifically, their dimensions are following, given N is batch size, K is the number of densities
     and D is the output dimension
     
-    - mixing coefficients: [N, K]
+    - mixing coefficients: [N, K, D]
     - mean: [N, K, D]
     - variance: [N, K, D]
     """
@@ -26,8 +28,8 @@ class MDN(nn.Module):
                  input_dim, 
                  output_dim, 
                  num_densities, 
-                 hidden_sizes, 
-                 hidden_nonlinearity):
+                 hidden_sizes=None, 
+                 hidden_nonlinearity=None):
         """
         Args:
             input_dim (int): the number of dimensions of input tensor
@@ -44,23 +46,27 @@ class MDN(nn.Module):
         self.hidden_sizes = hidden_sizes
         self.hidden_nonlinearity = hidden_nonlinearity
         
-        # Create hidden layers
-        self.MLP = MLP(input_dim=self.input_dim, 
-                       hidden_sizes=self.hidden_sizes, 
-                       hidden_nonlinearity=self.hidden_nonlinearity, 
-                       output_dim=None, 
-                       output_nonlinearity=None)
-        # Take out dimension of last hidden layer
-        in_features = self.hidden_sizes[-1]
+        # Create hidden layers if it is required
+        if self.hidden_sizes is None:
+            in_features = self.input_dim
+        else:
+            self.MLP = MLP(input_dim=self.input_dim, 
+                           hidden_sizes=self.hidden_sizes, 
+                           hidden_nonlinearity=self.hidden_nonlinearity, 
+                           output_dim=None, 
+                           output_nonlinearity=None)
+            # Take out dimension of last hidden layer
+            in_features = self.hidden_sizes[-1]
+            
         # Create mixing coefficients head
         # Note that its unnormalized logits
-        self.unnormalized_pi_head = nn.Linear(in_features=in_features, out_features=self.num_densities)
+        self.unnormalized_pi_head = nn.Linear(in_features=in_features, out_features=self.num_densities*self.output_dim)
         # Create mean head
-        self.mu_head = nn.Linear(in_features=in_features, out_features=self.output_dim*self.num_densities)
+        self.mu_head = nn.Linear(in_features=in_features, out_features=self.num_densities*self.output_dim)
         # Create log-variance head
         # Use log-variance allows to optimize values in [negative, 0, positive]
         # To retrieve std, use exp(2*log-variance) rather than sqrt for better numerical stability
-        self.logvar_head = nn.Linear(in_features=in_features, out_features=self.output_dim*self.num_densities)
+        self.logvar_head = nn.Linear(in_features=in_features, out_features=self.num_densities*self.output_dim)
         
         # Initialize parameters
         self._init_params()
@@ -93,11 +99,14 @@ class MDN(nn.Module):
         # Enforce the shape of x to be consistent with first layer
         x = x.view(-1, self.input_dim)
         
-        # Forward pass till last hidden layer via MLP
-        x = self.MLP(x)
+        if self.hidden_sizes is not None:
+            # Forward pass till last hidden layer via MLP
+            x = self.MLP(x)
             
         # Forward pass through unnormalized mixing coefficients head
         unnormalized_pi = self.unnormalized_pi_head(x)
+        # Convert to tensor with shape [N, K, D]
+        unnormalized_pi = unnormalized_pi.view(-1, self.num_densities, self.output_dim)
         # Enforce each of coefficients are non-negative and summed up to 1
         # Note that it's LogSoftmax to compute numerically stable loss via log-sum-exp trick
         log_pi = F.log_softmax(unnormalized_pi, dim=1)
@@ -128,8 +137,11 @@ class MDN(nn.Module):
             x (Tensor): input tensor, shape [N, D]
             
         Returns:
-            log_probs (Tensor): the calculated log-probabilities for each data and each density, shape [N, K]
+            log_probs (Tensor): the calculated log-probabilities for each data and each density, shape [N, K, D]
         """
+        # Set up lower bound of std, since zero std can lead to NaN log-probability
+        min_std = 1e-12
+        
         log_probs = []
         
         # Iterate over all density components
@@ -137,16 +149,16 @@ class MDN(nn.Module):
             # Retrieve means and stds
             mu_i = mu[:, i, :]
             std_i = std[:, i, :]
+            # Thresholding std, if std is 0, it leads to NaN loss. 
+            #std_i = torch.clamp(std_i, min=min_std, max=std_i.max().item())
             # Create Gaussian distribution
             dist = Normal(loc=mu_i, scale=std_i)
-            # Calculate the log-probability for each data item
-            # For numerical stability: we sum up log-probabiilty
-            # i.e. log(prod(probs)) = sum(log(probs))
-            logp = dist.log_prob(x).sum(dim=1)
+            # Calculate the log-probability
+            logp = dist.log_prob(x)
             # Record the log probability for current density
             log_probs.append(logp)
             
-        # Stack log-probabilities with shape [N, K]
+        # Stack log-probabilities with shape [N, K, D]
         log_probs = torch.stack(log_probs, dim=1)
         
         return log_probs
@@ -167,7 +179,7 @@ class MDN(nn.Module):
         i.e. \log\sum_{i=1}^{N}\exp(x_i) = a + \log\sum_{i=1}^{N}\exp(x_i - a), where a = \max_i(x_i)
         
         Args:
-            log_pi (Tensor): log-scale mixing coefficients, shape [N, K]
+            log_pi (Tensor): log-scale mixing coefficients, shape [N, K, D]
             mu (Tensor): mean of Gaussian mixtures, shape [N, K, D]
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
             target (Tensor): target tensor, shape [N, D]
@@ -182,15 +194,19 @@ class MDN(nn.Module):
         log_gaussian_probs = self._calculate_batched_logprob(mu=mu, 
                                                              std=std, 
                                                              x=target)
-        # Calculate the loss via log-sum-exp trick
-        loss = -log_sum_exp(log_pi + log_gaussian_probs).squeeze()
         
-        # Average over the batch
-        loss = loss.mean()
+        # Calculate the loss via log-sum-exp trick
+        # Permute dimensions to [N, D, K] since log_sum_exp manipulate last dimension
+        loss = -log_sum_exp(log_pi.permute(0, 2, 1) + log_gaussian_probs.permute(0, 2, 1))
+        # Since log_sum_exp keepsdim, unsqueeze dimension to [N, D]
+        loss = loss.squeeze(-1)
+        
+        # Sum up loss over elements and average over batch
+        loss = loss.sum(1).mean()
         
         return loss
     
-    def sample(self, log_pi, mu, std, greedy=False):
+    def sample(self, log_pi, mu, std, tau=1.0):
         """
         Sampling from Gaussian mixture using reparameterization trick.
         
@@ -198,32 +214,49 @@ class MDN(nn.Module):
         - Then sample from selected Gaussian distribution
         
         Args:
-            log_pi (Tensor): log-scale mixing coefficients, shape [N, K]
+            log_pi (Tensor): log-scale mixing coefficients, shape [N, K, D]
             mu (Tensor): mean of Gaussian mixtures, shape [N, K, D]
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
-            greedy (bool): If True then greedily sample the mixing coefficients. 
+            tau (float): temperature during sampling, controlling uncertainty. 
+                If tau > 1: increase uncertainty
+                If tau < 1: decrease uncertainty
         
         Returns:
             x (Tensor): sampled data, shape [N, D]
         """
+        # Get all shapes [batch size, number of densities, data dimension]
+        N, K, D = log_pi.shape
+        # Convert to [N*D, K], easy to use for Categorical probabilities
+        log_pi = log_pi.permute(0, 2, 1).view(-1, K)
+        mu = mu.permute(0, 2, 1).view(-1, K)
+        std = std.permute(0, 2, 1).view(-1, K)
+        
         # Get mixing coefficient
-        pi = torch.exp(log_pi)
+        if tau == 1.0:  # normal sampling, no uncertainty control
+            pi = torch.exp(log_pi)
+        else:  # use temperature
+            pi = F.softmax(log_pi/tau, dim=1)
         # Create a categorical distribution for mixing coefficients
         pi_dist = Categorical(probs=pi)
         # Sampling mixing coefficients to determine which Gaussian to sample from for each data
         pi_samples = pi_dist.sample()
+        # Convert 
         # Iteratively sample from selected Gaussian distributions
         samples = []
         for N_idx, pi_idx in enumerate(pi_samples):
             # Retrieve selected Gaussian distribution
-            mu_i = mu[N_idx, pi_idx, :]
-            std_i = std[N_idx, pi_idx, :]
+            mu_i = mu[N_idx, pi_idx]
+            std_i = std[N_idx, pi_idx]
             # Create standard Gaussian noise for reparameterization trick
             eps = torch.randn_like(std_i)
             # Sampling via reparameterization trick
-            samples.append(mu_i + eps*std_i)
+            if tau == 1.0:  # normal sampling, no uncertainty control
+                samples.append(mu_i + eps*std_i)
+            else:  # use temperature
+                samples.append(mu_i + eps*std_i*math.sqrt(tau))
             
-        # Convert sampled data to a Tensor
-        samples = torch.stack(samples, dim=0)
+            
+        # Convert sampled data to a Tensor and reshape to [N, D]
+        samples = torch.stack(samples, dim=0).view(N, D)
         
         return samples

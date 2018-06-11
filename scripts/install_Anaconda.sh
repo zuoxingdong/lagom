@@ -2,7 +2,7 @@
 
 #############################
 # Install Anaconda with env #
-# Date: May 7, 2018  	    #
+# Date: June 11, 2018  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -10,8 +10,8 @@
 set -e
 
 # Create list of variables
-export ANACONDA=Anaconda3-5.1.0-Linux-x86_64.sh  # Check new version
-export ENV_NAME=RL_server  # name of Anaconda environment
+export ANACONDA=Anaconda3-5.2.0-Linux-x86_64.sh  # Check new version
+export ENV_NAME=RL  # name of Anaconda environment
 
 # Download and install Anaconda
 # Select NO to append the installation path to /.bashrc
@@ -37,6 +37,7 @@ $CONDA create -n $ENV_NAME
 echo "conda activate $ENV_NAME  # automatically activate virtual envs" >> ~/.bashrc  # double quotation works for variable
 
 # Message to restart the shell
+echo "############################"
 echo "Please restart the shell to automatically load conda and environment."
 echo "Then run the second bash file to set up dependencies."
 
