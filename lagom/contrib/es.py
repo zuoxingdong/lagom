@@ -43,44 +43,26 @@ class BaseES(object):
         """
         raise NotImplementedError
         
-    def l2_weight_decay(self, weight_decay, params):
-        """
-        L2 weight decay. 
-
-        Args:
-            weight_decay (float): coefficient for weight decay
-            params (numpy.ndarray): the model parameters needed to have L2 weight decay. 
-                Shape [N, D]: N is number of models, D is number of parameters for each model. 
-        Returns:
-            decayed_params (numpy.ndarray): model parameters after weight decay
-        """
-        assert params.ndim == 2
-
-        decayed_params = params - weight_decay*np.mean(params**2, axis=-1, keepdims=True)
-
-        return decayed_params
-        
 
 class CMAES(BaseES):
     """
     Wrapper of original CMA-ES implementation at https://github.com/CMA-ES/pycma
+    
+    Note that we minimize the objective, i.e. function values in tell(). 
     """
     def __init__(self, 
                  mu0, 
                  std0, 
-                 popsize, 
-                 weight_decay=0.01):
+                 popsize):
         """
         Args:
             mu0 (list or ndarray): initial mean
             std0 (float): initial standard deviation
             popsize (int): population size
-            weight_decay (float): weight decay
         """
         self.mu0 = mu0
         self.std0 = std0
         self.popsize = popsize
-        self.weight_decay = weight_decay
         
         # Create CMA-ES instance
         import cma
@@ -95,12 +77,8 @@ class CMAES(BaseES):
         return self.solutions
     
     def tell(self, solutions, function_values):
-        # Weight decay if required
-        if self.weight_decay > 0:
-            solutions = self.l2_weight_decay(self.weight_decay, solutions)
         # Update populations
         self.es.tell(solutions, function_values)
-        self.solutions = solutions
         
     @property
     def result(self):
@@ -116,9 +94,13 @@ class CMAES(BaseES):
     
 def compute_ranks(x):
     """
-    Compute ranks of the input vector. The rank has the same dimension as input vector.
+    Rank transformation of the input vector. The rank has the same dimensionality as input vector.
     Each element in the rank indicates the index of the ascendingly sorted input.
     i.e. ranks[i] = k, it means i-th element in the input is k-th smallest value. 
+    
+    Rank transformation reduce sensitivity to outliers, e.g. in OpenAI ES, gradient computation
+    involves fitness values in the population, if there are outliers (too large fitness), it affects
+    the gradient too much. 
     
     Args:
         x (ndarray): Input array. Note that it should be only 1-dim vector
@@ -153,39 +135,45 @@ def compute_centered_ranks(x):
 class OpenAIES(BaseES):
     """
     Simple version of OpenAI evolution strategies.
+    
+    Note that we minimize the objective, i.e. function values in tell(). 
     """
     def __init__(self, 
                  mu0, 
                  std0, 
                  popsize,
-                 weight_decay=0.01, 
                  std_decay=0.999, 
                  min_std=0.01,
                  lr=1e-3, 
                  lr_decay=0.9999, 
-                 min_lr=1e-2):
+                 min_lr=1e-2, 
+                 antithetic=False,
+                 rank_transform=True):
         """
         Args:
             mu0 (ndarray): initial mean
             std0 (float): initial standard deviation
             popsize (int): population size
-            weight_decay (float): weight decay
             std_decay (float): standard deviation decay
             min_std (float): minimum of standard deviation
             lr (float): learning rate
             lr_decay (float): learning rate decay
             min_lr (float): minumum of learning rate
+            antithetic (bool): If True, then use antithetic sampling to generate population.
+            rank_transform (bool): If True, then use rank transformation of fitness (combat with outliers). 
         """
         self.mu0 = np.array(mu0)
         self.std0 = std0
         self.popsize = popsize
-        self.weight_decay = weight_decay
         self.std_decay = std_decay
         self.min_std = min_std
         self.lr = lr
         self.lr_decay = lr_decay
         self.min_lr = min_lr
-        assert popsize % 2 == 0, 'popsize must be even, for antithetic sampling. '
+        self.antithetic = antithetic
+        if self.antithetic:
+            assert self.popsize % 2 == 0, 'popsize must be even for antithetic sampling. '
+        self.rank_transform = rank_transform
         
         # Some other settings
         self.num_params = self.mu0.size
@@ -203,10 +191,14 @@ class OpenAIES(BaseES):
         self.hist_best_f_val = None
     
     def ask(self):
-        # Antithetic sampling of the standard Gaussian noise
-        eps = np.random.randn(self.popsize//2, self.num_params)
-        eps = np.concatenate([eps, -eps], axis=0)
-        self.eps = eps  # record the noise for gradient computation in tell()
+        # Generate standard Gaussian noise for perturbating model parameters. 
+        if self.antithetic:  # antithetic sampling
+            eps = np.random.randn(self.popsize//2, self.num_params)
+            eps = np.concatenate([eps, -eps], axis=0)
+        else:
+            eps = np.random.randn(self.popsize, self.num_params)
+        # Record the noise for gradient computation in tell()
+        self.eps = eps
         
         # Perturbate the parameters
         self.solutions = self.mu.detach().numpy() + self.eps*self.std
@@ -214,18 +206,22 @@ class OpenAIES(BaseES):
         return self.solutions
         
     def tell(self, solutions, function_values):
-        # Use centered ranks instead of raw values, avoid getting stuck in local optima in early stage
-        centered_ranks = compute_centered_ranks(np.array(function_values))
-        #centered_ranks = np.array(function_values)
-        
-        # Weight decay if required
-        if self.weight_decay > 0:
-            solutions = self.l2_weight_decay(self.weight_decay, solutions)
+        # Enforce ndarray of function values
+        function_values = np.array(function_values)
+        if self.rank_transform:
+            # Make a copy of original function values, for recording true values
+            original_function_values = np.copy(function_values)
+            # Use centered ranks instead of raw values, combat with outliers. 
+            function_values = compute_centered_ranks(function_values)
             
         # Make some results
-        idx = np.argsort(function_values)[::-1][0]
+        # Sort function values and select the minimum, since we are minimizing the objective. 
+        idx = np.argsort(function_values)[0]  # argsort is in ascending order
         self.best_param = solutions[idx]
-        self.best_f_val = function_values[idx]
+        if self.rank_transform:  # use rank transform, we should record the original function values
+            self.best_f_val = original_function_values[idx]
+        else:
+            self.best_f_val = function_values[idx]
         # Update the historical best result
         first_iteration = self.hist_best_param is None or self.hist_best_f_val is None
         if first_iteration or self.best_f_val < self.hist_best_f_val:
@@ -234,7 +230,7 @@ class OpenAIES(BaseES):
             
         # Compute gradient from original paper
         # Enforce fitness as Gaussian distributed, here we use centered ranks
-        F = Standardize().process(centered_ranks)
+        F = Standardize().process(function_values)
         # Compute gradient, F:[popsize], eps: [popsize, num_params]
         grad = (1/self.std)*np.mean(np.expand_dims(F, 1)*self.eps, axis=0)
         grad = torch.from_numpy(grad).float()
