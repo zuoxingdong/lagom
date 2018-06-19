@@ -110,6 +110,7 @@ class CNN(nn.Module):
             
         return x
     
+    # TODO: use with torch.no_grad to save memory
     def _calculate_conv_flatten_dim(self):
         """
         Calculate the flattened dimension of the output of last convolutional layer via a temporary forward pass

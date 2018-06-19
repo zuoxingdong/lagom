@@ -5,6 +5,7 @@ import torch.optim as optim
 
 from lagom.core.preprocessors import Standardize
 
+from lagom.contrib.multiprocessing import BaseWorker, BaseMaster, BaseIterativeMaster
 
 
 class BaseES(object):
@@ -137,6 +138,9 @@ class OpenAIES(BaseES):
     Simple version of OpenAI evolution strategies.
     
     Note that we minimize the objective, i.e. function values in tell(). 
+    
+    A practical tip, the learning rate is better to be proportional to batch size
+    i.e. larger batch size, use larger learning rate and vise versa. 
     """
     def __init__(self, 
                  mu0, 
@@ -256,8 +260,6 @@ class OpenAIES(BaseES):
         return results
     
     
-    
-    
 class ESOptimizer(object):
     def __init__(self, es_solver, f):
         """
@@ -283,3 +285,144 @@ class ESOptimizer(object):
         results = self.es_solver.result
         
         return results
+    
+    
+class ESWorker(BaseWorker):
+    def __init__(self, f):
+        """
+        Args:
+            f (function): objective function to evaluate the candidate.
+        """
+        self.f = f
+    
+    def work(self, master_cmd):
+        # Unpack master command
+        solution_id, solution, seed = master_cmd
+        
+        # Set random seed
+        np.random.seed(seed)
+        
+        # Evaluate the solution to obtain fitness to the objective function
+        function_value = self.f(solution)
+        
+        return solution_id, function_value
+        
+        
+class ESMaster(BaseIterativeMaster):
+    def __init__(self,
+                 make_es,
+                 num_iteration, 
+                 worker, 
+                 num_worker,
+                 init_seed=0, 
+                 daemonic_worker=None):
+        super().__init__(num_iteration=num_iteration, 
+                         worker=worker, 
+                         num_worker=num_worker,
+                         init_seed=init_seed, 
+                         daemonic_worker=daemonic_worker)
+        # Create ES solver
+        self.es = make_es()
+        # It is better to force popsize to be number of workers
+        assert self.es.popsize == self.num_worker
+
+    def make_tasks(self, iteration):
+        # ES samples new candidate solutions
+        solutions = self.es.ask()
+        
+        # Record iteration number, for logging in _process_workers_result()
+        # And it also keeps API untouched for assign_tasks() in non-iterative Master class
+        self.generation = iteration
+        
+        return solutions
+        
+    def _process_workers_result(self, tasks, workers_result):
+        # Rename, in ES context, the task is to evalute the solution candidate
+        solutions = tasks
+        
+        # Unpack function values from workers results, [solution_id, function_value]
+        # Note that the workers result already sorted ascendingly with respect to task ID
+        function_values = [result[1] for result in workers_result]
+        
+        # Update ES
+        self.es.tell(solutions, function_values)
+        
+        # Obtain results from ES
+        result = self.es.result
+        
+        # Unpack result
+        best_f_val = result['best_f_val']
+        if self.generation == 0 or (self.generation+1) % 100 == 0:
+            print(f'Best function value at generation {self.generation+1}: {best_f_val}')
+            
+            
+class GymESWorker(ESWorker):
+    def work(self, master_cmd):
+        # Unpack master
+        solution_id, solution, seed = master_cmd
+        
+        # Unpack solution, since it contains [solution, env]
+        solution, env = solution
+        
+        # Set random seed
+        np.random.seed(seed)
+        
+        # Evaluate the solution with gym environment to obtain fitness 
+        # fitness: negative rewards, since we are doing minimization in ES
+        function_value = self.f(solution, env, seed)
+        
+        return solution_id, function_value
+    
+class GymESMaster(ESMaster):
+    def __init__(self,
+                 make_env,
+                 make_es,
+                 num_iteration, 
+                 worker, 
+                 num_worker,
+                 init_seed=0, 
+                 daemonic_worker=None):
+        super().__init__(make_es=make_es, 
+                         num_iteration=num_iteration, 
+                         worker=worker, 
+                         num_worker=num_worker,
+                         init_seed=init_seed, 
+                         daemonic_worker=daemonic_worker)
+        
+        # Create all gym environments on the top to save memory and overhead
+        self.envs = [make_env() for _ in range(self.num_worker)]
+
+    def make_tasks(self, iteration):
+        # ES samples new candidate solutions
+        solutions = self.es.ask()
+        
+        # Record iteration number, for logging in _process_workers_result()
+        # And it also keeps API untouched for assign_tasks() in non-iterative Master class
+        self.generation = iteration
+        
+        # Fit environment into solution together for worker to setup
+        # e.g. worker can seed the environment and make rollout
+        solutions = list(zip(solutions, self.envs))
+        assert len(solutions) == self.es.popsize
+        
+        return solutions
+        
+    def _process_workers_result(self, tasks, workers_result):
+        # Rename, in ES context, the task is to evalute the solution candidate
+        # Unpack tasks, since it inclues [solutions, env]
+        solutions = [task[0] for task in tasks]
+        
+        # Unpack function values from workers results, [solution_id, function_value]
+        # Note that the workers result already sorted ascendingly with respect to task ID
+        function_values = [result[1] for result in workers_result]
+        
+        # Update ES
+        self.es.tell(solutions, function_values)
+        
+        # Obtain results from ES
+        result = self.es.result
+        
+        # Unpack result
+        best_f_val = result['best_f_val']
+        if self.generation == 0 or (self.generation+1) % 100 == 0:
+            print(f'Best function value at generation {self.generation+1}: {best_f_val}')
