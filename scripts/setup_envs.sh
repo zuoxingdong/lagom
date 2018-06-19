@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: June 11, 2018  	    #
+# Date: June 14, 2018  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -11,6 +11,7 @@ set -e
 
 # Create list of variables
 export ENV_NAME=RL  # name of Anaconda environment
+export NVIDIA_DRIVER_VER=396  # major version of Nvidia driver
 
 # Alias of conda command
 export CONDA=$HOME/anaconda3/bin/conda
@@ -19,6 +20,9 @@ export CONDA=$HOME/anaconda3/bin/conda
 $CONDA update --all
 
 # Append more useful things to bashrc
+echo "# PATH" >> ~/.bashrc
+echo "export PATH=/usr/lib/nvidia-$NVIDIA_DRIVER_VER/bin/:$PATH" >> ~/.bashrc
+
 echo "# LIBRARY" >> ~/.bashrc
 echo "export LIBRARY_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib:$LIBRARY_PATH" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$HOME/anaconda3/envs/$ENV_NAME/lib:$LD_LIBRARY_PATH" >> ~/.bashrc
