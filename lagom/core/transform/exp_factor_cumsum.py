@@ -29,9 +29,10 @@ class ExpFactorCumSum(BaseTransform):
         Returns:
             out (list): calculated data
         """
-        # Convert to list if ndarray
-        if isinstance(x, np.ndarray):
-            x = x.tolist()
+        # Convert input to ndarray
+        x = self.make_input(x)
+        # Convert to list
+        x = x.tolist()
         
         # Enforce input data as list type
         assert isinstance(x, list), 'Supported type: list. '
