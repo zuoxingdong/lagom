@@ -33,6 +33,10 @@ class BaseTransform(object):
         Returns:
             x (ndarray): converted data
         """
+        # Enforce tuple becomes list
+        if isinstance(x, tuple):
+            x = list(x)
+        
         if np.isscalar(x) or isinstance(x, (list, np.ndarray)):  # scalar, list or ndarray
             x = np.array(x)
 
