@@ -2,7 +2,7 @@
 
 #############################
 # Install Anaconda with env #
-# Date: June 11, 2018  	    #
+# Date: 2018-07-05  	    #
 # Author: Xingdong Zuo      #
 #############################
 

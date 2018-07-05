@@ -8,7 +8,7 @@ sys.path.append('/home/zuo/Code/lagom/')
 
 import numpy as np
 
-import unittest
+import pytest
 
 from lagom.core.transform import Clip
 from lagom.core.transform import Centralize
@@ -18,25 +18,25 @@ from lagom.core.transform import ExpFactorCumSum
 from lagom.core.transform import RunningMeanStd
 
 
-class TestTransform(unittest.TestCase):
+class TestTransform(object):
     def test_clip(self):
         clip = Clip()
         
         # Test scalar
-        self.assertEqual(clip(x=2, a_min=0, a_max=1), 1)
-        self.assertEqual(clip(x=0.5, a_min=0, a_max=1), 0.5)
-        self.assertEqual(clip(x=-1, a_min=0, a_max=1), 0)
+        assert clip(x=2, a_min=0, a_max=1) == 1
+        assert clip(x=0.5, a_min=0, a_max=1) == 0.5
+        assert clip(x=-1, a_min=0, a_max=1) == 0
         
         # Test numpy scalar
-        self.assertEqual(clip(x=np.array(2), a_min=0, a_max=1), 1)
-        self.assertEqual(clip(x=np.array(0.5), a_min=0, a_max=1), 0.5)
-        self.assertEqual(clip(x=np.array(-1), a_min=0, a_max=1), 0)
+        assert clip(x=np.array(2), a_min=0, a_max=1) == 1
+        assert clip(x=np.array(0.5), a_min=0, a_max=1) == 0.5
+        assert clip(x=np.array(-1), a_min=0, a_max=1) == 0
         
         #
         # Test vector
         #
         def _test_vec(x):
-            self.assertTrue(np.alltrue(clip(x=x, a_min=2, a_max=3) == [2, 2, 3, 3]))
+            assert np.alltrue(clip(x=x, a_min=2, a_max=3) == [2, 2, 3, 3])
         
         # Tuple
         a = (1, 2, 3, 4)
@@ -55,36 +55,36 @@ class TestTransform(unittest.TestCase):
         #
         # ndarray more than 1-dim is not allowed
         d = np.array([[1, 2, 3, 4]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             clip(x=d, a_min=2, a_max=3)
         
     def test_centralize(self):
         centralize = Centralize()
         
         # Test scalar
-        self.assertEqual(centralize(x=1), 1)
-        self.assertEqual(centralize(x=0), 0)
-        self.assertEqual(centralize(x=2), 2)
+        assert centralize(x=1) == 1
+        assert centralize(x=0) == 0
+        assert centralize(x=2) == 2
         
-        self.assertEqual(centralize(x=1, mean=1), 1)
-        self.assertEqual(centralize(x=0, mean=1), 0)
-        self.assertEqual(centralize(x=2, mean=1), 2)
+        assert centralize(x=1, mean=1) == 1
+        assert centralize(x=0, mean=1) == 0
+        assert centralize(x=2, mean=1) == 2
         
         # Test numpy scalar
-        self.assertEqual(centralize(x=np.array(1)), 1)
-        self.assertEqual(centralize(x=np.array(0)), 0)
-        self.assertEqual(centralize(x=np.array(2)), 2)
+        assert centralize(x=np.array(1)) == 1
+        assert centralize(x=np.array(0)) == 0
+        assert centralize(x=np.array(2)) == 2
         
-        self.assertEqual(centralize(x=np.array(1), mean=1), 1)
-        self.assertEqual(centralize(x=np.array(0), mean=1), 0)
-        self.assertEqual(centralize(x=np.array(2), mean=1), 2)
+        assert centralize(x=np.array(1), mean=1) == 1
+        assert centralize(x=np.array(0), mean=1) == 0
+        assert centralize(x=np.array(2), mean=1) == 2
         
         #
         # Test vector
         #
         def _test_vec(x):
-            self.assertTrue(np.alltrue(centralize(x=x) == [-1.5, -0.5, 0.5, 1.5]))
-            self.assertTrue(np.alltrue(centralize(x=x, mean=1) == [0, 1, 2, 3]))
+            assert np.alltrue(centralize(x=x) == [-1.5, -0.5, 0.5, 1.5])
+            assert np.alltrue(centralize(x=x, mean=1) == [0, 1, 2, 3])
         
         # Tuple
         a = (1, 2, 3, 4)
@@ -103,39 +103,39 @@ class TestTransform(unittest.TestCase):
         #
         # ndarray more than 1-dim is not allowed
         d = np.array([[1, 2, 3, 4]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             centralize(x=d)
         
     def test_normalize(self):
         normalize = Normalize(eps=1.1920929e-07)
         
         # Test scalar
-        self.assertEqual(normalize(x=-1), 0)
-        self.assertEqual(normalize(x=0.5), 0.5)
-        self.assertEqual(normalize(x=2), 1)
+        assert normalize(x=-1) == 0
+        assert normalize(x=0.5) == 0.5
+        assert normalize(x=2) == 1
         
-        self.assertEqual(normalize(x=-1, min_val=0, max_val=1), 0)
-        self.assertEqual(normalize(x=0.5, min_val=0, max_val=1), 0.5)
-        self.assertEqual(normalize(x=2, min_val=0, max_val=1), 1)
+        assert normalize(x=-1, min_val=0, max_val=1) == 0
+        assert normalize(x=0.5, min_val=0, max_val=1) == 0.5
+        assert normalize(x=2, min_val=0, max_val=1) == 1
         
         # Test numpy scalar
-        self.assertEqual(normalize(x=np.array(-1)), 0)
-        self.assertEqual(normalize(x=np.array(0.5)), 0.5)
-        self.assertEqual(normalize(x=np.array(2)), 1)
+        assert normalize(x=np.array(-1)) == 0
+        assert normalize(x=np.array(0.5)) == 0.5
+        assert normalize(x=np.array(2)) == 1
         
-        self.assertEqual(normalize(x=np.array(-1), min_val=0, max_val=1), 0)
-        self.assertEqual(normalize(x=np.array(0.5), min_val=0, max_val=1), 0.5)
-        self.assertEqual(normalize(x=np.array(2), min_val=0, max_val=1), 1)
+        assert normalize(x=np.array(-1), min_val=0, max_val=1) == 0
+        assert normalize(x=np.array(0.5), min_val=0, max_val=1) == 0.5
+        assert normalize(x=np.array(2), min_val=0, max_val=1) == 1
         
         #
         # Test vector
         #
         def _test_vec(x):
-            self.assertTrue(np.allclose(normalize(x=x), 
-                                        [0.        , 0.33333332, 0.66666664, 0.99999996]))
+            assert np.allclose(normalize(x=x), 
+                               [0.        , 0.33333332, 0.66666664, 0.99999996])
         
-            self.assertTrue(np.allclose(normalize(x=x, min_val=0, max_val=1), 
-                                        [0.99999988, 1.99999976, 2.99999964, 3.99999952]))
+            assert np.allclose(normalize(x=x, min_val=0, max_val=1), 
+                               [0.99999988, 1.99999976, 2.99999964, 3.99999952])
         # Tuple
         a = (1, 2, 3, 4)
         _test_vec(a)
@@ -153,39 +153,39 @@ class TestTransform(unittest.TestCase):
         #
         # ndarray more than 1-dim is not allowed
         d = np.array([[1, 2, 3, 4]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             normalize(x=d)
         
     def test_standardize(self):
         standardize = Standardize(eps=1.1920929e-07)
         
         # Test scalar
-        self.assertEqual(standardize(x=-1), -1)
-        self.assertEqual(standardize(x=0), 0)
-        self.assertEqual(standardize(x=1), 1)
+        assert standardize(x=-1) == -1
+        assert standardize(x=0) == 0
+        assert standardize(x=1) == 1
         
-        self.assertEqual(standardize(x=-1, mean=0, std=1), -1)
-        self.assertEqual(standardize(x=0, mean=0, std=1), 0)
-        self.assertEqual(standardize(x=1, mean=0, std=1), 1)
+        assert standardize(x=-1, mean=0, std=1) == -1
+        assert standardize(x=0, mean=0, std=1) == 0
+        assert standardize(x=1, mean=0, std=1) == 1
         
         # Test numpy scalar
-        self.assertEqual(standardize(x=np.array(-1)), -1)
-        self.assertEqual(standardize(x=np.array(0)), 0)
-        self.assertEqual(standardize(x=np.array(1)), 1)
+        assert standardize(x=np.array(-1)) == -1
+        assert standardize(x=np.array(0)) == 0
+        assert standardize(x=np.array(1)) == 1
         
-        self.assertEqual(standardize(x=np.array(-1), mean=0, std=1), -1)
-        self.assertEqual(standardize(x=np.array(0), mean=0, std=1), 0)
-        self.assertEqual(standardize(x=np.array(1), mean=0, std=1), 1)
+        assert standardize(x=np.array(-1), mean=0, std=1) == -1
+        assert standardize(x=np.array(0), mean=0, std=1) == 0
+        assert standardize(x=np.array(1), mean=0, std=1) == 1
         
         #
         # Test vector
         #
         def _test_vec(x):
-            self.assertTrue(np.allclose(standardize(x=x), 
-                                        [-1.34164064, -0.44721355,  0.44721355,  1.34164064]))
+            assert np.allclose(standardize(x=x), 
+                               [-1.34164064, -0.44721355,  0.44721355,  1.34164064])
         
-            self.assertTrue(np.allclose(standardize(x=x, mean=0, std=1), 
-                                        [0.99999988, 1.99999976, 2.99999964, 3.99999952]))
+            assert np.allclose(standardize(x=x, mean=0, std=1), 
+                               [0.99999988, 1.99999976, 2.99999964, 3.99999952])
         
         # Tuple
         a = (1, 2, 3, 4)
@@ -204,7 +204,7 @@ class TestTransform(unittest.TestCase):
         #
         # ndarray more than 1-dim is not allowed
         d = np.array([[1, 2, 3, 4]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             standardize(x=d)
         
     def test_expfactorcumsum(self):
@@ -214,8 +214,8 @@ class TestTransform(unittest.TestCase):
         # Test vector
         #
         def _test_vec(x):
-            self.assertTrue(np.allclose(expfactorcumsum(x=x), 
-                                        [1.23, 2.3, 3.0]))
+            assert np.allclose(expfactorcumsum(x=x), 
+                               [1.23, 2.3, 3.0])
         
         # Tuple
         a = (1, 2, 3)
@@ -233,18 +233,18 @@ class TestTransform(unittest.TestCase):
         # Test exceptions
         #
         # Scalar is not allowed
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             expfactorcumsum(x=1)
         
         # ndarray more than 1-dim is not allowed
         d = np.array([[1, 2, 3]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             expfactorcumsum(x=d)
             
     def test_runningmeanstd(self):
         def _test_moments(runningmeanstd, x):
-            self.assertTrue(np.allclose(runningmeanstd.mu, np.mean(x)))
-            self.assertTrue(np.allclose(runningmeanstd.sigma, np.std(x)))
+            assert np.allclose(runningmeanstd.mu, np.mean(x))
+            assert np.allclose(runningmeanstd.sigma, np.std(x))
 
         a = [1, 2, 3, 4]
 
@@ -262,9 +262,5 @@ class TestTransform(unittest.TestCase):
         b = np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]])
         runningmeanstd = RunningMeanStd()
         runningmeanstd(b)
-        self.assertTrue(np.allclose(runningmeanstd.mu, b.mean(0)))
-        self.assertTrue(np.allclose(runningmeanstd.sigma, b.std(0)))
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert np.allclose(runningmeanstd.mu, b.mean(0))
+        assert np.allclose(runningmeanstd.sigma, b.std(0))

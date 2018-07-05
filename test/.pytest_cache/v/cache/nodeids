@@ -1,0 +1,9 @@
+[
+  "test_config.py::test_config",
+  "test_transform.py::TestTransform::()::test_clip",
+  "test_transform.py::TestTransform::()::test_centralize",
+  "test_transform.py::TestTransform::()::test_normalize",
+  "test_transform.py::TestTransform::()::test_standardize",
+  "test_transform.py::TestTransform::()::test_expfactorcumsum",
+  "test_transform.py::TestTransform::()::test_runningmeanstd"
+]
