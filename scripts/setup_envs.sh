@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: June 14, 2018  	    #
+# Date: 2018-07-05  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -40,14 +40,11 @@ $CONDA install -y ipython
 pip install --upgrade pip
 pip install cmake cython msgpack
 
-# Install Numpy, matplotlib, scikit-image
+# Install some conda packages
 $CONDA install -y numpy matplotlib scikit-image
 
-# Jupyterlab
-pip install jupyterlab
+# Install some pip packages
+pip install jupyterlab gym[all] pytest
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch
-
-# OpenAI Gym
-pip install gym
