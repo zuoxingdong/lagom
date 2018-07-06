@@ -1,5 +1,8 @@
 [
   "test_config.py::test_config",
+  "test_multiprocessing.py::TestMultiprocessing::()::test_seeder",
+  "test_multiprocessing.py::TestMultiprocessing::()::test_master_worker",
+  "test_multiprocessing.py::TestMultiprocessing::()::test_iterative_master_worker",
   "test_transform.py::TestTransform::()::test_clip",
   "test_transform.py::TestTransform::()::test_centralize",
   "test_transform.py::TestTransform::()::test_normalize",
