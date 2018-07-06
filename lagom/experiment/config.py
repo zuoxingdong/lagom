@@ -128,3 +128,15 @@ class Config(object):
         """
         for config in self.configs:
             np.save(f'{f}/config_ID_{config["ID"]}', config)
+           
+    @staticmethod
+    def print_config(config):
+        """
+        Helper function to print all items in the given configuration. 
+        
+        Args:
+            config (dict): Dictionary of configurations. 
+        """
+        print(f'{"#":#^50}')
+        [print(f'# {key}: {val}') for key, val in config.items()]
+        print(f'{"#":#^50}')

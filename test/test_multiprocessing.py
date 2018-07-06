@@ -56,7 +56,7 @@ class NaivePrimalityMaster(BaseMaster):
                 
 class NaivePrimalityIterativeMaster(BaseIterativeMaster):
     def make_tasks(self, iteration):
-        tasks = np.array_split(range(128*10), 128)
+        tasks = np.array_split(range(128*10), self.num_worker)
         
         return tasks
     
