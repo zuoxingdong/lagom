@@ -9,11 +9,15 @@ class BaseAlgorithm(object):
         """
         self.name = name
         
-    def run(self, config):
+    def __call__(self, config):
         """
-        Run the algorithm with given configurations
+        Run the algorithm with given configurations. 
         
         Args:
             config (OrderedDict): dictionary of configurations
+            
+        Returns:
+            result (object): Result of the execution. 
+                If no need to return anything, then `return None`
         """
         raise NotImplementedError
