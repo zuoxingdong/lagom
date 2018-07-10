@@ -25,4 +25,4 @@ class Clip(BaseTransform):
         # Clip the data
         out = np.clip(x, a_min=a_min, a_max=a_max)
         
-        return out
+        return out.astype(np.float32)

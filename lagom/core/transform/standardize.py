@@ -37,4 +37,4 @@ class Standardize(BaseTransform):
         # Standardize the data
         out = (x - mean)/(std + self.eps)
         
-        return out
+        return out.astype(np.float32)

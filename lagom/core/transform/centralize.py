@@ -12,7 +12,7 @@ class Centralize(BaseTransform):
         Centralize the input data: Subtracted by mean. 
         
         Args:
-            x (object): input data. 
+            x (scalar/list/ndarray): input data. 
             mean (float): If not None, then use specific mean to centralize the input data. 
         
         Returns:
@@ -32,4 +32,4 @@ class Centralize(BaseTransform):
         # Centralize the data
         out = x - mean
         
-        return out
+        return out.astype(np.float32)

@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-05  	    #
+# Date: 2018-07-09  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -44,7 +44,7 @@ pip install cmake cython msgpack
 $CONDA install -y numpy matplotlib scikit-image
 
 # Install some pip packages
-pip install jupyterlab gym[all] pytest
+pip install jupyterlab gym[all] pytest cma
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch
