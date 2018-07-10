@@ -16,6 +16,7 @@ from lagom.core.transform import Normalize
 from lagom.core.transform import Standardize
 from lagom.core.transform import ExpFactorCumSum
 from lagom.core.transform import RunningMeanStd
+from lagom.core.transform import RankTransform
 
 
 class TestTransform(object):
@@ -248,19 +249,44 @@ class TestTransform(object):
 
         a = [1, 2, 3, 4]
 
-        # Test scalar
+        # Scalar
         runningmeanstd = RunningMeanStd()
         [runningmeanstd(i) for i in a]
         _test_moments(runningmeanstd=runningmeanstd, x=a)
 
-        # Test vector
+        # Vector
         runningmeanstd = RunningMeanStd()
         runningmeanstd(a)
         _test_moments(runningmeanstd=runningmeanstd, x=a)
 
-        # Test n-dim array
+        # n-dim array
         b = np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]])
         runningmeanstd = RunningMeanStd()
         runningmeanstd(b)
         assert np.allclose(runningmeanstd.mu, b.mean(0))
         assert np.allclose(runningmeanstd.sigma, b.std(0))
+        
+    def test_rank_transform(self):
+        rank_transform = RankTransform()
+        
+        # List
+        a = [3, 14, 1]
+        assert np.allclose(rank_transform(a, centered=False), [1, 2, 0])
+        assert np.allclose(rank_transform(a), [0, 0.5, -0.5])
+        
+        # ndarray
+        b = np.array([3, 14, 1])
+        assert np.allclose(rank_transform(b, centered=False), [1, 2, 0])
+        assert np.allclose(rank_transform(b), [0, 0.5, -0.5])
+        
+        #
+        # Test exceptions
+        #
+        # Scalar is not allowed
+        with pytest.raises(AssertionError):
+            rank_transform(5)
+            
+        # ndarray more than 1-dim is not allowed
+        c = np.array([[3, 14, 1]])
+        with pytest.raises(ValueError):
+            rank_transform(c)

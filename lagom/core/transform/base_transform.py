@@ -7,13 +7,18 @@ class BaseTransform(object):
     
     Note that all inherited class should support only scalar value or 1-dim vector. 
     Because it has much higher risk to introduce bugs with larger dimensionality. 
+    
+    It is recommended to convert all numpy processed data to type, np.float32
+    becuase it is more compatible with PyTorch. Numpy default float64 often 
+    can lead to numerical issues or raised exceptions in PyTorch. Similarly
+    for np.int32. 
     """
     def __call__(self, x):
         """
         Process the input data
         
         Args:
-            x: input data
+            x (scalar/list/ndarray): input data
             
         Returns:
             out: The processed data
@@ -39,6 +44,11 @@ class BaseTransform(object):
         
         if np.isscalar(x) or isinstance(x, (list, np.ndarray)):  # scalar, list or ndarray
             x = np.array(x)
+            # Convert to type of int32 or float32 with compatibility to PyTorch
+            if x.dtype == np.int:
+                x = x.astype(np.int32)
+            elif x.dtype == np.float:
+                x = x.astype(np.float32)
 
             if x.ndim <= 1:
                 return x

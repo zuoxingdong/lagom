@@ -37,4 +37,4 @@ class Normalize(BaseTransform):
         # Normalize data into [0, 1]
         out = (x - min_val)/(max_val - min_val + self.eps)
         
-        return out
+        return out.astype(np.float32)
