@@ -10,7 +10,7 @@ class BaseES(object):
         Sample new candidate solutions. 
         
         Returns:
-            solutions (ndarray): sampled candidate solutions
+            solutions (list/ndarray): sampled candidate solutions
         """
         raise NotImplementedError
         
@@ -20,7 +20,7 @@ class BaseES(object):
         i.e. update the parameters of the population. 
         
         Args:
-            solutions (ndarray): candidate solutions sampled from ask()
+            solutions (list/ndarray): candidate solutions sampled from ask()
             function_values (list): objective function values evaluated for sampled solutions
         Returns:
         """

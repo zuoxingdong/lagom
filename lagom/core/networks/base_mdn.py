@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.distributions import Categorical, Normal
-from torch.distributions.utils import _log_sum_exp
 
 from .base_network import BaseNetwork
 
@@ -259,10 +258,12 @@ class BaseMDN(BaseNetwork):
                                                              x=target)
         
         # Calculate the loss via log-sum-exp trick
-        # Permute dimensions to [N, D, K] since log_sum_exp manipulate last dimension
-        loss = -_log_sum_exp(log_pi.permute(0, 2, 1) + log_gaussian_probs.permute(0, 2, 1))
+        # It calculates over K (mixing coefficient) dimension, produce tensor with shape [N, D]
+        loss = -torch.logsumexp(log_pi + log_gaussian_probs, dim=1, keepdim=False)
+        #loss = -_log_sum_exp(log_pi.permute(0, 2, 1) + log_gaussian_probs.permute(0, 2, 1))
         # Since log_sum_exp keepsdim, unsqueeze dimension to [N, D]
-        loss = loss.squeeze(-1)
+        #loss = loss.squeeze(-1)
+        assert False, 'TODO: check this new torch.logsumexp in PyTorch 0.5'
         
         # Sum up loss over elements and average over batch
         loss = loss.sum(1).mean()
