@@ -78,6 +78,10 @@ class BaseESMaster(BaseIterativeMaster):
         """
         User-defined function to process the result from ES. 
         
+        Note that the user can use the class memeber `self.generation` which indicate the index of
+        the current generation, it is automatically incremented each time when sample a set of
+        solution candidates. 
+        
         Args:
             result (dict): A dictionary of result returned from es.result. 
             
