@@ -260,10 +260,6 @@ class BaseMDN(BaseNetwork):
         # Calculate the loss via log-sum-exp trick
         # It calculates over K (mixing coefficient) dimension, produce tensor with shape [N, D]
         loss = -torch.logsumexp(log_pi + log_gaussian_probs, dim=1, keepdim=False)
-        #loss = -_log_sum_exp(log_pi.permute(0, 2, 1) + log_gaussian_probs.permute(0, 2, 1))
-        # Since log_sum_exp keepsdim, unsqueeze dimension to [N, D]
-        #loss = loss.squeeze(-1)
-        #assert False, 'TODO: check this new torch.logsumexp in PyTorch 0.5'
         
         # Sum up loss over elements and average over batch
         loss = loss.sum(1).mean()
