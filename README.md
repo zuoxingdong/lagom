@@ -7,9 +7,9 @@
 
 - [Basics](#Basics)
 - [Installation](#Installation)
-    - [Install dependencies](#Install dependencies)
-    - [Install lagom](#Install lagom)
-- [Getting Started](#Getting Started)
+    - [Install dependencies](#Install-dependencies)
+    - [Install lagom](#Install-lagom)
+- [Getting Started](#Getting-Started)
 - [Examples](#Examples)
 - [Test](#Test)
 - [Roadmap](#Roadmap)
@@ -28,7 +28,6 @@ One of the main pipelines to use `lagom` can be done as following:
 4. Define experiment and configurations. 
 
 A graphical illustration is coming soon. 
-
 
 # Installation
 
