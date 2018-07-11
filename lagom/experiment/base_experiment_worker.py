@@ -1,3 +1,5 @@
+from lagom.experiment import Config
+
 from lagom.core.multiprocessing import BaseWorker
 
 
@@ -20,6 +22,9 @@ class BaseExperimentWorker(BaseWorker):
         
         # Instantiate an algorithm
         algo = self.make_algo()
+        
+        # Print configuration
+        Config.print_config(config)
         
         # Run the algorithm with given configuration
         result = algo(config)

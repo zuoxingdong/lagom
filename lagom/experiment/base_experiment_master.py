@@ -1,6 +1,5 @@
 import numpy as np
 
-from lagom.experiment import Config
 from lagom.core.multiprocessing import BaseIterativeMaster
 
 
@@ -50,9 +49,6 @@ class BaseExperimentMaster(BaseIterativeMaster):
     
     def _process_workers_result(self, tasks, workers_result):
         for config, (task_id, result) in zip(tasks, workers_result):
-            # Print configuration
-            Config.print_config(config)
-            
             self.process_algo_result(config, result)
             
     def process_algo_result(self, config, result):
