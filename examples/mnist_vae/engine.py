@@ -72,7 +72,7 @@ class Engine(BaseEngine):
                                  indent='')
                 """
                 
-        print(f'====> Average loss: {np.sum(losses)/len(self.train_loader.dataset)}') # TODO: directly use np.mean
+        print(f'====> Average loss: {np.mean(losses)}')
             
     def eval(self):
         """
@@ -112,4 +112,4 @@ class Engine(BaseEngine):
                                f'data/reconstruction.png',
                                nrow=n)
                 
-        print(f'====> Test set loss: {np.sum(losses)/len(self.test_loader.dataset)}')  # TODO: directly use np.mean
+        print(f'====> Test set loss: {np.mean(losses)}')
