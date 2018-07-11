@@ -24,7 +24,8 @@ class BaseAgent(object):
         The output is a dictionary containing useful items, e.g. action, action_logprob, state_value
         
         Args:
-            obs (object): agent's observation
+            obs (object): agent's observation. Note that this is raw observation returned from 
+                environment. Tensor conversion should be handled here. 
             
         Returns:
             output (dict): a dictionary of action selection output. 
