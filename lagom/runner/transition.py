@@ -48,6 +48,7 @@ class Transition(object):
         Return the state value for the next state, self.s_next. 
         If this transition leads to a terminal state, then it returns 0
         """
+        # TODO: it might be memory costly to have V_s_next in each transition. 
         V_s_next = self.info['V_s_next']
         # Set to zero for terminal state
         if self.done:
@@ -56,4 +57,4 @@ class Transition(object):
         return V_s_next
     
     def __repr__(self):
-        return f'Transition: ({self.s}, {self.a}, {self.r}, {self.s_next})'
+        return f'Transition: ({self.s}, {self.a}, {self.r}, {self.s_next}, {self.done})'

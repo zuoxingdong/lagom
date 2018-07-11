@@ -82,8 +82,14 @@ class BaseGaussianPolicy(BasePolicy):
         action = action_dist.rsample()
         # Calculate log-probability of sampled action
         action_logprob = action_dist.log_prob(action)
+        
         # Constraint action with lower/upper bounds
         # TODO: where should we put before/after logprob ?
+        # https://discuss.pytorch.org/t/should-action-log-probability-computed-after-or-before-constraining-the-action/20976
+        # Note that it will be completely wrong if put constraint transformation
+        # before computing the log-probability. Because log-prob with transformed action is 
+        # definitely a wrong value, it's equivalent to transformation of a Gaussian distribution
+        # and compute transformed samples with Gaussian density. 
         action = self.constraint_action(action)
         
         # User-defined function to process any possible other output

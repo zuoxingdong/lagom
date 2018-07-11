@@ -38,7 +38,7 @@ class BaseGymESMaster(BaseESMaster):
         # Pack make_env together for each solution
         # e.g. ES with gym environment
         solutions = list(zip(solutions, [self.make_env for _ in range(len(solutions))]))
-        assert len(solutions == self.es.popsize)
+        assert len(solutions) == self.es.popsize
         
         return solutions
         
