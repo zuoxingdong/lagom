@@ -1,3 +1,3 @@
-from lagom.runner.transition import Transition
-from lagom.runner.trajectory import Trajectory
-from lagom.runner.runner import Runner
+from .transition import Transition
+from .trajectory import Trajectory
+from .runner import Runner

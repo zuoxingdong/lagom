@@ -1,18 +1,29 @@
-from lagom.experiment import GridConfig
-from lagom.experiment import BaseExperiment
+from algo import Algorithm
+
+from lagom.experiment import Config
+from lagom.experiment import BaseExperimentWorker
+from lagom.experiment import BaseExperimentMaster
 
 
-class Experiment(BaseExperiment):
-    def _configure(self):
-        config = GridConfig()
+class ExperimentWorker(BaseExperimentWorker):
+    def make_algo(self):
+        algo = Algorithm(name='VAE on MNIST')
         
-        config.add('batch_size', [128])
-        config.add('num_epochs', [100])
-        config.add('seed', [1])
-        config.add('log_interval', [100])
-        config.add('cuda', [True])
-        
-        return config.make_configs()
+        return algo
     
-    def _make_env(self, config):
-        pass
+class ExperimentMaster(BaseExperimentMaster):
+    def process_algo_result(self, config, result):
+        assert result == None
+        
+    def make_configs(self):
+        config = Config()
+        
+        config.add_item(name='num_epochs', val=100)
+        config.add_item(name='cuda', val=True)
+        config.add_item(name='seed', val=1)
+        config.add_item(name='batch_size', val=128)
+        config.add_item(name='log_interval', val=100)
+        
+        configs = config.make_configs()
+        
+        return configs
