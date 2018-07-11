@@ -259,11 +259,11 @@ class BaseVAE(BaseNetwork):
         if reconstruction_loss_type == 'BCE':
             reconstruction_loss = F.binary_cross_entropy(reconstructed_x, 
                                                          x, 
-                                                         reduce=False)  # all losses for [N, D]
+                                                         reduction='none')  # all losses for [N, D]
         elif reconstruction_loss_type == 'MSE':
             reconstruction_loss = F.mse_loss(reconstructed_x, 
                                              x, 
-                                             reduce=False)  # all losses for [N, D]
+                                             reduction='none')  # all losses for [N, D]
         # sum up loss for each data item, with shape [N]
         reconstruction_loss = reconstruction_loss.sum(1)
             
