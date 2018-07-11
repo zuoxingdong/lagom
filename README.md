@@ -1,8 +1,7 @@
 # lagom
-<img src='doc/img/infrastructure.png' width='300'>
---------------------------------------------------------------------------------
+<!--- <img src='doc/img/infrastructure.png' width='300'> --->
 
-**lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.** [Lagom](https://sv.wikipedia.org/wiki/Lagom) is a 'magic' word in Swedish, 'inte för mycket och inte för lite, enkelhet är bäst', meaning not too much and not too little, simplicity is often the best. We use this name because lagom is also the philosophy how this library is designed and inspired. 
+**lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.** [Lagom](https://sv.wikipedia.org/wiki/Lagom) is a 'magic' word in Swedish, *"inte för mycket och inte för lite, enkelhet är bäst"*, meaning *"not too much and not too little, simplicity is often the best"*. We use this name because lagom is also the philosophy how this library is designed and inspired. 
 
 `lagom` balances between the flexibility and the userability when developing reinforcement learning (RL) algorithms. The library is built on top of [PyTorch](https://pytorch.org/) and provides modular tools to quickly prototype RL algorithms. However, we do not go overboard, because in practice, going too low level is rather time consuming and prone to potential bugs and going too high level degrades the flexibility which making it difficulty to try out some crazy ideas. 
 
@@ -17,7 +16,8 @@ One of the main pipelines to use `lagom` can be done as following:
 A graphical illustration is coming soon. 
 
 * **Contents of this document**
-- [Installation]
+
+- [Installation](#Installation)
     - [Install dependencies](#Install dependencies)
     - [Install lagom](#Install lagom)
 - [Getting Started](#Getting Started)
@@ -60,8 +60,7 @@ We shall continuously provide [examples/](examples/) to use lagom.
 
 We are using [pytest](https://docs.pytest.org) for tests. Feel free to run via
 ```bash
-cd test
-pytest -v
+pytest test -v
 ```
 
 # Roadmap
@@ -77,8 +76,8 @@ pytest -v
     - Q-Prop
     - DQN: Rainbow
     - ES: PEPG/NES
-## More standard networks (e.g. Mixture Density Networks)
-    - /
+## More standard networks
+    - Monte Carlo Dropout/Concrete Dropout
 ## Misc
     - VecEnv: similar to that of OpenAI baseline
     - Support pip install
