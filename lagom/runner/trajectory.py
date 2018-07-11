@@ -96,8 +96,18 @@ class Trajectory(object):
         return ExpFactorCumSum(self.gamma)(self.all_r)
     
     @property
-    def all_TD(self):
+    def all_V(self):
         """
+        Return a list of all state values, from first to last state. 
+        
+        It takes information with the key 'V_s' for all transitions
+        and augment it with 'V_s_next' of the last transition. 
+        """
+        return [transition.V_s for transition in self.transitions] + [self.transitions[-1].V_s_next]
+    
+    @property
+    def all_TD(self):
+        r"""
         Returns a list of TD errors for all time steps. 
         
         It requires that each transition has the information with key 'V_s' and
@@ -105,22 +115,25 @@ class Trajectory(object):
         
         If last transition with done=True, then V_s_next should be zero as terminal state value. 
         
-        
+        TD error is calculated as following:
+        \delta_t = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
         """
         # Get all rewards
         all_r = np.array(self.all_r)
-
+        
         # Get all state values
-        all_v = self.all_info('state_value')
-        # Retrive each item if dtype: torch.Tensor 
-        all_v = np.array([v.item() if torch.is_tensor(v) else v for v in all_v])
-
-        # Get all next state values, final terminal state with zero state value
-        all_next_v = np.append(all_v[1:], [0])
-
+        # Retrieve raw value if dtype is Tensor
+        all_V = np.array([v.item() if torch.is_tensor(v) else v for v in self.all_V])
+        if self.all_done[-1]:  # value of terminal state is zero
+            assert all_V[-1] == 0.0
+        
+        # Unpack state values into current and next time step
+        all_V_s = all_V[:-1]
+        all_V_s_next = all_V[1:]
+        
         # Calculate TD error
-        all_TD = all_r + self.gamma*all_next_v - all_v
-
+        all_TD = all_r + self.gamma*all_V_s_next - all_V_s
+        
         return all_TD.tolist()
     
     def all_info(self, name):

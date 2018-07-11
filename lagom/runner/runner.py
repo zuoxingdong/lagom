@@ -1,7 +1,9 @@
 import torch
 
 from .transition import Transition
-from .episode import Episode
+from .trajectory import Trajectory
+
+from lagom.envs.spaces import Discrete
 
 
 class Runner(object):
@@ -9,75 +11,81 @@ class Runner(object):
     Data collection for an agent in an environment.
     """
     def __init__(self, agent, env, gamma):
+        """
+        Args:
+            agent (BaseAgent): agent
+            env (Env): environment
+            gamma (float): discount factor
+        """
         self.agent = agent
         self.env = env
         # Discount factor
         self.gamma = gamma
         
-    def run(self, T, num_epi, mode):
+    def __call__(self, N, T):
         """
-        Run the agent in the environment and collect all necessary data
+        Run the agent in the environment and collect all necessary data for given number of trajectories
+        and horizon (time steps) for each trajectory. 
         
         Args:
+            N (int): Number of trajectories
             T (int): Number of time steps
-            num_epi (int): Number of episodes
-            mode (str): option to select an action, ['sampling', 'greedy']
             
         Returns:
-            batch (list of Episode): list of episodes, each is an object of Episode
+            D (list of Trajectory): list of collected trajectories. 
         """ 
-        batch = []
-        for _ in range(num_epi):  # Iterate over the number of episodes
-            # Create an episode object
-            episode = Episode(self.gamma)
+        D = []
+        
+        for n in range(N):  # Iterate over the number of trajectories
+            # Create an trajectory object
+            trajectory = Trajectory(gamma=self.gamma)
             
             # Reset the environment and returns initial state
             obs = self.env.reset()
             
             for t in range(T):  # Iterate over the number of time steps
-                # Action selection by agent
-                output_agent = self.agent.choose_action(self._make_input(obs), mode)
+                # Action selection by the agent
+                output_agent = self.agent.choose_action(obs)
                 
-                # Unpack output from agent
+                # Unpack action from output. 
+                # Note that do not convert to raw value from Tensor here
+                # Because for Transition object, we often want to record Tensor action to backprop. 
                 action = output_agent['action']
                 
-                # Action execution in the environment
-                obs_next, reward, done, info = self.env.step(action.item())  # item() retrieve raw data
+                # Execute the action in the environment
+                if torch.is_tensor(action):  # convert Tensor to raw numpy array
+                    raw_action = action.detach().cpu().numpy()
+                    # Handle with discrete action (must be int)
+                    # Now raw action is ndarray
+                    if isinstance(self.env.action_space, Discrete):
+                        raw_action = raw_action.item()
+                else:  # Non Tensor action, e.g. from RandomAgent
+                    raw_action = action
+                # Take action
+                obs_next, reward, done, info = self.env.step(raw_action)
                 
-                # Create a transition
-                transition = Transition(s=obs, a=action, r=reward, s_next=obs_next)
-                # Record more information about the transition
-                transition.add_info('done', done)
-                for key, val in output_agent.items():  # record other information from agent
+                # Create and record a Transition
+                transition = Transition(s=obs, 
+                                        a=action, 
+                                        r=reward, 
+                                        s_next=obs_next, 
+                                        done=done)
+                # Record additional information from output_agent
+                for key, val in output_agent.items():
                     if key != 'action':  # action already recorded
                         transition.add_info(key, val)
                 
-                # Add transition to the episode
-                episode.add_transition(transition)
+                # Add transition to trajectory
+                trajectory.add_transition(transition)
                 
-                # Terminate when episode finishes
+                # Terminate if episode finishes
                 if done:
                     break
                     
-                # Update obs after transition, for next iteration to feed into agent
+                # Back up obs for next iteration to feed into agent
                 obs = obs_next
             
-            # Append episode to the batch
-            batch.append(episode)
+            # Append trajectory to data
+            D.append(trajectory)
 
-        return batch
-    
-    def _make_input(self, obs):
-        """
-        User-defined function to process the input data for the agent to choose action
-        
-        Args:
-            obs (object): observations
-            
-        Returns:
-            data (Tensor): input data for the action selection
-        
-        """
-        data = torch.Tensor(obs).unsqueeze(0)
-        
-        return data
+        return D
