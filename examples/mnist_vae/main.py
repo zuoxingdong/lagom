@@ -5,18 +5,15 @@ sys.path.append('/home/zuo/Code/lagom/')
 
 from time import time
 
-from experiment import Experiment
-from algo import Algorithm
+from experiment import ExperimentWorker
+from experiment import ExperimentMaster
 
-algo = Algorithm(name='VAE in MNIST')
-experiment = Experiment()
-
-experiment.add_algo(algo)
 
 t = time()
 
-experiment.benchmark(num_process=1)
-print(f'\nTotal time: {time() - t:.2f} s')
+experiment = ExperimentMaster(worker_class=ExperimentWorker, 
+                              num_worker=1, 
+                              daemonic_worker=None)
+experiment()
 
-# Save all configurations
-experiment.save_configs()
+print(f'\nTotal time: {time() - t:.2} s')

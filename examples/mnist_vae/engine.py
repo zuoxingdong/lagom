@@ -44,7 +44,14 @@ class Engine(BaseEngine):
             # Forward pass of the data
             reconstructed_x, mu, logvar = self.model(data)
             # Calculate the loss
-            loss = self.model.calculate_loss(reconstructed_x, data, mu, logvar)
+            loss, reconstruction_loss, KL_loss = self.model.calculate_loss(reconstructed_x=reconstructed_x, 
+                                                                           x=data, 
+                                                                           mu=mu, 
+                                                                           logvar=logvar, 
+                                                                           reconstruction_loss_type='BCE')
+            # Record the loss
+            # Note that it is recommended to use `item()`, otherwise accumulated computation graph
+            # might lead to memory issue
             losses.append(loss.item())
             # Backward pass to calcualte gradients
             loss.backward()
@@ -52,8 +59,8 @@ class Engine(BaseEngine):
             self.optimizer.step()
             
             # Loggings
-            if i == 0 or (i+1)%self.config['log_interval'] == 0:
-                print(f'Training iteration #{i+1}: {loss.item()/len(data)}')
+            if i == 0 or (i+1) % self.config['log_interval'] == 0:
+                print(f'Training iteration #{i+1}: {loss.item()}')
                 
                 """
                 self.logger.log(config_ID=self.config['ID'], 
@@ -65,7 +72,7 @@ class Engine(BaseEngine):
                                  indent='')
                 """
                 
-        print(f'====> Average loss: {np.sum(losses)/len(self.train_loader.dataset)}')
+        print(f'====> Average loss: {np.sum(losses)/len(self.train_loader.dataset)}') # TODO: directly use np.mean
             
     def eval(self):
         """
@@ -84,7 +91,14 @@ class Engine(BaseEngine):
                 # Forward pass of the data
                 reconstructed_x, mu, logvar = self.model(data)
                 # Calculate the loss
-                loss = self.model.calculate_loss(reconstructed_x, data, mu, logvar)
+                loss, reconstruction_loss, KL_loss = self.model.calculate_loss(reconstructed_x=reconstructed_x, 
+                                                                               x=data, 
+                                                                               mu=mu, 
+                                                                               logvar=logvar, 
+                                                                               reconstruction_loss_type='BCE')
+                # Record the loss
+                # Note that it is recommended to use `item()`, otherwise accumulated computation graph
+                # might lead to memory issue
                 losses.append(loss.item())
                 
                 # Generate reconstructed images
@@ -98,4 +112,4 @@ class Engine(BaseEngine):
                                f'data/reconstruction.png',
                                nrow=n)
                 
-        print(f'====> Test set loss: {np.sum(losses)/len(self.test_loader.dataset)}')
+        print(f'====> Test set loss: {np.sum(losses)/len(self.test_loader.dataset)}')  # TODO: directly use np.mean

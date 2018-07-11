@@ -1,3 +1,3 @@
-from lagom.engine.base import BaseEngine
-from lagom.engine.simple_engine import SimpleEngine
+from .base_engine import BaseEngine
+from .simple_engine import SimpleEngine
 
