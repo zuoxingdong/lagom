@@ -5,15 +5,15 @@
 
 **Contents of this document**
 
-- [Basics](#Basics)
-- [Installation](#Installation)
-    - [Install dependencies](#Install-dependencies)
-    - [Install lagom](#Install-lagom)
-- [Getting Started](#Getting-Started)
-- [Examples](#Examples)
-- [Test](#Test)
-- [Roadmap](#Roadmap)
-- [Reference](#Reference)
+- [Basics](#basics)
+- [Installation](#installation)
+    - [Install dependencies](#install-dependencies)
+    - [Install lagom](#install-lagom)
+- [Getting Started](#getting-started)
+- [Examples](#examples)
+- [Test](#test)
+- [Roadmap](#roadmap)
+- [Reference](#reference)
 
 # Basics
 
