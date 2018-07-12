@@ -82,6 +82,10 @@ class BaseGaussianPolicy(BasePolicy):
         action = action_dist.rsample()
         # Calculate log-probability of sampled action
         action_logprob = action_dist.log_prob(action)
+        # Calculate entropy of the policy conditional on state
+        entropy = action_dist.entropy()
+        # Calculate perplexity of the policy, i.e. exp(entropy)
+        perplexity = action_dist.perplexity()
         
         # Constraint action with lower/upper bounds
         # TODO: where should we put before/after logprob ?
@@ -99,6 +103,8 @@ class BaseGaussianPolicy(BasePolicy):
         out = {}
         out['action'] = action
         out['action_logprob'] = action_logprob
+        out['entropy'] = entropy
+        out['perplexity'] = perplexity
         # Augment with dictionary returned from processed network output
         out = {**out, **processed_network_out}
         
