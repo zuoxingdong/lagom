@@ -51,7 +51,7 @@ class Algorithm(BaseAlgorithm):
         lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
         
         # Create agent
-        agent_class = ActorCriticAgent
+        agent_class = ActorCriticAgent#REINFORCEAgent
         agent = agent_class(policy=policy, 
                             optimizer=optimizer, 
                             config=config, 
@@ -70,6 +70,7 @@ class Algorithm(BaseAlgorithm):
                         logger=logger)
         
         # Training
-        engine.train()
+        train_output = engine.train()
+        np.save('logs/returns_ActorCritic', train_output)
         
         return None
