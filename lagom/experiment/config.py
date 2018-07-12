@@ -21,21 +21,32 @@ class Config(object):
         
     def add_item(self, name, val):
         """
-        Add an item for the configuration. 
+        Add a single item for the configuration. 
         
-        This can be used for grid search. 
-        If val is a list, then auto-config generation will iterate each element in the list
-        If val is not a list, then it is converted to a list as a single item. 
+        It will be wrapped as a list with single element. 
         
         Args:
             name (str): the name for the configuration item
-            val (object/list): the value for the configuration item
+            val (object): the value for the configuration item
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
-        # Convert non-list to list for auto-config generation (cartesian product)
-        if not isinstance(val, list):
-            val = [val]
+        self.config_settings[name] = [val]
+        
+    def add_grid(self, name, val):
+        """
+        Add a list of configurations. 
+        
+        This can be used for grid search. 
+        The auto-config generation will iterate over each element. 
+        
+        Args:
+            name (str): the name for the configuration item
+            val (list): a list of configuration items
+        """
+        assert name not in self.config_settings, 'The key is already existed. '
+        
+        assert isinstance(val, list)
         
         self.config_settings[name] = val
         
