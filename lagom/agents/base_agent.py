@@ -10,13 +10,21 @@ class BaseAgent(object):
     2. learn(self, x)
     3. save(self, filename)
     4. load(self, filename)
+    
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
     """
-    def __init__(self, config):
+    def __init__(self, config, **kwargs):
         """
         Args:
             config (dict): the configurations
+            **kwargs: TODO for documentation
         """
         self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
         
     def choose_action(self, obs):
         """
@@ -44,7 +52,7 @@ class BaseAgent(object):
             
         Returns:
             output (dict): a dictionary of learning output. 
-                Possible keys: ['total_loss', 'batched_policy_loss']
+                Possible keys: ['total_loss', 'batch_policy_loss']
         """
         raise NotImplementedError
         

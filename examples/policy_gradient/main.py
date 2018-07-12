@@ -1,23 +1,14 @@
-# TEMP: Import lagom
-# Not useful once lagom is installed
-import sys
-sys.path.append('/home/zuo/Code/lagom/')
-
 from time import time
 
-from experiment import Experiment
-from algo import Algorithm
+from experiment import ExperimentWorker
+from experiment import ExperimentMaster
 
 
-algo = Algorithm(name='test')
-experiment = Experiment()
+t = time()
 
-experiment.add_algo(algo)
+experiment = ExperimentMaster(worker_class=ExperimentWorker, 
+                              num_worker=1, 
+                              daemonic_worker=None)
+experiment()
 
-start_time = time()
-
-experiment.benchmark(num_process=1)
-print(f'\nTotal time: {time() - start_time:.2f} s')
-
-# Save all configurations
-experiment.save_configs()
+print(f'\nTotal time: {time() - t:.2} s')

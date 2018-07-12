@@ -2,58 +2,47 @@ import numpy as np
 
 from lagom.engine import BaseEngine
 
-    
+
 class Engine(BaseEngine):
-    def train(self, train_iter):
-        # Set max time steps as optimal trajectories (consistent with A* solution)
-        if self.config['use_optimal_T']:
-            self.config['T'] = self.runner.env.all_steps[tuple(goal)]
+    """
+    Engine for training policy gradient for some number of iterations
+    """
+    def train(self):
+        # Set network as training mode
+        self.agent.policy.network.train()
         
-        # Training
         for i in range(self.config['train_iter']):  # training iterations
-            # Collect one batch of data from runner
-            batch_data = self.runner.run(self.config['T'], 
-                                         self.config['train_num_epi'], 
-                                         mode='sampling')
+            # Collect a list of trajectories
+            D = self.runner(N=self.config['N'], T=self.config['T'])
             
-            # Update agent by learning over the batch of data
-            output_learn = self.agent.learn(batch_data)
+            # Train agent with given data
+            out_agent = self.agent.learn(D)
             
-            # Useful metrics
-            loss = output_learn['loss'].item()
-            batch_returns = [np.sum(episode.all_r) for episode in batch_data]
-            batch_discounted_returns = [episode.returns for episode in batch_data]
+            # Unpack agent's learning outputs
+            total_loss = out_agent['total_loss'].item()  # item saves memory
             
-            # Loggings
-            if i == 0 or (i + 1) % self.config['log_interval'] == 0:
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Loss'], 
-                                loss)
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Num Episodes'], 
-                                len(batch_data))
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Average Return'], 
-                                np.mean(batch_returns))
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Average Discounted Return'], 
-                                np.mean(batch_discounted_returns))
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Std Return'], 
-                                np.std(batch_returns))
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Min Return'], 
-                                np.min(batch_returns))
-                self.logger.log(self.config['ID'], 
-                                [('Train Iteration', i+1), 'Max Return'], 
-                                np.max(batch_returns))
+            # Unpack useful information from trajectory list
+            all_returns = [trajectory.all_returns[0] for trajectory in D]
+            all_discounted_returns = [trajectory.all_discounted_returns[0] for trajectory in D]
+            
+            # Loggins
+            if i == 0 or (i+1) % self.config['log_interval'] == 0:
+                print('-'*50)
+                print(f'Training iteration: {i+1}')
+                print('-'*50)
                 
-                # Dump the loggings
-                self.logger.dump(self.config['ID'], 
-                                 [('Train Iteration', i+1)], 
-                                 indent='')
+                print(f'Total loss: {total_loss}')
+                print(f'Number of trajectories: {len(D)}')
+                print(f'Average Return: {np.mean(all_returns)}')
+                print(f'Average Discounted Return: {np.mean(all_discounted_returns)}')
+                print(f'Std Return: {np.std(all_returns)}')
+                print(f'Min Return: {np.min(all_returns)}')
+                print(f'Max Return: {np.max(all_returns)}')
+                
+               
+                print('-'*50)
         
-    def eval(self, goal_iter, goal):
+    def eval(self):
         pass
         
     
