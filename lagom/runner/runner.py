@@ -51,6 +51,7 @@ class Runner(object):
                 # Note that do not convert to raw value from Tensor here
                 # Because for Transition object, we often want to record Tensor action to backprop. 
                 action = output_agent['action']
+                state_value = output_agent.get('state_value', None)
                 
                 # Execute the action in the environment
                 if torch.is_tensor(action):  # convert Tensor to raw numpy array
@@ -70,20 +71,32 @@ class Runner(object):
                                         r=reward, 
                                         s_next=obs_next, 
                                         done=done)
+                # Record state value if required
+                if state_value is not None:
+                    transition.add_info('V_s', state_value)
                 # Record additional information from output_agent
                 for key, val in output_agent.items():
-                    if key != 'action':  # action already recorded
+                    if key != 'action' and key != 'state_value':  # action and state_value already recorded
                         transition.add_info(key, val)
                 
                 # Add transition to trajectory
                 trajectory.add_transition(transition)
                 
+                # Back up obs for next iteration to feed into agent
+                obs = obs_next
+                
                 # Terminate if episode finishes
                 if done:
                     break
-                    
-                # Back up obs for next iteration to feed into agent
-                obs = obs_next
+            
+            # Call agent again to compute state value for final obsevation in collected trajectory
+            if state_value is not None:
+                V_s_next = self.agent.choose_action(obs)['state_value']
+                # Set to zero if it is terminal state
+                if done:
+                    V_s_next.fill_(0.0)
+                # Add to the final transition as 'V_s_next'
+                trajectory.transitions[-1].add_info('V_s_next', V_s_next)
             
             # Append trajectory to data
             D.append(trajectory)

@@ -41,14 +41,15 @@ class BasePolicy(object):
         User-defined function to support additional processing of the 
         output from the internal network. 
         
-        It can also return a processed output. If there is nothing to return, 
-        then one can return an empty disctionary, i.e. {}. 
+        It can also return a processed output. If there is nothing to do, 
+        then return it back, i.e. return network_out
         
         Args:
             network_out (dict): Dictionary of data returned from forward pass of internal network. 
             
         Returns:
             processed_network_out (dict): A dictionary of processed network output. 
-                It will be returned together in __call__. 
+                It will be returned together in __call__. Default to return back
+                of network_out
         """
         raise NotImplementedError

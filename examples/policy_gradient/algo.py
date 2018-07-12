@@ -11,6 +11,8 @@ from lagom.envs import EnvSpec
 from lagom.core.utils import Logger
 
 from lagom.agents import REINFORCEAgent
+from lagom.agents import ActorCriticAgent
+
 from lagom.runner import Runner
 
 from engine import Engine
@@ -37,7 +39,7 @@ class Algorithm(BaseAlgorithm):
         logger = Logger(name='logger')
         
         # Create policy
-        network = MLP(config=None)
+        network = MLP(config=config)
         policy = CategoricalPolicy(network=network, env_spec=env_spec)
         policy.network = policy.network.to(device)
 
@@ -49,11 +51,12 @@ class Algorithm(BaseAlgorithm):
         lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
         
         # Create agent
-        agent = REINFORCEAgent(policy=policy, 
-                               optimizer=optimizer, 
-                               config=config, 
-                               lr_scheduler=lr_scheduler, 
-                               device=device)
+        agent_class = ActorCriticAgent
+        agent = agent_class(policy=policy, 
+                            optimizer=optimizer, 
+                            config=config, 
+                            lr_scheduler=lr_scheduler, 
+                            device=device)
         
         # Create runner
         runner = Runner(agent=agent, 

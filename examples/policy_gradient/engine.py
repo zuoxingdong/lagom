@@ -1,5 +1,7 @@
 import numpy as np
 
+import torch
+
 from lagom.engine import BaseEngine
 
 
@@ -19,7 +21,10 @@ class Engine(BaseEngine):
             out_agent = self.agent.learn(D)
             
             # Unpack agent's learning outputs
-            total_loss = out_agent['total_loss'].item()  # item saves memory
+            loss = out_agent['loss'].item()  # item saves memory
+            if 'batch_value_loss' in out_agent:
+                value_loss = torch.stack(out_agent['batch_value_loss']).mean().item()
+            entropy_loss = torch.stack(out_agent['batch_entropy_loss']).mean().item()
             
             # Unpack useful information from trajectory list
             all_returns = [trajectory.all_returns[0] for trajectory in D]
@@ -31,7 +36,12 @@ class Engine(BaseEngine):
                 print(f'Training iteration: {i+1}')
                 print('-'*50)
                 
-                print(f'Total loss: {total_loss}')
+                if 'current_lr' in out_agent:
+                    print(f'Current lr: {out_agent["current_lr"]}')
+                print(f'Loss: {loss}')
+                if 'value_loss' in locals():  # if value_loss is defined above within train()
+                    print(f'Value loss: {value_loss}')
+                print(f'Entropy loss: {entropy_loss}')
                 print(f'Number of trajectories: {len(D)}')
                 print(f'Average Return: {np.mean(all_returns)}')
                 print(f'Average Discounted Return: {np.mean(all_discounted_returns)}')

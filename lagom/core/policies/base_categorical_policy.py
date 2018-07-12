@@ -69,6 +69,10 @@ class BaseCategoricalPolicy(BasePolicy):
         action = action_dist.sample()
         # Calculate log-probability of sampled action
         action_logprob = action_dist.log_prob(action)
+        # Calculate entropy of the policy conditional on state
+        entropy = action_dist.entropy()
+        # Calculate perplexity of the policy, i.e. exp(entropy)
+        perplexity = action_dist.perplexity()
         
         # User-defined function to process any possible other output
         processed_network_out = self.process_network_output(network_out)
@@ -77,6 +81,9 @@ class BaseCategoricalPolicy(BasePolicy):
         out = {}
         out['action'] = action
         out['action_logprob'] = action_logprob
+        out['entropy'] = entropy
+        out['perplexity'] = perplexity
+        
         # Augment with dictionary returned from processed network output
         out = {**out, **processed_network_out}
         

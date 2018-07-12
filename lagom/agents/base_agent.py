@@ -44,7 +44,7 @@ class BaseAgent(object):
     def learn(self, x):
         """
         Learning rule about how agent updates itself given data.
-        The output is a dictionary containing useful items, i.e. total_loss, batched_policy_loss
+        The output is a dictionary containing useful items, i.e. loss, batched_policy_loss
         
         Args:
             x (object): input data to train the agent. 
@@ -52,7 +52,7 @@ class BaseAgent(object):
             
         Returns:
             output (dict): a dictionary of learning output. 
-                Possible keys: ['total_loss', 'batch_policy_loss']
+                Possible keys: ['loss', 'batch_policy_loss']
         """
         raise NotImplementedError
         
