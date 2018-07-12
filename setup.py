@@ -1,18 +1,40 @@
 from setuptools import setup
+from setuptools import find_packages
 
-from lagom.__init__ import __version__
+from lagom.version import __version__
 
+
+# Read content of README.md
+with open('README.md', 'r') as f:
+    long_description = f.read()
 
 setup(name='lagom',
-      install_requires=['pytest', 
-                        'numpy', 
+      version=__version__,
+      author='Xingdong Zuo',
+      author_email='zuoxingdong@hotmail.com',
+      description='lagom: A light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.',
+      # Long description of README markdown, shows in Python Package Index
+      long_description=long_description, 
+      long_description_content_type='text/markdown',
+      url='https://github.com/zuoxingdong/lagom',
+      # Install dependencies
+      install_requires=['numpy', 
                         'matplotlib', 
                         'scikit-image', 
                         'jupyterlab', 
                         'gym', 
                         'cma'],
-      description='lagom: A light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.',
-      author='Xingdong Zuo',
-      url='https://github.com/zuoxingdong/lagom',
-      version=__version__
+      tests_require=['pytest'],
+      # Only Python 3+
+      python_requires='>=3',
+      # List all lagom packages (folder with __init__.py), useful to distribute a release
+      packages=find_packages(), 
+      # tell pip some metadata (e.g. Python version, OS etc.)
+      classifiers=['Programming Language :: Python :: 3', 
+                   'License :: OSI Approved :: MIT License', 
+                   'Operating System :: OS Independent', 
+                   'Natural Language :: English', 
+                   'Topic :: Scientific/Engineering :: Artificial Intelligence']
+      
+      
 )

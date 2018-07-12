@@ -18,6 +18,8 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         config = Config()
         
+        config.add_item(name='use_ConvVAE', val=[True, False])
+        
         config.add_item(name='num_epochs', val=100)
         config.add_item(name='cuda', val=True)
         config.add_item(name='seed', val=1)
