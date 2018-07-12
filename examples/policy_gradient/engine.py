@@ -10,6 +10,10 @@ class Engine(BaseEngine):
     Engine for training policy gradient for some number of iterations
     """
     def train(self):
+        # Training output
+        train_output = {}
+        train_output['returns'] = []
+        
         # Set network as training mode
         self.agent.policy.network.train()
         
@@ -29,6 +33,9 @@ class Engine(BaseEngine):
             # Unpack useful information from trajectory list
             all_returns = [trajectory.all_returns[0] for trajectory in D]
             all_discounted_returns = [trajectory.all_discounted_returns[0] for trajectory in D]
+            
+            # Record training output for each iteration
+            train_output['returns'].append(np.mean(all_returns))
             
             # Loggins
             if i == 0 or (i+1) % self.config['log_interval'] == 0:
@@ -51,6 +58,8 @@ class Engine(BaseEngine):
                 
                
                 print('-'*50)
+                
+        return train_output
         
     def eval(self):
         pass

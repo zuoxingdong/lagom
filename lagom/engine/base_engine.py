@@ -15,11 +15,17 @@ class BaseEngine(object):
     def train(self):
         """
         Agent training process
+        
+        Returns:
+            train_output (dict): training output
         """
         raise NotImplementedError
         
     def eval(self):
         """
         Agent evaluation process
+        
+        Returns:
+            eval_output (dict): evluation output
         """
         raise NotImplementedError
