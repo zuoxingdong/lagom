@@ -18,7 +18,7 @@ class Transition(object):
         """
         self.s = s
         self.a = a
-        self.r = r
+        self.r = float(r)  # ensure it is float for PyTorch compatibility. Often r from gym environment as scalar value. 
         self.s_next = s_next
         self.done = done
         

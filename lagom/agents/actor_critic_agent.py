@@ -1,128 +1,123 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from lagom.agents.base import BaseAgent
-from lagom.core.preprocessors import Standardize
+from .base_agent import BaseAgent
+from lagom.core.transform import Standardize
+
 
 class ActorCriticAgent(BaseAgent):
     """
-    Actor-Critic with value network
+    Actor-Critic with value network (baseline), no bootstrapping to estimate value function. 
     """
-    def __init__(self, policy, optimizer, lr_scheduler, config):
+    def __init__(self, policy, optimizer, config, **kwargs):
         self.policy = policy
         self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
         
-        super().__init__(config)
+        super().__init__(config, **kwargs)
         
-    def choose_action(self, obs, mode):
-        assert mode == 'sampling' or mode == 'greedy'
+    def choose_action(self, obs):
+        # Convert to Tensor
+        # Note that we assume obs is a single observation, not batched one
+        # so we unsqueeze it with a batch dimension
+        if not torch.is_tensor(obs):
+            obs = torch.from_numpy(obs).float()
+            obs = obs.unsqueeze(0)  # make a batch dimension
+            obs = obs.to(self.device)  # move to device
         
         out_policy = self.policy(obs)
-        # Unpack output from policy network
-        action_probs = out_policy['action_probs']
-        state_value = out_policy['state_value']
-        
-        # Create a categorical distribution
-        # TODO: automatic distribution select according to action space
-        action_dist = Categorical(action_probs)
-        # Calculate entropy of the policy conditional on state
-        entropy = action_dist.entropy()
-        # Calculate perplexity of the policy, i.e. exp(entropy)
-        perplexity = action_dist.perplexity()
-        
-        if mode == 'greedy':  # greedily select an action, useful for evaluation
-            action = torch.argmax(action_probs, 1)
-            logprob_action = None  # due to greedy selection, no log-probability available
-        elif mode == 'sampling':  # sample an action according to distribution
-            action = action_dist.sample()
-            logprob_action = action_dist.log_prob(action)  # calculate log-probability
-            
-            
-            #print(f'#######{action_probs}')
-            #print(f'!!!!!!!{action.item()}')
-        
+        # Squeeze the single batch dimension of the action
+        for key, val in out_policy.items():
+            if torch.is_tensor(val):
+                out_policy[key] = val.squeeze(0)
+                
         # Dictionary of output data
         output = {}
-        output['action'] = action
-        output['logprob_action'] = logprob_action
-        output['state_value'] = state_value
-        output['entropy'] = entropy
-        output['perplexity'] = perplexity
-
+        output = {**out_policy}
+                
         return output
         
-    def learn(self, batch):
+    def learn(self, x):
         batch_policy_loss = []
         batch_value_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
-
-        for episode in batch:  # Iterate over batch of episodes
-            # Get all returns
-            Qs = episode.all_returns
-            # Get all values
-            Vs = episode.all_info('state_value')
-            # Get all action log-probabilities
-            log_probs = episode.all_info('logprob_action')
-            # Get all entropies
-            entropies = episode.all_info('entropy')
+        
+        # Iterate over list of trajectories
+        for trajectory in x:
+            # Get all discounted returns
+            Rs = trajectory.all_discounted_returns
+            if self.config['standardize_r']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
+                Rs = Standardize()(Rs)
+                
+            # Get all state values (except for s_next in last transition)
+            Vs = trajectory.all_V[:-1]
             
-            # TODO: testing standardization before or after computing advantage estimation
-            # Calculate advantage estimation
-            Qs = Standardize().process(Qs)
+            # Get all log-probabilities and entropies
+            logprobs = trajectory.all_info('action_logprob')
+            entropies = trajectory.all_info('entropy')
             
-            # Calculate losses
+            # All losses
             policy_loss = []
             value_loss = []
             entropy_loss = []
             
-            # iterate over time steps
-            for logprob, V, Q, entropy in zip(log_probs, Vs, Qs, entropies):
-                advantage_estimate = Q - V.item()
-                policy_loss.append(-logprob*advantage_estimate)
-                value_loss.append(F.mse_loss(V, torch.Tensor([Q]).unsqueeze(0)).unsqueeze(0))
+            # Estimate policy gradient for all time steps
+            for logprob, entropy, R, V in zip(logprobs, entropies, Rs, Vs):
+                # Advantage estimate
+                A = R - V.item()
+                # Compute losses
+                policy_loss.append(-logprob*float(A))  # TODO: supports VecEnv
+                value_loss.append(F.mse_loss(V, torch.tensor(float(R), device=V.device).type_as(V)))
                 entropy_loss.append(-entropy)
-            
-            # Sum up losses for each time step
-            policy_loss = torch.cat(policy_loss).sum()
-            value_loss = torch.cat(value_loss).sum()
-            entropy_loss = torch.cat(entropy_loss).sum()
-            
+                
+            # Sum up losses for all time steps
+            policy_loss = torch.stack(policy_loss).sum()
+            value_loss = torch.stack(value_loss).sum()
+            entropy_loss = torch.stack(entropy_loss).sum()
+        
             # Calculate total loss
-            total_loss = policy_loss + self.config['value_coef']*value_loss# + self.config['entropy_coef']*entropy_loss
+            value_coef = self.config['value_coef']
+            entropy_coef = self.config['entropy_coef']
+            total_loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
             
-            # Record all losses for current episode
+            # Record all losses
             batch_policy_loss.append(policy_loss)
             batch_value_loss.append(value_loss)
             batch_entropy_loss.append(entropy_loss)
             batch_total_loss.append(total_loss)
-            
-        # Average total loss over the batch
-        # TODO: keep track of new feature to cat zero dimensional Tensor
-        batch_total_loss = [total_loss.unsqueeze(0) for total_loss in batch_total_loss]
-        loss = torch.cat(batch_total_loss).mean()
+        
+        # Compute loss (average over trajectories)
+        loss = torch.stack(batch_total_loss).mean()  # use stack because each element is zero-dim tensor
         
         # Zero-out gradient buffer
         self.optimizer.zero_grad()
         # Backward pass and compute gradients
         loss.backward()
+        
         # Clip gradient norms if required
-        if 'max_grad_norm' in self.config:
-            nn.utils.clip_grad_norm(self.policy.parameters(), self.config['max_grad_norm'])
-        # Update learning rate scheduler
-        #self.lr_scheduler.step()
-        # Update for one step
+        if self.config['max_grad_norm'] is not None:
+            nn.utils.clip_grad_norm_(parameters=self.policy.network.parameters(), 
+                                     max_norm=self.config['max_grad_norm'], 
+                                     norm_type=2)
+        
+        # Decay learning rate if required
+        if hasattr(self, 'lr_scheduler'):
+            self.lr_scheduler.step()
+        
+        # Take a gradient step
         self.optimizer.step()
         
         # Output dictionary for different losses
+        # TODO: if no more backprop needed, record with .item(), save memory without store computation graph
         output = {}
-        output['loss'] = loss
+        output['loss'] = loss  # TODO: maybe item()
         output['batch_policy_loss'] = batch_policy_loss
         output['batch_value_loss'] = batch_value_loss
         output['batch_entropy_loss'] = batch_entropy_loss
         output['batch_total_loss'] = batch_total_loss
-
+        if hasattr(self, 'lr_scheduler'):
+            output['current_lr'] = self.lr_scheduler.get_lr()
+        
         return output

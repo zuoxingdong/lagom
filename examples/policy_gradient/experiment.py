@@ -19,7 +19,7 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         config = Config()
         
-        config.add_item(name='cuda', val=[True, False])
+        config.add_grid(name='cuda', val=[True])
         config.add_item(name='seed', val=1)
         
         config.add_item(name='lr', val=1e-2)
@@ -28,6 +28,12 @@ class ExperimentMaster(BaseExperimentMaster):
         config.add_item(name='train_iter', val=1000)
         config.add_item(name='N', val=1)
         config.add_item(name='T', val=300)
+        
+        config.add_item(name='use_value', val=True)  # True for actor-critic
+        config.add_item(name='entropy_coef', val=0.0)
+        config.add_item(name='value_coef', val=0.0)
+        
+        config.add_item(name='max_grad_norm', val=None)
         
         config.add_item(name='log_interval', val=100)
         
