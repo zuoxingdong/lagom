@@ -1,43 +1,73 @@
 import torch
 from torch.distributions import Categorical
 
-from lagom.agents.base import BaseAgent
-from lagom.core.preprocessors import Standardize
+from .base_agent import BaseAgent
+from lagom.core.transform import Standardize
+
 
 class REINFORCEAgent(BaseAgent):
     """
     REINFORCE algorithm (no baseline)
     """
-    def __init__(self, policy, optimizer, config):
+    def __init__(self, policy, optimizer, config, **kwargs):
         self.policy = policy
         self.optimizer = optimizer
         
-        super().__init__(config)
+        super().__init__(config, **kwargs)
         
     def choose_action(self, obs):
+        # Convert to Tensor
+        if not torch.is_tensor(obs):
+            obs = torch.from_numpy(obs).float()
+            obs = obs.unsqueeze(0)  # make a batch dimension
+            obs = obs.to(self.device)  # move to device
+        
         out_policy = self.policy(obs)
-        # Unpack output from policy network
-        action_probs = out_policy.get('action_probs', None)
-        
-        # Sample an action according to categorical distribution
-        action_dist = Categorical(action_probs)
-        action = action_dist.sample()
-        # Calculate log-probability according to distribution
-        logprob_action = action_dist.log_prob(action)
-        
-        # Convert action from Variable to scalar value
-        action = action.data[0]
                 
         # Dictionary of output data
         output = {}
-        output['action'] = action
-        output['logprob_action'] = logprob_action
+        output = {**out_policy}
                 
         return output
         
-    def learn(self, batch_data):
+    def learn(self, x):
         batch_policy_loss = []
         
+        # Iterate over list of trajectories
+        for trajectory in x:
+            R = trajectory.all_discounted_returns
+            if self.config['standardize_r']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
+                standardize = Standardize()
+                R = standardize(R)
+                
+            # Calculate policy loss for this trajectory (all time steps)
+            policy_loss = []
+            for logprob, r in zip(trajectory.all_info(name='action_logprob'), R):
+                policy_loss.append(-logprob*float(r))  # TODO: supports VecEnv
+            policy_loss = torch.cat(policy_loss).sum()
+            
+            # Record the policy loss
+            batch_policy_loss.append(policy_loss)
+            
+        # Compute total loss (average over trajectories)
+        total_loss = torch.stack(batch_policy_loss).mean()  # use stack because each element is zero-dim tensor
+        
+        # Zero-out gradient buffer
+        self.optimizer.zero_grad()
+        # Backward pass and compute gradients
+        total_loss.backward()
+        # Update for one step
+        self.optimizer.step()
+        
+        # Output dictionary for different losses
+        # TODO: if no more backprop needed, record with .item(), save memory without store computation graph
+        output = {}
+        output['total_loss'] = total_loss
+        output['batch_policy_loss'] = batch_policy_loss
+
+        return output
+            
+        """
         # Iterate over batch of trajectories
         for epi_data in batch_data:
             R = epi_data['returns']
@@ -68,3 +98,10 @@ class REINFORCEAgent(BaseAgent):
         output['batch_policy_loss'] = batch_policy_loss
 
         return output
+        """
+    
+    def save(self, filename):
+        self.policy.network.save(filename)
+    
+    def load(self, filename):
+        self.policy.network.load(filename)
