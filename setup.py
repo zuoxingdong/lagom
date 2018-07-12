@@ -1,5 +1,7 @@
 from setuptools import setup
 
+from lagom.__init__ import __version__
+
 
 setup(name='lagom',
       install_requires=['pytest', 
@@ -12,5 +14,5 @@ setup(name='lagom',
       description='lagom: A light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.',
       author='Xingdong Zuo',
       url='https://github.com/zuoxingdong/lagom',
-      version='0.1.0'  # TODO: import VERSION variable
+      version=__version__
 )
