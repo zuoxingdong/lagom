@@ -1,18 +1,41 @@
-import numpy as np
+from algo import Algorithm
 
-import gym
-
-from gym_maze.envs import MazeEnv
-from gym_maze.envs import UMazeGenerator
-
-from lagom.experiment import BaseExperiment
-from lagom.experiment import GridConfig
-from lagom.envs import GymEnv
-from lagom.envs.wrappers import SparseReward
-
-import torch.nn.functional as F
+from lagom.experiment import Config
+from lagom.experiment import BaseExperimentWorker
+from lagom.experiment import BaseExperimentMaster
 
 
+class ExperimentWorker(BaseExperimentWorker):
+    def make_algo(self):
+        algo = Algorithm(name='Policy gradient in CartPole')
+        
+        return algo
+
+
+class ExperimentMaster(BaseExperimentMaster):
+    def process_algo_result(self, config, result):
+        assert result == None
+        
+    def make_configs(self):
+        config = Config()
+        
+        config.add_item(name='cuda', val=False)
+        config.add_item(name='seed', val=1)
+        
+        config.add_item(name='lr', val=1e-2)
+        config.add_item(name='gamma', val=0.995)
+        config.add_item(name='standardize_r', val=True)
+        config.add_item(name='train_iter', val=1000)
+        config.add_item(name='N', val=1)
+        config.add_item(name='T', val=300)
+        
+        config.add_item(name='log_interval', val=100)
+        
+        configs = config.make_configs()
+        
+        return configs
+
+"""
 class Experiment(BaseExperiment):
     def _configure(self):
         config = GridConfig()
@@ -48,28 +71,5 @@ class Experiment(BaseExperiment):
         env = GymEnv(env)
         
         return env
-        
-    """
-    def _make_env(self, config):
-        # Create environment
-        maze = UMazeGenerator(len_long_corridor=5, len_short_corridor=2, width=2, wall_size=1)
-        env = MazeEnv(maze, action_type='VonNeumann', render_trace=False)
-        env = GymEnv(env)  # Gym wrapper
-        env = GoalMaze(env)  # flattened observation (coordiantes) augmented with goal coordinates
-        env = SparseReward(env)  # sparse reward function
-        
-        # Set fixed initial state
-        env.get_source_env().init_state = config['init_state']
-        
-        # None with goal states
-        env.get_source_env().goal_states = None
-        
-        # Compute all optimal steps according to A*
-        env.all_steps = get_all_optimal_steps(env)
-        
-        # Compute all free space
-        free_space = np.where(env.get_source_env().maze == 0)
-        env.free_space = list(zip(free_space[0], free_space[1]))
-        
-        return env
+    
 """

@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-09  	    #
+# Date: 2018-07-12  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -38,7 +38,7 @@ $CONDA install -y ipython
 
 # Upgrade pip and install some dependencies
 pip install --upgrade pip
-pip install cmake cython msgpack
+pip install cmake cython msgpack setuptools
 
 # Install some conda packages
 $CONDA install -y numpy matplotlib scikit-image

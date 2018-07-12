@@ -36,6 +36,7 @@ This repository requires following packages:
 
 - Python >= 3.6
 - pytest >= 3.6.3
+- setuptools >= 39.0.1
 - Numpy >= 1.14.5
 - Matplotlib >= 2.2.2
 - PyTorch >= 0.5.0a0
