@@ -21,19 +21,29 @@ class Config(object):
         
     def add_item(self, name, val):
         """
-        Add an item for the configuration
+        Add an item for the configuration. 
+        
+        This can be used for grid search. 
+        If val is a list, then auto-config generation will iterate each element in the list
+        If val is not a list, then it is converted to a list as a single item. 
         
         Args:
             name (str): the name for the configuration item
-            val (object): the value for the configuration item
+            val (object/list): the value for the configuration item
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
-        self.config_settings[name] = [val]  # as list for auto-config generation, cartesian product
+        # Convert non-list to list for auto-config generation (cartesian product)
+        if not isinstance(val, list):
+            val = [val]
+        
+        self.config_settings[name] = val
         
     def add_random_discrete(self, name, list_val, num_sample, replace=True):
         """
-        Add a discrete list of values to sample from
+        Add a discrete list of values to sample from. 
+        
+        This can be used for random search sampled from given discrete list of items. 
         
         Args:
             name (str): name of configuration item
@@ -51,6 +61,8 @@ class Config(object):
     def add_random_continuous(self, name, low, high, num_sample):
         """
         Add a continuous range to sample from uniformly. 
+        
+        This can be used for random search sampled from a given continuous range. 
         
         Args:
             name (str): name of configuration item

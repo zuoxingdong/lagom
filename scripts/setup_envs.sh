@@ -38,7 +38,7 @@ $CONDA install -y ipython
 
 # Upgrade pip and install some dependencies
 pip install --upgrade pip
-pip install cmake cython msgpack setuptools
+pip install cmake cython msgpack setuptools wheel twine
 
 # Install some conda packages
 $CONDA install -y numpy matplotlib scikit-image

@@ -14,13 +14,13 @@ class VAE(BaseVAE):
         return encoder
 
     def make_moment_heads(self, config):
-        mu_head = nn.Linear(in_features=400, out_features=20)
-        logvar_head = nn.Linear(in_features=400, out_features=20)
+        mu_head = nn.Linear(in_features=400, out_features=8)
+        logvar_head = nn.Linear(in_features=400, out_features=8)
 
         return mu_head, logvar_head
 
     def make_decoder(self, config):
-        fc1 = nn.Linear(in_features=20, out_features=400)
+        fc1 = nn.Linear(in_features=8, out_features=400)
         fc2 = nn.Linear(in_features=400, out_features=784)
 
         decoder = nn.ModuleList([fc1, fc2])

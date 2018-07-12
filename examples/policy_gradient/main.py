@@ -1,14 +1,10 @@
-from time import time
+from lagom.experiment import run_experiment
 
 from experiment import ExperimentWorker
 from experiment import ExperimentMaster
 
 
-t = time()
-
-experiment = ExperimentMaster(worker_class=ExperimentWorker, 
-                              num_worker=1, 
-                              daemonic_worker=None)
-experiment()
-
-print(f'\nTotal time: {time() - t:.2} s')
+run_experiment(worker_class=ExperimentWorker, 
+               master_class=ExperimentMaster, 
+               num_worker=2, 
+               daemonic_worker=None)
