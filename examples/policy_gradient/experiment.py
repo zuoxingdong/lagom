@@ -19,7 +19,7 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         config = Config()
         
-        config.add_item(name='cuda', val=False)
+        config.add_item(name='cuda', val=[True, False])
         config.add_item(name='seed', val=1)
         
         config.add_item(name='lr', val=1e-2)

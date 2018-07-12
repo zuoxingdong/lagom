@@ -14,6 +14,7 @@ from lagom.core.utils import Logger
 
 from engine import Engine
 from vae import VAE
+from conv_vae import ConvVAE
 
 
 class Algorithm(BaseAlgorithm):
@@ -49,7 +50,10 @@ class Algorithm(BaseAlgorithm):
                                  **kwargs)
         
         # Create the model
-        model = VAE(config=None)
+        if config['use_ConvVAE']:
+            model = ConvVAE(config=None)
+        else:
+            model = VAE(config=None)
         model = model.to(device)
         
         # Create optimizer
@@ -77,7 +81,7 @@ class Algorithm(BaseAlgorithm):
             
             # Sample image from standard Gaussian noise as input to decoder
             with torch.no_grad():
-                sample = torch.randn(64, 20).to(device)
+                sample = torch.randn(64, 8).to(device)
                 sample = model.decoder_forward(sample).cpu()
                 
                 save_image(sample.view(64, 1, 28, 28),
