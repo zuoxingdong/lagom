@@ -1,11 +1,3 @@
-#############TEMP
-# TEMP: Import lagom
-# Not useful once lagom is installed
-import sys
-sys.path.append('/home/zuo/Code/lagom/')
-##############################
-
-
 import numpy as np
 
 import pytest
