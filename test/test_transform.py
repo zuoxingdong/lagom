@@ -9,6 +9,7 @@ from lagom.core.transform import Standardize
 from lagom.core.transform import ExpFactorCumSum
 from lagom.core.transform import RunningMeanStd
 from lagom.core.transform import RankTransform
+from lagom.core.transform import PolySmooth
 
 
 class TestTransform(object):
@@ -282,3 +283,33 @@ class TestTransform(object):
         c = np.array([[3, 14, 1]])
         with pytest.raises(ValueError):
             rank_transform(c)
+            
+    def test_polysmooth(self):
+        smooth = PolySmooth()
+
+        #
+        # Test vector
+        #
+        def _test_vec(x):
+            smoothed_x = smooth(x, 2)
+            assert np.allclose(smoothed_x, [0.96, 0.58, 0.1, -0.48, -1.16])
+
+        # Tuple
+        a = (0.8, 0.9, 0.1, -0.8, -1.0)
+        _test_vec(a)
+
+        # List
+        b = [0.8, 0.9, 0.1, -0.8, -1.0]
+        _test_vec(b)
+
+        # ndarray
+        c = np.array([0.8, 0.9, 0.1, -0.8, -1.0])
+        _test_vec(c)
+
+        #
+        # Test exceptions
+        #
+        # ndarray more than 1-dim is not allowed
+        d = np.array([[0.8, 0.9, 0.1, -0.8, -1.0]])
+        with pytest.raises(ValueError):
+            smooth(d, 2)
