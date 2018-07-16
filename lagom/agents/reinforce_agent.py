@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torch.distributions import Categorical
 
 from .base_agent import BaseAgent
