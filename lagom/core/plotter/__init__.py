@@ -1,1 +1,2 @@
-from lagom.core.plotter.plotter import Plotter
+from .base_plot import BasePlot
+from .curve_plot import CurvePlot

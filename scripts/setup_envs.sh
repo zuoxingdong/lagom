@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-12  	    #
+# Date: 2018-07-16  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -41,10 +41,10 @@ pip install --upgrade pip
 pip install cmake cython msgpack setuptools wheel twine
 
 # Install some conda packages
-$CONDA install -y numpy matplotlib scikit-image
+$CONDA install -y numpy scipy matplotlib scikit-image
 
 # Install some pip packages
-pip install jupyterlab gym[all] pytest cma
+pip install pandas seaborn jupyterlab gym[all] pytest cma
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch

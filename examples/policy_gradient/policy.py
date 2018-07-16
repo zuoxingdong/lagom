@@ -8,9 +8,9 @@ from lagom.core.policies import BaseCategoricalPolicy
 
 class MLP(BaseMLP):
     def make_params(self, config):
-        self.fc1 = nn.Linear(in_features=6, out_features=128)
+        self.fc1 = nn.Linear(in_features=4, out_features=128)
         
-        self.action_head = nn.Linear(in_features=128, out_features=3)
+        self.action_head = nn.Linear(in_features=128, out_features=2)
         
         if config['use_value']:
             self.value_head = nn.Linear(in_features=128, out_features=1)

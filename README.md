@@ -38,8 +38,13 @@ This repository requires following packages:
 - pytest >= 3.6.3
 - setuptools >= 39.0.1
 - Numpy >= 1.14.5
+- Scipy >= 1.1.0
+- Pandas >= 0.23.3
 - Matplotlib >= 2.2.2
+- Seaborn >= 0.9.dev
+- Scikit-image >= 0.14.0
 - PyTorch >= 0.5.0a0
+- Jupyterlab >= 0.32.1
 - gym >= 0.10.5
 - cma >= 2.6.0
 
