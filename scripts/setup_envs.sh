@@ -38,13 +38,17 @@ $CONDA install -y ipython
 
 # Upgrade pip and install some dependencies
 pip install --upgrade pip
-pip install cmake cython msgpack setuptools wheel twine
+pip install cmake cython msgpack
+pip install setuptools wheel twine
 
 # Install some conda packages
 $CONDA install -y numpy scipy matplotlib scikit-image
 
 # Install some pip packages
-pip install pandas seaborn jupyterlab gym[all] pytest cma
+pip install pandas seaborn
+pip install jupyterlab
+pip install gym[all] cma
+pip install pytest flake8
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch
