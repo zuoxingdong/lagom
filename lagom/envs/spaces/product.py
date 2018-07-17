@@ -31,7 +31,7 @@ class Product(Space):
         return int(np.sum([space.flat_dim for space in self.spaces]))  # PyTorch Tensor dimension only accepts raw int type
     
     def flatten(self, x):
-        return np.concatenate([space.flatten(x_part)  for x_part, space in zip(x, self.spaces)])
+        return np.concatenate([space.flatten(x_part) for x_part, space in zip(x, self.spaces)])
         
     def unflatten(self, x):
         dims = [space.flat_dim for space in self.spaces]

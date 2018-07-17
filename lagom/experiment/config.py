@@ -83,7 +83,7 @@ class Config(object):
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
-        samples = np.random.uniform(low=low ,high=high, size=num_sample)
+        samples = np.random.uniform(low=low, high=high, size=num_sample)
         samples = samples.tolist()
         
         self.config_settings[name] = samples

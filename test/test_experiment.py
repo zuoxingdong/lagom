@@ -53,5 +53,3 @@ def test_experiment():
     assert len(experiment.configs) > (experiment.num_iteration - 1)*experiment.num_worker
     
     assert len(experiment.configs) == 500
-    
-    

@@ -1,5 +1,6 @@
 from .base_policy import BasePolicy
 
+
 class RandomPolicy(BasePolicy):
     """
     A random policy. The action is sampled from action space.

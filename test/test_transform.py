@@ -126,7 +126,7 @@ class TestTransform(object):
         #
         def _test_vec(x):
             assert np.allclose(normalize(x=x), 
-                               [0.        , 0.33333332, 0.66666664, 0.99999996])
+                               [0., 0.33333332, 0.66666664, 0.99999996])
         
             assert np.allclose(normalize(x=x, min_val=0, max_val=1), 
                                [0.99999988, 1.99999976, 2.99999964, 3.99999952])
@@ -176,7 +176,7 @@ class TestTransform(object):
         #
         def _test_vec(x):
             assert np.allclose(standardize(x=x), 
-                               [-1.34164064, -0.44721355,  0.44721355,  1.34164064])
+                               [-1.34164064, -0.44721355, 0.44721355, 1.34164064])
         
             assert np.allclose(standardize(x=x, mean=0, std=1), 
                                [0.99999988, 1.99999976, 2.99999964, 3.99999952])
