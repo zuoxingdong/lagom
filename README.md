@@ -1,6 +1,8 @@
 # lagom
 <!--- <img src='doc/img/infrastructure.png' width='300'> --->
 
+[![Build Status](https://travis-ci.org/zuoxingdong/lagom.svg?branch=master)](https://travis-ci.org/zuoxingdong/lagom)
+
 **lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.** [Lagom](https://sv.wikipedia.org/wiki/Lagom) is a 'magic' word in Swedish, *"inte för mycket och inte för lite, enkelhet är bäst"*, meaning *"not too much and not too little, simplicity is often the best"*. lagom is the philosophy on which this library was designed. 
 
 **Contents of this document**
@@ -35,6 +37,7 @@ A graphical illustration is coming soon.
 This repository requires following packages:
 
 - Python >= 3.6
+- Cython >= 0.28.4
 - setuptools >= 39.0.1
 - Numpy >= 1.14.5
 - Scipy >= 1.1.0

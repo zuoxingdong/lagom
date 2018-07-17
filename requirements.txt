@@ -1,3 +1,4 @@
+cython>=0.28.4
 setuptools>=39.0.1
 numpy>=1.14.5
 scipy>=1.1.0
