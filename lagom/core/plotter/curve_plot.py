@@ -129,6 +129,6 @@ class CurvePlot(BasePlot):
         elif x.ndim == 2:
             x = x
         else:
-            raise TypeError(f'The input data must be either one- or two-dimensional. But got {all_data.ndim}.')
+            raise TypeError(f'The input data must be either one- or two-dimensional. But got {x.ndim}.')
             
         return x
