@@ -1,0 +1,20 @@
+# https://travis-ci.org/zuoxingdong/lagom
+sudo: false
+
+language: python
+# Set Python version
+python:
+    - '3.6'
+
+# Install dependencies
+install:
+    - pip install -r requirements.txt
+# Command to run tests
+script:
+    - pytest test/ -v  # run test files
+    - flake8  # check code style and quality
+    
+# Only master branch
+branches:
+    only:
+        - master
