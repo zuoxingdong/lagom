@@ -46,7 +46,8 @@ class NaivePrimalityMaster(BaseMaster):
             task_id, result = worker_result
             for integer, prime in zip(task, result):
                 assert prime == naive_primality(integer)
-                
+
+
 class NaivePrimalityIterativeMaster(BaseIterativeMaster):
     def make_tasks(self, iteration):
         tasks = np.array_split(range(128*10), self.num_worker)

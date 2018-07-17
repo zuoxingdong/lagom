@@ -26,6 +26,7 @@ class Engine(BaseEngine):
             
             # Unpack agent's learning outputs
             loss = out_agent['loss'].item()  # item saves memory
+            policy_loss = torch.stack(out_agent['batch_policy_loss']).mean().item()
             if 'batch_value_loss' in out_agent:
                 value_loss = torch.stack(out_agent['batch_value_loss']).mean().item()
             entropy_loss = torch.stack(out_agent['batch_entropy_loss']).mean().item()
@@ -46,6 +47,7 @@ class Engine(BaseEngine):
                 if 'current_lr' in out_agent:
                     print(f'Current lr: {out_agent["current_lr"]}')
                 print(f'Loss: {loss}')
+                print(f'Policy loss: {policy_loss}')
                 if 'value_loss' in locals():  # if value_loss is defined above within train()
                     print(f'Value loss: {value_loss}')
                 print(f'Entropy loss: {entropy_loss}')
@@ -56,12 +58,9 @@ class Engine(BaseEngine):
                 print(f'Min Return: {np.min(all_returns)}')
                 print(f'Max Return: {np.max(all_returns)}')
                 
-               
                 print('-'*50)
                 
         return train_output
         
     def eval(self):
         pass
-        
-    

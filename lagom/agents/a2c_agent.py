@@ -41,10 +41,6 @@ class A2CAgent(BaseAgent):
         elif mode == 'sampling':  # sample an action according to distribution
             action = action_dist.sample()
             logprob_action = action_dist.log_prob(action)  # calculate log-probability
-            
-            
-            #print(f'#######{action_probs}')
-            #print(f'!!!!!!!{action.item()}')
         
         # Dictionary of output data
         output = {}

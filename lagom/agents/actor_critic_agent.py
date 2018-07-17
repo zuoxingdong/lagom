@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import Categorical
 
 from .base_agent import BaseAgent
 from lagom.core.transform import Standardize
