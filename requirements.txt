@@ -1,0 +1,14 @@
+setuptools>=39.0.1
+numpy>=1.14.5
+scipy>=1.1.0
+matplotlib>=2.2.2
+scikit-image>=0.14.0
+pandas>=0.23.3
+seaborn>=0.8.1
+jupyterlab >= 0.32.1
+gym>= 0.10.5
+cma>=2.6.0
+pytest>=3.6.3
+flake8>=3.5.0
+pytorch>=0.4.0
+torchvision>=0.2.1
