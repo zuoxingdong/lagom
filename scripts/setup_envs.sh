@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-16  	    #
+# Date: 2018-07-17  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -32,6 +32,11 @@ echo "export CUDA_HOME=/usr/local/cuda" >> ~/.bashrc
 
 echo "# PKG_CONFIG" >> ~/.bashrc
 echo "export PKG_CONFIG_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib/pkgconfig/" >> ~/.bashrc
+
+# Set up .vimrc for tab as 4 spaces
+echo "set tabstop=4" >> ~/.vimrc
+echo "set shiftwidth=4" >> ~/.vimrc
+echo "set expandtab" >> ~/.vimrc
 
 # Install IPython to enforce all later command in Python 3 context
 $CONDA install -y ipython
