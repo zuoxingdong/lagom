@@ -10,5 +10,5 @@ gym>= 0.10.5
 cma>=2.6.0
 pytest>=3.6.3
 flake8>=3.5.0
-torch>=0.4.0
-torchvision>=0.2.1
+# torch>=0.4.0
+# torchvision>=0.2.1
