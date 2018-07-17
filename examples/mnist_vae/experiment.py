@@ -10,10 +10,11 @@ class ExperimentWorker(BaseExperimentWorker):
         algo = Algorithm(name='VAE on MNIST')
         
         return algo
-    
+
+
 class ExperimentMaster(BaseExperimentMaster):
     def process_algo_result(self, config, result):
-        assert result == None
+        assert result is None
         
     def make_configs(self):
         config = Config()

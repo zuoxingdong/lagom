@@ -88,6 +88,6 @@ class Algorithm(BaseAlgorithm):
                            f'data/sample_{epoch}.png')
             
         # Save the logger
-        #logger.save(name=f'{self.name}_ID_{config["ID"]}')
+        # logger.save(name=f'{self.name}_ID_{config["ID"]}')
         
         return None
