@@ -47,7 +47,7 @@ class ActorCriticAgent(BaseAgent):
         for trajectory in x:
             # Get all discounted returns
             Rs = trajectory.all_discounted_returns
-            if self.config['standardize_r']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
+            if self.config['standardize_pg']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
                 Rs = Standardize()(Rs)
                 
             # Get all state values (except for s_next in last transition)

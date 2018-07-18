@@ -31,7 +31,7 @@ class ExperimentMaster(BaseExperimentMaster):
         
         config.add_item(name='lr', val=3e-2)
         config.add_item(name='gamma', val=0.99)
-        config.add_item(name='standardize_r', val=True)
+        config.add_item(name='standardize_pg', val=True)
         config.add_item(name='train_iter', val=3000)
         config.add_item(name='N', val=1)
         config.add_item(name='T', val=200)

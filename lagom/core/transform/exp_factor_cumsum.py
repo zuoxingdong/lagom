@@ -19,12 +19,17 @@ class ExpFactorCumSum(BaseTransform):
         """
         self.alpha = alpha
         
-    def __call__(self, x):
+    def __call__(self, x, masks=None):
         """
         Calculate future accumulated sums with exponential factor. 
         
+        An option with binary masks is provided. 
+        Intuitively, the computation will restart for each occurrence
+        of zero. If nothing provided, the default mask is ones everywhere.
+        
         Args:
             x (list): input data
+            masks (list): binary mask for each data item. 
             
         Returns:
             out (list): calculated data
@@ -35,15 +40,22 @@ class ExpFactorCumSum(BaseTransform):
         x = x.tolist()
         
         # Enforce input data as list type
-        assert isinstance(x, list), 'Supported type: list. '
+        assert isinstance(x, list), f'Input data must be list dtype, but got {type(x)}. '
+        
+        # Enforce masks as list type
+        if masks is None:
+            masks = [1.0]*len(x)
+        assert isinstance(masks, list), f'Masks must be list dtype, but got {type(masks)}.'
+        assert len(x) == len(masks), 'The length of input data should be the same as the length of masks.'
         
         # buffer of accumulated sum
         cumsum = 0
         
         out = []
         
-        for val in x[::-1]:  # iterate items in reverse ordering
-            cumsum = val + self.alpha*cumsum  # recursive update
+        # iterate items in reverse ordering
+        for val, mask in zip(x[::-1], masks[::-1]):
+            cumsum = val + self.alpha*cumsum*mask  # recursive update
             out.insert(0, cumsum)  # insert to the front
 
         return out
