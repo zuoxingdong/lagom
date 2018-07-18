@@ -208,7 +208,7 @@ class TestTransform(object):
         # Test vector
         #
         def _test_vec(x):
-            assert np.allclose(expfactorcumsum(x=x), 
+            assert np.allclose(expfactorcumsum(x=x, masks=None), 
                                [1.23, 2.3, 3.0])
         
         # Tuple
@@ -223,6 +223,27 @@ class TestTransform(object):
         c = np.array([1, 2, 3])
         _test_vec(c)
         
+        # 
+        # Test with masks
+        # 
+        def _test_vec_mask(x, masks):
+            assert np.allclose(expfactorcumsum(x=x, masks=masks), 
+                               [1.23, 2.3, 3.0, 4.56, 5.6, 6.0])
+        dones = [False, False, True, False, False, False]
+        masks = np.logical_not(dones).astype(int).tolist()
+        
+        # Tuple
+        d = (1, 2, 3, 4, 5, 6)
+        _test_vec_mask(d, masks)
+        
+        # List
+        e = [1, 2, 3, 4, 5, 6]
+        _test_vec_mask(e, masks)
+        
+        # ndarray
+        f = np.array([1, 2, 3, 4, 5, 6])
+        _test_vec_mask(f, masks)
+        
         #
         # Test exceptions
         #
@@ -231,10 +252,22 @@ class TestTransform(object):
             expfactorcumsum(x=1)
         
         # ndarray more than 1-dim is not allowed
-        d = np.array([[1, 2, 3]])
+        g = np.array([[1, 2, 3]])
         with pytest.raises(ValueError):
-            expfactorcumsum(x=d)
+            expfactorcumsum(g)
             
+        # masks must be list dtype
+        h = [1, 2, 3]
+        masks_h = np.array([True, False, True])
+        with pytest.raises(AssertionError):
+            expfactorcumsum(h, masks_h)
+        
+        # masks must have same length with input data
+        i = [1, 2, 3]
+        masks_i = [True, False, True, True]
+        with pytest.raises(AssertionError):
+            expfactorcumsum(i, masks_i)
+
     def test_runningmeanstd(self):
         def _test_moments(runningmeanstd, x):
             assert np.allclose(runningmeanstd.mu, np.mean(x))
