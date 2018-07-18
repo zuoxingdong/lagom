@@ -25,7 +25,10 @@ class BaseMDN(BaseNetwork):
     - mean: [N, K, D]
     - variance: [N, K, D]
     
-    All inherited subclass should implement the following functions
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    
+    All inherited subclasses should at least implement the following functions:
     1. make_feature_layers(self, config)
     2. make_mdn_heads(self, config)
     3. init_params(self, config)
@@ -74,11 +77,15 @@ class BaseMDN(BaseNetwork):
 
             return x
     """
-    def __init__(self, config=None):
+    def __init__(self, config=None, **kwargs):
         # Override this constructor
         super(BaseNetwork, self).__init__()  # call nn.Module.__init__()
         
         self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
         
         # Create feature layers
         self.feature_layers = self.make_feature_layers(self.config)

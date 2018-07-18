@@ -1,5 +1,5 @@
-from lagom.envs.base import Env
-from lagom.envs.spaces import Dict
+from .env import Env
+from spaces import Dict
 
 
 class GoalEnv(Env):

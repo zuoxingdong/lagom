@@ -1,4 +1,4 @@
-from lagom.envs.wrappers import RewardWrapper
+from .wrapper import RewardWrapper
 
 
 class SparseReward(RewardWrapper):

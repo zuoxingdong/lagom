@@ -1,6 +1,10 @@
 class BaseEngine(object):
     """
-    Base class for engine: agent training and evaluation process
+    Base class for engine: agent training and evaluation process. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. train(self)
+    2. eval(self)
     """
     def __init__(self, agent, runner, config, logger, **kwargs):
         self.agent = agent

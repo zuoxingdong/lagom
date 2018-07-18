@@ -12,7 +12,7 @@ class BaseESMaster(BaseIterativeMaster):
     For more details about how master class works, please refer
     to the documentation of the class, BaseIterativeMaster. 
     
-    All inherited subclasses should implement the following function:
+    All inherited subclasses should at least implement the following function:
     1. make_es(self)
     2. _process_es_result(self, result)
     """

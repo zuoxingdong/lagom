@@ -1,4 +1,4 @@
-from lagom.experiment import Config
+from .config import Config
 
 from lagom.core.multiprocessing import BaseWorker
 
@@ -10,7 +10,7 @@ class BaseExperimentWorker(BaseWorker):
     For details about worker in general, please refer to 
     the documentation of the class, BaseWorker. 
     
-    All inherited subclasses should implement the following function:
+    All inherited subclasses should at least implement the following functions:
     1. make_algo(self)
     """
     def work(self, master_cmd):

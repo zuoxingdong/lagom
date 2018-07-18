@@ -1,6 +1,12 @@
 class VecEnv(object):
     """
     An asynchronous, vectorized environment. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. step_async(self, actions)
+    2. step_wait(self)
+    3. reset(self)
+    4. close(self)
     """
     def __init__(self, num_envs, observation_space, action_space):
         self.num_envs = num_envs

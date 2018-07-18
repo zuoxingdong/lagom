@@ -5,14 +5,14 @@ class BaseAgent(object):
     Depending on the type of agent (e.g. policy-based or value-based), it is recommended
     to override the constructor __init__() to provide essential items for the agent. 
     
-    All inherited subclasses should implement the following functions:
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    
+    All inherited subclasses should at least implement the following functions:
     1. choose_action(self, obs)
     2. learn(self, x)
     3. save(self, filename)
     4. load(self, filename)
-    
-    Note that if subclass overrides __init__, remember to provide
-    keywords aguments, i.e. **kwargs passing to super().__init__. 
     """
     def __init__(self, config, **kwargs):
         """

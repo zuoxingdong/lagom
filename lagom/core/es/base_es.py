@@ -2,8 +2,12 @@ class BaseES(object):
     """
     Base class for evolution strategies. 
     
-    Note that all inherited subclasses should implement the optimization
-    as minimization. 
+    Note that the optimization should be treated as minimization. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. ask(self)
+    2. tell(self, solutions, function_values)
+    3. @property: result(self)
     """
     def ask(self):
         """

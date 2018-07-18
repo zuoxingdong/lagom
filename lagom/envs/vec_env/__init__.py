@@ -1,2 +1,2 @@
-from lagom.envs.vec_env.base import VecEnv
-from lagom.envs.vec_env.dummy_vec_env import DummyVecEnv
+from .vec_env import VecEnv
+from .dummy_vec_env import DummyVecEnv

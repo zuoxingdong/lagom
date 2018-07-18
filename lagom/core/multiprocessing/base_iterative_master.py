@@ -17,7 +17,7 @@ class BaseIterativeMaster(BaseMaster):
     # Stop all workers and terminate all processes
     self.stop_workers()
     
-    All inherited subclasses should implement the following function
+    All inherited subclasses should at least implement the following function
     1. make_tasks(self, iteration)
     2. _process_workers_result(self, tasks, workers_result)
     """

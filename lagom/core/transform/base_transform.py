@@ -12,6 +12,9 @@ class BaseTransform(object):
     becuase it is more compatible with PyTorch. Numpy default float64 often 
     can lead to numerical issues or raised exceptions in PyTorch. Similarly
     for np.int32. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. __call__(self, x)
     """
     def __call__(self, x):
         """

@@ -9,8 +9,8 @@ class BasePlot(object):
     - Heatmaps with value shown in each cell. 
     - Kernel Density Estimation (KDE) plots.
     
-    All inherited subclasses should implement the following functions:
-    1. __call__
+    All inherited subclasses should at least implement the following functions:
+    1. __call__(self, **kwargs)
     """
     def __init__(self):
         self.data = {}
