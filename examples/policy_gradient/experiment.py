@@ -37,10 +37,10 @@ class ExperimentMaster(BaseExperimentMaster):
         config.add_item(name='T', val=200)
         
         config.add_item(name='use_value', val=True)  # True for actor-critic
-        config.add_item(name='value_coef', val=1.0)  # Coefficient for learning value function
-        config.add_item(name='entropy_coef', val=0.0)
+        config.add_item(name='value_coef', val=0.5)  # Coefficient for learning value function
+        config.add_item(name='entropy_coef', val=0.01)  # Coefficient for maximize policy entropy
         
-        config.add_item(name='max_grad_norm', val=None)
+        config.add_item(name='max_grad_norm', val=0.5)  # gradient clipping with max gradient norm
         
         config.add_item(name='log_interval', val=100)
         
