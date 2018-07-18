@@ -25,7 +25,8 @@ class Engine(BaseEngine):
             out_agent = self.agent.learn(D)
             
             # Unpack agent's learning outputs
-            loss = out_agent['loss'].item()  # item saves memory
+            # Use items() to save memory
+            loss = out_agent['loss'].item()
             policy_loss = torch.stack(out_agent['batch_policy_loss']).mean().item()
             if 'batch_value_loss' in out_agent:
                 value_loss = torch.stack(out_agent['batch_value_loss']).mean().item()

@@ -102,13 +102,15 @@ class Trajectory(object):
         
         It takes information with the key 'V_s' for all transitions
         and augment it with 'V_s_next' of the last transition. 
+        
+        Note that we would like to keep Tensor dtype, used for backprop.
         """
         return [transition.V_s for transition in self.transitions] + [self.transitions[-1].V_s_next]
     
     @property
     def all_TD(self):
         r"""
-        Returns a list of TD errors for all time steps. 
+        Return a list of TD errors for all time steps. 
         
         It requires that each transition has the information with key 'V_s' and
         last transition with both 'V_s' and 'V_s_next'.
@@ -117,6 +119,9 @@ class Trajectory(object):
         
         TD error is calculated as following:
         \delta_t = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
+        
+        Note that we would like to use raw float dtype, rather than Tensor. 
+        Because we often do not backprop via TD error. 
         """
         # Get all rewards
         all_r = np.array(self.all_r)
@@ -135,6 +140,16 @@ class Trajectory(object):
         all_TD = all_r + self.gamma*all_V_s_next - all_V_s
         
         return all_TD.tolist()
+    
+    @property
+    def all_gae(self, gae_lambda):
+        """
+        Return a list of GAE. 
+        https://arxiv.org/abs/1506.02438
+        
+        TODO: remaining work. 
+        """
+        raise NotImplementedError
     
     def all_info(self, name):
         """

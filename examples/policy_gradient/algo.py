@@ -12,6 +12,7 @@ from lagom.core.utils import Logger
 
 from lagom.agents import REINFORCEAgent
 from lagom.agents import ActorCriticAgent
+from lagom.agents import A2CAgent
 
 from lagom.runner import Runner
 
@@ -51,7 +52,8 @@ class Algorithm(BaseAlgorithm):
         lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
         
         # Create agent
-        agent_class = ActorCriticAgent  # REINFORCEAgent
+        all_agents = [REINFORCEAgent, ActorCriticAgent, A2CAgent]
+        agent_class = all_agents[2]
         agent = agent_class(policy=policy, 
                             optimizer=optimizer, 
                             config=config, 
@@ -71,6 +73,6 @@ class Algorithm(BaseAlgorithm):
         
         # Training
         train_output = engine.train()
-        np.save(f'logs/returns_ActorCritic_{config["ID"]}', train_output)
+        np.save(f'logs/returns_{agent.__class__.__name__}_{config["ID"]}', train_output)
         
         return None
