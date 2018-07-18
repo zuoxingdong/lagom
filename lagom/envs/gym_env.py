@@ -1,11 +1,11 @@
 import gym
 
-from lagom.envs.base import Env
+from .env import Env
 
-from lagom.envs.spaces import Box
-from lagom.envs.spaces import Dict
-from lagom.envs.spaces import Discrete
-from lagom.envs.spaces import Product
+from spaces import Box
+from spaces import Dict
+from spaces import Discrete
+from spaces import Product
 
 
 class GymEnv(Env):

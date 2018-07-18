@@ -5,7 +5,10 @@ class BaseCNN(BaseNetwork):
     """
     Base class for convolutional neural networks. 
     
-    All inherited subclass should implement the following functions
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    
+    All inherited subclasses should at least implement the following functions:
     1. make_params(self, config)
     2. init_params(self, config)
     3. forward(self, x)
@@ -39,5 +42,5 @@ class BaseCNN(BaseNetwork):
 
             return x
     """
-    def __init__(self, config=None):
-        super().__init__(config)
+    def __init__(self, config=None, **kwargs):
+        super().__init__(config, **kwargs)

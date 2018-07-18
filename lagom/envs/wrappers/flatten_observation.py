@@ -1,4 +1,4 @@
-from lagom.envs.wrappers import ObservationWrapper
+from .wrapper import ObservationWrapper
 
 
 class FlattenObservation(ObservationWrapper):

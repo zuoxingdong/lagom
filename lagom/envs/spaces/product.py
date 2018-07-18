@@ -1,6 +1,6 @@
 import numpy as np
 
-from lagom.envs.spaces.base import Space
+from .space import Space
 
 
 class Product(Space):

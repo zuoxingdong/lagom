@@ -2,7 +2,7 @@ import numpy as np
 
 from collections import OrderedDict
 
-from lagom.envs.spaces.base import Space
+from .space import Space
 
 
 class Dict(Space):

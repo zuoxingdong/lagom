@@ -3,7 +3,7 @@ import numpy as np
 from collections import OrderedDict
 
 from lagom.envs.spaces import Box, Dict
-from .base import VecEnv
+from .vec_env import VecEnv
 
 
 class DummyVecEnv(VecEnv):

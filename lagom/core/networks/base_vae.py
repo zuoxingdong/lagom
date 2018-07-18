@@ -9,7 +9,10 @@ class BaseVAE(BaseNetwork):
     """
     Base class for variational autoencoders (VAE), works for both MLP and CNN versions.
     
-    All inherited subclass should implement the following functions
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    
+    All inherited subclasses should at least implement the following functions:
     1. make_encoder(self, config)
     2. make_moment_heads(self, config)
     3. make_decoder(self, config)
@@ -74,11 +77,15 @@ class BaseVAE(BaseNetwork):
 
             return x
     """
-    def __init__(self, config=None):
+    def __init__(self, config=None, **kwargs):
         # Override this constructor
         super(BaseNetwork, self).__init__()  # call nn.Module.__init__()
         
         self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
         
         # Create encoder
         self.encoder = self.make_encoder(self.config)

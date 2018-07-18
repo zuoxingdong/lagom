@@ -5,7 +5,7 @@ class BasePolicy(object):
     It receives user-defined network (must be of types in lagom.core.networks) and
     environment specification (of type EnvSpec). 
     
-    All inherited subclasses should implement the following functions
+    All inherited subclasses should at least implement the following functions
     1. __call__(self, x)
     2. process_network_output(self, network_out)
     """

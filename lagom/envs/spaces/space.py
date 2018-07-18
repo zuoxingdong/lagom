@@ -4,6 +4,13 @@ import numpy as np
 class Space(object):
     """
     Base class for observation and action space e.g. applied to Env.
+    
+    All inherited subclasses should at least implement the following functions:
+    1. sample(self)
+    2. @property: flat_dim(self)
+    3. flatten(self, x)
+    4. unflatten(self, x)
+    5. contains(self, x)
     """
     def __init__(self, shape=None, dtype=None):
         if shape is None:

@@ -1,7 +1,7 @@
 import numpy as np
 
 from lagom.envs.spaces import Box
-from lagom.envs.wrappers import ObservationWrapper
+from .wrapper import ObservationWrapper
 
 
 class PartialFlattenDict(ObservationWrapper):

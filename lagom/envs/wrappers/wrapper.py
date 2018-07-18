@@ -44,6 +44,15 @@ class Wrapper(Env):
     
 
 class ObservationWrapper(Wrapper):
+    """
+    Observation wrapper modifies the received observation after each function call of step() and reset(). 
+    
+    Note that when observation is modified, the observation space should also be adjusted accordingly.
+    
+    All inherited subclasses should at least implement the following functions:
+    1. process_observation(self, observation)
+    2. @property: observation_space(self)
+    """
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
         
@@ -63,6 +72,15 @@ class ObservationWrapper(Wrapper):
         
         
 class ActionWrapper(Wrapper):
+    """
+    Action wrapper modifies the action before calling step() function. 
+    
+    Note that when action is modified, the action space should also be adjusted accordingly. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. process_action(self, action)
+    2. @property: action_space(self)
+    """
     def step(self, action):
         return self.env.step(self.process_action(action))
     
@@ -75,6 +93,12 @@ class ActionWrapper(Wrapper):
         
         
 class RewardWrapper(Wrapper):
+    """
+    Reward wrapper modifies the received reward after each function call of step(). 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. process_reward(self, reward)
+    """
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
         

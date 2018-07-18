@@ -14,7 +14,7 @@ class BaseCategoricalPolicy(BasePolicy):
     from its forward function. At least with the key ['action_scores'] (without softmax). 
     It can also contain the key 'value' for the value function of actor-critic network.
     
-    All inherited subclasses should implement the following function
+    All inherited subclasses should at least implement the following function
     1. process_network_output(self, network_out)
     
     Examples:
