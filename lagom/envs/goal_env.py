@@ -1,5 +1,5 @@
 from .env import Env
-from spaces import Dict
+from .spaces import Dict
 
 
 class GoalEnv(Env):
