@@ -2,10 +2,10 @@ import gym
 
 from .env import Env
 
-from spaces import Box
-from spaces import Dict
-from spaces import Discrete
-from spaces import Product
+from .spaces import Box
+from .spaces import Dict
+from .spaces import Discrete
+from .spaces import Product
 
 
 class GymEnv(Env):
