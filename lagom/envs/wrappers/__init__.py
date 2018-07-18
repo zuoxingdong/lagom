@@ -1,4 +1,7 @@
-from lagom.envs.wrappers.base import Wrapper, ObservationWrapper, RewardWrapper, ActionWrapper
-from lagom.envs.wrappers.flatten_observation import FlattenObservation
-from lagom.envs.wrappers.partial_flatten_dict import PartialFlattenDict
-from lagom.envs.wrappers.sparse_reward import SparseReward
+from .wrapper import Wrapper
+from .wrapper import ObservationWrapper
+from .wrapper import ActionWrapper
+from .wrapper import RewardWrapper
+from .flatten_observation import FlattenObservation
+from .partial_flatten_dict import PartialFlattenDict
+from .sparse_reward import SparseReward

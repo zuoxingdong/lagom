@@ -5,12 +5,26 @@ from torch.nn.utils import vector_to_parameters, parameters_to_vector
 
 class BaseNetwork(nn.Module):
     """
-    Base class for neural networks
+    Base class for neural networks. 
+    
+    Depending on the type of neural networks (e.g. policy network, Q-network), it is recommended
+    to override the constructor __init__ to provide essential items for the neural network. 
+    
+    Note that if subclass overrides __init__, remember to provide
+    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. make_params(self, config)
+    2. init_params(self, config)
     """
-    def __init__(self, config=None):
+    def __init__(self, config=None, **kwargs):
         super().__init__()
         
         self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
     
         # User-defined function to create all trainable parameters (layers)
         self.make_params(self.config)

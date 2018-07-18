@@ -1,6 +1,9 @@
 class BaseAlgorithm(object):
     """
-    Base class for the algorithm
+    Base class for the algorithm. 
+    
+    All inherited subclasses should at least implement the following functions:
+    1. __call__(self, config)
     """
     def __init__(self, name):
         """

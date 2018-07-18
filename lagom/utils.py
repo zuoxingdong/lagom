@@ -5,7 +5,12 @@ import random
 
 def set_global_seeds(seed):
     """
-    Set seed for all dependencies we use
+    Set seed for all dependencies we use. 
+    
+    It includes the following:
+    1. PyTorch
+    2. Numpy
+    3. Python random
     
     Args:
         seed (int): seed

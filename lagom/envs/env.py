@@ -1,5 +1,17 @@
 class Env(object):
-    """Base class for environment"""
+    """
+    Base class for environment
+    
+    All inherited subclasses should at least implement the following functions:
+    1. step(self, action)
+    2. reset(self)
+    3. render(self, mode='human')
+    4. close(self)
+    5. seed(self, seed)
+    6. @property: T(self)
+    7. @property: observation_space(self)
+    8. @property: action_space(self)
+    """
     def step(self, action):
         """
         Execute the given action for one time step through the environment's dynamics. 
@@ -41,7 +53,7 @@ class Env(object):
         
         Override this method to do any further cleanup. 
         """
-        return
+        raise NotImplementedError
     
     def seed(self, seed):
         """

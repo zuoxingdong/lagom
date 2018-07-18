@@ -1,6 +1,6 @@
 import numpy as np
 
-from lagom.envs import Env
+from .env import Env
 
 
 class EnvSpec(object):

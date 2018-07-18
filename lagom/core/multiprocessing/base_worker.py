@@ -10,7 +10,7 @@ class BaseWorker(object):
     Note that it is a good practice to close the master connection although it is not used
     because the forked process for the worker will anyway copy both connection ends. 
     
-    All inherited subclasses should implement the following function
+    All inherited subclasses should at least implement the following functions:
     1. work(self, master_cmd)
     
     Remark: To be optimally user-friendly, it is highly recommended not to override constructor __init__

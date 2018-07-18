@@ -27,7 +27,7 @@ class BaseMaster(object):
     Note that it is possible to make less tasks than the number of workers, however, it is not generally
     recommended to do so. 
     
-    All inherited subclasses should implement the following function
+    All inherited subclasses should at least implement the following functions:
     1. make_tasks(self)
     2. _process_workers_result(self, tasks, workers_result)
     """

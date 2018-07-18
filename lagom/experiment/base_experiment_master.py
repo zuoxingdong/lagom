@@ -10,7 +10,7 @@ class BaseExperimentMaster(BaseIterativeMaster):
     For details about master in general, please refer to 
     the documentation of the class, BaseIterativeMaster. 
     
-    All inherited subclasses should implement the following function:
+    All inherited subclasses should at least implement the following function:
     1. process_algo_result(self, config, result)
     2. make_configs(self)
     """

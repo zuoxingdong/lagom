@@ -11,8 +11,8 @@ class BaseESWorker(BaseWorker):
     For more details about how worker class works, please refer
     to the documentation of the class, BaseWorker. 
     
-    All inherited subclasses should implement the following function:
-    1. f(self, solution)
+    All inherited subclasses should at least implement the following function:
+    1. f(self, solution, seed)
     """
     def work(self, master_cmd):
         # Unpack master command
