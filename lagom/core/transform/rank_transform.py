@@ -43,4 +43,4 @@ class RankTransform(BaseTransform):
         if centered:
             ranks = ranks/(ranks.size - 1) - 0.5
             
-        return ranks.astype(np.float32)
+        return ranks.astype(np.float32).tolist()  # enforce raw float dtype

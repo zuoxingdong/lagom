@@ -54,9 +54,8 @@ class A2CAgent(BaseAgent):
             Rs = trajectory.all_discounted_returns
             
             # TODO: really standardize it ? maybe biased magnitude of learned value leading to wrong TD error ?
-            if self.config['standardize_pg']:
+            if not self.config['standardize_pg']:
                 Rs = Standardize()(Rs)
-            
             
             # Get all state values (except for s_next in last transition)
             Vs = trajectory.all_V[:-1]
@@ -69,7 +68,12 @@ class A2CAgent(BaseAgent):
                 pass
             else:  # standard advantage estimates
                 # Use TD error as advantage estimate
-                As = TDs
+                # As = TDs
+                rs = trajectory.all_r
+                V_s_next = trajectory.all_V[1:]
+                bootstrap_Rs = [r + self.config['gamma']*V_next.item() for r, V_next in zip(rs, V_s_next)]
+                # bootstrap_Rs = Standardize()(bootstrap_Rs)
+                As = [R - V.item() for R, V in zip(bootstrap_Rs, Vs)]
             # Standardize advantage estimates if required
             # encourage/discourage half of performed actions, respectively. 
             if self.config['standardize_pg']:
@@ -85,17 +89,17 @@ class A2CAgent(BaseAgent):
             entropy_loss = []
             
             # Estimate policy gradient for all time steps
-            for logprob, entropy, A, R, V in zip(logprobs, entropies, As, Rs, Vs):
+            for logprob, entropy, A, bootstrap_R, V in zip(logprobs, entropies, As, bootstrap_Rs, Vs):
                 # Compute losses
-                policy_loss.append(-logprob*float(A))  # TODO: supports VecEnv
+                policy_loss.append(-logprob*A)  # TODO: supports VecEnv
                 # value_loss.append(F.mse_loss(V, torch.tensor(float(R), device=V.device).type_as(V)))
-                value_loss.append(F.mse_loss(V, torch.tensor(A + V.item()).to(V.device).type_as(V)))
+                value_loss.append(F.mse_loss(V, torch.tensor(bootstrap_R).to(V.device).type_as(V)))
                 entropy_loss.append(-entropy)
                 
-            # Sum up losses for all time steps
-            policy_loss = torch.stack(policy_loss).sum()
-            value_loss = torch.stack(value_loss).sum()
-            entropy_loss = torch.stack(entropy_loss).sum()
+            # Average over losses for all time steps
+            policy_loss = torch.stack(policy_loss).mean()
+            value_loss = torch.stack(value_loss).mean()
+            entropy_loss = torch.stack(entropy_loss).mean()
         
             # Calculate total loss
             value_coef = self.config['value_coef']

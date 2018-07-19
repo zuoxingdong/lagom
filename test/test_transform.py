@@ -258,15 +258,23 @@ class TestTransform(object):
             
         # masks must be list dtype
         h = [1, 2, 3]
-        masks_h = np.array([True, False, True])
+        dones_h = np.array([True, False, True])
+        masks_h = np.logical_not(dones_h).astype(int)
         with pytest.raises(AssertionError):
             expfactorcumsum(h, masks_h)
         
         # masks must have same length with input data
         i = [1, 2, 3]
-        masks_i = [True, False, True, True]
+        dones_i = [True, False, True, True]
+        masks_i = np.logical_not(dones_i).astype(int).tolist()
         with pytest.raises(AssertionError):
             expfactorcumsum(i, masks_i)
+            
+        # masks must be binary
+        j = [1, 2, 3]
+        masks_j = [0, 0.5, 1]
+        with pytest.raises(AssertionError):
+            expfactorcumsum(j, masks_j)
 
     def test_runningmeanstd(self):
         def _test_moments(runningmeanstd, x):
