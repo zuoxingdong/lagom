@@ -69,14 +69,14 @@ class RunningMeanStd(BaseTransform):
         """
         Running mean
         """
-        return self.mean.squeeze().astype(np.float32)
+        return self.mean.squeeze().astype(np.float32).tolist()  # enforce raw float dtype
         
     @property
     def sigma(self):
         """
         Running standard deviation
         """
-        return np.sqrt(self.var).squeeze().astype(np.float32)
+        return np.sqrt(self.var).squeeze().astype(np.float32).tolist()  # enforce raw float dtype
     
     @property
     def n(self):

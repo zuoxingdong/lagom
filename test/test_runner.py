@@ -98,14 +98,12 @@ class TestRunner(object):
         assert len(transition.info) == 0
         
         transition.add_info(name='V_s', value=0.3)
-        transition.add_info(name='V_s_next', value=0.4)
+        transition.add_info(name='V_s_next', value=0.0)
         transition.add_info(name='extra', value=[1, 2, 3, 4])
         
         assert len(transition.info) == 3
         assert transition.V_s == 0.3
         assert transition.V_s_next == 0.0
-        transition.done = False
-        assert transition.V_s_next == 0.4
         assert np.allclose(transition.info['extra'], [1, 2, 3, 4])
         
     def test_trajectory(self):
@@ -129,7 +127,7 @@ class TestRunner(object):
                                  s_next=4, 
                                  done=True)
         transition3.add_info(name='V_s', value=30)
-        transition3.add_info(name='V_s_next', value=40)
+        transition3.add_info(name='V_s_next', value=0.0)
 
         trajectory = Trajectory(gamma=0.1)
 

@@ -47,6 +47,7 @@ class ExpFactorCumSum(BaseTransform):
             masks = [1.0]*len(x)
         assert isinstance(masks, list), f'Masks must be list dtype, but got {type(masks)}.'
         assert len(x) == len(masks), 'The length of input data should be the same as the length of masks.'
+        assert np.array_equal(masks, np.array(masks).astype(bool)), 'The masks must be binary, i.e. either 0 or 1. '
         
         # buffer of accumulated sum
         cumsum = 0

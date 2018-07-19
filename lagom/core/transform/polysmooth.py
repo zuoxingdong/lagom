@@ -27,4 +27,4 @@ class PolySmooth(BaseTransform):
         # Evaluate the polynomial for all points to get a smooth curve
         out = np.poly1d(poly)(x)
 
-        return out.astype(np.float32)
+        return out.astype(np.float32).tolist()  # enforce raw float dtype

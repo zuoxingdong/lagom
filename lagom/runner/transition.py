@@ -50,9 +50,13 @@ class Transition(object):
         """
         # TODO: it might be memory costly to have V_s_next in each transition. 
         V_s_next = self.info['V_s_next']
-        # Set to zero for terminal state
+        # Check zero values for terminal state
+        # Runner already set to zero
         if self.done:
-            V_s_next = 0.0
+            if hasattr(V_s_next, 'item'):
+                assert V_s_next.item() == 0.0
+            else:
+                assert V_s_next == 0.0
         
         return V_s_next
     
