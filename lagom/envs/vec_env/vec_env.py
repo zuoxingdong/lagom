@@ -66,6 +66,7 @@ class VecEnv(ABC):
             dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
             infos (list of dict): A list of debugging informations from all environments.
         """
+        assert len(actions) == self.num_env
         # Execute the actions in all environments asynchronously
         self.step_async(actions)
         
