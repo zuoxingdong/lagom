@@ -20,7 +20,7 @@ class Standardize(BaseTransform):
             std (float): If not None, then use specific standard deviation to standardize the input data. 
         
         Returns:
-            out (ndarray): standardized data
+            out (list): standardized data
         """
         # Convert input to ndarray
         x = self.make_input(x)
@@ -37,4 +37,4 @@ class Standardize(BaseTransform):
         # Standardize the data
         out = (x - mean)/(std + self.eps)
         
-        return out.astype(np.float32)
+        return out.astype(np.float32).tolist()  # enforce raw float dtype

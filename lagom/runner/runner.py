@@ -94,7 +94,7 @@ class Runner(object):
                 V_s_next = self.agent.choose_action(obs)['state_value']
                 # Set to zero if it is terminal state
                 if done:
-                    V_s_next.fill_(0.0)
+                    V_s_next = V_s_next.fill_(0.0)
                 # Add to the final transition as 'V_s_next'
                 trajectory.transitions[-1].add_info('V_s_next', V_s_next)
             

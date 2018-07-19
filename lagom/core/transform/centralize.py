@@ -32,4 +32,4 @@ class Centralize(BaseTransform):
         # Centralize the data
         out = x - mean
         
-        return out.astype(np.float32)
+        return out.astype(np.float32).tolist()  # enforce raw float dtype
