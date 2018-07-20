@@ -2,7 +2,8 @@ import numpy as np
 
 import pytest
 
-from lagom.core.multiprocessing import Seeder
+from lagom import Seeder
+
 from lagom.core.multiprocessing import BaseWorker
 from lagom.core.multiprocessing import BaseMaster
 from lagom.core.multiprocessing import BaseIterativeMaster
