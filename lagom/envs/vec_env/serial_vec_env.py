@@ -3,11 +3,11 @@ import numpy as np
 from lagom.envs.vec_env import VecEnv
 
 
-class LinearVecEnv(VecEnv):
+class SerialVecEnv(VecEnv):
     """
-    Run vectorized environment linearly. 
+    Run vectorized environment serially. 
     
-    Note that it is recommended to use linear vectorized environment only if step() in the environment
+    Note that it is recommended to use this environment only if step() in the environment
     needs very few computation, otherwise it will be slower than doing it parallelly. For 'slow' environment, 
     it is recommended to use ParallelVecEnv instead. 
     
@@ -18,7 +18,7 @@ class LinearVecEnv(VecEnv):
 
             return env
 
-        env = LinearVecEnv([make_env]*5)
+        env = SerialVecEnv([make_env]*5)
         env.reset()
         for _ in range(100):
             env.step([0]*5)

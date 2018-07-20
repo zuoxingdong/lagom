@@ -63,8 +63,8 @@ class ParallelVecEnv(VecEnv):
     Run vectorized environment in parallel. Each environment is running in an individual Process.
     
     Note that it is recommended to use parallel vectorized environment only if the step() in the environment
-    needs quite some computation, otherwise it will be slower than doing it linearly. For 'fast'
-    environment, it is recommended to use LinearVecEnv instead. 
+    needs quite some computation, otherwise it will be slower than doing it serially. For 'fast'
+    environment, it is recommended to use SerialVecEnv instead. 
     
     Examples:
     
@@ -78,48 +78,6 @@ class ParallelVecEnv(VecEnv):
         env.reset()
         for _ in range(100):
             env.step([0]*5)
-            
-    To see how parallelization can benefit the speed, one can run the following example:
-    
-        def make_env():
-            env = gym.make('CartPole-v0')
-
-            return env
-
-        def test_linear(make_env):
-            t = time()
-
-            env = make_env()
-
-            for _ in range(5):
-                env.reset()
-                for _ in range(100):
-                    observation, rewards, done, info = env.step(0)
-                    if done:
-                        env.reset()
-                    sleep(0.01)
-
-            print(f'Total time for linear: {time() - t:.2f} s')
-
-        def test_parallel(make_env):
-            t = time()
-
-            env = ParallelVecEnv([make_env]*5)
-            env.reset()
-
-            for _ in range(100):
-                env.step([0]*5)
-                sleep(0.01)
-
-            print(f'Total time for parallel: {time() - t:.2f} s')
-
-
-        test_linear(make_env)
-        test_parallel(make_env)
-        
-        >>> Total time for linear: 5.09 s
-        >>> Total time for parallel: 1.09 s
-
     """
     def __init__(self, list_make_env):
         """
@@ -142,7 +100,7 @@ class ParallelVecEnv(VecEnv):
         
         # Obtain observation and action spaces from all environments
         self.master_conns[0].send(['get_spaces', None])
-        observation_space, action_space =  self.master_conns[0].recv()
+        observation_space, action_space = self.master_conns[0].recv()
         
         # Call parent constructor
         super().__init__(list_make_env=list_make_env, 

@@ -22,4 +22,4 @@ def run_experiment(worker_class, master_class, num_worker, daemonic_worker=None)
     # Run experiment in parallel
     experiment()
 
-    print(f'\nTotal time: {time() - t:.2} s')
+    print(f'\nTotal time: {time() - t:.2f} s')
