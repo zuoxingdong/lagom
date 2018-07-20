@@ -5,3 +5,4 @@ from .wrapper import RewardWrapper
 from .flatten_observation import FlattenObservation
 from .partial_flatten_dict import PartialFlattenDict
 from .sparse_reward import SparseReward
+from .stack_observation import StackObservation
