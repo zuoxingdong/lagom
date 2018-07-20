@@ -9,10 +9,14 @@ class RunningMeanStd(BaseTransform):
     
     https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
     """
-    def __init__(self):
+    def __init__(self, dtype='list'):
         self.mean = None
         self.var = None
         self.N = 0
+        
+        # dtype to output mu and sigma
+        # Possible: ['list', 'ndarray']
+        self.dtype = dtype
         
     def __call__(self, x):
         """
@@ -69,14 +73,20 @@ class RunningMeanStd(BaseTransform):
         """
         Running mean
         """
-        return self.mean.squeeze().astype(np.float32).tolist()  # enforce raw float dtype
+        if self.dtype == 'list':
+            return self.mean.squeeze().astype(np.float32).tolist()  # enforce raw float dtype
+        elif self.dtype == 'ndarray':
+            return self.mean.squeeze().astype(np.float32)
         
     @property
     def sigma(self):
         """
         Running standard deviation
         """
-        return np.sqrt(self.var).squeeze().astype(np.float32).tolist()  # enforce raw float dtype
+        if self.dtype == 'list':
+            return np.sqrt(self.var).squeeze().astype(np.float32).tolist()  # enforce raw float dtype
+        elif self.dtype == 'ndarray':
+            return np.sqrt(self.var).squeeze().astype(np.float32)
     
     @property
     def n(self):
