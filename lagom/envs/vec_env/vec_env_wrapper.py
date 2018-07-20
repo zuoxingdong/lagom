@@ -38,7 +38,7 @@ class VecEnvWrapper(VecEnv):
     @property
     def T(self):
         return self.venv.T
-    
+
     @property
     def observation_space(self):
         """
