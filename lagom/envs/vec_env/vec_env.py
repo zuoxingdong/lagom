@@ -20,8 +20,9 @@ class VecEnv(ABC):
     def __init__(self, list_make_env, observation_space, action_space):
         self.list_make_env = list_make_env
         self.num_env = len(self.list_make_env)
-        self.observation_space = observation_space
-        self.action_space = action_space
+        
+        self._observation_space = observation_space
+        self._action_space = action_space
         
     @abstractmethod
     def step_async(self, actions):
@@ -134,3 +135,17 @@ class VecEnv(ABC):
         Horizon of the environment, if available
         """
         pass
+
+    @property
+    def observation_space(self):
+        """
+        Return a Space object to define the observation space.
+        """
+        return self._observation_space
+    
+    @property
+    def action_space(self):
+        """
+        Return a Space object to define the action space.
+        """
+        return self._action_space
