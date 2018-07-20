@@ -12,7 +12,7 @@ from torch.multiprocessing import Queue
 from torch.multiprocessing import SimpleQueue
 """
 
-from .seeder import Seeder
+from lagom import Seeder
 
 
 class BaseMaster(object):
