@@ -10,8 +10,9 @@ class Trajectory(object):
     Data for a trajectory, consisting of successive transitions, with additional useful information
     e.g. other info includes length, success and so on.
     
-    Note that it is not necessarily an episode (with terminal state). It can be a segment of temporal
-    transitions.
+    Note that it is not necessarily an episode (with terminal state). But it must be a part of an episode. 
+    For segment of transitions which can contains `done=True` in the middle (more than one episode data), one 
+    can use Segment instead. 
     """
     def __init__(self, gamma):
         self.gamma = gamma  # discount factor

@@ -208,7 +208,7 @@ class TestTransform(object):
         # Test vector
         #
         def _test_vec(x):
-            assert np.allclose(expfactorcumsum(x=x, masks=None), 
+            assert np.allclose(expfactorcumsum(x=x, mask=None), 
                                [1.23, 2.3, 3.0])
         
         # Tuple
@@ -224,25 +224,25 @@ class TestTransform(object):
         _test_vec(c)
         
         # 
-        # Test with masks
+        # Test with mask
         # 
-        def _test_vec_mask(x, masks):
-            assert np.allclose(expfactorcumsum(x=x, masks=masks), 
+        def _test_vec_mask(x, mask):
+            assert np.allclose(expfactorcumsum(x=x, mask=mask), 
                                [1.23, 2.3, 3.0, 4.56, 5.6, 6.0])
         dones = [False, False, True, False, False, False]
-        masks = np.logical_not(dones).astype(int).tolist()
+        mask = np.logical_not(dones).astype(int).tolist()
         
         # Tuple
         d = (1, 2, 3, 4, 5, 6)
-        _test_vec_mask(d, masks)
+        _test_vec_mask(d, mask)
         
         # List
         e = [1, 2, 3, 4, 5, 6]
-        _test_vec_mask(e, masks)
+        _test_vec_mask(e, mask)
         
         # ndarray
         f = np.array([1, 2, 3, 4, 5, 6])
-        _test_vec_mask(f, masks)
+        _test_vec_mask(f, mask)
         
         #
         # Test exceptions
@@ -256,25 +256,31 @@ class TestTransform(object):
         with pytest.raises(ValueError):
             expfactorcumsum(g)
             
-        # masks must be list dtype
+        # mask must be list dtype
         h = [1, 2, 3]
         dones_h = np.array([True, False, True])
-        masks_h = np.logical_not(dones_h).astype(int)
+        mask_h = np.logical_not(dones_h).astype(int)
         with pytest.raises(AssertionError):
-            expfactorcumsum(h, masks_h)
+            expfactorcumsum(h, mask_h)
         
-        # masks must have same length with input data
+        # mask must have same length with input data
         i = [1, 2, 3]
         dones_i = [True, False, True, True]
-        masks_i = np.logical_not(dones_i).astype(int).tolist()
+        mask_i = np.logical_not(dones_i).astype(int).tolist()
         with pytest.raises(AssertionError):
-            expfactorcumsum(i, masks_i)
+            expfactorcumsum(i, mask_i)
             
-        # masks must be binary
+        # mask must be binary
         j = [1, 2, 3]
-        masks_j = [0, 0.5, 1]
+        mask_j = [0, 0.5, 1]
         with pytest.raises(AssertionError):
-            expfactorcumsum(j, masks_j)
+            expfactorcumsum(j, mask_j)
+            
+        # boolean mask is not allowed, because it is easy to get bug
+        k = [1, 2, 3]
+        mask_k = [True, False, False]
+        with pytest.raises(AssertionError):
+            expfactorcumsum(k, mask_k)
 
     def test_runningmeanstd(self):
         def _test_moments(runningmeanstd, x):
