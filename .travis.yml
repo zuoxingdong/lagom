@@ -33,3 +33,7 @@ script:
 branches:
     only:
         - master
+
+# Turn off email notification
+notifications:
+    email: false

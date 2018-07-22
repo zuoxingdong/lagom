@@ -19,17 +19,17 @@ class ExpFactorCumSum(BaseTransform):
         """
         self.alpha = alpha
         
-    def __call__(self, x, masks=None):
+    def __call__(self, x, mask=None):
         """
         Calculate future accumulated sums with exponential factor. 
         
-        An option with binary masks is provided. 
+        An option with binary mask is provided. 
         Intuitively, the computation will restart for each occurrence
         of zero. If nothing provided, the default mask is ones everywhere.
         
         Args:
             x (list): input data
-            masks (list): binary mask for each data item. 
+            mask (list): binary mask for each data item. 
             
         Returns:
             out (list): calculated data
@@ -42,12 +42,14 @@ class ExpFactorCumSum(BaseTransform):
         # Enforce input data as list type
         assert isinstance(x, list), f'Input data must be list dtype, but got {type(x)}. '
         
-        # Enforce masks as list type
-        if masks is None:
-            masks = [1.0]*len(x)
-        assert isinstance(masks, list), f'Masks must be list dtype, but got {type(masks)}.'
-        assert len(x) == len(masks), 'The length of input data should be the same as the length of masks.'
-        assert np.array_equal(masks, np.array(masks).astype(bool)), 'The masks must be binary, i.e. either 0 or 1. '
+        # Enforce mask as list type
+        if mask is None:
+            mask = [1.0]*len(x)
+        else:  # check is mask is binary array, because boolean array might lead to bugs easily
+            assert np.array(mask).dtype != bool, 'Ensure using binary value only, becuase boolean might lead to bugs. '
+        assert isinstance(mask, list), f'Mask must be list dtype, but got {type(mask)}.'
+        assert len(x) == len(mask), 'The length of input data should be the same as the length of mask.'
+        assert np.array_equal(mask, np.array(mask).astype(bool)), 'The mask must be binary, i.e. either 0 or 1. '
         
         # buffer of accumulated sum
         cumsum = 0
@@ -55,8 +57,8 @@ class ExpFactorCumSum(BaseTransform):
         out = []
         
         # iterate items in reverse ordering
-        for val, mask in zip(x[::-1], masks[::-1]):
-            cumsum = val + self.alpha*cumsum*mask  # recursive update
+        for val, mask_item in zip(x[::-1], mask[::-1]):
+            cumsum = val + self.alpha*cumsum*mask_item  # recursive update
             out.insert(0, cumsum)  # insert to the front
 
         return out
