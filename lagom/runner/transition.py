@@ -46,19 +46,14 @@ class Transition(object):
     def V_s_next(self):
         """
         Return the state value for the next state, self.s_next. 
-        If this transition leads to a terminal state, then it returns 0
+        
+        Note that we do not set zero value for terminal state, because this function
+        often returns the Tensor dtype, used for backprop. 
+        
+        Please be careful when using returned values in later phase !
         """
         # TODO: it might be memory costly to have V_s_next in each transition. 
-        V_s_next = self.info['V_s_next']
-        # Check zero values for terminal state
-        # Runner already set to zero
-        if self.done:
-            if hasattr(V_s_next, 'item'):
-                assert V_s_next.item() == 0.0
-            else:
-                assert V_s_next == 0.0
-        
-        return V_s_next
+        return self.info['V_s_next']
     
     def __repr__(self):
         return f'Transition: ({self.s}, {self.a}, {self.r}, {self.s_next}, {self.done})'
