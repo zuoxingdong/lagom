@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,10 +12,14 @@ class A2CAgent(BaseAgent):
     """
     Advantage Actor-Critic (A2C) with option to use Generalized Advantage Estimate (GAE)
     
+    The main difference of A2C is to use bootstrapping for estimating the advantage function and training value function. 
+    
     Reference: https://arxiv.org/abs/1602.01783
     
-    Note that it might be better to use fixed-length segments of experiment to compute returns and advantages.
+    Note that we use fixed-length segments of experiment to compute returns and advantages. 
     https://blog.openai.com/baselines-acktr-a2c/
+    
+    For this purpose, please use SegmentRunner, not TrajectoryRunner to collect data for A2CAgent. 
     """
     def __init__(self, policy, optimizer, config, **kwargs):
         self.policy = policy
@@ -23,18 +29,14 @@ class A2CAgent(BaseAgent):
         
     def choose_action(self, obs):
         # Convert to Tensor
-        # Note that we assume obs is a single observation, not batched one
-        # so we unsqueeze it with a batch dimension
+        # Note that obs should be batched already (even if only one segment), because we use VecEnv and SegmentRunner
         if not torch.is_tensor(obs):
-            obs = torch.from_numpy(obs).float()
-            obs = obs.unsqueeze(0)  # make a batch dimension
+            obs = torch.from_numpy(np.array(obs)).float()
             obs = obs.to(self.device)  # move to device
         
+        # Call policy
+        # Note that all metrics should also be batched for SegmentRunner to work properly, check policy/network output.
         out_policy = self.policy(obs)
-        # Squeeze the single batch dimension of the action
-        for key, val in out_policy.items():
-            if torch.is_tensor(val):
-                out_policy[key] = val.squeeze(0)
                 
         # Dictionary of output data
         output = {}
@@ -42,60 +44,41 @@ class A2CAgent(BaseAgent):
                 
         return output
         
-    def learn(self, x):
+    def learn(self, D):
         batch_policy_loss = []
         batch_value_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
         
-        # Iterate over list of trajectories
-        for trajectory in x:
-            # Get all discounted returns
-            Rs = trajectory.all_discounted_returns
-            
-            # TODO: really standardize it ? maybe biased magnitude of learned value leading to wrong TD error ?
-            if not self.config['standardize_pg']:
-                Rs = Standardize()(Rs)
-            
-            # Get all state values (except for s_next in last transition)
-            Vs = trajectory.all_V[:-1]
-            
-            # Get TD errors for all time steps
-            TDs = trajectory.all_TD
-            
-            # Compute all advantage estimates
-            if hasattr(self, 'use_gae'):  # GAE
-                pass
-            else:  # standard advantage estimates
-                # Use TD error as advantage estimate
-                # As = TDs
-                rs = trajectory.all_r
-                V_s_next = trajectory.all_V[1:]
-                bootstrap_Rs = [r + self.config['gamma']*V_next.item() for r, V_next in zip(rs, V_s_next)]
-                # bootstrap_Rs = Standardize()(bootstrap_Rs)
-                As = [R - V.item() for R, V in zip(bootstrap_Rs, Vs)]
+        # Iterate over list of Segment in D
+        for segment in D:
+            # Get all boostrapped discounted returns as estimate of Q
+            Qs = segment.all_bootstrapped_discounted_returns
+            # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
             # Standardize advantage estimates if required
-            # encourage/discourage half of performed actions, respectively. 
+            # encourage/discourage half of performed actions, respectively.
             if self.config['standardize_pg']:
-                As = Standardize()(As)
+                Qs = Standardize()(Qs)
+            
+            # Get all state values (without V_s_next with all done=True also without the final transition)
+            Vs = segment.all_info('V_s')
+            
+            # Advantage estimates
+            As = [Q - V.item() for Q, V in zip(Qs, Vs)]
             
             # Get all log-probabilities and entropies
-            logprobs = trajectory.all_info('action_logprob')
-            entropies = trajectory.all_info('entropy')
+            logprobs = segment.all_info('action_logprob')
+            entropies = segment.all_info('entropy')
             
-            # All losses
+            # Estimate policy gradient for all time steps and record all losses
             policy_loss = []
             value_loss = []
             entropy_loss = []
-            
-            # Estimate policy gradient for all time steps
-            for logprob, entropy, A, bootstrap_R, V in zip(logprobs, entropies, As, bootstrap_Rs, Vs):
-                # Compute losses
-                policy_loss.append(-logprob*A)  # TODO: supports VecEnv
-                # value_loss.append(F.mse_loss(V, torch.tensor(float(R), device=V.device).type_as(V)))
-                value_loss.append(F.mse_loss(V, torch.tensor(bootstrap_R).to(V.device).type_as(V)))
+            for logprob, entropy, A, Q, V in zip(logprobs, entropies, As, Qs, Vs):
+                policy_loss.append(-logprob*A)
+                value_loss.append(F.mse_loss(V, torch.tensor(Q).to(V.device)))
                 entropy_loss.append(-entropy)
-                
+        
             # Average over losses for all time steps
             policy_loss = torch.stack(policy_loss).mean()
             value_loss = torch.stack(value_loss).mean()
@@ -112,7 +95,7 @@ class A2CAgent(BaseAgent):
             batch_entropy_loss.append(entropy_loss)
             batch_total_loss.append(total_loss)
         
-        # Compute loss (average over trajectories)
+        # Compute loss (average over segments)
         loss = torch.stack(batch_total_loss).mean()  # use stack because each element is zero-dim tensor
         
         # Zero-out gradient buffer

@@ -1,5 +1,5 @@
 from .transition import Transition
-from .segment import Segment
-from .runner import Runner
-
 from .trajectory import Trajectory
+from .segment import Segment
+from .trajectory_runner import TrajectoryRunner
+from .segment_runner import SegmentRunner
