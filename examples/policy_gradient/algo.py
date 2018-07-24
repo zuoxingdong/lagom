@@ -10,15 +10,19 @@ from lagom import BaseAlgorithm
 from lagom.envs import EnvSpec
 from lagom.core.utils import Logger
 
+from lagom.envs import make_envs
+from lagom.envs import make_gym_env
+from lagom.envs.vec_env import SerialVecEnv
+
+from lagom.runner import SegmentRunner
+
 from lagom.agents import REINFORCEAgent
 from lagom.agents import ActorCriticAgent
 from lagom.agents import A2CAgent
 
-from lagom.runner import Runner
-
 from engine import Engine
-from policy import MLP, CategoricalPolicy
-from utils import make_env
+from policy import MLP
+from policy import CategoricalPolicy
 
 
 class Algorithm(BaseAlgorithm):
@@ -26,12 +30,16 @@ class Algorithm(BaseAlgorithm):
         # Set random seeds: PyTorch, numpy.random, random
         set_global_seeds(seed=config['seed'])
         
-        # Create environment and seed it
-        env = make_env(seed=config['seed'], 
-                       monitor=False, 
-                       monitor_dir=None)
+        # Make a list of make_env functions
+        list_make_env = make_envs(make_env=make_gym_env, 
+                                  env_id='CartPole-v1', 
+                                  num_env=config['N'], 
+                                  init_seed=config['seed']+1)
+        # Create vectorized environment
+        env = SerialVecEnv(list_make_env=list_make_env)
+        
         # Create environment specification
-        env_spec = EnvSpec(env)  # TODO: integrate within make_env globally
+        env_spec = EnvSpec(env)
         
         # Create device
         device = torch.device('cuda' if config['cuda'] else 'cpu')
@@ -40,9 +48,8 @@ class Algorithm(BaseAlgorithm):
         logger = Logger(name='logger')
         
         # Create policy
-        network = MLP(config=config)
+        network = MLP(config=config).to(device)
         policy = CategoricalPolicy(network=network, env_spec=env_spec)
-        policy.network = policy.network.to(device)
 
         # Create optimizer
         optimizer = optim.Adam(policy.network.parameters(), lr=config['lr'])
@@ -61,9 +68,9 @@ class Algorithm(BaseAlgorithm):
                             device=device)
         
         # Create runner
-        runner = Runner(agent=agent, 
-                        env=env, 
-                        gamma=config['gamma'])
+        runner = SegmentRunner(agent=agent, 
+                               env=env, 
+                               gamma=config['gamma'])
         
         # Create engine
         engine = Engine(agent=agent, 

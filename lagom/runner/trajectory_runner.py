@@ -3,12 +3,34 @@ import torch
 from .transition import Transition
 from .trajectory import Trajectory
 
+from lagom.envs.vec_env import VecEnv
 from lagom.envs.spaces import Discrete
 
 
-class Runner(object):
+class TrajectoryRunner(object):
     """
-    Data collection for an agent in an environment.
+    Batched data collection for an agent in one environment for a number of trajectories and a certain time steps. 
+    It includes successive transitions (observation, action, reward, next observation, done) and 
+    additional data useful for training the agent such as the action log-probabilities, policy entropies, 
+    Q values etc.
+    
+    The collected data in each trajectory will be wrapped in an individual Trajectory object. Each call
+    of the runner will return a list of Trajectory objects. 
+    
+    Note that the transitions in a Trajectory should come from a single episode and started from initial observation.
+    The length of the trajectory can maximally be the allowed time steps or can be the time steps until it reaches
+    terminal state. 
+    
+    For example, for a Trajectory with length 4, it can have either of following cases:
+    
+    Let s_t be state at time step t and s_T be terminal state.
+    
+    1. Part of single episode from initial observation: 
+        s_0 -> s_1 -> s_2 -> s_3
+    2. A complete episode:
+        s_0 -> s_1 -> s_2 -> s_T
+    
+    For runner that collects transitions from multiple episodes, one can use SegmentRunner instead. 
     """
     def __init__(self, agent, env, gamma):
         """
@@ -19,7 +41,7 @@ class Runner(object):
         """
         self.agent = agent
         self.env = env
-        # Discount factor
+        assert not isinstance(self.env, VecEnv), 'The environment cannot be of type VecEnv. '
         self.gamma = gamma
         
     def __call__(self, N, T):
