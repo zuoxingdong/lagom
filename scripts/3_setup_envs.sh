@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-17  	    #
+# Date: 2018-07-23  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -45,9 +45,17 @@ $CONDA install -y ipython
 pip install --upgrade pip
 pip install cmake cython msgpack
 pip install setuptools wheel twine
+pip install pyglet
 
 # Install some conda packages
 $CONDA install -y numpy scipy matplotlib scikit-image
+
+# From PyTorch Github README
+$CONDA install -y pyyaml mkl mkl-include cffi typing
+
+# Install patchelf useful for mujoco-py to work, potential problem with Ubuntu 16.04
+# TODO: test on Ubuntu 18.04
+$CONDA install -y patchelf
 
 # Install some pip packages
 pip install pandas seaborn

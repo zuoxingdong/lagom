@@ -4,6 +4,13 @@ import torch
 
 from lagom.engine import BaseEngine
 
+from lagom.envs import make_envs
+from lagom.envs import make_gym_env
+from lagom.envs.vec_env import SerialVecEnv
+
+from lagom.runner import TrajectoryRunner
+from lagom.runner import SegmentRunner
+
 
 class Engine(BaseEngine):
     """
@@ -13,13 +20,17 @@ class Engine(BaseEngine):
         # Training output
         train_output = {}
         train_output['returns'] = []
+        train_output['eval_returns'] = []
         
         # Set network as training mode
         self.agent.policy.network.train()
         
         for i in range(self.config['train_iter']):  # training iterations
             # Collect a list of trajectories
-            D = self.runner(N=self.config['N'], T=self.config['T'])
+            if isinstance(self.runner, TrajectoryRunner):
+                D = self.runner(N=self.config['N'], T=self.config['T'])
+            elif isinstance(self.runner, SegmentRunner):
+                D = self.runner(T=self.config['T'])
             
             # Train agent with given data
             out_agent = self.agent.learn(D)
@@ -61,7 +72,29 @@ class Engine(BaseEngine):
                 
                 print('-'*50)
                 
+                train_output['eval_returns'].append(self.eval())
+                
         return train_output
         
     def eval(self):
-        pass
+        """
+        Running the current agent in the environment for some episodes and calculate the mean episodic return. 
+        """
+        env = make_gym_env(env_id='CartPole-v1', 
+                           seed=self.config['seed']*2, 
+                           monitor=False, 
+                           monitor_dir=None)
+        runner = TrajectoryRunner(agent=self.agent, 
+                                  env=env, 
+                                  gamma=self.config['gamma'])
+        
+        D = runner(N=10, T=200)
+        mean_episodic_return = np.mean([sum(d.all_r) for d in D])
+        
+        print('-'*50)
+        print('Evaluation: ')
+        print(f'Mean episodic return: {mean_episodic_return}')
+        print('-'*50)
+        
+        return mean_episodic_return
+        
