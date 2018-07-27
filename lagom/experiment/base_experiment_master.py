@@ -1,3 +1,5 @@
+from .config import Config
+
 import numpy as np
 
 from lagom.core.multiprocessing import BaseIterativeMaster
@@ -16,17 +18,21 @@ class BaseExperimentMaster(BaseIterativeMaster):
     """
     def __init__(self,
                  worker_class, 
-                 num_worker,
+                 num_worker=None,
                  daemonic_worker=None):
         """
         Args:
             worker_class (BaseWorker): a callable worker class. Note that it is not recommended to 
                 send instantiated object of the worker class, but send class instead.
-            num_worker (int): number of workers. Recommended to be the same as number of CPU cores. 
+            num_worker (int, optional): number of workers. If None, then set to be the total number of
+                configurations. Recommended to set to be the same as number of CPU cores. 
             daemonic_worker (bool): If True, then set all workers to be daemonic. 
                 Because if main process crashes, we should not cause things to hang.
         """
         self.configs = self.make_configs()
+        
+        if num_worker is None:
+            num_worker = len(self.configs)
         
         num_iteration = int(np.ceil(len(self.configs)/num_worker))
         assert len(self.configs) <= num_iteration*num_worker, 'More configurations than capacity. '
@@ -44,6 +50,9 @@ class BaseExperimentMaster(BaseIterativeMaster):
         
     def make_tasks(self, iteration):
         tasks = self.splitted_configs.pop(0).tolist()
+        
+        # Print configuration
+        [Config.print_config(config) for config in tasks]
         
         return tasks
     
@@ -90,3 +99,12 @@ class BaseExperimentMaster(BaseIterativeMaster):
             return configs
         """
         raise NotImplementedError
+    
+    def save_configs(self, f):
+        """
+        Save all configurations returned from `make_configs` (a list of dict). 
+        
+        Args:
+            f (str): path to save all configurations
+        """
+        np.save(f, self.configs)

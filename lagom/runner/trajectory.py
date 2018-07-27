@@ -140,7 +140,7 @@ class Trajectory(object):
         # Calculate TD error
         all_TD = all_r + self.gamma*all_V_s_next - all_V_s
         
-        return all_TD.tolist()
+        return all_TD.astype(np.float32).tolist()
     
     @property
     def all_gae(self, gae_lambda):

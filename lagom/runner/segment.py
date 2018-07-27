@@ -380,10 +380,6 @@ class Segment(object):
         # Make binary mask: set 0 for done=True and set 1 for done=False
         mask = np.logical_not(all_done).astype(int)
         
-        # Augment all_r and mask with 0.0 when done=True, except for last transition
-        # We do this because we want fast vectorized computation of TD
-        # the additional computation will be deleted in final step
-        
         # Compute all indicies with done=True except for last transition
         # Because no matter the final done is True or False, it will be handled by mask automatically
         # And we always have state value V_s_next for final transition regardless of done

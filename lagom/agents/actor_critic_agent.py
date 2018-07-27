@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,6 +11,8 @@ from lagom.core.transform import Standardize
 class ActorCriticAgent(BaseAgent):
     """
     Actor-Critic with value network (baseline), no bootstrapping to estimate value function. 
+    
+    Sometimes it is also called Vanilla Policy Gradient (VPG)
     """
     def __init__(self, policy, optimizer, config, **kwargs):
         self.policy = policy
@@ -18,18 +22,14 @@ class ActorCriticAgent(BaseAgent):
         
     def choose_action(self, obs):
         # Convert to Tensor
-        # Note that we assume obs is a single observation, not batched one
-        # so we unsqueeze it with a batch dimension
+        # Note that the observation should be batched already (even if only one trajectory)
         if not torch.is_tensor(obs):
-            obs = torch.from_numpy(obs).float()
-            obs = obs.unsqueeze(0)  # make a batch dimension
+            obs = torch.from_numpy(np.array(obs)).float()
             obs = obs.to(self.device)  # move to device
-        
+            
+        # Call policy
+        # Note that all metrics should also be batched for TrajectoryRunner to work properly, check policy/network output.   
         out_policy = self.policy(obs)
-        # Squeeze the single batch dimension of the action
-        for key, val in out_policy.items():
-            if torch.is_tensor(val):
-                out_policy[key] = val.squeeze(0)
                 
         # Dictionary of output data
         output = {}
@@ -37,48 +37,49 @@ class ActorCriticAgent(BaseAgent):
                 
         return output
         
-    def learn(self, x):
+    def learn(self, D):
         batch_policy_loss = []
         batch_value_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
         
-        # Iterate over list of trajectories
-        for trajectory in x:
-            # Get all discounted returns
-            Rs = trajectory.all_discounted_returns
-            if self.config['standardize_pg']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
-                Rs = Standardize()(Rs)
+        # Iterate over list of trajectories in D
+        for trajectory in D:
+            # Get all discounted returns as estimate of Q
+            Qs = trajectory.all_discounted_returns
+            # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
+            # Standardize advantage estimates if required
+            # encourage/discourage half of performed actions, respectively.
+            if self.config['agent:standardize']:
+                Qs = Standardize()(Qs)
                 
-            # Get all state values (except for s_next in last transition)
-            Vs = trajectory.all_V[:-1]
+            # Get all state values (without V_s_next in final transition)
+            Vs = trajectory.all_info('V_s')
+            
+            # Advantage estimates
+            As = [Q - V.item() for Q, V in zip(Qs, Vs)]
             
             # Get all log-probabilities and entropies
             logprobs = trajectory.all_info('action_logprob')
             entropies = trajectory.all_info('entropy')
             
-            # All losses
+            # Estimate policy gradient for all time steps and record all losses
             policy_loss = []
             value_loss = []
             entropy_loss = []
-            
-            # Estimate policy gradient for all time steps
-            for logprob, entropy, R, V in zip(logprobs, entropies, Rs, Vs):
-                # Advantage estimate
-                A = R - V.item()
-                # Compute losses
-                policy_loss.append(-logprob*float(A))  # TODO: supports VecEnv
-                value_loss.append(F.mse_loss(V, torch.tensor(float(R), device=V.device).type_as(V)))
+            for logprob, entropy, A, Q, V in zip(logprobs, entropies, As, Qs, Vs):
+                policy_loss.append(-logprob*A)
+                value_loss.append(F.mse_loss(V, torch.tensor(Q).view_as(V).to(V.device)))
                 entropy_loss.append(-entropy)
                 
-            # Sum up losses for all time steps
-            policy_loss = torch.stack(policy_loss).sum()
-            value_loss = torch.stack(value_loss).sum()
-            entropy_loss = torch.stack(entropy_loss).sum()
+            # Average over losses for all time steps
+            policy_loss = torch.stack(policy_loss).mean()
+            value_loss = torch.stack(value_loss).mean()
+            entropy_loss = torch.stack(entropy_loss).mean()
         
             # Calculate total loss
-            value_coef = self.config['value_coef']
-            entropy_coef = self.config['entropy_coef']
+            value_coef = self.config['agent:value_coef']
+            entropy_coef = self.config['agent:entropy_coef']
             total_loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
             
             # Record all losses
@@ -96,9 +97,9 @@ class ActorCriticAgent(BaseAgent):
         loss.backward()
         
         # Clip gradient norms if required
-        if self.config['max_grad_norm'] is not None:
+        if self.config['agent:max_grad_norm'] is not None:
             nn.utils.clip_grad_norm_(parameters=self.policy.network.parameters(), 
-                                     max_norm=self.config['max_grad_norm'], 
+                                     max_norm=self.config['agent:max_grad_norm'], 
                                      norm_type=2)
         
         # Decay learning rate if required
@@ -120,3 +121,9 @@ class ActorCriticAgent(BaseAgent):
             output['current_lr'] = self.lr_scheduler.get_lr()
         
         return output
+    
+    def save(self, filename):
+        self.policy.network.save(filename)
+    
+    def load(self, filename):
+        self.policy.network.load(filename)
