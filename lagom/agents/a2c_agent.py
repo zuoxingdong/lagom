@@ -57,14 +57,24 @@ class A2CAgent(BaseAgent):
             # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
             # Standardize advantage estimates if required
             # encourage/discourage half of performed actions, respectively.
-            if self.config['agent:standardize']:
-                Qs = Standardize()(Qs)
+            
+            ########
+            # A2C: testing, normalizing advantage estimate instead
+            
+            
             
             # Get all state values (without V_s_next with all done=True also without the final transition)
             Vs = segment.all_info('V_s')
             
             # Advantage estimates
             As = [Q - V.item() for Q, V in zip(Qs, Vs)]
+            
+            
+            ############
+            if self.config['agent:standardize']:
+                As = Standardize()(As)
+            
+            
             
             # Get all log-probabilities and entropies
             logprobs = segment.all_info('action_logprob')
