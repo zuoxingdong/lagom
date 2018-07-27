@@ -51,6 +51,7 @@ This repository requires following packages:
 - cma >= 2.6.0
 - pytest >= 3.6.3
 - flake8 >= 3.5.0
+- sphinx >= 1.7.6
 - PyTorch >= 0.5.0a0
 
 There are bash scripts in [scripts/](scripts/) directory to automatically set up the conda environment and dependencies.

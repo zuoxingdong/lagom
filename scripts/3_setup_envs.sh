@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-23  	    #
+# Date: 2018-07-27  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -61,7 +61,7 @@ $CONDA install -y patchelf
 pip install pandas seaborn
 pip install jupyterlab
 pip install gym[all] cma
-pip install pytest flake8
+pip install pytest flake8 sphinx
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch
