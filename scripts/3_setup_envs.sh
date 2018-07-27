@@ -61,7 +61,7 @@ $CONDA install -y patchelf
 pip install pandas seaborn
 pip install jupyterlab
 pip install gym[all] cma
-pip install pytest flake8 sphinx
+pip install pytest flake8 sphinx sphinx_rtd_theme
 
 # PyTorch
 $CONDA install pytorch torchvision -c pytorch
