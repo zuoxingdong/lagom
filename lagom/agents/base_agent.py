@@ -8,6 +8,9 @@ class BaseAgent(object):
     Note that if subclass overrides __init__, remember to provide
     keywords aguments, i.e. **kwargs passing to super().__init__. 
     
+    All Agent should by default handle batched data
+    e.g. observation with first dimension as batch or learning data is a batched list of Trajectory or Segment. 
+    
     All inherited subclasses should at least implement the following functions:
     1. choose_action(self, obs)
     2. learn(self, x)
@@ -33,7 +36,8 @@ class BaseAgent(object):
         
         Args:
             obs (object): agent's observation. Note that this is raw observation returned from 
-                environment. Tensor conversion should be handled here. 
+                environment. Tensor conversion should be handled here. And it is batched data
+                i.e. first dimension as batch dimension
             
         Returns:
             output (dict): a dictionary of action selection output. 
@@ -41,14 +45,14 @@ class BaseAgent(object):
         """
         raise NotImplementedError
         
-    def learn(self, x):
+    def learn(self, D):
         """
-        Learning rule about how agent updates itself given data.
+        Learning rule about how agent updates itself given batched data.
         The output is a dictionary containing useful items, i.e. loss, batched_policy_loss
         
         Args:
-            x (object): input data to train the agent. 
-                e.g. In policy gradient, this can be a list of episodes
+            D (list): batched data to train the agent. 
+                e.g. In policy gradient, this can be a list of Trajectory or Segment
             
         Returns:
             output (dict): a dictionary of learning output. 

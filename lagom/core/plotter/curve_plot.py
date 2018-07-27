@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from functools import partial
+
 from .base_plot import BasePlot
 
 
@@ -24,7 +26,39 @@ class CurvePlot(BasePlot):
     
     For more advanced use cases, feel free to inherit this class and overide `__call__`. 
     """
-    def __call__(self, colors=None, scales=None, alphas=None, **kwargs):
+    def add(self, name, data, xvalues=None):
+        """
+        Add a curve data (either one of multiple) with option to select range of values
+        for horizontal axis. If not provided, then it will be automatically set to integers. 
+        
+        Note that only one list of xvalues needed, because all curve data should share identical
+        horizontal axis. 
+        
+        Args:
+            name (str): name of the curve
+            data (list/ndarray): curve data. If multiple curves (list) provided, then it will plot uncertainty bands. 
+            xvalues (list, optional): values for horizontal axis. If None, then it set to be integers. 
+        """
+        # Convert data to ndarray
+        data = np.array(data)
+        # Get number of data points
+        N = data.shape[-1]  # handle both single/multiple curve data, since last dimension always be data size
+        # Set xvalues
+        if xvalues is None:
+            xvalues = np.arange(1, N+1)
+        assert np.array(xvalues).ndim == 1, f'Horizontal values must be one dimensional, got {np.array(xvalues).ndim}'
+            
+        # Make data
+        D = {'data': data, 'xvalues': xvalues}
+        
+        # Call parent add to save data
+        super().add(name=name, data=D)
+    
+    def __call__(self, 
+                 colors=None, 
+                 scales=None, 
+                 alphas=None, 
+                 **kwargs):
         """
         Args:
             colors (list): A list of colors, each for plotting one data item
@@ -32,6 +66,7 @@ class CurvePlot(BasePlot):
             alphas (list): A list of alphas (transparency), each for plotting one uncertainty band
             **kwargs: keyword aguments used to specify the plotting options. 
                  A list of possible options:
+                     - ax (Axes): given Matplotlib Axes to plot the figure
                      - title (str): title of the plot
                      - xlabel (str): label of horizontal axis
                      - ylabel (str): label of vertical axis
@@ -41,8 +76,11 @@ class CurvePlot(BasePlot):
                      - logy (bool): log-scale of vertical axis
                      - integer_x (bool): enforce integer coordinates of horizontal axis
                      - integer_y (bool): enforce integer coordinates of vertical axis
-                     
-            
+                     - legend_loc (str): location string of the legend.
+                     - num_tick (int): Maximum number of major ticks in horizontal axis. 
+                     - xscale_magnitude (str): Format the major ticks in horizontal axis based on 
+                         the given magnitude. e.g. 'K': every one thousand or 'M': every one million.
+
         Returns:
             ax (Axes): A matplotlib Axes representing the generated plot.
         """
@@ -54,10 +92,17 @@ class CurvePlot(BasePlot):
             colors = sns.color_palette(n_colors=len(self.data))
         
         # Create a figure
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6, 4])
+        if 'ax' in kwargs:  # use provided Axes
+            ax = kwargs['ax']
+        else:  # create an Axes
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6, 4])
         
         # Iterate all saved data
-        for i, (name, data) in enumerate(self.data.items()):
+        for i, (name, D) in enumerate(self.data.items()):
+            # Unpack the data
+            data = D['data']
+            xvalues = D['xvalues']
+            
             # Enforce ndarray data with two-dimensional
             data = self._make_data(data)
             # Retrieve the generated color
@@ -66,11 +111,9 @@ class CurvePlot(BasePlot):
             # Compute the mean of the data
             mean = np.mean(data, axis=0)
             std = np.std(data, axis=0)
-            # Number of values
-            N = mean.size
             
             # Plot mean curve
-            ax.plot(range(1, N+1), 
+            ax.plot(xvalues, 
                     mean, 
                     color=color, 
                     label=name)
@@ -79,14 +122,17 @@ class CurvePlot(BasePlot):
                 scales = [1.0]
                 alphas = [0.5]
             for scale, alpha in zip(scales, alphas):
-                ax.fill_between(range(1, N+1), 
+                ax.fill_between(xvalues, 
                                 mean - scale*std, 
                                 mean + scale*std, 
                                 facecolor=color, 
                                 alpha=alpha)
                 
         # Make legend for each mean curve (data item)
-        ax.legend()
+        if 'legend_loc' in kwargs:
+            ax.legend(loc=kwargs['legend_loc'])
+        else:
+            ax.legend()
         
         # Make title if provided
         if 'title' in kwargs:
@@ -112,11 +158,18 @@ class CurvePlot(BasePlot):
         
         # Enforce axis having integer coordinates if provided
         if 'integer_x' in kwargs and kwargs['integer_x']:
-            from matplotlib.ticker import MaxNLocator
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         if 'integer_y' in kwargs and kwargs['integer_y']:
-            from matplotlib.ticker import MaxNLocator
-            ax.yaxis.set_major_locator(MaxNLocator(integer=True))    
+            ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+            
+        # Enforce the maximum number of major ticks in horizontal axis
+        if 'num_tick' in kwargs:
+            ax.xaxis.set_major_locator(plt.MaxNLocator(kwargs['num_tick']))
+            
+        # Format the major ticks in horizontal axis
+        if 'xscale_magnitude' in kwargs:
+            format_function = partial(self.tick_formatter, scale_magnitude=kwargs['xscale_magnitude'])
+            ax.xaxis.set_major_formatter(plt.FuncFormatter(format_function))
         
         return ax
     
@@ -132,3 +185,34 @@ class CurvePlot(BasePlot):
             raise TypeError(f'The input data must be either one- or two-dimensional. But got {x.ndim}.')
             
         return x
+    
+    def tick_formatter(self, x, pos, scale_magnitude):
+        """
+        A function to set major functional formatter. 
+
+        Args:
+            x (object): data value, internal argument used by Matplotlib
+            pos (object): position, internal argument used by Matplotlib
+            scale_magnitude (str): string description of scaling magnitude, use functools.partial
+                to make a function specified with this scaler but without put it as a required argument. 
+                Possible values: 
+                    - 'K': every one thousand
+                    - 'M': every one million
+
+        Returns:
+            A formatted string of the tick given the data value. 
+        """
+        # Make scaler based on string format
+        if scale_magnitude == 'K':
+            divisor = 1000
+        elif scale_magnitude == 'M':
+            divisor = 1000000
+        else:
+            raise ValueError(f"Only 'K' or 'M' supported, got {scale_magnitude}")
+
+        # Format the data value and return it
+        if x == 0:  # no format for zero
+            return '0'
+        else:
+            return f'{int(x/divisor)}{scale_magnitude}'
+        

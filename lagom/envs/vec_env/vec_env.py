@@ -132,7 +132,15 @@ class VecEnv(ABC):
     @abstractmethod
     def T(self):
         """
-        Horizon of the environment, if available
+        Maximum horizon of the environment, if available
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def max_episode_reward(self):
+        """
+        Maximum episodic rewards of the environment, if available
         """
         pass
 

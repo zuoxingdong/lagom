@@ -9,8 +9,9 @@ class Env(object):
     4. close(self)
     5. seed(self, seed)
     6. @property: T(self)
-    7. @property: observation_space(self)
-    8. @property: action_space(self)
+    7. @property: max_episode_reward(self)
+    8. @property: observation_space(self)
+    9. @property: action_space(self)
     """
     def step(self, action):
         """
@@ -74,7 +75,14 @@ class Env(object):
     @property
     def T(self):
         """
-        Horizon of the environment, if available
+        Maximum horizon of the environment, if available
+        """
+        raise NotImplementedError
+        
+    @property
+    def max_episode_reward(self):
+        """
+        Maximum episodic rewards of the environment, if available
         """
         raise NotImplementedError
         

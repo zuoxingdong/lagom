@@ -43,6 +43,7 @@ This repository requires following packages:
 - Scipy >= 1.1.0
 - Matplotlib >= 2.2.2
 - Scikit-image >= 0.14.0
+- Imageio >= 2.3.0
 - Pandas >= 0.23.3
 - Seaborn >= 0.9.dev
 - Jupyterlab >= 0.32.1

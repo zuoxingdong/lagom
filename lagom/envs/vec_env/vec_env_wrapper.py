@@ -38,6 +38,10 @@ class VecEnvWrapper(VecEnv):
     @property
     def T(self):
         return self.venv.T
+    
+    @property
+    def max_episode_reward(self):
+        return self.venv.max_episode_reward
 
     @property
     def observation_space(self):

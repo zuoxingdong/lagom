@@ -1,5 +1,8 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .base_agent import BaseAgent
 from lagom.core.transform import Standardize
@@ -17,18 +20,14 @@ class REINFORCEAgent(BaseAgent):
         
     def choose_action(self, obs):
         # Convert to Tensor
-        # Note that we assume obs is a single observation, not batched one
-        # so we unsqueeze it with a batch dimension
+        # Note that the observation should be batched already (even if only one trajectory)
         if not torch.is_tensor(obs):
-            obs = torch.from_numpy(obs).float()
-            obs = obs.unsqueeze(0)  # make a batch dimension
+            obs = torch.from_numpy(np.array(obs)).float()
             obs = obs.to(self.device)  # move to device
-        
+            
+        # Call policy
+        # Note that all metrics should also be batched for TrajectoryRunner to work properly, check policy/network output.   
         out_policy = self.policy(obs)
-        # Squeeze the single batch dimension of the action
-        for key, val in out_policy.items():
-            if torch.is_tensor(val):
-                out_policy[key] = val.squeeze(0)
                 
         # Dictionary of output data
         output = {}
@@ -36,37 +35,38 @@ class REINFORCEAgent(BaseAgent):
                 
         return output
         
-    def learn(self, x):
+    def learn(self, D):
         batch_policy_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
         
-        # Iterate over list of trajectories
-        for trajectory in x:
-            # Get all discounted returns
-            Rs = trajectory.all_discounted_returns
-            if self.config['standardize_pg']:  # encourage/discourage half of performed actions, i.e. [-1, 1]
-                Rs = Standardize()(Rs)
-                
+        # Iterate over list of Trajectory in D
+        for trajectory in D:
+            # Get all discounted returns as estimate of Q
+            Qs = trajectory.all_discounted_returns
+            # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
+            # Standardize advantage estimates if required
+            # encourage/discourage half of performed actions, respectively.
+            if self.config['agent:standardize']:
+                Qs = Standardize()(Qs)
+            
             # Get all log-probabilities and entropies
             logprobs = trajectory.all_info('action_logprob')
             entropies = trajectory.all_info('entropy')
-                
-            # All losses
+            
+            # Estimate policy gradient for all time steps and record all losses
             policy_loss = []
             entropy_loss = []
-            
-            # Estimate policy gradient for all time steps
-            for logprob, entropy, R in zip(logprobs, entropies, Rs):
-                policy_loss.append(-logprob*float(R))  # TODO: supports VecEnv
+            for logprob, entropy, Q in zip(logprobs, entropies, Qs):
+                policy_loss.append(-logprob*Q)
                 entropy_loss.append(-entropy)
                 
-            # Sum up losses for all time steps
-            policy_loss = torch.stack(policy_loss).sum()
-            entropy_loss = torch.stack(entropy_loss).sum()
+            # Average over losses for all time steps
+            policy_loss = torch.stack(policy_loss).mean()
+            entropy_loss = torch.stack(entropy_loss).mean()
             
             # Calculate total loss
-            entropy_coef = self.config['entropy_coef']
+            entropy_coef = self.config['agent:entropy_coef']
             total_loss = policy_loss + entropy_coef*entropy_loss
             
             # Record all losses
@@ -83,9 +83,9 @@ class REINFORCEAgent(BaseAgent):
         loss.backward()
         
         # Clip gradient norms if required
-        if self.config['max_grad_norm'] is not None:
+        if self.config['agent:max_grad_norm'] is not None:
             nn.utils.clip_grad_norm_(parameters=self.policy.network.parameters(), 
-                                     max_norm=self.config['max_grad_norm'], 
+                                     max_norm=self.config['agent:max_grad_norm'], 
                                      norm_type=2)
         
         # Decay learning rate if required

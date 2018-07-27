@@ -33,7 +33,11 @@ class GymEnv(Env):
     
     @property
     def T(self):
-        return self.env.T
+        return self.env.spec.max_episode_steps
+    
+    @property
+    def max_episode_reward(self):
+        return self.env.spec.reward_threshold
     
     @property
     def observation_space(self):

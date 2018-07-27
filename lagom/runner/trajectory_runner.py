@@ -67,24 +67,24 @@ class TrajectoryRunner(object):
             
             for t in range(T):  # Iterate over the number of time steps
                 # Action selection by the agent
-                output_agent = self.agent.choose_action(obs)
+                # We wrap obs with list to make a batch dimension
+                # Not using numpy because we don't know exact dtype, all Agent should handle batched data
+                output_agent = self.agent.choose_action([obs])
                 
                 # Unpack action from output. 
-                # Note that do not convert to raw value from Tensor here
-                # Because for Transition object, we often want to record Tensor action to backprop. 
-                action = output_agent['action']
-                state_value = output_agent.get('state_value', None)
+                # We record Tensor dtype for backprop (propagate via Transitions)
+                action = output_agent.pop('action')  # pop-out
+                state_value = output_agent.pop('state_value', None)
                 
-                # Execute the action in the environment
+                # Obtain raw action from Tensor for environment to execute
                 if torch.is_tensor(action):  # convert Tensor to raw numpy array
                     raw_action = action.detach().cpu().numpy()
-                    # Handle with discrete action (must be int)
-                    # Now raw action is ndarray
-                    if isinstance(self.env.action_space, Discrete):
-                        raw_action = raw_action.item()
+                    # Note that the action is batched with batch size one.  
+                    # So we unwrapped it for environment to work on valid action
+                    raw_action = raw_action[0]
                 else:  # Non Tensor action, e.g. from RandomAgent
                     raw_action = action
-                # Take action
+                # Execute the action
                 obs_next, reward, done, info = self.env.step(raw_action)
                 
                 # Create and record a Transition
@@ -97,11 +97,11 @@ class TrajectoryRunner(object):
                 if state_value is not None:
                     transition.add_info('V_s', state_value)
                 # Record additional information from output_agent
+                # Note that 'action' and 'state_value' already poped out
                 for key, val in output_agent.items():
-                    if key != 'action' and key != 'state_value':  # action and state_value already recorded
-                        transition.add_info(key, val)
-                
-                # Add transition to trajectory
+                    transition.add_info(key, val)
+                    
+                # Add transition to Trajectory
                 trajectory.add_transition(transition)
                 
                 # Back up obs for next iteration to feed into agent
@@ -113,10 +113,10 @@ class TrajectoryRunner(object):
             
             # Call agent again to compute state value for final obsevation in collected trajectory
             if state_value is not None:
-                V_s_next = self.agent.choose_action(obs)['state_value']
-                # Set to zero if it is terminal state
-                if done:
-                    V_s_next = V_s_next.fill_(0.0)
+                V_s_next = self.agent.choose_action([obs])['state_value']  # batched observation with same reason as above
+                # We do not set zero even if it is terminal state
+                # Because it should be handled in Trajectory e.g. compute TD errors
+                # Return original Tensor in general can help backprop to work properly, e.g. learning value function
                 # Add to the final transition as 'V_s_next'
                 trajectory.transitions[-1].add_info('V_s_next', V_s_next)
             
