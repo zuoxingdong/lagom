@@ -52,6 +52,8 @@ def worker(master_conn, worker_conn, make_env):
             env.seed(data)
         elif cmd == 'T':
             worker_conn.send(env.T)
+        elif cmd == 'max_episode_reward':
+            worker_conn.send(env.max_episode_reward)
         elif cmd == 'get_spaces':
             result = [env.observation_space, env.action_space]
             # Send back spaces
@@ -173,3 +175,10 @@ class ParallelVecEnv(VecEnv):
         all_T = [master_conn.recv() for master_conn in self.master_conns]
         
         return all_T
+    
+    @property
+    def max_episode_reward(self):
+        [master_conn.send(['max_episode_reward', None]) for master_conn in self.master_conns]
+        all_max_episode_reward = [master_conn.recv() for master_conn in self.master_conns]
+        
+        return all_max_episode_reward

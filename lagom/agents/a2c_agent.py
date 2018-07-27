@@ -57,7 +57,7 @@ class A2CAgent(BaseAgent):
             # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
             # Standardize advantage estimates if required
             # encourage/discourage half of performed actions, respectively.
-            if self.config['standardize_pg']:
+            if self.config['agent:standardize']:
                 Qs = Standardize()(Qs)
             
             # Get all state values (without V_s_next with all done=True also without the final transition)
@@ -85,8 +85,8 @@ class A2CAgent(BaseAgent):
             entropy_loss = torch.stack(entropy_loss).mean()
         
             # Calculate total loss
-            value_coef = self.config['value_coef']
-            entropy_coef = self.config['entropy_coef']
+            value_coef = self.config['agent:value_coef']
+            entropy_coef = self.config['agent:entropy_coef']
             total_loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
             
             # Record all losses
@@ -104,9 +104,9 @@ class A2CAgent(BaseAgent):
         loss.backward()
         
         # Clip gradient norms if required
-        if self.config['max_grad_norm'] is not None:
+        if self.config['agent:max_grad_norm'] is not None:
             nn.utils.clip_grad_norm_(parameters=self.policy.network.parameters(), 
-                                     max_norm=self.config['max_grad_norm'], 
+                                     max_norm=self.config['agent:max_grad_norm'], 
                                      norm_type=2)
         
         # Decay learning rate if required
@@ -127,7 +127,13 @@ class A2CAgent(BaseAgent):
         if hasattr(self, 'lr_scheduler'):
             output['current_lr'] = self.lr_scheduler.get_lr()
         
-        return output        
+        return output
+    
+    def save(self, filename):
+        self.policy.network.save(filename)
+    
+    def load(self, filename):
+        self.policy.network.load(filename)
 """
             
             # Generalized Advantage Estimation (GAE)

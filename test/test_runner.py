@@ -14,9 +14,10 @@ from lagom.envs import EnvSpec, GymEnv
 from lagom.agents import BaseAgent, RandomAgent
 
 from lagom.runner import Transition
-from lagom.runner import Segment
 from lagom.runner import Trajectory
-from lagom.runner import Runner
+from lagom.runner import TrajectoryRunner
+from lagom.runner import Segment
+from lagom.runner import SegmentRunner
 
 
 class Agent1(BaseAgent):
@@ -26,16 +27,13 @@ class Agent1(BaseAgent):
         self.network = nn.Linear(4, 2)
     
     def choose_action(self, obs):
-        obs = torch.from_numpy(obs).float()
-        obs = obs.unsqueeze(0)
+        obs = torch.from_numpy(np.array(obs)).float()
         
         action_scores = self.network(obs)
         action_probs = F.softmax(action_scores, dim=-1)
         action_dist = Categorical(action_probs)
         action = action_dist.sample()
         action_logprob = action_dist.log_prob(action)
-        
-        action = action.squeeze(0)
         
         output = {}
         output['action'] = action
@@ -60,12 +58,10 @@ class Agent2(BaseAgent):
         self.network = nn.Linear(3, 1)
     
     def choose_action(self, obs):
-        obs = torch.from_numpy(obs).float()
-        obs = obs.unsqueeze(0)
+        obs = torch.from_numpy(np.array(obs)).float()
         
         action = self.network(obs)
         action = 2*torch.tanh(action)
-        action = action.squeeze(0)
         
         output = {}
         output['action'] = action
@@ -234,6 +230,48 @@ class TestRunner(object):
         all_V = [V.item() if torch.is_tensor(V) else V for V in segment.all_V]
         assert np.allclose(segment.all_V, [100, 200, 250, 300, 400, 500])
         assert np.allclose(segment.all_TD, [-79, -198, -257, -346])
+        
+        
+        # Test case: segment of transitions from three episodes with final transition non-terminal
+        # done: [True, False, True, False]
+        segment = Segment(gamma=0.1)
+
+        transition1 = Transition(s=10, a=-1, r=1, s_next=20, done=True)
+        transition1.add_info(name='V_s', value=torch.tensor(100))
+        transition1.add_info(name='V_s_next', value=torch.tensor(150))
+        segment.add_transition(transition1)
+        transition2 = Transition(s=25, a=-2, r=2, s_next=30, done=False)
+        transition2.add_info(name='V_s', value=torch.tensor(200))
+        segment.add_transition(transition2)
+        transition3 = Transition(s=30, a=-3, r=3, s_next=40, done=True)
+        transition3.add_info(name='V_s', value=torch.tensor(300))
+        transition3.add_info(name='V_s_next', value=torch.tensor(350))
+        segment.add_transition(transition3)
+        transition4 = Transition(s=45, a=-4, r=4, s_next=50, done=False)
+        transition4.add_info(name='V_s', value=torch.tensor(400))
+        transition4.add_info(name='V_s_next', value=torch.tensor(500))
+        assert len(transition4.info) == 2
+        segment.add_transition(transition4)
+
+        segment.add_info(name='extra', value='ok')
+        assert len(segment.info) == 1
+        assert np.allclose(segment.all_info('V_s'), [100, 200, 300, 400])
+
+        assert segment.T == 4
+        assert len(segment.split_transitions) == 3
+        assert len(segment.T_split) == 3 and np.array_equal(segment.T_split, [1, 2, 1])
+        assert np.allclose(segment.all_s, [10, 20, 25, 30, 40, 45, 50])
+        assert len(segment.all_s_split) == 3 and segment.all_s_split == [[10, 20], [25, 30, 40], [45, 50]]
+        assert np.allclose(segment.all_a, [-1, -2, -3, -4])
+        assert np.allclose(segment.all_r, [1, 2, 3, 4])
+        assert np.all(np.array_equal(segment.all_done, [True, False, True, False]))
+        assert np.allclose(segment.all_returns, [1, 5, 3, 4])
+        assert np.allclose(segment.all_discounted_returns, [1, 2.3, 3, 4])
+        assert np.allclose(segment.all_bootstrapped_returns, [1, 5, 3, 504])
+        assert np.allclose(segment.all_bootstrapped_discounted_returns, [1, 2.3, 3, 54])
+        all_V = [V.item() if torch.is_tensor(V) else V for V in segment.all_V]
+        assert np.allclose(segment.all_V, [100, 150, 200, 300, 350, 400, 500])
+        assert np.allclose(segment.all_TD, [-99, -168, -297, -346])
 
 
         # Test case: segment of transitions from two episodes with final transition terminal
@@ -366,7 +404,7 @@ class TestRunner(object):
         assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -29])
         assert np.allclose(trajectory.all_info(name='V_s'), [10, 20, 30])
         
-    def test_runner(self):
+    def test_trajectoryrunner(self):
         def helper(agent, env):
             env = GymEnv(env)
             env_spec = EnvSpec(env)
@@ -380,7 +418,7 @@ class TestRunner(object):
             else:
                 raise ValueError('Wrong agent name')
 
-            runner = Runner(agent=agent, env=env, gamma=1.0)
+            runner = TrajectoryRunner(agent=agent, env=env, gamma=1.0)
 
             D = runner(N=3, T=4)
 

@@ -87,3 +87,9 @@ class SerialVecEnv(VecEnv):
         all_T = [env.T for env in self.list_env]
         
         return all_T
+    
+    @property
+    def max_episode_reward(self):
+        all_max_episode_reward = [env.max_episode_reward for env in self.list_env]
+        
+        return all_max_episode_reward

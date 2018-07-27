@@ -13,6 +13,14 @@ class EnvSpec(object):
             raise TypeError('The object env must be of type lagom Env or VecEnv.')
         
         self.env = env
+    
+    @property
+    def T(self):
+        return self.env.T
+    
+    @property
+    def max_episode_reward(self):
+        return self.env.max_episode_reward
         
     @property
     def observation_space(self):
