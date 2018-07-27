@@ -5,6 +5,8 @@
 
 lagom
 =====
+    | *inte för mycket och inte för lite, enkelhet är bäst*
+    | *not too much and not too little, simplicity is often the best*
 
 .. raw:: html
 
@@ -14,11 +16,36 @@ lagom
   
 *lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.*
 
+lagom balances between the flexibility and the userability when developing reinforcement learning (RL) algorithms. The library is built on top of `PyTorch`_ and provides modular tools to quickly prototype RL algorithms. However, we do not go overboard, because going too low level is rather time consuming and prone to potential bugs, while going too high level degrades the flexibility which makes it difficult to try out some crazy ideas. 
+
+.. _`PyTorch`: https://pytorch.org/
+
+We are continuously making lagom more 'self-contained' to run experiments quickly. Now, it internally supports base classes for multiprocessing (master-worker framework) to parallelize (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search. 
+
+One of the main pipelines to use lagom can be done as following:
+    1. Define environment and RL agent
+    2. User runner to collect data for agent
+    3. Define algorithm to train agent
+    4. Define experiment and configurations. 
+
+A graphical illustration is coming soon. 
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Basics:
+    :maxdepth: 1
+    :caption: Installation
+   
+.. toctree::
+    :maxdepth: 1
+    :caption: Getting Started
+    
+.. toctree::
+    :maxdepth: 1
+    :caption: Tutorials
+    
+.. toctree::
+    :maxdepth: 1
+    :caption: Examples
 
 
 
