@@ -1,0 +1,378 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.envs.vec_env.vec_env &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.envs.vec_env.vec_env</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.envs.vec_env.vec_env</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">abstractmethod</span>
+
+
+<div class="viewcode-block" id="VecEnv"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv">[docs]</a><span class="k">class</span> <span class="nc">VecEnv</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An abstract class for asynchronous, vectorized environment. </span>
+<span class="sd">    </span>
+<span class="sd">    Note that all vectorized environments should share the same observation and action spaces.</span>
+<span class="sd">    </span>
+<span class="sd">    All inherited subclasses should at least implement the following functions:</span>
+<span class="sd">    1. step_asyn(self, actions)</span>
+<span class="sd">    2. step_wait(self)</span>
+<span class="sd">    3. reset(self)</span>
+<span class="sd">    4. render(self, mode=&#39;human&#39;)</span>
+<span class="sd">    5. close(self)</span>
+<span class="sd">    6. seed(self, seeds)</span>
+<span class="sd">    7. @property: T(self)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_make_env</span><span class="p">,</span> <span class="n">observation_space</span><span class="p">,</span> <span class="n">action_space</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_make_env</span> <span class="o">=</span> <span class="n">list_make_env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_env</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_make_env</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observation_space</span> <span class="o">=</span> <span class="n">observation_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_action_space</span> <span class="o">=</span> <span class="n">action_space</span>
+        
+<div class="viewcode-block" id="VecEnv.step_async"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.step_async">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">step_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Notify all the environments to execute the given actions, each for one environment. </span>
+<span class="sd">        </span>
+<span class="sd">        Call step_wait() to receive all the results. </span>
+<span class="sd">        </span>
+<span class="sd">        Note that do not call this function if it is already pending. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            actions (list): a list of given actions, each for one environment. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+        
+<div class="viewcode-block" id="VecEnv.step_wait"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.step_wait">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">step_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wait for the job in step_async() to finish and return all the results. </span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (list of object): A list of current observations that agent receives from all </span>
+<span class="sd">                environments after executing the given actions. </span>
+<span class="sd">            rewards (list of float): A list of scalar rewards from all environments. </span>
+<span class="sd">            dones (list of bool): A list booleans from all environments. If True, then the episode terminates.</span>
+<span class="sd">            infos (list of dict): A list of debugging informations from all environments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+        
+<div class="viewcode-block" id="VecEnv.step"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Execute all the given actions, each for one environment, for one time step through</span>
+<span class="sd">        the environments&#39; dynamics. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            actions (list): a list of given actions, each for one environment. </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (list of object): A list of current observations that agent receives from all </span>
+<span class="sd">                environments after executing the given actions. </span>
+<span class="sd">            rewards (list of float): A list of scalar rewards from all environments. </span>
+<span class="sd">            dones (list of bool): A list booleans from all environments. If True, then the episode terminates.</span>
+<span class="sd">            infos (list of dict): A list of debugging informations from all environments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_env</span>
+        <span class="c1"># Execute the actions in all environments asynchronously</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_async</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span>
+        
+        <span class="c1"># wait to receive the results and return them</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_wait</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="VecEnv.reset"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.reset">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset the states of all the environments and return a list of initial observations.</span>
+<span class="sd">        </span>
+<span class="sd">        Note that the step_async() will be cancelled if it is still woring. </span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            observations (list): The list of initial observations from all environments. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="VecEnv.render"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.render">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;human&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render the vectorized environment. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The mode for the rendering. Two modes are supported.</span>
+<span class="sd">                        - &#39;human&#39;: Often pop up a rendered window</span>
+<span class="sd">                        - &#39;rgb_array&#39;: numpy array with shape [x, y, 3] for RGB values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="VecEnv.close"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.close">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This will be automatically called when garbage collected or program exited. </span>
+<span class="sd">        </span>
+<span class="sd">        Override this method to do any further cleanup. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="VecEnv.seed"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.VecEnv.seed">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seeds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the random seeds for each of the environment. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            seeds (list): List of seeds to initialize the pseudo-random number generator</span>
+<span class="sd">                for all environments. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: make it better to use</span>
+        <span class="k">pass</span></div>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">unwrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unwrap the vectorized environment. </span>
+<span class="sd">        </span>
+<span class="sd">        Useful for sequential wrappers applied, it can access information from those environments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Maximum horizon of the environment, if available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">max_episode_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Maximum episodic rewards of the environment, if available</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">observation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a Space object to define the observation space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observation_space</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">action_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a Space object to define the action space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_space</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

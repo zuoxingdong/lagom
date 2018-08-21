@@ -3,7 +3,7 @@
 
 #############################
 # Build PyTorch wheel file  #
-# Date: 2018-07-10          #
+# Date: 2018-08-06          #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -19,7 +19,7 @@ export CONDA=$HOME/anaconda3/bin/conda
 
 # Create list of variables
 export CMAKE_PREFIX_PATH=/home/zuo/anaconda3
-export CUDA_VERSION=90
+export CUDA_VERSION=92
 
 # Install dependencies
 $CONDA install -y numpy pyyaml mkl mkl-include setuptools cffi typing

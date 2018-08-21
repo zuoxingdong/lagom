@@ -2,7 +2,7 @@
 
 #############################
 # Install dependencies      #
-# Date: 2018-07-27  	    #
+# Date: 2018-08-10  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -21,17 +21,15 @@ $CONDA update --all
 
 # Append more useful things to bashrc
 echo "# PATH" >> ~/.bashrc
-echo "export PATH=/usr/lib/nvidia-$NVIDIA_DRIVER_VER/bin/:$PATH" >> ~/.bashrc
+echo "export PATH=/usr/lib/nvidia-$NVIDIA_DRIVER_VER/bin/:\$PATH" >> ~/.bashrc
 
 echo "# LIBRARY" >> ~/.bashrc
-echo "export LIBRARY_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib:$LIBRARY_PATH" >> ~/.bashrc
-echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$HOME/anaconda3/envs/$ENV_NAME/lib:$LD_LIBRARY_PATH" >> ~/.bashrc
-
-echo "# CUDA" >> ~/.bashrc
-echo "export CUDA_HOME=/usr/local/cuda" >> ~/.bashrc
+echo "export LIBRARY_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib:\$LIBRARY_PATH" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=/usr/lib/nvidia-$NVIDIA_DRIVER_VER:$HOME/anaconda3/envs/$ENV_NAME/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$HOME/.mujoco/mjpro150/bin" >> ~/.bashrc 
 
 echo "# PKG_CONFIG" >> ~/.bashrc
-echo "export PKG_CONFIG_PATH=$HOME/anaconda3/envs/$ENV_NAME/lib/pkgconfig/" >> ~/.bashrc
+echo "export PKG_CONFIG_PATH=\$PKG_CONFIG_PATH:$HOME/anaconda3/envs/$ENV_NAME/lib/pkgconfig/" >> ~/.bashrc
 
 # Set up .vimrc for tab as 4 spaces
 echo "set tabstop=4" >> ~/.vimrc
@@ -60,8 +58,8 @@ $CONDA install -y patchelf
 # Install some pip packages
 pip install pandas seaborn
 pip install jupyterlab
-pip install gym[all] cma
+pip install mujoco-py gym[all] cma
 pip install pytest flake8 sphinx sphinx_rtd_theme
 
 # PyTorch
-$CONDA install pytorch torchvision -c pytorch
+$CONDA install pytorch torchvision cuda92 -c pytorch

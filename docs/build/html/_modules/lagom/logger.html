@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.logger &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.logger</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.logger</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Logger"><a class="viewcode-back" href="../../lagom.html#lagom.Logger">[docs]</a><span class="k">class</span> <span class="nc">Logger</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Logging information during experiment. </span>
+<span class="sd">    </span>
+<span class="sd">    It supports iterative logging and dumping. That is, when same key is logged more than once, </span>
+<span class="sd">    the values for this key will be appended successively. During dumping, the user can also</span>
+<span class="sd">    choose to dump either the entire list of logged values or the values with specific index.</span>
+<span class="sd">    </span>
+<span class="sd">    Note that we do not support hierarchical logging, e.g. list of dict of list of dict of ndarray</span>
+<span class="sd">    this is because pickling is extremely slow for such a hierarhical data structure with mixture</span>
+<span class="sd">    of dict and ndarray. Thus, we keep dict always at the top, if hierarchical logging is really</span>
+<span class="sd">    needed, we recommand to present it in the key, the following example illustrate it:</span>
+<span class="sd">    </span>
+<span class="sd">    Suppose we want to train a goal-conditional policy in a maze with different goals iteratively,</span>
+<span class="sd">    and each goal is trained with several internal iterations, in such scenario, when we want to </span>
+<span class="sd">    log policy loss, the hierarchical key can be combine into one string with &#39;:&#39; to separate each</span>
+<span class="sd">    level, for example we want to log the policy loss with goal number 34 and internal training iteration</span>
+<span class="sd">    20, the key can be &#39;goal_34:train:iter_20:policy_loss&#39;. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;logger&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Logger. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the logger</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        
+        <span class="c1"># Create logging dictionary, we use OrderedDict to keep insert ordering of the keys</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="Logger.log"><a class="viewcode-back" href="../../lagom.html#lagom.Logger.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Log the information with given key and value. </span>
+<span class="sd">        </span>
+<span class="sd">        Note that if key is already existed, the new value will be appended. </span>
+<span class="sd">        </span>
+<span class="sd">        A recommandation for the string style of the key, it should be named semantically</span>
+<span class="sd">        and each word separated by &#39;_&#39;, because `dump()` will automatically replace all &#39;_&#39;</span>
+<span class="sd">        with a whitespace and make each word capitalized by `str.title()`. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            key (str): key of the information</span>
+<span class="sd">            val (object): value to be logged</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize the logging with a list</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            
+        <span class="c1"># Append the current value to be logged</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Logger.dump"><a class="viewcode-back" href="../../lagom.html#lagom.Logger.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dump the item to the screen.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            keys (list, optional): List of keys to dump, if got None, then dump all logged information.</span>
+<span class="sd">                Default: None</span>
+<span class="sd">            index (int/list, optional): The index of logged information for dumping. It can be used with the </span>
+<span class="sd">                following types:</span>
+<span class="sd">                1. Scalar: applies to all given keys. It can also be -1, i.e. last element in the list.</span>
+<span class="sd">                2. List: applies to each key with given index. </span>
+<span class="sd">                3. None: dump everything for all given keys. It can also be list of None.</span>
+<span class="sd">                Default: None</span>
+<span class="sd">            indent (int, optional): the number of tab indentation before dumping the information. </span>
+<span class="sd">                Default: 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make keys depends on the cases</span>
+        <span class="k">if</span> <span class="n">keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># dump all keys</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;keys must be list type, got {type(keys)}&#39;</span>
+        
+        <span class="c1"># Make all indicies consistent with keys</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># dump everything in given keys</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># apply to all given keys</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>  <span class="c1"># specific index for each key</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;index length should be same as that of keys, got {len(index)}&#39;</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        
+        <span class="c1"># Dump all logged information given the keys and index</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+            <span class="c1"># Print given indentation</span>
+            <span class="k">if</span> <span class="n">indent</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">*</span><span class="n">indent</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># do not create a new line</span>
+            
+            <span class="c1"># Get logged information based on index</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                <span class="n">log_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            
+            <span class="c1"># Polish key string and make it visually beautiful</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            
+            <span class="c1"># Print logged information</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{key}</span><span class="s1">: </span><span class="si">{log_data}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Logger.save"><a class="viewcode-back" href="../../lagom.html#lagom.Logger.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save loggings to a file</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            file (str): path to save the logged information. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Logger.clear"><a class="viewcode-back" href="../../lagom.html#lagom.Logger.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove all loggings&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+        
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

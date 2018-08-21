@@ -4,8 +4,7 @@ import random
 
 
 def set_global_seeds(seed):
-    """
-    Set seed for all dependencies we use. 
+    r"""Set seed for all dependencies we use. 
     
     It includes the following:
     1. PyTorch
@@ -22,8 +21,7 @@ def set_global_seeds(seed):
 
 
 class Seeder(object):
-    """
-    A seeder that can continuously sample a single or a batch of random seeds. 
+    r"""A seeder that can continuously sample a single or a batch of random seeds. 
     """
     def __init__(self, init_seed=0):
         # Initialize random seed for sampling random seeds

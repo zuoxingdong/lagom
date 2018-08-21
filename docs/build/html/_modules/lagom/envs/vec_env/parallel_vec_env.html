@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.envs.vec_env.parallel_vec_env &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.envs.vec_env.parallel_vec_env</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.envs.vec_env.parallel_vec_env</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Process</span>  <span class="c1"># easier than threading</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pipe</span>  <span class="c1"># faster than Queue</span>
+
+<span class="kn">from</span> <span class="nn">.vec_env</span> <span class="k">import</span> <span class="n">VecEnv</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">CloudpickleWrapper</span>
+
+
+<span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="n">master_conn</span><span class="p">,</span> <span class="n">worker_conn</span><span class="p">,</span> <span class="n">make_env</span><span class="p">):</span>
+    <span class="c1"># Close forked master connection as it is not used here</span>
+    <span class="c1"># It does not affect the master connection in the main process</span>
+    <span class="n">master_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="c1"># Create the environment</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">make_env</span><span class="p">()</span>
+    
+    <span class="c1"># Loop until receiving close command from master</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Receive master command</span>
+        <span class="n">cmd</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">worker_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+        
+        <span class="c1"># Do the work according to the command</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;step&#39;</span><span class="p">:</span>
+            <span class="n">observation</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            
+            <span class="c1"># If episode terminates, reset the environment and send back initial observation in info</span>
+            <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+                <span class="n">init_observation</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                <span class="n">info</span><span class="p">[</span><span class="s1">&#39;init_observation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">init_observation</span>
+                
+            <span class="c1"># Send information back to master</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="n">observation</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;reset&#39;</span><span class="p">:</span>
+            <span class="c1"># Reset environment</span>
+            <span class="n">observation</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="c1"># Send back initial observation</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;render&#39;</span><span class="p">:</span>
+            <span class="c1"># Render the environment</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rgb_array&#39;</span><span class="p">)</span>
+            <span class="c1"># Send back rendered RGB image</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;close&#39;</span><span class="p">:</span>
+            <span class="c1"># Close the environment</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1"># Close the worker connection</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1"># Break the while loop</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;seed&#39;</span><span class="p">:</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;T&#39;</span><span class="p">:</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;max_episode_reward&#39;</span><span class="p">:</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">max_episode_reward</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;get_spaces&#39;</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">]</span>
+            <span class="c1"># Send back spaces</span>
+            <span class="n">worker_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            
+
+<div class="viewcode-block" id="ParallelVecEnv"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv">[docs]</a><span class="k">class</span> <span class="nc">ParallelVecEnv</span><span class="p">(</span><span class="n">VecEnv</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run vectorized environment in parallel. Each environment is running in an individual Process.</span>
+<span class="sd">    </span>
+<span class="sd">    Note that it is recommended to use parallel vectorized environment only if the step() in the environment</span>
+<span class="sd">    needs quite some computation, otherwise it will be slower than doing it serially. For &#39;fast&#39;</span>
+<span class="sd">    environment, it is recommended to use SerialVecEnv instead. </span>
+<span class="sd">    </span>
+<span class="sd">    Examples:</span>
+<span class="sd">    </span>
+<span class="sd">        def make_env():</span>
+<span class="sd">            env = gym.make(&#39;CartPole-v0&#39;)</span>
+<span class="sd">            env = GymEnv(env)</span>
+
+<span class="sd">            return env</span>
+
+<span class="sd">        env = ParallelVecEnv([make_env]*5)</span>
+<span class="sd">        env.reset()</span>
+<span class="sd">        for _ in range(100):</span>
+<span class="sd">            env.step([0]*5)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_make_env</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            list_make_env (list): list of functions to generate an environment. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create Pipe connections, each for one environment worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">Pipe</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_make_env</span><span class="p">))])</span>
+        <span class="c1"># Create processes, each for one environment worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span> <span class="o">=</span> <span class="p">[</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="p">,</span> 
+                                     <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">master_conn</span><span class="p">,</span> <span class="n">worker_conn</span><span class="p">,</span> <span class="n">CloudpickleWrapper</span><span class="p">(</span><span class="n">make_env</span><span class="p">)],</span> 
+                                     <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                             <span class="k">for</span> <span class="n">master_conn</span><span class="p">,</span> <span class="n">worker_conn</span><span class="p">,</span> <span class="n">make_env</span> 
+                             <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span><span class="p">,</span> <span class="n">list_make_env</span><span class="p">)]</span>
+        <span class="c1"># Start all the processes</span>
+        <span class="p">[</span><span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span><span class="p">]</span>
+        
+        <span class="c1"># Close worker connections as they are not used here, the Processes already fork them</span>
+        <span class="p">[</span><span class="n">worker_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> <span class="k">for</span> <span class="n">worker_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span><span class="p">]</span>
+        
+        <span class="c1"># Obtain observation and action spaces from all environments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;get_spaces&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">observation_space</span><span class="p">,</span> <span class="n">action_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+        
+        <span class="c1"># Call parent constructor</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">list_make_env</span><span class="o">=</span><span class="n">list_make_env</span><span class="p">,</span> 
+                         <span class="n">observation_space</span><span class="o">=</span><span class="n">observation_space</span><span class="p">,</span> 
+                         <span class="n">action_space</span><span class="o">=</span><span class="n">action_space</span><span class="p">)</span>
+        
+        <span class="c1"># Some settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># If True, then workers are still working</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># If True, then all processes already closed</span>
+        
+<div class="viewcode-block" id="ParallelVecEnv.step_async"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.step_async">[docs]</a>    <span class="k">def</span> <span class="nf">step_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actions</span><span class="p">):</span>
+        <span class="c1"># Send &#39;step&#39; and action to all environment workers</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="n">action</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span><span class="p">,</span> <span class="n">action</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="n">actions</span><span class="p">)]</span>
+        <span class="c1"># Set waiting flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting</span> <span class="o">=</span> <span class="kc">True</span></div>
+        
+<div class="viewcode-block" id="ParallelVecEnv.step_wait"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.step_wait">[docs]</a>    <span class="k">def</span> <span class="nf">step_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Receive results from all workers</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="c1"># Turn off waiting flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waiting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Unpack results</span>
+        <span class="n">observations</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span> <span class="n">infos</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">results</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">observations</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span> <span class="n">infos</span></div>
+    
+<div class="viewcode-block" id="ParallelVecEnv.reset"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Send &#39;reset&#39; to all environment workers</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;reset&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="c1"># Receive a list of initial observations from reset() in all environment workers</span>
+        <span class="n">observations</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">observations</span></div>
+        
+<div class="viewcode-block" id="ParallelVecEnv.render"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;human&#39;</span><span class="p">):</span>
+        <span class="c1"># Send &#39;render&#39; to all environment workers</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;render&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="c1"># Receive all rendered output from all environment workers</span>
+        <span class="n">imgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">imgs</span></div>
+        
+<div class="viewcode-block" id="ParallelVecEnv.close"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>  <span class="c1"># all environments already closed</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="c1"># Waiting to receive data from all the workers if they are still working</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waiting</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+            
+        <span class="c1"># Send &#39;close&#39; to all environment workers</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;close&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="c1"># Close all master connections</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="c1"># Join all the processes</span>
+        <span class="p">[</span><span class="n">process</span><span class="o">.</span><span class="n">join</span><span class="p">()</span> <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span><span class="p">]</span>
+        
+        <span class="c1"># Update closed flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="kc">True</span></div>
+        
+<div class="viewcode-block" id="ParallelVecEnv.seed"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.ParallelVecEnv.seed">[docs]</a>    <span class="k">def</span> <span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seeds</span><span class="p">):</span>
+        <span class="c1"># Send seeds to all environment workers</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span><span class="p">,</span> <span class="n">seed</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="n">seeds</span><span class="p">)]</span></div>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="n">all_T</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">all_T</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_episode_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="s1">&#39;max_episode_reward&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="n">all_max_episode_reward</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">all_max_episode_reward</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

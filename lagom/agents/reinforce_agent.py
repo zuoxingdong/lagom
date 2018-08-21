@@ -18,6 +18,8 @@ class REINFORCEAgent(BaseAgent):
         
         super().__init__(config, **kwargs)
         
+        self.accumulated_trained_timesteps = 0
+        
     def choose_action(self, obs):
         # Convert to Tensor
         # Note that the observation should be batched already (even if only one trajectory)
@@ -90,10 +92,18 @@ class REINFORCEAgent(BaseAgent):
         
         # Decay learning rate if required
         if hasattr(self, 'lr_scheduler'):
-            self.lr_scheduler.step()
+            if 'train:iter' in self.config:  # iteration-based training, so just increment epoch by default
+                self.lr_scheduler.step()
+            elif 'train:timestep' in self.config:  # timestep-based training, increment with timesteps
+                self.lr_scheduler.step(self.accumulated_trained_timesteps)
+            else:
+                raise KeyError('expected train:iter or train:timestep in config, but none of them exist')
         
         # Take a gradient step
         self.optimizer.step()
+        
+        # Accumulate trained timesteps
+        self.accumulated_trained_timesteps += sum([trajectory.T for trajectory in D])
         
         # Output dictionary for different losses
         # TODO: if no more backprop needed, record with .item(), save memory without store computation graph

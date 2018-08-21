@@ -1,0 +1,644 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.agents &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="lagom.contrib" href="contrib.html" />
+    <link rel="prev" title="lagom" href="lagom.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">lagom.agents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#agent">Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#random-agent">Random Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#policy-gradient-agent">Policy Gradient Agent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reinforce">REINFORCE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vanilla-policy-gradient">Vanilla Policy Gradient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advantage-actor-critic-a2c">Advantage Actor-Critic (A2C)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>lagom.agents</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/agents.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-lagom.agents">
+<span id="lagom-agents"></span><h1>lagom.agents<a class="headerlink" href="#module-lagom.agents" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="agent">
+<h2>Agent<a class="headerlink" href="#agent" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lagom.agents.BaseAgent">
+<em class="property">class </em><code class="descclassname">lagom.agents.</code><code class="descname">BaseAgent</code><span class="sig-paren">(</span><em>config</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class of the agent for action selection and learning rule.</p>
+<p>Depending on the type of agent (e.g. policy-based or value-based), it is recommended
+to override the constructor __init__() to provide essential items for the agent.</p>
+<p>Note that if subclass overrides __init__, remember to provide
+keywords aguments, i.e. <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs passing to super().__init__.</p>
+<p>All Agent should by default handle batched data
+e.g. observation with first dimension as batch or learning data is a batched list of Trajectory or Segment.</p>
+<p>All inherited subclasses should at least implement the following functions:
+1. choose_action(self, obs)
+2. learn(self, x)
+3. save(self, filename)
+4. load(self, filename)</p>
+<dl class="method">
+<dt id="lagom.agents.BaseAgent.choose_action">
+<code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.choose_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>The agent selects an action based on given observation. 
+The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
+<dd>environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of action selection output. </dt>
+<dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.BaseAgent.learn">
+<code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learning rule about how agent updates itself given batched data.
+The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>D (list): batched data to train the agent. </dt>
+<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of learning output. </dt>
+<dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.BaseAgent.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the parameters of the agent from a file</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.BaseAgent.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current parameters of the agent.</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="random-agent">
+<h2>Random Agent<a class="headerlink" href="#random-agent" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lagom.agents.RandomAgent">
+<em class="property">class </em><code class="descclassname">lagom.agents.</code><code class="descname">RandomAgent</code><span class="sig-paren">(</span><em>env_spec</em>, <em>config=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>A random agent samples action uniformly from action space.</p>
+<p>Note that the agent should handle batched data.</p>
+<dl class="method">
+<dt id="lagom.agents.RandomAgent.choose_action">
+<code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.choose_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>The agent selects an action based on given observation. 
+The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
+<dd>environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of action selection output. </dt>
+<dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.RandomAgent.learn">
+<code class="descname">learn</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learning rule about how agent updates itself given batched data.
+The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>D (list): batched data to train the agent. </dt>
+<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of learning output. </dt>
+<dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.RandomAgent.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the parameters of the agent from a file</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.RandomAgent.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current parameters of the agent.</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="policy-gradient-agent">
+<h2>Policy Gradient Agent<a class="headerlink" href="#policy-gradient-agent" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="reinforce">
+<h3>REINFORCE<a class="headerlink" href="#reinforce" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="lagom.agents.REINFORCEAgent">
+<em class="property">class </em><code class="descclassname">lagom.agents.</code><code class="descname">REINFORCEAgent</code><span class="sig-paren">(</span><em>policy</em>, <em>optimizer</em>, <em>config</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>REINFORCE algorithm (no baseline)</p>
+<dl class="method">
+<dt id="lagom.agents.REINFORCEAgent.choose_action">
+<code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.choose_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>The agent selects an action based on given observation. 
+The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
+<dd>environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of action selection output. </dt>
+<dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.REINFORCEAgent.learn">
+<code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learning rule about how agent updates itself given batched data.
+The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>D (list): batched data to train the agent. </dt>
+<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of learning output. </dt>
+<dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.REINFORCEAgent.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the parameters of the agent from a file</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.REINFORCEAgent.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current parameters of the agent.</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="vanilla-policy-gradient">
+<h3>Vanilla Policy Gradient<a class="headerlink" href="#vanilla-policy-gradient" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="lagom.agents.VPGAgent">
+<em class="property">class </em><code class="descclassname">lagom.agents.</code><code class="descname">VPGAgent</code><span class="sig-paren">(</span><em>policy</em>, <em>optimizer</em>, <em>config</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function.</p>
+<dl class="method">
+<dt id="lagom.agents.VPGAgent.choose_action">
+<code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.choose_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>The agent selects an action based on given observation. 
+The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
+<dd>environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of action selection output. </dt>
+<dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.VPGAgent.learn">
+<code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learning rule about how agent updates itself given batched data.
+The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>D (list): batched data to train the agent. </dt>
+<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of learning output. </dt>
+<dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.VPGAgent.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the parameters of the agent from a file</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.VPGAgent.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current parameters of the agent.</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="advantage-actor-critic-a2c">
+<h3>Advantage Actor-Critic (A2C)<a class="headerlink" href="#advantage-actor-critic-a2c" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="lagom.agents.A2CAgent">
+<em class="property">class </em><code class="descclassname">lagom.agents.</code><code class="descname">A2CAgent</code><span class="sig-paren">(</span><em>policy</em>, <em>optimizer</em>, <em>config</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advantage Actor-Critic (A2C) with option to use Generalized Advantage Estimate (GAE)</p>
+<p>The main difference of A2C is to use bootstrapping for estimating the advantage function and training value function.</p>
+<p>Reference: <a class="reference external" href="https://arxiv.org/abs/1602.01783">https://arxiv.org/abs/1602.01783</a></p>
+<p>Note that we use fixed-length segments of experiment to compute returns and advantages. 
+<a class="reference external" href="https://blog.openai.com/baselines-acktr-a2c/">https://blog.openai.com/baselines-acktr-a2c/</a></p>
+<p>For this purpose, please use SegmentRunner, not TrajectoryRunner to collect data for A2CAgent.</p>
+<dl class="method">
+<dt id="lagom.agents.A2CAgent.choose_action">
+<code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.choose_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>The agent selects an action based on given observation. 
+The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
+<dd>environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of action selection output. </dt>
+<dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.A2CAgent.learn">
+<code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learning rule about how agent updates itself given batched data.
+The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>D (list): batched data to train the agent. </dt>
+<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>output (dict): a dictionary of learning output. </dt>
+<dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.A2CAgent.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the parameters of the agent from a file</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.agents.A2CAgent.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the current parameters of the agent.</p>
+<p>If the agent uses a BaseNetwork object, it is recommended to call
+BaseNetwork internal save/load function for network parameters in PyTorch.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (str): name of the file</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contrib.html" class="btn btn-neutral float-right" title="lagom.contrib" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="lagom.html" class="btn btn-neutral" title="lagom" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

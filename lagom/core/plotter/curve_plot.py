@@ -7,7 +7,6 @@ from functools import partial
 
 from .base_plot import BasePlot
 
-
 class CurvePlot(BasePlot):
     """
     Compare different curves in one plot. In machine learning research, it is 
@@ -32,7 +31,8 @@ class CurvePlot(BasePlot):
         for horizontal axis. If not provided, then it will be automatically set to integers. 
         
         Note that only one list of xvalues needed, because all curve data should share identical
-        horizontal axis. 
+        horizontal axis. If a batch of xvalues are provided and they are not identical, 
+        then each line will be interpolated and new shared xvalues and queried y values will be computed.
         
         Args:
             name (str): name of the curve
@@ -46,8 +46,21 @@ class CurvePlot(BasePlot):
         # Set xvalues
         if xvalues is None:
             xvalues = np.arange(1, N+1)
-        assert np.array(xvalues).ndim == 1, f'Horizontal values must be one dimensional, got {np.array(xvalues).ndim}'
-            
+        else:
+            xvalues = np.array(xvalues)
+        
+        # Sanity check if all xvalues are identical, otherwise the uncertainty bands are impossible to plot
+        # We check if first element is not scallar to determine batched xvalues, because we should allow
+        # x values with different length for each line, then it's impossible to have multidimensional array
+        if not np.isscalar(xvalues[0]):  # independent x values for each line, so check it !
+            check_pass = np.all([np.array_equal(xvalues[0], x) for x in xvalues[1:]])
+            # Interpolate the lines to share same x values if check is failed to pass
+            if not check_pass:
+                # Get new shared xvalues and queried y values from interpolated lines
+                xvalues, data = self._interp_data(all_x=xvalues, all_y=data, num_points=500)
+            else:  # passed the check, batch with same xvalues, but we want one xvalues only
+                xvalues = xvalues[0]  # take first one, because rest of them are identical
+        
         # Make data
         D = {'data': data, 'xvalues': xvalues}
         
@@ -79,7 +92,7 @@ class CurvePlot(BasePlot):
                      - legend_loc (str): location string of the legend.
                      - num_tick (int): Maximum number of major ticks in horizontal axis. 
                      - xscale_magnitude (str): Format the major ticks in horizontal axis based on 
-                         the given magnitude. e.g. 'K': every one thousand or 'M': every one million.
+                         the given magnitude. e.g. 'N': raw value, 'K': every one thousand or 'M': every one million.
 
         Returns:
             ax (Axes): A matplotlib Axes representing the generated plot.
@@ -186,7 +199,35 @@ class CurvePlot(BasePlot):
             
         return x
     
-    def tick_formatter(self, x, pos, scale_magnitude):
+    def _interp_data(self, all_x, all_y, num_points=500):
+        """
+        Piecewise linear interpolation for each line and return the x-y values from interpolated line. 
+        
+        This is for the case that multiple lines have different x value points, which is impossible
+        to plot uncertainty bands. 
+        
+        Args:
+            all_x (list): x values for each line
+            all_y (list): y values for each line
+            num_points (int): number of points to generate from interpolated lines. 
+            
+        Returns:
+            new_x (list): shared query x values between minimum and maximum possible x values.
+            interp_all_y (list): y values from each interpolated line. 
+        """
+        # Obtain minimum and maximum x values from given data
+        # We iterate over each line, because they might have different length, and impossible to broadcast
+        min_x = min([np.min(x) for x in all_x])
+        max_x = max([np.max(x) for x in all_x])
+        # Generate an array of new query x values between min and max possible x values
+        new_x = np.linspace(min_x, max_x, num=num_points)
+        
+        # Generate new y values from each interpolated line given the shared query x values
+        interp_all_y = [np.interp(new_x, x, y) for x, y in zip(all_x, all_y)]
+        
+        return new_x, interp_all_y
+        
+    def tick_formatter(self, x, pos, scale_magnitude=None):
         """
         A function to set major functional formatter. 
 
@@ -196,23 +237,41 @@ class CurvePlot(BasePlot):
             scale_magnitude (str): string description of scaling magnitude, use functools.partial
                 to make a function specified with this scaler but without put it as a required argument. 
                 Possible values: 
+                    - 'N': no scaling, raw value
                     - 'K': every one thousand
                     - 'M': every one million
+                When None is given, then it automatically detect for N, K or M. 
 
         Returns:
             A formatted string of the tick given the data value. 
         """
+        msg = f'expected K, M or None, got {scale_magnitude}'
+        assert scale_magnitude in ['N', 'K', 'M', None], msg
+        
+        # Auto-assign scale magnitude to K or M depending on the x value
+        if scale_magnitude is None:
+            if x < 1000:  # less than a thousand, so show raw value
+                scale_magnitude = 'N'
+            elif x >= 1000 and x < 1000000:  # between a thousand and a million
+                scale_magnitude = 'K'
+            elif x >= 1000000:  # more than a million
+                scale_magnitude = 'M'
+        
         # Make scaler based on string format
-        if scale_magnitude == 'K':
-            divisor = 1000
+        if scale_magnitude == 'N':
+            scaled_x = x
+            scale_str = ''
+        elif scale_magnitude == 'K':
+            scaled_x = x/1000
+            scale_str = 'K'
         elif scale_magnitude == 'M':
-            divisor = 1000000
-        else:
-            raise ValueError(f"Only 'K' or 'M' supported, got {scale_magnitude}")
+            scaled_x = x/1000000
+            scale_str = 'M'
 
         # Format the data value and return it
-        if x == 0:  # no format for zero
+        if scaled_x == 0:  # no format for zero
             return '0'
-        else:
-            return f'{int(x/divisor)}{scale_magnitude}'
-        
+        elif scaled_x > 0 and scaled_x < 1:  # less than 1, then keep one decimal
+            return f'{round(scaled_x, 1)}{scale_str}'
+        else:  # more than 1
+            return f'{int(scaled_x)}{scale_str}'

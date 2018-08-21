@@ -27,7 +27,8 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Setup environment" href="setup.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -55,6 +56,10 @@
           
             
             
+              <div class="version">
+                0.0.1
+              </div>
+            
           
 
           
@@ -76,14 +81,23 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">lagom</a><ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
 </ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">lagom.runner</a></li>
 </ul>
-</div>
+
             
           
         </div>
@@ -159,24 +173,37 @@
 </embed><p><em>lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.</em></p>
 <p>lagom balances between the flexibility and the userability when developing reinforcement learning (RL) algorithms. The library is built on top of <a class="reference external" href="https://pytorch.org/">PyTorch</a> and provides modular tools to quickly prototype RL algorithms. However, we do not go overboard, because going too low level is rather time consuming and prone to potential bugs, while going too high level degrades the flexibility which makes it difficult to try out some crazy ideas.</p>
 <p>We are continuously making lagom more ‘self-contained’ to run experiments quickly. Now, it internally supports base classes for multiprocessing (master-worker framework) to parallelize (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search.</p>
-<dl class="docutils">
-<dt>One of the main pipelines to use lagom can be done as following:</dt>
-<dd><ol class="first last arabic simple">
+<p>One of the main pipelines to use lagom can be done as following:</p>
+<blockquote>
+<div><ol class="arabic simple">
 <li>Define environment and RL agent</li>
 <li>User runner to collect data for agent</li>
 <li>Define algorithm to train agent</li>
 <li>Define experiment and configurations.</li>
 </ol>
-</dd>
-</dl>
+</div></blockquote>
 <p>A graphical illustration is coming soon.</p>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
+</ul>
 </div>
 <div class="toctree-wrapper compound">
 </div>
 <div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">lagom.runner</a></li>
+</ul>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -193,6 +220,13 @@
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="setup.html" class="btn btn-neutral float-right" title="Setup environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
   
 
   <hr/>

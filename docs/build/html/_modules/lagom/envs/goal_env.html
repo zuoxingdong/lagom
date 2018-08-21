@@ -1,0 +1,256 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.envs.goal_env &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.envs.goal_env</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.envs.goal_env</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.env</span> <span class="k">import</span> <span class="n">Env</span>
+<span class="kn">from</span> <span class="nn">.spaces</span> <span class="k">import</span> <span class="n">Dict</span>
+
+
+<div class="viewcode-block" id="GoalEnv"><a class="viewcode-back" href="../../../envs.html#lagom.envs.GoalEnv">[docs]</a><span class="k">class</span> <span class="nc">GoalEnv</span><span class="p">(</span><span class="n">Env</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A goal-based environment. The observation space is a dictionary space consisting of </span>
+<span class="sd">    - &#39;observation&#39;: same like regular observation</span>
+<span class="sd">    - &#39;achieved_goal&#39;: the goal is currently achieved by the agent</span>
+<span class="sd">    - &#39;desired_goal&#39;: the goal should be achieved by the agent</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GoalEnv.reset"><a class="viewcode-back" href="../../../envs.html#lagom.envs.GoalEnv.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Ensure the observation space is Dictionary space</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">Dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;The observation space of GoalEnv must be of type Dict&#39;</span><span class="p">)</span>
+        <span class="n">observation</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;observation&#39;</span><span class="p">,</span> <span class="s1">&#39;achieved_goal&#39;</span><span class="p">,</span> <span class="s1">&#39;desired_goal&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">observation</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;The key (</span><span class="si">{key}</span><span class="s1">) must be contained in the observation dictionary. &#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">observation</span></div>
+    
+<div class="viewcode-block" id="GoalEnv.compute_reward"><a class="viewcode-back" href="../../../envs.html#lagom.envs.GoalEnv.compute_reward">[docs]</a>    <span class="k">def</span> <span class="nf">compute_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">achieved_goal</span><span class="p">,</span> <span class="n">desired_goal</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the step reward dependent on a desired goal and a goal that was achieved. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            achieved_goal (object): the goal that was achieved</span>
+<span class="sd">            desired_goal (object): the desired goal that agent should achieve</span>
+<span class="sd">            info (dict): additional information, e.g. additional rewards that are independent of goal. </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            reward (float): the reward according to achieved goal and desired goal.</span>
+<span class="sd">                    Note that the following should be true:</span>
+<span class="sd">                        observation, reward, done, info = env.step()</span>
+<span class="sd">                        assert reward == env.compute_reward(observation[&#39;achieved_goal&#39;], observation[&#39;desired_goal&#39;], info)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
