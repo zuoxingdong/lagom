@@ -41,7 +41,9 @@ class TrajectoryRunner(object):
         """
         self.agent = agent
         self.env = env
-        assert not isinstance(self.env, VecEnv), 'The environment cannot be of type VecEnv. '
+        assert isinstance(self.env, VecEnv), 'The environment must be of type VecEnv. '
+        msg = f'expected only one environment for TrajectoryRunner, got {self.env.num_env}'
+        assert self.env.num_env == 1, msg    
         self.gamma = gamma
         
     def __call__(self, N, T):
@@ -67,9 +69,8 @@ class TrajectoryRunner(object):
             
             for t in range(T):  # Iterate over the number of time steps
                 # Action selection by the agent
-                # We wrap obs with list to make a batch dimension
                 # Not using numpy because we don't know exact dtype, all Agent should handle batched data
-                output_agent = self.agent.choose_action([obs])
+                output_agent = self.agent.choose_action(obs)
                 
                 # Unpack action from output. 
                 # We record Tensor dtype for backprop (propagate via Transitions)
@@ -77,29 +78,28 @@ class TrajectoryRunner(object):
                 state_value = output_agent.pop('state_value', None)
                 
                 # Obtain raw action from Tensor for environment to execute
-                if torch.is_tensor(action):  # convert Tensor to raw numpy array
+                if torch.is_tensor(action):
                     raw_action = action.detach().cpu().numpy()
-                    # Note that the action is batched with batch size one.  
-                    # So we unwrapped it for environment to work on valid action
-                    raw_action = raw_action[0]
+                    raw_action = list(raw_action)
                 else:  # Non Tensor action, e.g. from RandomAgent
                     raw_action = action
                 # Execute the action
                 obs_next, reward, done, info = self.env.step(raw_action)
                 
                 # Create and record a Transition
-                transition = Transition(s=obs, 
-                                        a=action, 
-                                        r=reward, 
-                                        s_next=obs_next, 
-                                        done=done)
+                # Take out first element because we only have one environment wrapped for TrajectoryRunner
+                transition = Transition(s=obs[0], 
+                                        a=action[0], 
+                                        r=reward[0], 
+                                        s_next=obs_next[0], 
+                                        done=done[0])
                 # Record state value if required
                 if state_value is not None:
-                    transition.add_info('V_s', state_value)
+                    transition.add_info('V_s', state_value[0])
                 # Record additional information from output_agent
                 # Note that 'action' and 'state_value' already poped out
                 for key, val in output_agent.items():
-                    transition.add_info(key, val)
+                    transition.add_info(key, val[0])
                     
                 # Add transition to Trajectory
                 trajectory.add_transition(transition)
@@ -108,17 +108,17 @@ class TrajectoryRunner(object):
                 obs = obs_next
                 
                 # Terminate if episode finishes
-                if done:
+                if done[0]:
                     break
             
             # Call agent again to compute state value for final obsevation in collected trajectory
             if state_value is not None:
-                V_s_next = self.agent.choose_action([obs])['state_value']  # batched observation with same reason as above
+                V_s_next = self.agent.choose_action(obs)['state_value']
                 # We do not set zero even if it is terminal state
                 # Because it should be handled in Trajectory e.g. compute TD errors
                 # Return original Tensor in general can help backprop to work properly, e.g. learning value function
                 # Add to the final transition as 'V_s_next'
-                trajectory.transitions[-1].add_info('V_s_next', V_s_next)
+                trajectory.transitions[-1].add_info('V_s_next', V_s_next[0])
             
             # Append trajectory to data
             D.append(trajectory)

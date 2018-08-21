@@ -23,6 +23,7 @@ lagom balances between the flexibility and the userability when developing reinf
 We are continuously making lagom more 'self-contained' to run experiments quickly. Now, it internally supports base classes for multiprocessing (master-worker framework) to parallelize (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search. 
 
 One of the main pipelines to use lagom can be done as following:
+
     1. Define environment and RL agent
     2. User runner to collect data for agent
     3. Define algorithm to train agent
@@ -34,10 +35,9 @@ A graphical illustration is coming soon.
 .. toctree::
     :maxdepth: 1
     :caption: Installation
-   
-.. toctree::
-    :maxdepth: 1
-    :caption: Getting Started
+    
+    setup
+    install
     
 .. toctree::
     :maxdepth: 1
@@ -46,8 +46,24 @@ A graphical illustration is coming soon.
 .. toctree::
     :maxdepth: 1
     :caption: Examples
-
-
+    
+    examples_vae
+    examples_mdn
+    examples_es
+    examples_pg
+    
+.. toctree::
+    :maxdepth: 1
+    :caption: lagom API
+    
+    lagom
+    lagom.agents <agents>
+    lagom.contrib <contrib>
+    lagom.core <core>
+    lagom.engine <engine>
+    lagom.envs <envs>
+    lagom.experiment <experiment>
+    lagom.runner <runner>
 
 Indices and tables
 ==================

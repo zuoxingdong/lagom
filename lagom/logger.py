@@ -6,8 +6,7 @@ import numpy as np
 
 
 class Logger(logging.Logger):
-    """
-    Logging information during experiment. 
+    """Logging information during experiment. 
     
     It supports iterative logging and dumping. That is, when same key is logged more than once, 
     the values for this key will be appended successively. During dumping, the user can also
@@ -23,10 +22,10 @@ class Logger(logging.Logger):
     log policy loss, the hierarchical key can be combine into one string with ':' to separate each
     level, for example we want to log the policy loss with goal number 34 and internal training iteration
     20, the key can be 'goal_34:train:iter_20:policy_loss'. 
-    
     """
     def __init__(self, name='logger'):
-        """
+        """Initialize the Logger. 
+        
         Args:
             name (str): name of the logger
         """
@@ -38,8 +37,7 @@ class Logger(logging.Logger):
         self.logs = OrderedDict()
         
     def log(self, key, val):
-        """
-        Log the information with given key and value. 
+        """Log the information with given key and value. 
         
         Note that if key is already existed, the new value will be appended. 
         
@@ -59,8 +57,7 @@ class Logger(logging.Logger):
         self.logs[key].append(val)
         
     def dump(self, keys=None, index=None, indent=0):
-        """
-        Dump the item to the screen.
+        """Dump the item to the screen.
         
         Args:
             keys (list, optional): List of keys to dump, if got None, then dump all logged information.
@@ -107,7 +104,11 @@ class Logger(logging.Logger):
             print(f'{key}: {log_data}')
 
     def save(self, file=None):
-        """Save loggings to a file"""
+        """Save loggings to a file
+        
+        Args:
+            file (str): path to save the logged information. 
+        """
         np.save(file, self.logs)
         
     def clear(self):

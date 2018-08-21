@@ -18,21 +18,30 @@ class BaseExperimentMaster(BaseIterativeMaster):
     """
     def __init__(self,
                  worker_class, 
-                 num_worker=None,
+                 max_num_worker=None,
                  daemonic_worker=None):
         """
         Args:
             worker_class (BaseWorker): a callable worker class. Note that it is not recommended to 
                 send instantiated object of the worker class, but send class instead.
-            num_worker (int, optional): number of workers. If None, then set to be the total number of
-                configurations. Recommended to set to be the same as number of CPU cores. 
+            max_num_worker (int, optional): maximum number of workers. It has following use cases:
+                - If None, then number of wokers set to be the total number of configurations. 
+                - If number of configurations less than this max bound, then the number of workers
+                    will be automatically reduced to the number of configurations.
+                - If number of configurations larger than this max bound, then the rest of configurations
+                    will be fed in iteratively complying with this max bound. 
+                
+                Recommended to set to be the same as number of CPU cores, however, it is not necessary.
             daemonic_worker (bool): If True, then set all workers to be daemonic. 
                 Because if main process crashes, we should not cause things to hang.
         """
         self.configs = self.make_configs()
         
-        if num_worker is None:
+        # Compute appropriate number of workers to open
+        if max_num_worker is None:  # None, then each configuration uses an individual worker
             num_worker = len(self.configs)
+        else:  # A max bound is given
+            num_worker = min(max_num_worker, len(self.configs))
         
         num_iteration = int(np.ceil(len(self.configs)/num_worker))
         assert len(self.configs) <= num_iteration*num_worker, 'More configurations than capacity. '

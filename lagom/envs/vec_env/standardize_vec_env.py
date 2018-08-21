@@ -8,7 +8,9 @@ from lagom.envs.vec_env import VecEnvWrapper
 class StandardizeVecEnv(VecEnvWrapper):
     """
     Standardize the observations and rewards by using running average. 
-    i.e. subtract by running mean and divided by running standard deviation
+    i.e. subtract by running mean and divided by running standard deviation. 
+    
+    Or the user can also provide constant mean and standard deviation for standardization. 
     
     Note that we do not subtract the mean from rewards but only divided by standard deviation. 
     And the reward running average is computed by discounted returns continuously. 
@@ -17,6 +19,8 @@ class StandardizeVecEnv(VecEnvWrapper):
     Because of discount factor (< 1), the running averages will be converged after some iterations. 
     Therefore, we do not allow discounted factor as 1.0, as it will lead to unbounded explosion 
     of reward running averages. 
+    
+    IMPORTANT: Remember to save and load observation scaling for evaluating the agent. 
     
     Examples:
     
@@ -42,7 +46,10 @@ class StandardizeVecEnv(VecEnvWrapper):
                  clip_obs=10., 
                  clip_reward=10., 
                  gamma=0.99, 
-                 eps=1e-8):
+                 eps=1e-8, 
+                 constant_obs_mean=None, 
+                 constant_obs_std=None, 
+                 constant_reward_std=None):
         """
         Args:
             venv (VecEnv): vectorized environment
@@ -56,6 +63,12 @@ class StandardizeVecEnv(VecEnvWrapper):
                 unboundly. 
             eps (float): a small epsilon for numerical stability of dividing by standard deviation. 
                  e.g. when standard deviation is zero.
+            constant_obs_mean (ndarray): Constant mean to standardize observation. Note that when it is
+                provided, then running average will be ignored. 
+            constant_obs_std (ndarray): Constant standard deviation to standardize observation. Note that
+                when it is provided, then running average will be ignored.
+            constant_reward_std (ndarray): Constant standard deviation to standardize reward. Note that
+                when it is provided, then running average will be ignored. 
         """
         super().__init__(venv)
         self.obs_runningavg = RunningMeanStd(dtype='ndarray')
@@ -70,6 +83,10 @@ class StandardizeVecEnv(VecEnvWrapper):
         assert self.gamma < 1.0, 'We do not allow discounted factor as 1.0. See docstring for details. '
         self.eps = eps
         
+        self.constant_obs_mean = constant_obs_mean
+        self.constant_obs_std = constant_obs_std
+        self.constant_reward_std = constant_reward_std
+        
         self.all_returns = np.zeros(self.num_env)
     
     def step_wait(self):
@@ -79,7 +96,7 @@ class StandardizeVecEnv(VecEnvWrapper):
         return self.process_obs(observations), self.process_reward(rewards), dones, infos
         
     def process_reward(self, rewards):
-        if self.use_reward:
+        if self.use_reward and self.constant_reward_std is None:  # using running average
             # Compute discounted returns
             self.all_returns = rewards + self.gamma*self.all_returns
             # Update with calculated discounted returns
@@ -88,20 +105,42 @@ class StandardizeVecEnv(VecEnvWrapper):
             mean = self.reward_runningavg.mu
             std = self.reward_runningavg.sigma
             # Note that we do not subtract from mean, but only divided by std
-            rewards = np.clip(rewards/(std + self.eps), a_min=-self.clip_reward, a_max=self.clip_reward)
+            if not np.allclose(std, 0.0):  # only non-zero std
+                rewards = rewards/(std + self.eps)
+                
+            # Clipping
+            rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
+            
+            return rewards
+        elif self.use_reward and self.constant_reward_std is not None:  # use given constant std
+            rewards = rewards/(self.constant_reward_std + self.eps)
+            
+            # Clipping
+            rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
             
             return rewards
         else:  # return original rewards if use_reward is turned off
             return rewards
         
     def process_obs(self, obs):
-        if self.use_obs:
+        if self.use_obs and self.constant_obs_mean is None and self.constant_obs_std is None:  # use running average
             # Update with new observation
             self.obs_runningavg(obs)
             # Standardize the observation
             mean = self.obs_runningavg.mu
             std = self.obs_runningavg.sigma
-            obs = np.clip((obs - mean)/(std + self.eps), a_min=-self.clip_obs, a_max=self.clip_obs)
+            if not np.allclose(std, 0.0):  # only non-zero std
+                obs = (obs - mean)/(std + self.eps)
+            
+            # Clipping
+            obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
+            
+            return obs
+        elif self.use_obs and self.constant_obs_mean is not None and self.constant_obs_std is not None:  # use given moment
+            obs = (obs - self.constant_obs_mean)/(self.constant_obs_std + self.eps)
+            
+            # Clipping
+            obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
             
             return obs
         else:  # return original observation if use_obs is turned off

@@ -16,6 +16,10 @@ class Config(object):
     then into groups by adding tags in the key, e.g. {'network: lr': 1e-3}
     
     Note that it supports both grid search and random search. 
+    
+    It is recommended to save loggings for each ID with an individual directory. 
+    e.g. top folder 'logs', and subfolders with name as ID number. 
+    This is automatically provided by method in `experiment/run_experiment.py`. 
     """
     def __init__(self):
         self.config_settings = OrderedDict()
@@ -180,10 +184,47 @@ class Config(object):
         # Create a list of DataFrame, each for one configuration
         list_dataframe = [pd.DataFrame([config.values()], columns=config.keys()) for config in list_config]
         # Concatenate all DataFrame
+        # Note that this is much more efficient than iteratively appending to DataFrame
         config_dataframe = pd.concat(list_dataframe, ignore_index=True)
         
+        # Fill None object with string 'None', otherwise it will lead to problems
+        # Note that do not change it in original configuration dictionary, because it's important for algorithm
+        # to run correctly with None object
+        config_dataframe.fillna(value='None', inplace=True)
+        
         return config_dataframe
-         
+    
+    @staticmethod
+    def subset_configs(config_dataframe, keyvalues):
+        """
+        Take a subset of given configurations based on the selection criterion for certain key and certain values. 
+        
+        For example, we want to select the configuration with seed only in the range of [20, 52, 70], and 
+        learning rate in the range of [1e-3, 5e-4, 1e-4], one could do it as following:
+        
+            config_dataframe = config_dataframe.loc[config_dataframe['seed'].isin([20, 52, 70])]
+            config_dataframe = config_dataframe.loc[config_dataframe['lr'].isin([1e-3, 5e-4, 1e-4])]
+        
+        Args:
+            config_dataframe (DataFrame): configuration DataFrame
+            keyvalues (dict): A dictionary of subset selection criterion. The keys corresponds to the columns in 
+                the DataFrame. Each value should be a list of considered column values. 
+        
+        Returns:
+            subset (DataFrame): selected subset of configurations as DataFrame.
+        """
+        assert isinstance(keyvalues, dict), f'expected dict dtype, but got {type(keyvalues)}'
+        [isinstance(value, list) for value in keyvalues.values()]
+        
+        # Alias of subset
+        subset = config_dataframe
+        
+        # Iterate over all given key values pairs
+        for key, value_list in keyvalues.items():
+            subset = subset.loc[subset[key].isin(value_list)]
+            
+        return subset
+            
     @staticmethod
     def partition_IDs(config_dataframe, group_keys):
         """
@@ -233,6 +274,7 @@ class Config(object):
         grouped_config = config_dataframe.groupby(keys)
 
         # Make grouped keys be showing as a Series of dictionary
+        # This will be a displayable DataFrame with grouped information, very nice to visualize
         transformed_config = grouped_config.apply(lambda x: pd.DataFrame({key: x[key].tolist() 
                                                                           for key in ['ID', *group_keys]}))
 

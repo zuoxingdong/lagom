@@ -2,21 +2,28 @@ class BasePolicy(object):
     """
     Base class for the policy. 
     
-    It receives user-defined network (must be of types in lagom.core.networks) and
-    environment specification (of type EnvSpec). 
+    It receives user-defined network (must be of types in lagom.core.networks),
+    environment specification (of type EnvSpec) and configuration. 
     
     All inherited subclasses should at least implement the following functions
     1. __call__(self, x)
     2. process_network_output(self, network_out)
     """
-    def __init__(self, network, env_spec):
+    def __init__(self, network, env_spec, config, **kwargs):
         """
         Args:
             network (BaseNetwork): an instantiated user-defined network. 
             env_spec (EnvSpec): environment specification. 
+            config (dict): A dictionary for the configuration. 
+            *kwargs: keyword aguments used to specify the policy. 
         """
         self.network = network
         self.env_spec = env_spec
+        self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
         
     def __call__(self, x):
         """
@@ -30,7 +37,7 @@ class BasePolicy(object):
             x (Tensor): input data. 
             
         Returns:
-            out (dict): A dictionary of output data from running the policy network of given input. 
+            network_out (dict): A dictionary of output data from running the policy network of given input. 
                 It must contain at least one key, 'action'. Other possible keys include 
                 ['action_logprob', 'state_value']
         """

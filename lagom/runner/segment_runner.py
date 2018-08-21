@@ -92,7 +92,7 @@ class SegmentRunner(object):
             if torch.is_tensor(action):
                 raw_action = action.detach().cpu().numpy()
                 raw_action = list(raw_action)
-            else:
+            else:  # Non Tensor action, e.g. from RandomAgent
                 raw_action = action
             # Execute the action
             obs_next, reward, done, info = self.env.step(raw_action)

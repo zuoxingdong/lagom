@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.envs.vec_env.standardize_vec_env &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.envs.vec_env.standardize_vec_env</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.envs.vec_env.standardize_vec_env</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">lagom.core.transform</span> <span class="k">import</span> <span class="n">RunningMeanStd</span>
+
+<span class="kn">from</span> <span class="nn">lagom.envs.vec_env</span> <span class="k">import</span> <span class="n">VecEnvWrapper</span>
+
+
+<div class="viewcode-block" id="StandardizeVecEnv"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.StandardizeVecEnv">[docs]</a><span class="k">class</span> <span class="nc">StandardizeVecEnv</span><span class="p">(</span><span class="n">VecEnvWrapper</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standardize the observations and rewards by using running average. </span>
+<span class="sd">    i.e. subtract by running mean and divided by running standard deviation. </span>
+<span class="sd">    </span>
+<span class="sd">    Or the user can also provide constant mean and standard deviation for standardization. </span>
+<span class="sd">    </span>
+<span class="sd">    Note that we do not subtract the mean from rewards but only divided by standard deviation. </span>
+<span class="sd">    And the reward running average is computed by discounted returns continuously. </span>
+<span class="sd">    </span>
+<span class="sd">    Also note that each `reset()` we do not clean up the `self.all_returns` buffer. </span>
+<span class="sd">    Because of discount factor (&lt; 1), the running averages will be converged after some iterations. </span>
+<span class="sd">    Therefore, we do not allow discounted factor as 1.0, as it will lead to unbounded explosion </span>
+<span class="sd">    of reward running averages. </span>
+<span class="sd">    </span>
+<span class="sd">    IMPORTANT: Remember to save and load observation scaling for evaluating the agent. </span>
+<span class="sd">    </span>
+<span class="sd">    Examples:</span>
+<span class="sd">    </span>
+<span class="sd">        list_make_env = make_envs(make_env=make_gym_env, </span>
+<span class="sd">                                  env_id=&#39;Pendulum-v0&#39;, </span>
+<span class="sd">                                  num_env=2, </span>
+<span class="sd">                                  init_seed=1)</span>
+
+<span class="sd">        venv = SerialVecEnv(list_make_env=list_make_env)</span>
+
+<span class="sd">        env = StandardizeVecEnv(venv=venv, </span>
+<span class="sd">                                use_obs=True, </span>
+<span class="sd">                                use_reward=True, </span>
+<span class="sd">                                clip_obs=10.0, </span>
+<span class="sd">                                clip_reward=10.0, </span>
+<span class="sd">                                gamma=0.99, </span>
+<span class="sd">                                eps=1e-8)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">venv</span><span class="p">,</span> 
+                 <span class="n">use_obs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                 <span class="n">use_reward</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                 <span class="n">clip_obs</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> 
+                 <span class="n">clip_reward</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> 
+                 <span class="n">gamma</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> 
+                 <span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> 
+                 <span class="n">constant_obs_mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">constant_obs_std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">constant_reward_std</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            venv (VecEnv): vectorized environment</span>
+<span class="sd">            use_obs (bool): Whether to standardize the observation by using its running average</span>
+<span class="sd">            use_reward (bool): Whether to standardize the reward by using its running average</span>
+<span class="sd">                Note that running average here is computed by discounted returns iteratively. </span>
+<span class="sd">            clip_obs (float/ndarray): clipping range of standardized observation, i.e. [-clip_obs, clip_obs]</span>
+<span class="sd">            clip_reward (float): clipping range of standardized reward, i.e. [-clip_reward, clip_reward]</span>
+<span class="sd">            gamma (float): discounted factor. Note that the value 1.0 should not be used. </span>
+<span class="sd">                It will let the reward running average (computed with discounted returns) exploits</span>
+<span class="sd">                unboundly. </span>
+<span class="sd">            eps (float): a small epsilon for numerical stability of dividing by standard deviation. </span>
+<span class="sd">                 e.g. when standard deviation is zero.</span>
+<span class="sd">            constant_obs_mean (ndarray): Constant mean to standardize observation. Note that when it is</span>
+<span class="sd">                provided, then running average will be ignored. </span>
+<span class="sd">            constant_obs_std (ndarray): Constant standard deviation to standardize observation. Note that</span>
+<span class="sd">                when it is provided, then running average will be ignored.</span>
+<span class="sd">            constant_reward_std (ndarray): Constant standard deviation to standardize reward. Note that</span>
+<span class="sd">                when it is provided, then running average will be ignored. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">venv</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs_runningavg</span> <span class="o">=</span> <span class="n">RunningMeanStd</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;ndarray&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reward_runningavg</span> <span class="o">=</span> <span class="n">RunningMeanStd</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;ndarray&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_obs</span> <span class="o">=</span> <span class="n">use_obs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_reward</span> <span class="o">=</span> <span class="n">use_reward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clip_obs</span> <span class="o">=</span> <span class="n">clip_obs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clip_reward</span> <span class="o">=</span> <span class="n">clip_reward</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;We do not allow discounted factor as 1.0. See docstring for details. &#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_mean</span> <span class="o">=</span> <span class="n">constant_obs_mean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_std</span> <span class="o">=</span> <span class="n">constant_obs_std</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constant_reward_std</span> <span class="o">=</span> <span class="n">constant_reward_std</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_returns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_env</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="StandardizeVecEnv.step_wait"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.StandardizeVecEnv.step_wait">[docs]</a>    <span class="k">def</span> <span class="nf">step_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Call original step_wait to get results from all environments</span>
+        <span class="n">observations</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span> <span class="n">infos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">step_wait</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_obs</span><span class="p">(</span><span class="n">observations</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_reward</span><span class="p">(</span><span class="n">rewards</span><span class="p">),</span> <span class="n">dones</span><span class="p">,</span> <span class="n">infos</span></div>
+        
+    <span class="k">def</span> <span class="nf">process_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rewards</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_reward</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_reward_std</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using running average</span>
+            <span class="c1"># Compute discounted returns</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_returns</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">all_returns</span>
+            <span class="c1"># Update with calculated discounted returns</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reward_runningavg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_returns</span><span class="p">)</span>
+            <span class="c1"># Standardize the reward</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_runningavg</span><span class="o">.</span><span class="n">mu</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_runningavg</span><span class="o">.</span><span class="n">sigma</span>
+            <span class="c1"># Note that we do not subtract from mean, but only divided by std</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>  <span class="c1"># only non-zero std</span>
+                <span class="n">rewards</span> <span class="o">=</span> <span class="n">rewards</span><span class="o">/</span><span class="p">(</span><span class="n">std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+                
+            <span class="c1"># Clipping</span>
+            <span class="n">rewards</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_reward</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_reward</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">rewards</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_reward</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_reward_std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use given constant std</span>
+            <span class="n">rewards</span> <span class="o">=</span> <span class="n">rewards</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constant_reward_std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+            
+            <span class="c1"># Clipping</span>
+            <span class="n">rewards</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_reward</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_reward</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">rewards</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># return original rewards if use_reward is turned off</span>
+            <span class="k">return</span> <span class="n">rewards</span>
+        
+    <span class="k">def</span> <span class="nf">process_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_obs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_mean</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_std</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use running average</span>
+            <span class="c1"># Update with new observation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs_runningavg</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+            <span class="c1"># Standardize the observation</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_runningavg</span><span class="o">.</span><span class="n">mu</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_runningavg</span><span class="o">.</span><span class="n">sigma</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>  <span class="c1"># only non-zero std</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="p">(</span><span class="n">obs</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+            
+            <span class="c1"># Clipping</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_obs</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_obs</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">obs</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_obs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use given moment</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="p">(</span><span class="n">obs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_mean</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constant_obs_std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+            
+            <span class="c1"># Clipping</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_obs</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_obs</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">obs</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># return original observation if use_obs is turned off</span>
+            <span class="k">return</span> <span class="n">obs</span>
+        
+<div class="viewcode-block" id="StandardizeVecEnv.reset"><a class="viewcode-back" href="../../../../envs.html#lagom.envs.vec_env.StandardizeVecEnv.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_obs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">reset</span><span class="p">())</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -27,9 +27,11 @@ class A2CAgent(BaseAgent):
         
         super().__init__(config, **kwargs)
         
+        self.accumulated_trained_timesteps = 0
+        
     def choose_action(self, obs):
         # Convert to Tensor
-        # Note that obs should be batched already (even if only one segment), because we use VecEnv and SegmentRunner
+        # Note that the observation should be batched already (even if only one Segment)
         if not torch.is_tensor(obs):
             obs = torch.from_numpy(np.array(obs)).float()
             obs = obs.to(self.device)  # move to device
@@ -57,24 +59,14 @@ class A2CAgent(BaseAgent):
             # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
             # Standardize advantage estimates if required
             # encourage/discourage half of performed actions, respectively.
+            if self.config['agent:standardize']:
+                Qs = Standardize()(Qs)
             
-            ########
-            # A2C: testing, normalizing advantage estimate instead
-            
-            
-            
-            # Get all state values (without V_s_next with all done=True also without the final transition)
+            # Get all state values (without V_s_next in final transition)
             Vs = segment.all_info('V_s')
             
             # Advantage estimates
             As = [Q - V.item() for Q, V in zip(Qs, Vs)]
-            
-            
-            ############
-            if self.config['agent:standardize']:
-                As = Standardize()(As)
-            
-            
             
             # Get all log-probabilities and entropies
             logprobs = segment.all_info('action_logprob')
@@ -86,7 +78,7 @@ class A2CAgent(BaseAgent):
             entropy_loss = []
             for logprob, entropy, A, Q, V in zip(logprobs, entropies, As, Qs, Vs):
                 policy_loss.append(-logprob*A)
-                value_loss.append(F.mse_loss(V, torch.tensor(Q).to(V.device)))
+                value_loss.append(F.mse_loss(V, torch.tensor(Q).view_as(V).to(V.device)))
                 entropy_loss.append(-entropy)
         
             # Average over losses for all time steps
@@ -121,15 +113,23 @@ class A2CAgent(BaseAgent):
         
         # Decay learning rate if required
         if hasattr(self, 'lr_scheduler'):
-            self.lr_scheduler.step()
+            if 'train:iter' in self.config:  # iteration-based training, so just increment epoch by default
+                self.lr_scheduler.step()
+            elif 'train:timestep' in self.config:  # timestep-based training, increment with timesteps
+                self.lr_scheduler.step(self.accumulated_trained_timesteps)
+            else:
+                raise KeyError('expected train:iter or train:timestep in config, but none of them exist')
         
         # Take a gradient step
         self.optimizer.step()
         
+        # Accumulate trained timesteps
+        self.accumulated_trained_timesteps += sum([segment.T for segment in D])
+        
         # Output dictionary for different losses
         # TODO: if no more backprop needed, record with .item(), save memory without store computation graph
         output = {}
-        output['loss'] = loss  # TODO: maybe item()
+        output['loss'] = loss
         output['batch_policy_loss'] = batch_policy_loss
         output['batch_value_loss'] = batch_value_loss
         output['batch_entropy_loss'] = batch_entropy_loss

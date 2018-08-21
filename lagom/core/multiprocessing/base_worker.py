@@ -26,6 +26,7 @@ class BaseWorker(object):
             master_cmd = worker_conn.recv()
             
             if master_cmd == 'close':
+                worker_conn.send('confirmed')
                 worker_conn.close()
                 break
             elif master_cmd == 'cozy':
