@@ -1,6 +1,8 @@
 # Note that `__name__ == '__main__'` is mostly for Windows compatibility
 # We do not use it because most expected users shall use Ubuntu. 
 
+import numpy as np
+
 from multiprocessing import Process
 from multiprocessing import Pipe
 
@@ -155,10 +157,15 @@ class BaseMaster(object):
         """
         Stop all the workers by sending a 'close' signal via pipe connection and join all processes.
         """
-        # Tell all workers to stop working and close pipe connections
-        for master_conn in self.master_conns:
-            master_conn.send('close')
-            master_conn.close()
-            
+        # Tell all workers to stop working
+        [master_conn.send('close') for master_conn in self.master_conns]
+        # Sanity check if all workers confirmed to be closed successfully
+        close_check = np.all([master_conn.recv() == 'confirmed' for master_conn in self.master_conns])
+        assert close_check, 'Something wrong with closing all workers'
+        
+        # Now close all master connections
+        [master_conn.close() for master_conn in self.master_conns]
+        assert np.all([master_conn.closed for master_conn in self.master_conns]), 'Not all master connections are closed'
+
         # Join all processes
         [process.join() for process in self.list_process]

@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="lagom.agents" href="agents.html" />
+    <link rel="prev" title="Installing lagom" href="install.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">lagom</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basealgorithm">BaseAlgorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logger">Logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#utils">Utils</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>lagom</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lagom.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-lagom">
+<span id="lagom"></span><h1>lagom<a class="headerlink" href="#module-lagom" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basealgorithm">
+<h2>BaseAlgorithm<a class="headerlink" href="#basealgorithm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lagom.BaseAlgorithm">
+<em class="property">class </em><code class="descclassname">lagom.</code><code class="descname">BaseAlgorithm</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/base_algo.html#BaseAlgorithm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.BaseAlgorithm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for the algorithm.</p>
+<p>All inherited subclasses should at least implement the following functions:
+1. __call__(self, config)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="logger">
+<h2>Logger<a class="headerlink" href="#logger" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lagom.Logger">
+<em class="property">class </em><code class="descclassname">lagom.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>name='logger'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logging information during experiment.</p>
+<p>It supports iterative logging and dumping. That is, when same key is logged more than once, 
+the values for this key will be appended successively. During dumping, the user can also
+choose to dump either the entire list of logged values or the values with specific index.</p>
+<p>Note that we do not support hierarchical logging, e.g. list of dict of list of dict of ndarray
+this is because pickling is extremely slow for such a hierarhical data structure with mixture
+of dict and ndarray. Thus, we keep dict always at the top, if hierarchical logging is really
+needed, we recommand to present it in the key, the following example illustrate it:</p>
+<p>Suppose we want to train a goal-conditional policy in a maze with different goals iteratively,
+and each goal is trained with several internal iterations, in such scenario, when we want to 
+log policy loss, the hierarchical key can be combine into one string with ‘:’ to separate each
+level, for example we want to log the policy loss with goal number 34 and internal training iteration
+20, the key can be ‘goal_34:train:iter_20:policy_loss’.</p>
+<dl class="method">
+<dt id="lagom.Logger.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all loggings</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.Logger.dump">
+<code class="descname">dump</code><span class="sig-paren">(</span><em>keys=None</em>, <em>index=None</em>, <em>indent=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dump the item to the screen.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>keys (list, optional): List of keys to dump, if got None, then dump all logged information.</dt>
+<dd>Default: None</dd>
+<dt>index (int/list, optional): The index of logged information for dumping. It can be used with the </dt>
+<dd>following types:
+1. Scalar: applies to all given keys. It can also be -1, i.e. last element in the list.
+2. List: applies to each key with given index. 
+3. None: dump everything for all given keys. It can also be list of None.
+Default: None</dd>
+<dt>indent (int, optional): the number of tab indentation before dumping the information. </dt>
+<dd>Default: 0.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.Logger.log">
+<code class="descname">log</code><span class="sig-paren">(</span><em>key</em>, <em>val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log the information with given key and value.</p>
+<p>Note that if key is already existed, the new value will be appended.</p>
+<p>A recommandation for the string style of the key, it should be named semantically
+and each word separated by ‘_’, because <cite>dump()</cite> will automatically replace all ‘_’
+with a whitespace and make each word capitalized by <cite>str.title()</cite>.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>key (str): key of the information
+val (object): value to be logged</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="lagom.Logger.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save loggings to a file</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>file (str): path to save the logged information.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="utils">
+<h2>Utils<a class="headerlink" href="#utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lagom.set_global_seeds">
+<code class="descclassname">lagom.</code><code class="descname">set_global_seeds</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/utils.html#set_global_seeds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.set_global_seeds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set seed for all dependencies we use.</p>
+<p>It includes the following:
+1. PyTorch
+2. Numpy
+3. Python random</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>seed (int): seed</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="lagom.Seeder">
+<em class="property">class </em><code class="descclassname">lagom.</code><code class="descname">Seeder</code><span class="sig-paren">(</span><em>init_seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/utils.html#Seeder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Seeder" title="Permalink to this definition">¶</a></dt>
+<dd><p>A seeder that can continuously sample a single or a batch of random seeds.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="agents.html" class="btn btn-neutral float-right" title="lagom.agents" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="install.html" class="btn btn-neutral" title="Installing lagom" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

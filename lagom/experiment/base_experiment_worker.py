@@ -1,3 +1,5 @@
+import torch
+
 from lagom.core.multiprocessing import BaseWorker
 
 
@@ -17,6 +19,16 @@ class BaseExperimentWorker(BaseWorker):
         # Don't use this seed
         # Set seed inside config
         config = task
+        
+        # Assign a GPU card for this task, rolling with total number of GPUs
+        # e.g. we have 30 tasks and 5 GPUs, then each GPU will be assigned with 6 tasks
+        if 'cuda' in config and config['cuda']:  # if using GPU
+            # Get total number of GPUs
+            num_gpu = torch.cuda.device_count()
+            # Compute which GPU to assign with rolling ID
+            device_id = task_id % num_gpu
+            # Assign the GPU device for PyTorch
+            torch.cuda.set_device(device_id)
         
         # Instantiate an algorithm
         algo = self.make_algo()

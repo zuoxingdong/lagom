@@ -19,16 +19,21 @@ def ask_yes_or_no(msg):
         else:
             print("Please answer 'yes' or 'no':")
             
-def run_experiment(worker_class, master_class, num_worker=None, daemonic_worker=None):
+def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_worker=None):
     """
     This function runs given experiments in parallel (master-worker) with defined configurations. 
     
     Args:
         worker_class (BaseExperimentWorker): user-defined experiment worker class.
         master_class (BaseExperimentMaster): user-defined experiment master class.
-        num_worker (int): Number of workers, each opens an Process. Recommanded to be 
-            the number of available CPU core, however, it is not strictly necessary. 
-            If None, then set to be the total number of configurations. 
+        max_num_worker (int, optional): maximum number of workers. It has following use cases:
+                - If None, then number of wokers set to be the total number of configurations. 
+                - If number of configurations less than this max bound, then the number of workers
+                    will be automatically reduced to the number of configurations.
+                - If number of configurations larger than this max bound, then the rest of configurations
+                    will be fed in iteratively complying with this max bound. 
+                
+                Recommended to set to be the same as number of CPU cores, however, it is not necessary.
         daemonic_worker (bool): If True, then set each worker to be daemonic. 
             For details of daemonic worker, please refer to documentations in classes of 
             BaseWorker/BaseMaster
@@ -38,13 +43,13 @@ def run_experiment(worker_class, master_class, num_worker=None, daemonic_worker=
     
     # Create experiment
     experiment = master_class(worker_class=worker_class, 
-                              num_worker=num_worker, 
+                              max_num_worker=max_num_worker, 
                               daemonic_worker=daemonic_worker)
     
     # Create path to log directory defined in the configuration
     log_path = Path(experiment.configs[0]['log:dir'])
     if not log_path.exists():  # Make directory if it does not exist
-        log_path.mkdir()
+        log_path.mkdir(parents=True)  # create recursively for all missing directories
     else:  # already existed, ask user whether to remove old logs
         msg = f"Logging directory '{log_path.absolute()}' already existed, do you want to clean it ?"
         answer = ask_yes_or_no(msg)

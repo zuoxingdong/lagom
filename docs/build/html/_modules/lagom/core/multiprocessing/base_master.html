@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lagom.core.multiprocessing.base_master &mdash; lagom 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> lagom
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../setup.html">Setup environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing lagom</a></li>
+</ul>
+<p class="caption"><span class="caption-text">lagom API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../lagom.html">lagom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agents.html">lagom.agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contrib.html">lagom.contrib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../core.html">lagom.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../engine.html">lagom.engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../envs.html">lagom.envs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../experiment.html">lagom.experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runner.html">lagom.runner</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">lagom</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lagom.core.multiprocessing.base_master</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lagom.core.multiprocessing.base_master</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Note that `__name__ == &#39;__main__&#39;` is mostly for Windows compatibility</span>
+<span class="c1"># We do not use it because most expected users shall use Ubuntu. </span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Process</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pipe</span>
+
+<span class="c1"># TODO: consider support of torch.multiprocessing, for its own SimpleQueue or Queue</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">from torch.multiprocessing import Process</span>
+<span class="sd">from torch.multiprocessing import Queue</span>
+<span class="sd"># SimpleQueue sometimes better, it does not use additional threads</span>
+<span class="sd">from torch.multiprocessing import SimpleQueue</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">lagom</span> <span class="k">import</span> <span class="n">Seeder</span>
+
+
+<div class="viewcode-block" id="BaseMaster"><a class="viewcode-back" href="../../../../core.html#lagom.core.multiprocessing.BaseMaster">[docs]</a><span class="k">class</span> <span class="nc">BaseMaster</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class of a callable master to parallelize solving a set of tasks, each with a worker. </span>
+<span class="sd">    </span>
+<span class="sd">    Each calling it initialize all the workers (each opens a Process) and independent Pipe connections</span>
+<span class="sd">    between each worker and itself. And then it makes a set of tasks and assign each task to a worker.</span>
+<span class="sd">    After processing each working results received from workers, it stops all workers and terminate</span>
+<span class="sd">    all processes. </span>
+<span class="sd">    </span>
+<span class="sd">    Note that it is possible to make less tasks than the number of workers, however, it is not generally</span>
+<span class="sd">    recommended to do so. </span>
+<span class="sd">    </span>
+<span class="sd">    All inherited subclasses should at least implement the following functions:</span>
+<span class="sd">    1. make_tasks(self)</span>
+<span class="sd">    2. _process_workers_result(self, tasks, workers_result)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">worker_class</span><span class="p">,</span> 
+                 <span class="n">num_worker</span><span class="p">,</span>
+                 <span class="n">init_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                 <span class="n">daemonic_worker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            worker_class (BaseWorker): a callable worker class. Note that it is not recommended to </span>
+<span class="sd">                send instantiated object of the worker class, but send class instead. </span>
+<span class="sd">            num_worker (int): number of workers. Recommended to be the same as number of CPU cores. </span>
+<span class="sd">            init_seed (int): initial seed for the seeder which samples seeds for workers.</span>
+<span class="sd">            daemonic_worker (bool): If True, then set all workers to be daemonic. </span>
+<span class="sd">                Because if main process crashes, we should not cause things to hang.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_class</span> <span class="o">=</span> <span class="n">worker_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_worker</span> <span class="o">=</span> <span class="n">num_worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_seed</span> <span class="o">=</span> <span class="n">init_seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daemonic_worker</span> <span class="o">=</span> <span class="n">daemonic_worker</span>
+        
+        <span class="c1"># Create a seeder, sampling different seeds for each task</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seeder</span> <span class="o">=</span> <span class="n">Seeder</span><span class="p">(</span><span class="n">init_seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_seed</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        It initializes the workers, makes a set of tasks and assign each task to a worker. </span>
+<span class="sd">        After finish processing results from all workers, stop them and terminate all processes. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize all workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_workers</span><span class="p">()</span>
+        
+        <span class="c1"># Make tasks and assign each task to a worker</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_tasks</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_worker</span><span class="p">,</span> <span class="s1">&#39;The number of tasks cannot exceed the number of workers.&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assign_tasks</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span>
+        
+        <span class="c1"># Stop all workers and terminate all processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_workers</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="BaseMaster.initialize_workers"><a class="viewcode-back" href="../../../../core.html#lagom.core.multiprocessing.BaseMaster.initialize_workers">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize all workers, each opens a Process. </span>
+<span class="sd">        Create an independent Pipe connection between master and each worker. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create pipes as communicators between master and workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">Pipe</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_worker</span><span class="p">)])</span>
+        
+        <span class="c1"># Create a Process for each worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span> <span class="o">=</span> <span class="p">[</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_class</span><span class="p">(),</span>  <span class="c1"># individual instantiation for each Process</span>
+                                     <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">master_conn</span><span class="p">,</span> <span class="n">worker_conn</span><span class="p">],</span> 
+                                     <span class="n">daemon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">daemonic_worker</span><span class="p">)</span> 
+                             <span class="k">for</span> <span class="n">master_conn</span><span class="p">,</span> <span class="n">worker_conn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span><span class="p">)]</span>
+        
+        <span class="c1"># Start (fork) all processes, so all workers are stand by waiting for master&#39;s command to work</span>
+        <span class="c1"># Note that Linux OS will fork all connection terminals, so it&#39;s good to close unused ones here.</span>
+        <span class="p">[</span><span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span><span class="p">]</span>
+        
+        <span class="c1"># Close all worker connections here as they are not used in master process</span>
+        <span class="c1"># Note that this should come after all the processes started</span>
+        <span class="p">[</span><span class="n">worker_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> <span class="k">for</span> <span class="n">worker_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_conns</span><span class="p">]</span></div>
+        
+<div class="viewcode-block" id="BaseMaster.make_tasks"><a class="viewcode-back" href="../../../../core.html#lagom.core.multiprocessing.BaseMaster.make_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">make_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a set of tasks.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tasks (list): a list of tasks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+        
+<div class="viewcode-block" id="BaseMaster.assign_tasks"><a class="viewcode-back" href="../../../../core.html#lagom.core.multiprocessing.BaseMaster.assign_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">assign_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign each task to a worker. And process the results from all tasks. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tasks (list): a list of tasks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_task</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span>
+        
+        <span class="c1"># Sample random seeds, each for one task</span>
+        <span class="n">seeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seeder</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num_task</span><span class="p">)</span>
+        
+        <span class="c1"># Special case when there are less tasks than number of workers</span>
+        <span class="k">if</span> <span class="n">num_task</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_worker</span><span class="p">:</span>
+            <span class="n">master_conns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">[:</span><span class="n">num_task</span><span class="p">]</span>  <span class="c1"># slice exact connection terminals</span>
+            <span class="c1"># Send &#39;cozy&#39; signal to rest of workers as they don&#39;t have work to do</span>
+            <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;cozy&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">[</span><span class="n">num_task</span><span class="p">:]]</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># same number of tasks and workers</span>
+            <span class="n">master_conns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span>
+        
+        <span class="c1"># Iterate over all tasks, each assigned to a worker to work</span>
+        <span class="k">for</span> <span class="n">task_id</span><span class="p">,</span> <span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">master_conn</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">master_conns</span><span class="p">)):</span>
+            <span class="c1"># Send the task to worker via master connection</span>
+            <span class="c1"># It is important to send ID to make received results with consistent order</span>
+            <span class="n">master_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="n">task_id</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">seed</span><span class="p">]</span>
+            <span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">master_cmd</span><span class="p">)</span>
+        
+        <span class="c1"># Receive results from all workers</span>
+        <span class="n">workers_result</span> <span class="o">=</span> <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">workers_result</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_worker</span>
+        <span class="c1"># Remove all &#39;roger&#39; reply from cozy workers</span>
+        <span class="n">workers_result</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">workers_result</span> <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="s1">&#39;roger&#39;</span><span class="p">]</span>
+        
+        <span class="c1"># Reordering the result to be consistent with tasks as workers might finish in different speed</span>
+        <span class="c1"># i.e. ascending ordering of task ID [0, ..., num_task - 1]</span>
+        <span class="c1"># each result with data structure: [task_id, result]</span>
+        <span class="n">workers_result</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">workers_result</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># x[0] get task_id</span>
+        
+        <span class="c1"># Process the results from all workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_workers_result</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">workers_result</span><span class="p">)</span></div>
+    
+    <span class="k">def</span> <span class="nf">_process_workers_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">workers_result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process the results from all workers. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tasks (list): a list of tasks corresponding to workers results.</span>
+<span class="sd">            workers_result (list): a list of restuls from all workers. Each result consists of [task_ID, result]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+<div class="viewcode-block" id="BaseMaster.stop_workers"><a class="viewcode-back" href="../../../../core.html#lagom.core.multiprocessing.BaseMaster.stop_workers">[docs]</a>    <span class="k">def</span> <span class="nf">stop_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stop all the workers by sending a &#39;close&#39; signal via pipe connection and join all processes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Tell all workers to stop working</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;close&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="c1"># Sanity check if all workers confirmed to be closed successfully</span>
+        <span class="n">close_check</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">master_conn</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;confirmed&#39;</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">close_check</span><span class="p">,</span> <span class="s1">&#39;Something wrong with closing all workers&#39;</span>
+        
+        <span class="c1"># Now close all master connections</span>
+        <span class="p">[</span><span class="n">master_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">master_conn</span><span class="o">.</span><span class="n">closed</span> <span class="k">for</span> <span class="n">master_conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_conns</span><span class="p">]),</span> <span class="s1">&#39;Not all master connections are closed&#39;</span>
+
+        <span class="c1"># Join all processes</span>
+        <span class="p">[</span><span class="n">process</span><span class="o">.</span><span class="n">join</span><span class="p">()</span> <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_process</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Xingdong Zuo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

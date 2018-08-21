@@ -5,6 +5,9 @@ import torch
 from lagom import Logger
 from lagom.engine import BaseEngine
 from lagom.envs import make_gym_env
+from lagom.envs import make_envs
+from lagom.envs.vec_env import SerialVecEnv
+from lagom.envs.vec_env import StandardizeVecEnv
 from lagom.runner import TrajectoryRunner
 
 
@@ -18,14 +21,6 @@ class Engine(BaseEngine):
         
         # Train agent with collected data
         out_agent = self.agent.learn(D)
-        
-        # Accumulate the counter for all training timesteps
-        D_timesteps = sum([trajectory.T for trajectory in D])
-        if not hasattr(self, 'accumulated_trained_timesteps'):  # initialize with current batch of data
-            self.accumulated_trained_timesteps = D_timesteps
-        else:  # already defined, then increment it
-            self.accumulated_trained_timesteps += D_timesteps
-            
         # Return training output
         train_output = {}
         train_output['D'] = D
@@ -63,7 +58,7 @@ class Engine(BaseEngine):
         # Log more information
         logger.log(key='num_trajectories', val=len(D))
         logger.log(key='num_timesteps', val=num_timesteps)
-        logger.log(key='accumulated_trained_timesteps', val=self.accumulated_trained_timesteps)
+        logger.log(key='accumulated_trained_timesteps', val=self.agent.accumulated_trained_timesteps)
         logger.log(key='average_return', val=np.mean(batch_returns))
         logger.log(key='average_discounted_return', val=np.mean(batch_discounted_returns))
         logger.log(key='std_return', val=np.std(batch_returns))
@@ -81,22 +76,36 @@ class Engine(BaseEngine):
         # Set network as evaluation mode
         self.agent.policy.network.eval()
         
-        # Create a new instance of the envrionment
-        env = make_gym_env(env_id=self.config['env:id'], 
-                           seed=self.config['seed'], 
-                           monitor=False, 
-                           monitor_dir=None)
+        # Create a new instance of VecEnv envrionment
+        list_make_env = make_envs(make_env=make_gym_env, 
+                                  env_id=self.config['env:id'], 
+                                  num_env=1, 
+                                  init_seed=self.config['seed'])
+        env = SerialVecEnv(list_make_env)
+        # Wrapper to standardize observation from training scaling of mean and standard deviation
+        if self.config['env:normalize']:
+            env = StandardizeVecEnv(venv=env, 
+                                    use_obs=True, 
+                                    use_reward=False,  # do not standardize reward, use original
+                                    clip_obs=self.runner.env.clip_obs,
+                                    eps=self.runner.env.eps, 
+                                    constant_obs_mean=self.runner.env.obs_runningavg.mu, 
+                                    constant_obs_std=self.runner.env.obs_runningavg.sigma)
+        
         # Create a TrajectoryRunner
         runner = TrajectoryRunner(agent=self.agent, 
                                   env=env, 
                                   gamma=self.config['algo:gamma'])
         # Evaluate the agent for a set of trajectories
-        D = runner(N=self.config['eval:N'], T=self.config['eval:T'])
+        # Retrieve pre-defined maximum episode timesteps in the environment
+        T = env.T[0]  # take first one because of VecEnv
+        D = runner(N=self.config['eval:N'], T=T)
         
         # Return evaluation output
         eval_output = {}
         eval_output['D'] = D
         eval_output['n'] = n
+        eval_output['T'] = T
         
         return eval_output
         
@@ -107,6 +116,7 @@ class Engine(BaseEngine):
         # Unpack evaluation for logging
         D = eval_output['D']
         n = eval_output['n']
+        T = eval_output['T']
         
         # Compute some metrics
         batch_returns = [sum(trajectory.all_r) for trajectory in D]
@@ -116,10 +126,10 @@ class Engine(BaseEngine):
         # Use item() for tensor to save memory
         logger.log(key='evaluation_iteration', val=n+1)
         logger.log(key='num_trajectories', val=len(D))
-        logger.log(key='max_allowed_horizon', val=self.config['eval:T'])
+        logger.log(key='max_allowed_horizon', val=T)
         logger.log(key='average_horizon', val=np.mean(batch_T))
         logger.log(key='num_timesteps', val=np.sum(batch_T))
-        logger.log(key='accumulated_trained_timesteps', val=self.accumulated_trained_timesteps)
+        logger.log(key='accumulated_trained_timesteps', val=self.agent.accumulated_trained_timesteps)
         logger.log(key='average_return', val=np.mean(batch_returns))
         logger.log(key='std_return', val=np.std(batch_returns))
         logger.log(key='min_return', val=np.min(batch_returns))

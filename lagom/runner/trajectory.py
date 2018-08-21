@@ -167,4 +167,7 @@ class Trajectory(object):
         return info
     
     def __repr__(self):
-        return str([transition.__repr__() for transition in self.transitions])
+        string = 'Trajectory: \n'
+        for transition in self.transitions:
+            string += '\t' + transition.__repr__() + '\n'
+        return string
