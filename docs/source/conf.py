@@ -24,6 +24,9 @@ MOCK_MODULES = ['torch',
                 'torch.nn.utils',
                 'torch.optim', 
                 'torch.distributions', 
+                'seaborn', 
+                'matplotlib',
+                'matplotlib.pyplot',
                 '_tkinter']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
