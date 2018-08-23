@@ -1,0 +1,8 @@
+# .readthedocs.yml
+
+build:
+  image: latest
+
+# Use Python 3.6, specifically to support f-string. 
+python:
+  version: 3.6
