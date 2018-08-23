@@ -25,4 +25,4 @@ Experiment Worker
 Run experiment
 --------------
 
-.. autofunction:: runexperiment
+.. autofunction:: run_experiment

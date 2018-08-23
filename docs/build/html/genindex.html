@@ -86,6 +86,13 @@
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples_vae.html">Variational Auto-Encoder (VAE)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_mdn.html">Mixture Density Network (MDN)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_es.html">Evolution Strategies (ES)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pg.html">Policy Gradient</a></li>
+</ul>
 <p class="caption"><span class="caption-text">lagom API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
@@ -205,9 +212,11 @@
       </ul></li>
       <li><a href="envs.html#lagom.envs.wrappers.ActionWrapper">ActionWrapper (class in lagom.envs.wrappers)</a>
 </li>
-      <li><a href="core.html#lagom.core.plotter.CurvePlot.add">add() (lagom.core.plotter.CurvePlot method)</a>
+      <li><a href="core.html#lagom.core.plotter.BasePlot.add">add() (lagom.core.plotter.BasePlot method)</a>
 
       <ul>
+        <li><a href="core.html#lagom.core.plotter.CurvePlot.add">(lagom.core.plotter.CurvePlot method)</a>
+</li>
         <li><a href="core.html#lagom.core.plotter.GridImage.add">(lagom.core.plotter.GridImage method)</a>
 </li>
       </ul></li>
@@ -339,10 +348,10 @@
 </li>
       <li><a href="core.html#lagom.core.policies.BaseGaussianPolicy">BaseGaussianPolicy (class in lagom.core.policies)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core.html#lagom.core.es.BaseGymESMaster">BaseGymESMaster (class in lagom.core.es)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core.html#lagom.core.multiprocessing.BaseIterativeMaster">BaseIterativeMaster (class in lagom.core.multiprocessing)</a>
 </li>
       <li><a href="core.html#lagom.core.multiprocessing.BaseMaster">BaseMaster (class in lagom.core.multiprocessing)</a>
@@ -352,6 +361,8 @@
       <li><a href="core.html#lagom.core.networks.BaseMLP">BaseMLP (class in lagom.core.networks)</a>
 </li>
       <li><a href="core.html#lagom.core.networks.BaseNetwork">BaseNetwork (class in lagom.core.networks)</a>
+</li>
+      <li><a href="core.html#lagom.core.plotter.BasePlot">BasePlot (class in lagom.core.plotter)</a>
 </li>
       <li><a href="core.html#lagom.core.policies.BasePolicy">BasePolicy (class in lagom.core.policies)</a>
 </li>
@@ -822,6 +833,8 @@
 </li>
       </ul></li>
       <li><a href="envs.html#lagom.envs.wrappers.RewardWrapper">RewardWrapper (class in lagom.envs.wrappers)</a>
+</li>
+      <li><a href="experiment.html#lagom.experiment.run_experiment">run_experiment() (in module lagom.experiment)</a>
 </li>
       <li><a href="core.html#lagom.core.transform.RunningMeanStd">RunningMeanStd (class in lagom.core.transform)</a>
 </li>

@@ -93,7 +93,7 @@ Plotter
 
 .. currentmodule:: lagom.core.plotter
 
-.. autoclass:: BasePlotter
+.. autoclass:: BasePlot
     :members:
     
 .. autoclass:: CurvePlot
