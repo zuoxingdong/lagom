@@ -56,7 +56,7 @@ class ExperimentMaster(BaseExperimentMaster):
         # Alternative: 'train:iter' for training iterations
         config.add_item(name='train:timestep', val=1e6) # recommended: 1e-6, i.e. 1M timesteps
         # Number of Segment per training iteration
-        config.add_grid(name='train:N', val=[1, 16, 32, 64])
+        config.add_item(name='train:N', val=16)
         # Number of timesteps per Segment
         config.add_item(name='train:T', val=5)
         
@@ -70,7 +70,7 @@ class ExperimentMaster(BaseExperimentMaster):
         # Whether to standardize the discounted returns
         config.add_item(name='agent:standardize', val=False)
         # Gradient clipping with max gradient norm
-        config.add_item(name='agent:max_grad_norm', val=0.5)
+        config.add_grid(name='agent:max_grad_norm', val=[0.1, 0.5, 1.0, 10, 40])
         # Coefficient for policy entropy loss
         config.add_item(name='agent:entropy_coef', val=0.01)
         # Coefficient for value loss
@@ -90,9 +90,9 @@ class ExperimentMaster(BaseExperimentMaster):
         # Logging configurations #
         ##########################
         # Periodic interval to log and save information
-        config.add_item(name='log:interval', val=50)
+        config.add_item(name='log:interval', val=100)
         # Directory to save loggings
-        config.add_item(name='log:dir', val=f'logs/train_N/{config.config_settings["env:id"][0]}')
+        config.add_item(name='log:dir', val=f'logs/grad_clip/{config.config_settings["env:id"][0]}')
         
         # Auto-generate list of all possible configurations
         configs = config.make_configs()
