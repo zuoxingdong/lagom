@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>lagom.core.transform.centralize &mdash; lagom 0.0.1 documentation</title>
+  <title>lagom.core.plotter.base_plot &mdash; lagom 0.0.1 documentation</title>
   
 
   
@@ -149,7 +149,7 @@
         
           <li><a href="../../../index.html">Module code</a> &raquo;</li>
         
-      <li>lagom.core.transform.centralize</li>
+      <li>lagom.core.plotter.base_plot</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -164,42 +164,45 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for lagom.core.transform.centralize</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">from</span> <span class="nn">.base_transform</span> <span class="k">import</span> <span class="n">BaseTransform</span>
-
-
-<div class="viewcode-block" id="Centralize"><a class="viewcode-back" href="../../../../core.html#lagom.core.transform.Centralize">[docs]</a><span class="k">class</span> <span class="nc">Centralize</span><span class="p">(</span><span class="n">BaseTransform</span><span class="p">):</span>
+  <h1>Source code for lagom.core.plotter.base_plot</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="BasePlot"><a class="viewcode-back" href="../../../../core.html#lagom.core.plotter.BasePlot">[docs]</a><span></span><span class="k">class</span> <span class="nc">BasePlot</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Centralize the input data: Subtracted by mean. </span>
+<span class="sd">    Base class for plotting the experiment result. </span>
+<span class="sd">    </span>
+<span class="sd">    Many modern research plots are done via Seaborn, exploiting DataFrame data structure</span>
+<span class="sd">    from Pandas.</span>
+<span class="sd">    e.g.</span>
+<span class="sd">    - loss curves with uncertainties from different random seeds. </span>
+<span class="sd">    - Heatmaps with value shown in each cell. </span>
+<span class="sd">    - Kernel Density Estimation (KDE) plots.</span>
+<span class="sd">    </span>
+<span class="sd">    All inherited subclasses should at least implement the following functions:</span>
+<span class="sd">    1. __call__(self, **kwargs)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    
+<div class="viewcode-block" id="BasePlot.add"><a class="viewcode-back" href="../../../../core.html#lagom.core.plotter.BasePlot.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Centralize the input data: Subtracted by mean. </span>
+<span class="sd">        Add a new data for plotting. </span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x (scalar/list/ndarray): input data. </span>
-<span class="sd">            mean (float): If not None, then use specific mean to centralize the input data. </span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            out (ndarray): centralized data</span>
+<span class="sd">            name (str): name of the given data</span>
+<span class="sd">            data (object): given data</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Convert input to ndarray</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_input</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span></div>
         
-        <span class="c1"># Scalar: return the value</span>
-        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">x</span>
-        
-        <span class="c1"># Compute the mean if not provided</span>
-        <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">mean</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-            
-        <span class="c1"># Centralize the data</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mean</span>
-        
-        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>  <span class="c1"># enforce raw float dtype</span></div>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        User-defined function to generate a plot given keyword options. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: keyword aguments used to specify the plotting options. </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ax (Axes): a matplotlib Axes representing the generated plot. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 </pre></div>
 
            </div>

@@ -87,6 +87,13 @@
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples_vae.html">Variational Auto-Encoder (VAE)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_mdn.html">Mixture Density Network (MDN)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_es.html">Evolution Strategies (ES)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pg.html">Policy Gradient</a></li>
+</ul>
 <p class="caption"><span class="caption-text">lagom API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
@@ -1176,6 +1183,31 @@ though variance must be non-negative.</div></blockquote>
 </div>
 <div class="section" id="plotter">
 <h2>Plotter<a class="headerlink" href="#plotter" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lagom.core.plotter.BasePlot">
+<em class="property">class </em><code class="descclassname">lagom.core.plotter.</code><code class="descname">BasePlot</code><a class="reference internal" href="_modules/lagom/core/plotter/base_plot.html#BasePlot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.core.plotter.BasePlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for plotting the experiment result.</p>
+<p>Many modern research plots are done via Seaborn, exploiting DataFrame data structure
+from Pandas.
+e.g.
+- loss curves with uncertainties from different random seeds. 
+- Heatmaps with value shown in each cell. 
+- Kernel Density Estimation (KDE) plots.</p>
+<p>All inherited subclasses should at least implement the following functions:
+1. __call__(self, <a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs)</p>
+<dl class="method">
+<dt id="lagom.core.plotter.BasePlot.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>name</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/core/plotter/base_plot.html#BasePlot.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.core.plotter.BasePlot.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new data for plotting.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>name (str): name of the given data
+data (object): given data</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="lagom.core.plotter.CurvePlot">
 <em class="property">class </em><code class="descclassname">lagom.core.plotter.</code><code class="descname">CurvePlot</code><a class="reference internal" href="_modules/lagom/core/plotter/curve_plot.html#CurvePlot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.core.plotter.CurvePlot" title="Permalink to this definition">¶</a></dt>

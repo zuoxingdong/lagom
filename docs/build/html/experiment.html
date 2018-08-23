@@ -87,6 +87,13 @@
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Setup environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installing lagom</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples_vae.html">Variational Auto-Encoder (VAE)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_mdn.html">Mixture Density Network (MDN)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_es.html">Evolution Strategies (ES)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples_pg.html">Policy Gradient</a></li>
+</ul>
 <p class="caption"><span class="caption-text">lagom API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="lagom.html">lagom</a></li>
@@ -466,6 +473,40 @@ result (object): working result</dd>
 </div>
 <div class="section" id="run-experiment">
 <h2>Run experiment<a class="headerlink" href="#run-experiment" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lagom.experiment.run_experiment">
+<code class="descclassname">lagom.experiment.</code><code class="descname">run_experiment</code><span class="sig-paren">(</span><em>worker_class</em>, <em>master_class</em>, <em>max_num_worker=None</em>, <em>daemonic_worker=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/run_experiment.html#run_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.run_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function runs given experiments in parallel (master-worker) with defined configurations.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">worker_class (BaseExperimentWorker): user-defined experiment worker class.
+master_class (BaseExperimentMaster): user-defined experiment master class.
+max_num_worker (int, optional): maximum number of workers. It has following use cases:</p>
+<blockquote>
+<div><ul class="simple">
+<li>If None, then number of wokers set to be the total number of configurations.</li>
+<li><dl class="first docutils">
+<dt>If number of configurations less than this max bound, then the number of workers</dt>
+<dd>will be automatically reduced to the number of configurations.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>If number of configurations larger than this max bound, then the rest of configurations</dt>
+<dd>will be fed in iteratively complying with this max bound.</dd>
+</dl>
+</li>
+</ul>
+<p>Recommended to set to be the same as number of CPU cores, however, it is not necessary.</p>
+</div></blockquote>
+<dl class="last docutils">
+<dt>daemonic_worker (bool): If True, then set each worker to be daemonic. </dt>
+<dd>For details of daemonic worker, please refer to documentations in classes of 
+BaseWorker/BaseMaster</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 </div>
 

@@ -68,11 +68,11 @@ class ExperimentMaster(BaseExperimentMaster):
         # Agent configuration #
         #######################
         # Whether to standardize the discounted returns
-        config.add_grid(name='agent:standardize', val=[True, False])
+        config.add_item(name='agent:standardize', val=False)
         # Gradient clipping with max gradient norm
         config.add_item(name='agent:max_grad_norm', val=0.5)
         # Coefficient for policy entropy loss
-        config.add_item(name='agent:entropy_coef', val=0.01)
+        config.add_grid(name='agent:entropy_coef', val=[0.05, 0.1, 0.5, 1.0])
         # For Gaussian policy
         if continuous:
             # Min std threshould, avoid numerical instability
@@ -90,7 +90,7 @@ class ExperimentMaster(BaseExperimentMaster):
         # Periodic interval to log and save information
         config.add_item(name='log:interval', val=100)
         # Directory to save loggings
-        config.add_item(name='log:dir', val=f'logs/standardize_returns/{config.config_settings["env:id"][0]}')
+        config.add_item(name='log:dir', val=f'logs/entropy_coef/{config.config_settings["env:id"][0]}')
         
         # Auto-generate list of all possible configurations
         configs = config.make_configs()
