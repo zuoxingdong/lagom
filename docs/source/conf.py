@@ -16,6 +16,12 @@ import sys
 sys.path.insert(0, os.path.abspath('../../'))
 
 
+# Exclude some dependencies for Read the Docs to compile with
+import mock
+MOCK_MODULES = ['torch']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
 # -- Project information -----------------------------------------------------
 
 project = 'lagom'
