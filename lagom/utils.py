@@ -25,6 +25,13 @@ class Seeder(object):
     
     Given an initial seed, the seeder can be called continuously to sample a single
     or a batch of random seeds. 
+    
+    Example::
+    
+        >>> seeder = Seeder(init_seed=0)
+        >>> seeder(size=5)
+        [209652396, 398764591, 924231285, 1478610112, 441365315]
+        
     """
     
     def __init__(self, init_seed=0):
