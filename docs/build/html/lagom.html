@@ -192,7 +192,7 @@
 <dt id="lagom.Logger">
 <em class="property">class </em><code class="descclassname">lagom.</code><code class="descname">Logger</code><span class="sig-paren">(</span><em>name='logger'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Logging information during experiment.</p>
-<p>It supports iterative logging and dumping. That is, when same key is logged more than once, 
+<p>It supports iterative logging and dumping. That is, when same key is logged more than once,
 the values for this key will be appended successively. During dumping, the user can also
 choose to dump either the entire list of logged values or the values with specific index.</p>
 <p>Note that we do not support hierarchical logging, e.g. list of dict of list of dict of ndarray
@@ -200,7 +200,7 @@ this is because pickling is extremely slow for such a hierarhical data structure
 of dict and ndarray. Thus, we keep dict always at the top, if hierarchical logging is really
 needed, we recommand to present it in the key, the following example illustrate it:</p>
 <p>Suppose we want to train a goal-conditional policy in a maze with different goals iteratively,
-and each goal is trained with several internal iterations, in such scenario, when we want to 
+and each goal is trained with several internal iterations, in such scenario, when we want to
 log policy loss, the hierarchical key can be combine into one string with ‘:’ to separate each
 level, for example we want to log the policy loss with goal number 34 and internal training iteration
 20, the key can be ‘goal_34:train:iter_20:policy_loss’.</p>
@@ -214,22 +214,26 @@ level, for example we want to log the policy loss with goal number 34 and intern
 <dt id="lagom.Logger.dump">
 <code class="descname">dump</code><span class="sig-paren">(</span><em>keys=None</em>, <em>index=None</em>, <em>indent=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dump the item to the screen.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>keys (list, optional): List of keys to dump, if got None, then dump all logged information.</dt>
-<dd>Default: None</dd>
-<dt>index (int/list, optional): The index of logged information for dumping. It can be used with the </dt>
-<dd>following types:
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>keys</strong> (<em>list</em><em>, </em><em>optional</em>) – List of keys to dump, if got None, then dump all logged information.
+Default: None</li>
+<li><strong>index</strong> (<em>int/list</em><em>, </em><em>optional</em>) – The index of logged information for dumping. It can be used with the
+following types:
 1. Scalar: applies to all given keys. It can also be -1, i.e. last element in the list.
-2. List: applies to each key with given index. 
+2. List: applies to each key with given index.
 3. None: dump everything for all given keys. It can also be list of None.
-Default: None</dd>
-<dt>indent (int, optional): the number of tab indentation before dumping the information. </dt>
-<dd>Default: 0.</dd>
-</dl>
-</dd>
-</dl>
+Default: None</li>
+<li><strong>indent</strong> (<em>int</em><em>, </em><em>optional</em>) – the number of tab indentation before dumping the information.
+Default: 0.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -240,21 +244,32 @@ Default: None</dd>
 <p>A recommandation for the string style of the key, it should be named semantically
 and each word separated by ‘_’, because <cite>dump()</cite> will automatically replace all ‘_’
 with a whitespace and make each word capitalized by <cite>str.title()</cite>.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>key (str): key of the information
-val (object): value to be logged</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str</em>) – key of the information</li>
+<li><strong>val</strong> (<em>object</em>) – value to be logged</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.Logger.save">
 <code class="descname">save</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/logger.html#Logger.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.Logger.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save loggings to a file</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>file (str): path to save the logged information.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file</strong> (<em>str</em>) – path to save the logged information.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -270,10 +285,14 @@ val (object): value to be logged</dd>
 1. PyTorch
 2. Numpy
 3. Python random</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>seed (int): seed</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seed</strong> (<em>int</em>) – seed</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
