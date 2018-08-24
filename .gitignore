@@ -15,7 +15,8 @@ __pycache__/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-
+# Read the Docs
+docs/build
 
 
 
