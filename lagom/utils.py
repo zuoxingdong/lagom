@@ -28,8 +28,7 @@ class Seeder(object):
     """
     
     def __init__(self, init_seed=0):
-        r"""Constructor.
-        
+        r"""
         Args:
             init_seed (int, optional): Initial seed for generating random seeds.
         """
