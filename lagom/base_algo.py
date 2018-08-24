@@ -5,7 +5,7 @@ class BaseAlgorithm(object):
     
     The subclass should implement at least the following:
     
-    - __call__(self, config)
+    - :meth:`__call__`
     """
     def __init__(self, name):
         r"""Initialize the algorithm.
@@ -22,7 +22,7 @@ class BaseAlgorithm(object):
             config (OrderedDict): dictionary of configurations
             
         Returns:
-            result (object): Result of the execution. 
-                If no need to return anything, then an ``None`` should be returned. 
+            result (object): result of the execution. If no need to return anything, 
+                then an ``None`` should be returned. 
         """
         raise NotImplementedError
