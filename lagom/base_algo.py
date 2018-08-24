@@ -22,7 +22,7 @@ class BaseAlgorithm(object):
             config (OrderedDict): dictionary of configurations
             
         Returns:
-            - result (object): result of the execution. If no need to return anything, 
-                then an ``None`` should be returned. 
+            result:  object
+                result of the execution. If no need to return anything, then an ``None`` should be returned. 
         """
         raise NotImplementedError
