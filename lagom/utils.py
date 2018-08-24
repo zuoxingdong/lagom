@@ -28,7 +28,8 @@ class Seeder(object):
     """
     
     def __init__(self, init_seed=0):
-        r"""
+        r"""Constructor.
+        
         Args:
             init_seed (int, optional): Initial seed for generating random seeds.
         """
@@ -41,8 +42,7 @@ class Seeder(object):
         self.max = np.iinfo(np.int32).max
         
     def __call__(self, size=1):
-        r"""
-        Return the sampled random seeds according to the given size. 
+        r"""Return the sampled random seeds according to the given size. 
         
         Args:
             size (int or list): The size of random seeds to sample. 
