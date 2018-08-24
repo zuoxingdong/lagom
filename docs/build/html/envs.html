@@ -433,53 +433,67 @@
 <dt id="lagom.envs.Env.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/env.html#Env.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.Env.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.Env.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/env.html#Env.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.Env.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.Env.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/env.html#Env.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.Env.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seed of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>seed (int): The seed to initialize the pseudo-random number generator.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seed</strong> (<em>int</em>) – The seed to initialize the pseudo-random number generator.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.Env.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/env.html#Env.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.Env.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -505,7 +519,7 @@ info (dict): Debugging information.</dd>
 <dl class="class">
 <dt id="lagom.envs.GoalEnv">
 <em class="property">class </em><code class="descclassname">lagom.envs.</code><code class="descname">GoalEnv</code><a class="reference internal" href="_modules/lagom/envs/goal_env.html#GoalEnv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GoalEnv" title="Permalink to this definition">¶</a></dt>
-<dd><p>A goal-based environment. The observation space is a dictionary space consisting of 
+<dd><p>A goal-based environment. The observation space is a dictionary space consisting of
 - ‘observation’: same like regular observation
 - ‘achieved_goal’: the goal is currently achieved by the agent
 - ‘desired_goal’: the goal should be achieved by the agent</p>
@@ -513,33 +527,51 @@ info (dict): Debugging information.</dd>
 <dt id="lagom.envs.GoalEnv.compute_reward">
 <code class="descname">compute_reward</code><span class="sig-paren">(</span><em>achieved_goal</em>, <em>desired_goal</em>, <em>info</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/goal_env.html#GoalEnv.compute_reward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GoalEnv.compute_reward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the step reward dependent on a desired goal and a goal that was achieved.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>achieved_goal (object): the goal that was achieved
-desired_goal (object): the desired goal that agent should achieve
-info (dict): additional information, e.g. additional rewards that are independent of goal.</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>reward (float): the reward according to achieved goal and desired goal.</dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>achieved_goal</strong> (<em>object</em>) – the goal that was achieved</li>
+<li><strong>desired_goal</strong> (<em>object</em>) – the desired goal that agent should achieve</li>
+<li><strong>info</strong> (<em>dict</em>) – additional information, e.g. additional rewards that are independent of goal.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>the reward according to achieved goal and desired goal.</dt>
 <dd><dl class="first last docutils">
 <dt>Note that the following should be true:</dt>
-<dd>observation, reward, done, info = env.step()
-assert reward == env.compute_reward(observation[‘achieved_goal’], observation[‘desired_goal’], info)</dd>
-</dl>
+<dd><p class="first last">observation, reward, done, info = env.step()
+assert reward == env.compute_reward(observation[‘achieved_goal’], observation[‘desired_goal’], info)</p>
 </dd>
 </dl>
 </dd>
 </dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">reward (float)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.GoalEnv.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/goal_env.html#GoalEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GoalEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -582,53 +614,67 @@ assert reward == env.compute_reward(observation[‘achieved_goal’], observatio
 <dt id="lagom.envs.GymEnv.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/gym_env.html#GymEnv.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GymEnv.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.GymEnv.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/gym_env.html#GymEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GymEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.GymEnv.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/gym_env.html#GymEnv.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GymEnv.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seed of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>seed (int): The seed to initialize the pseudo-random number generator.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seed</strong> (<em>int</em>) – The seed to initialize the pseudo-random number generator.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.GymEnv.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/gym_env.html#GymEnv.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.GymEnv.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -643,15 +689,26 @@ info (dict): Debugging information.</dd>
 <dt id="lagom.envs.make_gym_env">
 <code class="descclassname">lagom.envs.</code><code class="descname">make_gym_env</code><span class="sig-paren">(</span><em>env_id</em>, <em>seed</em>, <em>monitor=False</em>, <em>monitor_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/make_env.html#make_gym_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.make_gym_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a gym environment, wrap it with GymEnv and seed it.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>env_id (str): environment ID, e.g. ‘Pendulum-v0’
-seed (int): random seed
-monitor (bool, optional): Whether to wrap the environment with Monitor for video recording. 
-monitor_dir (str, optional): directory to save all data from Monitor.</dd>
-<dt>Returns:</dt>
-<dd>env (GymEnv): created environment</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env_id</strong> (<em>str</em>) – environment ID, e.g. ‘Pendulum-v0’</li>
+<li><strong>seed</strong> (<em>int</em>) – random seed</li>
+<li><strong>monitor</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to wrap the environment with Monitor for video recording.</li>
+<li><strong>monitor_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – directory to save all data from Monitor.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">created environment</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">env (<a class="reference internal" href="#lagom.envs.GymEnv" title="lagom.envs.GymEnv">GymEnv</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -659,20 +716,32 @@ monitor_dir (str, optional): directory to save all data from Monitor.</dd>
 <code class="descclassname">lagom.envs.</code><code class="descname">make_envs</code><span class="sig-paren">(</span><em>make_env</em>, <em>env_id</em>, <em>num_env</em>, <em>init_seed</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/make_env.html#make_envs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.make_envs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a list of argument-free make_env() given the settings.</p>
 <p>Each make_env function in the list uses different random seeds generated by Seeder.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>make_env (function): A function to create an environment
-env_id (str): environment ID, e.g. ‘Pendulum-v0’. 
-num_env (int): Number of environments to create. 
-init_seed (int): Initial seed for Seeder to sample random seeds. 
-<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: keyword aguments used to specify other options for make_env.</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>list_make_env (list): A list of argument-free make_env() functions, each with different random</dt>
-<dd>seed.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>make_env</strong> (<em>function</em>) – A function to create an environment</li>
+<li><strong>env_id</strong> (<em>str</em>) – environment ID, e.g. ‘Pendulum-v0’.</li>
+<li><strong>num_env</strong> (<em>int</em>) – Number of environments to create.</li>
+<li><strong>init_seed</strong> (<em>int</em>) – Initial seed for Seeder to sample random seeds.</li>
+<li><strong>**kwargs</strong> – keyword aguments used to specify other options for make_env.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>A list of argument-free make_env() functions, each with different random</dt>
+<dd><p class="first last">seed.</p>
 </dd>
 </dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list_make_env (list)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -710,53 +779,67 @@ init_seed (int): Initial seed for Seeder to sample random seeds.
 <dt id="lagom.envs.wrappers.Wrapper.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#Wrapper.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.Wrapper.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.wrappers.Wrapper.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#Wrapper.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.Wrapper.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.wrappers.Wrapper.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#Wrapper.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.Wrapper.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seed of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>seed (int): The seed to initialize the pseudo-random number generator.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seed</strong> (<em>int</em>) – The seed to initialize the pseudo-random number generator.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.wrappers.Wrapper.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#Wrapper.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.Wrapper.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -785,25 +868,37 @@ info (dict): Debugging information.</dd>
 <dt id="lagom.envs.wrappers.ObservationWrapper.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#ObservationWrapper.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.ObservationWrapper.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.wrappers.ObservationWrapper.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#ObservationWrapper.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.ObservationWrapper.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -826,15 +921,21 @@ info (dict): Debugging information.</dd>
 <dt id="lagom.envs.wrappers.ActionWrapper.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#ActionWrapper.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.ActionWrapper.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -849,15 +950,21 @@ info (dict): Debugging information.</dd>
 <dt id="lagom.envs.wrappers.RewardWrapper.step">
 <code class="descname">step</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/wrapper.html#RewardWrapper.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.RewardWrapper.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the given action for one time step through the environment’s dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>action (object): a given action to the environment</dd>
-<dt>Returns:</dt>
-<dd>observation (object): The current observation agent receives after executing the given action.
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>object</em>) – a given action to the environment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The current observation agent receives after executing the given action.
 reward (float): A scalar reward signal
 done (bool): True if the episode terminates.
-info (dict): Debugging information.</dd>
-</dl>
+info (dict): Debugging information.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -882,10 +989,16 @@ observations, each step(), the returned observation will have shape [3, 4]</p>
 <dt id="lagom.envs.wrappers.StackObservation.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/wrappers/stack_observation.html#StackObservation.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.wrappers.StackObservation.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the environment and return an initial observation.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observation (object): The observation agents receives for the initial state.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The observation agents receives for the initial state.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observation (object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -969,18 +1082,16 @@ observations, each step(), the returned observation will have shape [3, 4]</p>
 <dt id="lagom.envs.vec_env.VecEnv.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env.html#VecEnv.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnv.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the vectorized environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -988,24 +1099,31 @@ observations, each step(), the returned observation will have shape [3, 4]</p>
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env.html#VecEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the states of all the environments and return a list of initial observations.</p>
 <p>Note that the step_async() will be cancelled if it is still woring.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observations (list): The list of initial observations from all environments.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of initial observations from all environments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.VecEnv.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seeds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env.html#VecEnv.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnv.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seeds for each of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>seeds (list): List of seeds to initialize the pseudo-random number generator</dt>
-<dd>for all environments.</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seeds</strong> (<em>list</em>) – List of seeds to initialize the pseudo-random number generator
+for all environments.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1013,19 +1131,25 @@ observations, each step(), the returned observation will have shape [3, 4]</p>
 <code class="descname">step</code><span class="sig-paren">(</span><em>actions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env.html#VecEnv.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnv.step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute all the given actions, each for one environment, for one time step through
 the environments’ dynamics.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>actions (list): a list of given actions, each for one environment.</dd>
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>actions</strong> (<em>list</em>) – a list of given actions, each for one environment.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1034,27 +1158,37 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <dd><p>Notify all the environments to execute the given actions, each for one environment.</p>
 <p>Call step_wait() to receive all the results.</p>
 <p>Note that do not call this function if it is already pending.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>actions (list): a list of given actions, each for one environment.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>actions</strong> (<em>list</em>) – a list of given actions, each for one environment.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.VecEnv.step_wait">
 <code class="descname">step_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env.html#VecEnv.step_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnv.step_wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for the job in step_async() to finish and return all the results.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -1071,11 +1205,10 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <em class="property">class </em><code class="descclassname">lagom.envs.vec_env.</code><code class="descname">SerialVecEnv</code><span class="sig-paren">(</span><em>list_make_env</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/serial_vec_env.html#SerialVecEnv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run vectorized environment serially.</p>
 <p>Note that it is recommended to use this environment only if step() in the environment
-needs very few computation, otherwise it will be slower than doing it parallelly. For ‘slow’ environment, 
+needs very few computation, otherwise it will be slower than doing it parallelly. For ‘slow’ environment,
 it is recommended to use ParallelVecEnv instead.</p>
+<p class="rubric">Examples</p>
 <dl class="docutils">
-<dt>Examples:</dt>
-<dd><dl class="first docutils">
 <dt>def make_env():</dt>
 <dd><p class="first">env = gym.make(‘CartPole-v0’)
 env = GymEnv(env)</p>
@@ -1085,10 +1218,8 @@ env = GymEnv(env)</p>
 <p>env = SerialVecEnv([make_env]*5)
 env.reset()
 for _ in range(100):</p>
-<blockquote class="last">
+<blockquote>
 <div>env.step([0]*5)</div></blockquote>
-</dd>
-</dl>
 <dl class="attribute">
 <dt id="lagom.envs.vec_env.SerialVecEnv.T">
 <code class="descname">T</code><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv.T" title="Permalink to this definition">¶</a></dt>
@@ -1112,18 +1243,16 @@ for _ in range(100):</p>
 <dt id="lagom.envs.vec_env.SerialVecEnv.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/serial_vec_env.html#SerialVecEnv.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the vectorized environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1131,24 +1260,31 @@ for _ in range(100):</p>
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/serial_vec_env.html#SerialVecEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the states of all the environments and return a list of initial observations.</p>
 <p>Note that the step_async() will be cancelled if it is still woring.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observations (list): The list of initial observations from all environments.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of initial observations from all environments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.SerialVecEnv.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seeds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/serial_vec_env.html#SerialVecEnv.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seeds for each of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>seeds (list): List of seeds to initialize the pseudo-random number generator</dt>
-<dd>for all environments.</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seeds</strong> (<em>list</em>) – List of seeds to initialize the pseudo-random number generator
+for all environments.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1157,27 +1293,37 @@ for _ in range(100):</p>
 <dd><p>Notify all the environments to execute the given actions, each for one environment.</p>
 <p>Call step_wait() to receive all the results.</p>
 <p>Note that do not call this function if it is already pending.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>actions (list): a list of given actions, each for one environment.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>actions</strong> (<em>list</em>) – a list of given actions, each for one environment.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.SerialVecEnv.step_wait">
 <code class="descname">step_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/serial_vec_env.html#SerialVecEnv.step_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.SerialVecEnv.step_wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for the job in step_async() to finish and return all the results.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -1189,9 +1335,8 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <p>Note that it is recommended to use parallel vectorized environment only if the step() in the environment
 needs quite some computation, otherwise it will be slower than doing it serially. For ‘fast’
 environment, it is recommended to use SerialVecEnv instead.</p>
-<p>Examples:</p>
-<blockquote>
-<div><dl class="docutils">
+<p class="rubric">Examples</p>
+<dl class="docutils">
 <dt>def make_env():</dt>
 <dd><p class="first">env = gym.make(‘CartPole-v0’)
 env = GymEnv(env)</p>
@@ -1203,7 +1348,6 @@ env.reset()
 for _ in range(100):</p>
 <blockquote>
 <div>env.step([0]*5)</div></blockquote>
-</div></blockquote>
 <dl class="attribute">
 <dt id="lagom.envs.vec_env.ParallelVecEnv.T">
 <code class="descname">T</code><a class="headerlink" href="#lagom.envs.vec_env.ParallelVecEnv.T" title="Permalink to this definition">¶</a></dt>
@@ -1227,18 +1371,16 @@ for _ in range(100):</p>
 <dt id="lagom.envs.vec_env.ParallelVecEnv.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/parallel_vec_env.html#ParallelVecEnv.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.ParallelVecEnv.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the vectorized environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1246,24 +1388,31 @@ for _ in range(100):</p>
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/parallel_vec_env.html#ParallelVecEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.ParallelVecEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the states of all the environments and return a list of initial observations.</p>
 <p>Note that the step_async() will be cancelled if it is still woring.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observations (list): The list of initial observations from all environments.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of initial observations from all environments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.ParallelVecEnv.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seeds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/parallel_vec_env.html#ParallelVecEnv.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.ParallelVecEnv.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seeds for each of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>seeds (list): List of seeds to initialize the pseudo-random number generator</dt>
-<dd>for all environments.</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seeds</strong> (<em>list</em>) – List of seeds to initialize the pseudo-random number generator
+for all environments.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1272,27 +1421,37 @@ for _ in range(100):</p>
 <dd><p>Notify all the environments to execute the given actions, each for one environment.</p>
 <p>Call step_wait() to receive all the results.</p>
 <p>Note that do not call this function if it is already pending.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>actions (list): a list of given actions, each for one environment.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>actions</strong> (<em>list</em>) – a list of given actions, each for one environment.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.ParallelVecEnv.step_wait">
 <code class="descname">step_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/parallel_vec_env.html#ParallelVecEnv.step_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.ParallelVecEnv.step_wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for the job in step_async() to finish and return all the results.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -1335,18 +1494,16 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <dt id="lagom.envs.vec_env.VecEnvWrapper.render">
 <code class="descname">render</code><span class="sig-paren">(</span><em>mode='human'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env_wrapper.html#VecEnvWrapper.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnvWrapper.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render the vectorized environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mode (str): The mode for the rendering. Two modes are supported.</dt>
-<dd><ul class="first last simple">
-<li>‘human’: Often pop up a rendered window</li>
-<li>‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>str</em>) – The mode for the rendering. Two modes are supported.
+- ‘human’: Often pop up a rendered window
+- ‘rgb_array’: numpy array with shape [x, y, 3] for RGB values.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1354,24 +1511,31 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env_wrapper.html#VecEnvWrapper.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnvWrapper.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the states of all the environments and return a list of initial observations.</p>
 <p>Note that the step_async() will be cancelled if it is still woring.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observations (list): The list of initial observations from all environments.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of initial observations from all environments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.VecEnvWrapper.seed">
 <code class="descname">seed</code><span class="sig-paren">(</span><em>seeds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env_wrapper.html#VecEnvWrapper.seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnvWrapper.seed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the random seeds for each of the environment.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>seeds (list): List of seeds to initialize the pseudo-random number generator</dt>
-<dd>for all environments.</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>seeds</strong> (<em>list</em>) – List of seeds to initialize the pseudo-random number generator
+for all environments.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1380,27 +1544,37 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <dd><p>Notify all the environments to execute the given actions, each for one environment.</p>
 <p>Call step_wait() to receive all the results.</p>
 <p>Note that do not call this function if it is already pending.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>actions (list): a list of given actions, each for one environment.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>actions</strong> (<em>list</em>) – a list of given actions, each for one environment.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.VecEnvWrapper.step_wait">
 <code class="descname">step_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/vec_env_wrapper.html#VecEnvWrapper.step_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.VecEnvWrapper.step_wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for the job in step_async() to finish and return all the results.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -1415,61 +1589,71 @@ infos (list of dict): A list of debugging informations from all environments.</p
 <dl class="class">
 <dt id="lagom.envs.vec_env.StandardizeVecEnv">
 <em class="property">class </em><code class="descclassname">lagom.envs.vec_env.</code><code class="descname">StandardizeVecEnv</code><span class="sig-paren">(</span><em>venv</em>, <em>use_obs=True</em>, <em>use_reward=True</em>, <em>clip_obs=10.0</em>, <em>clip_reward=10.0</em>, <em>gamma=0.99</em>, <em>eps=1e-08</em>, <em>constant_obs_mean=None</em>, <em>constant_obs_std=None</em>, <em>constant_reward_std=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/standardize_vec_env.html#StandardizeVecEnv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.StandardizeVecEnv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Standardize the observations and rewards by using running average. 
+<dd><p>Standardize the observations and rewards by using running average.
 i.e. subtract by running mean and divided by running standard deviation.</p>
 <p>Or the user can also provide constant mean and standard deviation for standardization.</p>
-<p>Note that we do not subtract the mean from rewards but only divided by standard deviation. 
+<p>Note that we do not subtract the mean from rewards but only divided by standard deviation.
 And the reward running average is computed by discounted returns continuously.</p>
-<p>Also note that each <cite>reset()</cite> we do not clean up the <cite>self.all_returns</cite> buffer. 
-Because of discount factor (&lt; 1), the running averages will be converged after some iterations. 
-Therefore, we do not allow discounted factor as 1.0, as it will lead to unbounded explosion 
+<p>Also note that each <cite>reset()</cite> we do not clean up the <cite>self.all_returns</cite> buffer.
+Because of discount factor (&lt; 1), the running averages will be converged after some iterations.
+Therefore, we do not allow discounted factor as 1.0, as it will lead to unbounded explosion
 of reward running averages.</p>
 <p>IMPORTANT: Remember to save and load observation scaling for evaluating the agent.</p>
-<p>Examples:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>list_make_env = make_envs(make_env=make_gym_env, </dt>
-<dd>env_id=’Pendulum-v0’, 
-num_env=2, 
+<p class="rubric">Examples</p>
+<dl class="docutils">
+<dt>list_make_env = make_envs(make_env=make_gym_env,</dt>
+<dd>env_id=’Pendulum-v0’,
+num_env=2,
 init_seed=1)</dd>
 </dl>
 <p>venv = SerialVecEnv(list_make_env=list_make_env)</p>
 <dl class="docutils">
-<dt>env = StandardizeVecEnv(venv=venv, </dt>
-<dd>use_obs=True, 
-use_reward=True, 
-clip_obs=10.0, 
-clip_reward=10.0, 
-gamma=0.99, 
+<dt>env = StandardizeVecEnv(venv=venv,</dt>
+<dd>use_obs=True,
+use_reward=True,
+clip_obs=10.0,
+clip_reward=10.0,
+gamma=0.99,
 eps=1e-8)</dd>
 </dl>
-</div></blockquote>
 <dl class="method">
 <dt id="lagom.envs.vec_env.StandardizeVecEnv.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/standardize_vec_env.html#StandardizeVecEnv.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.StandardizeVecEnv.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the states of all the environments and return a list of initial observations.</p>
 <p>Note that the step_async() will be cancelled if it is still woring.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>observations (list): The list of initial observations from all environments.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of initial observations from all environments.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.envs.vec_env.StandardizeVecEnv.step_wait">
 <code class="descname">step_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/envs/vec_env/standardize_vec_env.html#StandardizeVecEnv.step_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.envs.vec_env.StandardizeVecEnv.step_wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for the job in step_async() to finish and return all the results.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>observations (list of object): A list of current observations that agent receives from all </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A list of current observations that agent receives from all</dt>
 <dd>environments after executing the given actions.</dd>
 </dl>
-<p class="last">rewards (list of float): A list of scalar rewards from all environments. 
+<p>rewards (list of float): A list of scalar rewards from all environments.
 dones (list of bool): A list booleans from all environments. If True, then the episode terminates.
 infos (list of dict): A list of debugging informations from all environments.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">observations (list of object)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

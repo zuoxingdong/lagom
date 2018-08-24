@@ -187,20 +187,27 @@ e.g. hyperparamters, environments/algorithm/logging settings</p>
 are too many configurations, it is then recommended to divide
 then into groups by adding tags in the key, e.g. {‘network: lr’: 1e-3}</p>
 <p>Note that it supports both grid search and random search.</p>
-<p>It is recommended to save loggings for each ID with an individual directory. 
-e.g. top folder ‘logs’, and subfolders with name as ID number. 
+<p>It is recommended to save loggings for each ID with an individual directory.
+e.g. top folder ‘logs’, and subfolders with name as ID number.
 This is automatically provided by method in <cite>experiment/run_experiment.py</cite>.</p>
 <dl class="method">
 <dt id="lagom.experiment.Config.add_grid">
 <code class="descname">add_grid</code><span class="sig-paren">(</span><em>name</em>, <em>val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.add_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.add_grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a list of configurations.</p>
-<p>This can be used for grid search. 
+<p>This can be used for grid search.
 The auto-config generation will iterate over each element.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): the name for the configuration item
-val (list): a list of configuration items</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – the name for the configuration item</li>
+<li><strong>val</strong> (<em>list</em>) – a list of configuration items</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -208,11 +215,18 @@ val (list): a list of configuration items</dd>
 <code class="descname">add_item</code><span class="sig-paren">(</span><em>name</em>, <em>val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.add_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.add_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a single item for the configuration.</p>
 <p>It will be wrapped as a list with single element.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): the name for the configuration item
-val (object): the value for the configuration item</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – the name for the configuration item</li>
+<li><strong>val</strong> (<em>object</em>) – the value for the configuration item</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -220,13 +234,20 @@ val (object): the value for the configuration item</dd>
 <code class="descname">add_random_continuous</code><span class="sig-paren">(</span><em>name</em>, <em>low</em>, <em>high</em>, <em>num_sample</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.add_random_continuous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.add_random_continuous" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a continuous range to sample from uniformly.</p>
 <p>This can be used for random search sampled from a given continuous range.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of configuration item
-low (float): lowest value
-high (float): highest value
-num_sample (int): number of samples</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of configuration item</li>
+<li><strong>low</strong> (<em>float</em>) – lowest value</li>
+<li><strong>high</strong> (<em>float</em>) – highest value</li>
+<li><strong>num_sample</strong> (<em>int</em>) – number of samples</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -234,13 +255,20 @@ num_sample (int): number of samples</dd>
 <code class="descname">add_random_discrete</code><span class="sig-paren">(</span><em>name</em>, <em>list_val</em>, <em>num_sample</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.add_random_discrete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.add_random_discrete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a discrete list of values to sample from.</p>
 <p>This can be used for random search sampled from given discrete list of items.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of configuration item
-list_val (list): list of discrete values to sample
-num_sample (int): number of samples
-replace (bool): If True, then sampling with replacement. Default: True</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of configuration item</li>
+<li><strong>list_val</strong> (<em>list</em>) – list of discrete values to sample</li>
+<li><strong>num_sample</strong> (<em>int</em>) – number of samples</li>
+<li><strong>replace</strong> (<em>bool</em>) – If True, then sampling with replacement. Default: True</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -252,14 +280,21 @@ e.g. learning rates</p>
 <a class="reference external" href="http://cs231n.github.io/neural-networks-3/#hyper">http://cs231n.github.io/neural-networks-3/#hyper</a></p>
 <p>sample = base**np.random.uniform(low=low, high=high, size=num_sample)
 e.g. base=10, low=-6, high=0</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of configuration item
-base (float): base of exponential function
-low (float): lowest exponent
-high (float): highest exponent
-num_sample (int): number of samples</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of configuration item</li>
+<li><strong>base</strong> (<em>float</em>) – base of exponential function</li>
+<li><strong>low</strong> (<em>float</em>) – lowest exponent</li>
+<li><strong>high</strong> (<em>float</em>) – highest exponent</li>
+<li><strong>num_sample</strong> (<em>int</em>) – number of samples</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -267,51 +302,72 @@ num_sample (int): number of samples</dd>
 <code class="descname">make_configs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.make_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.make_configs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a list of combination of configurations
 i.e. list of OrderedDict, each augmented with a unique ID.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>configs (list): list of configurations</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of configurations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">configs (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="staticmethod">
 <dt id="lagom.experiment.Config.partition_IDs">
 <em class="property">static </em><code class="descname">partition_IDs</code><span class="sig-paren">(</span><em>config_dataframe</em>, <em>group_keys</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.partition_IDs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.partition_IDs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reorganize DataFrame of all configurations by grouping some given keys in the combination 
+<dd><p>Reorganize DataFrame of all configurations by grouping some given keys in the combination
 of all other keys and provide IDs for each group.</p>
 <p>For example, if we want to plot training loss with different random seeds, although there are
 many other hyperparameter searchings, one can use the following to obtain IDs for different
 random seeds, under different other configurations:</p>
 <blockquote>
 <div>y, transformed_y = partition_IDs(x, group_keys=[‘seed’])</div></blockquote>
-<p>In other words, the processed DataFrame will take a cartesian product of all other keys, 
+<p>In other words, the processed DataFrame will take a cartesian product of all other keys,
 and each combination will contain IDs for all different random seeds.</p>
 <p>We also return a transformed DataFrame that is more convenient for visualize the grouping
 in the Jupyter Notebook, it makes users easily verify how grouping is done.</p>
 <p>To retrieve the corresponding IDs, we suggest the simplest way is to firstly visually check
 the transformed DataFrame and use the returned DataFrameGroupby object to get the data
-by calling <cite>.groups.items()</cite> and be aware that it returned the index for the original DataFrame, 
+by calling <cite>.groups.items()</cite> and be aware that it returned the index for the original DataFrame,
 not the ID number. However it could be used if all IDs are successive and starting from 0,
 i.e. consistent with DataFrame indicies.</p>
 <p>Note that the key ‘ID’ should not be included in the group keys, because it will be added
 internally.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>config_dataframe (DataFrame): configuration DataFrame
-group_keys (list): list of keys to group up.</dd>
-<dt>Returns:</dt>
-<dd>grouped_config (DataFrameGroupby): processed DataFrame
-transformed_config (DataFrame): useful for Notebook visualization</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>config_dataframe</strong> (<em>DataFrame</em>) – configuration DataFrame</li>
+<li><strong>group_keys</strong> (<em>list</em>) – list of keys to group up.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">processed DataFrame
+transformed_config (DataFrame): useful for Notebook visualization</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">grouped_config (DataFrameGroupby)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="staticmethod">
 <dt id="lagom.experiment.Config.print_config">
 <em class="property">static </em><code class="descname">print_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.print_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.print_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to print all items in the given configuration.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>config (dict): Dictionary of configurations.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – Dictionary of configurations.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -319,43 +375,62 @@ transformed_config (DataFrame): useful for Notebook visualization</dd>
 <code class="descname">save_configs</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.save_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.save_configs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save all generated configurations, an individual file for each configuration
 and named by its ID.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>f (str): path to save all configuration files</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> (<em>str</em>) – path to save all configuration files</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="staticmethod">
 <dt id="lagom.experiment.Config.subset_configs">
 <em class="property">static </em><code class="descname">subset_configs</code><span class="sig-paren">(</span><em>config_dataframe</em>, <em>keyvalues</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.subset_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.subset_configs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take a subset of given configurations based on the selection criterion for certain key and certain values.</p>
-<p>For example, we want to select the configuration with seed only in the range of [20, 52, 70], and 
+<p>For example, we want to select the configuration with seed only in the range of [20, 52, 70], and
 learning rate in the range of [1e-3, 5e-4, 1e-4], one could do it as following:</p>
 <blockquote>
 <div>config_dataframe = config_dataframe.loc[config_dataframe[‘seed’].isin([20, 52, 70])]
 config_dataframe = config_dataframe.loc[config_dataframe[‘lr’].isin([1e-3, 5e-4, 1e-4])]</div></blockquote>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><p class="first">config_dataframe (DataFrame): configuration DataFrame
-keyvalues (dict): A dictionary of subset selection criterion. The keys corresponds to the columns in</p>
-<blockquote class="last">
-<div>the DataFrame. Each value should be a list of considered column values.</div></blockquote>
-</dd>
-<dt>Returns:</dt>
-<dd>subset (DataFrame): selected subset of configurations as DataFrame.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>config_dataframe</strong> (<em>DataFrame</em>) – configuration DataFrame</li>
+<li><strong>keyvalues</strong> (<em>dict</em>) – A dictionary of subset selection criterion. The keys corresponds to the columns in
+the DataFrame. Each value should be a list of considered column values.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">selected subset of configurations as DataFrame.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">subset (DataFrame)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="staticmethod">
 <dt id="lagom.experiment.Config.to_pandas_dataframe">
 <em class="property">static </em><code class="descname">to_pandas_dataframe</code><span class="sig-paren">(</span><em>list_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/config.html#Config.to_pandas_dataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.Config.to_pandas_dataframe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to create a Pandas DataFrame for given list of configurations.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>list_config (list of dict): A list of configurations, each one is a dictionary.</dd>
-<dt>Returns:</dt>
-<dd>config_dataframe (DataFrame): Pandas DataFrame for list of configurations</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>list_config</strong> (<em>list of dict</em>) – A list of configurations, each one is a dictionary.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Pandas DataFrame for list of configurations</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">config_dataframe (DataFrame)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -367,7 +442,7 @@ keyvalues (dict): A dictionary of subset selection criterion. The keys correspon
 <dt id="lagom.experiment.BaseExperimentMaster">
 <em class="property">class </em><code class="descclassname">lagom.experiment.</code><code class="descname">BaseExperimentMaster</code><span class="sig-paren">(</span><em>worker_class</em>, <em>max_num_worker=None</em>, <em>daemonic_worker=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_master.html#BaseExperimentMaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentMaster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class of the master for parallelized experiment.</p>
-<p>For details about master in general, please refer to 
+<p>For details about master in general, please refer to
 the documentation of the class, BaseIterativeMaster.</p>
 <p>All inherited subclasses should at least implement the following function:
 1. process_algo_result(self, config, result)
@@ -375,17 +450,24 @@ the documentation of the class, BaseIterativeMaster.</p>
 <dl class="method">
 <dt id="lagom.experiment.BaseExperimentMaster.make_configs">
 <code class="descname">make_configs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_master.html#BaseExperimentMaster.make_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentMaster.make_configs" title="Permalink to this definition">¶</a></dt>
-<dd><p>User-defined function to define all configurations. 
+<dd><p>User-defined function to define all configurations.
 e.g. hyperparameters and algorithm settings.</p>
 <p>It is recommeded to use Config class, define different
 configurations and call make_configs() to return
 a list of automatically generated all combination
 of configurations.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>configs (list): output from config.make_configs</dd>
-<dt>Examples:</dt>
-<dd><p class="first">config = Config()</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">output from config.make_configs</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">configs (list)</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>config = Config()</p>
 <p>config.add_item(name=’algo’, val=’RL’)
 config.add_item(name=’iter’, val=30)
 config.add_item(name=’hidden_sizes’, val=[64, 32, 16])
@@ -393,21 +475,25 @@ config.add_random_eps(name=’lr’, base=10, low=-6, high=0, num_sample=10)
 config.add_random_continuous(name=’values’, low=-5, high=5, num_sample=5)
 config.add_random_discrete(name=’select’, list_val=[43223, 5434, 21314], num_sample=10, replace=True)</p>
 <p>configs = config.make_configs()</p>
-<p class="last">return configs</p>
-</dd>
-</dl>
+<p>return configs</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.experiment.BaseExperimentMaster.make_tasks">
 <code class="descname">make_tasks</code><span class="sig-paren">(</span><em>iteration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_master.html#BaseExperimentMaster.make_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentMaster.make_tasks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a set of iteration-dependent tasks.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>iteration (int): the iteration index</dd>
-<dt>Returns:</dt>
-<dd>tasks (list): a list of tasks</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>iteration</strong> (<em>int</em>) – the iteration index</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of tasks</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tasks (list)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -415,21 +501,32 @@ config.add_random_discrete(name=’select’, list_val=[43223, 5434, 21314], num
 <code class="descname">process_algo_result</code><span class="sig-paren">(</span><em>config</em>, <em>result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_master.html#BaseExperimentMaster.process_algo_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentMaster.process_algo_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>User-defined function to process the result of the execution
 of the algorithm given the configuration.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>config (dict): dictionary of configurations. 
-result (object): result of algorithm execution returned from Algorithm.__call__().</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>config</strong> (<em>dict</em>) – dictionary of configurations.</li>
+<li><strong>result</strong> (<em>object</em>) – result of algorithm execution returned from Algorithm.__call__().</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.experiment.BaseExperimentMaster.save_configs">
 <code class="descname">save_configs</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_master.html#BaseExperimentMaster.save_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentMaster.save_configs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save all configurations returned from <cite>make_configs</cite> (a list of dict).</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>f (str): path to save all configurations</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> (<em>str</em>) – path to save all configurations</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -441,7 +538,7 @@ result (object): result of algorithm execution returned from Algorithm.__call__(
 <dt id="lagom.experiment.BaseExperimentWorker">
 <em class="property">class </em><code class="descclassname">lagom.experiment.</code><code class="descname">BaseExperimentWorker</code><a class="reference internal" href="_modules/lagom/experiment/base_experiment_worker.html#BaseExperimentWorker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentWorker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class of the worker for parallelized experiment.</p>
-<p>For details about worker in general, please refer to 
+<p>For details about worker in general, please refer to
 the documentation of the class, BaseWorker.</p>
 <p>All inherited subclasses should at least implement the following functions:
 1. make_algo(self)</p>
@@ -449,23 +546,35 @@ the documentation of the class, BaseWorker.</p>
 <dt id="lagom.experiment.BaseExperimentWorker.make_algo">
 <code class="descname">make_algo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_worker.html#BaseExperimentWorker.make_algo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentWorker.make_algo" title="Permalink to this definition">¶</a></dt>
 <dd><p>User-defined function to create an algorithm object.</p>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>algo (Algorithm): instantiated algorithm object.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">instantiated algorithm object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">algo (Algorithm)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.experiment.BaseExperimentWorker.work">
 <code class="descname">work</code><span class="sig-paren">(</span><em>master_cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/base_experiment_worker.html#BaseExperimentWorker.work"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.BaseExperimentWorker.work" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define how to do the work given the master’s command and returns the working result.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>master_cmd (list): master’s command. [task_id, task, seed]</dd>
-<dt>Returns:</dt>
-<dd>task_id (int): task ID
-result (object): working result</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>master_cmd</strong> (<em>list</em>) – master’s command. [task_id, task, seed]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">task ID
+result (object): working result</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">task_id (int)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -477,19 +586,19 @@ result (object): working result</dd>
 <dt id="lagom.experiment.run_experiment">
 <code class="descclassname">lagom.experiment.</code><code class="descname">run_experiment</code><span class="sig-paren">(</span><em>worker_class</em>, <em>master_class</em>, <em>max_num_worker=None</em>, <em>daemonic_worker=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/experiment/run_experiment.html#run_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.experiment.run_experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function runs given experiments in parallel (master-worker) with defined configurations.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><p class="first">worker_class (BaseExperimentWorker): user-defined experiment worker class.
-master_class (BaseExperimentMaster): user-defined experiment master class.
-max_num_worker (int, optional): maximum number of workers. It has following use cases:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>worker_class</strong> (<a class="reference internal" href="#lagom.experiment.BaseExperimentWorker" title="lagom.experiment.BaseExperimentWorker"><em>BaseExperimentWorker</em></a>) – user-defined experiment worker class.</li>
+<li><strong>master_class</strong> (<a class="reference internal" href="#lagom.experiment.BaseExperimentMaster" title="lagom.experiment.BaseExperimentMaster"><em>BaseExperimentMaster</em></a>) – user-defined experiment master class.</li>
+<li><strong>max_num_worker</strong> (<em>int</em><em>, </em><em>optional</em>) – <p>maximum number of workers. It has following use cases:
+- If None, then number of wokers set to be the total number of configurations.
+- If number of configurations less than this max bound, then the number of workers</p>
 <blockquote>
-<div><ul class="simple">
-<li>If None, then number of wokers set to be the total number of configurations.</li>
-<li><dl class="first docutils">
-<dt>If number of configurations less than this max bound, then the number of workers</dt>
-<dd>will be automatically reduced to the number of configurations.</dd>
-</dl>
-</li>
+<div>will be automatically reduced to the number of configurations.</div></blockquote>
+<ul>
 <li><dl class="first docutils">
 <dt>If number of configurations larger than this max bound, then the rest of configurations</dt>
 <dd>will be fed in iteratively complying with this max bound.</dd>
@@ -497,14 +606,15 @@ max_num_worker (int, optional): maximum number of workers. It has following use 
 </li>
 </ul>
 <p>Recommended to set to be the same as number of CPU cores, however, it is not necessary.</p>
-</div></blockquote>
-<dl class="last docutils">
-<dt>daemonic_worker (bool): If True, then set each worker to be daemonic. </dt>
-<dd>For details of daemonic worker, please refer to documentations in classes of 
-BaseWorker/BaseMaster</dd>
-</dl>
-</dd>
-</dl>
+</li>
+<li><strong>daemonic_worker</strong> (<em>bool</em>) – If True, then set each worker to be daemonic.
+For details of daemonic worker, please refer to documentations in classes of
+BaseWorker/BaseMaster</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
