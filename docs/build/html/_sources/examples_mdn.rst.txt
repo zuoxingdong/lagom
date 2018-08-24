@@ -1,3 +1,0 @@
-Mixture Density Network (MDN)
-===================================
-
