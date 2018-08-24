@@ -206,11 +206,18 @@ often returns the Tensor dtype, used for backprop.</p>
 <dt id="lagom.runner.Transition.add_info">
 <code class="descname">add_info</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/transition.html#Transition.add_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Transition.add_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add additional information for current transition</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of the information
-value (object): value of the information</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of the information</li>
+<li><strong>value</strong> (<em>object</em>) – value of the information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -223,8 +230,8 @@ value (object): value of the information</dd>
 <em class="property">class </em><code class="descclassname">lagom.runner.</code><code class="descname">Trajectory</code><span class="sig-paren">(</span><em>gamma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/trajectory.html#Trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Trajectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Data for a trajectory, consisting of successive transitions, with additional useful information
 e.g. other info includes length, success and so on.</p>
-<p>Note that it is not necessarily an episode (with terminal state). But it must be a part of an episode. 
-For segment of transitions which can contains <cite>done=True</cite> in the middle (more than one episode data), one 
+<p>Note that it is not necessarily an episode (with terminal state). But it must be a part of an episode.
+For segment of transitions which can contains <cite>done=True</cite> in the middle (more than one episode data), one
 can use Segment instead.</p>
 <dl class="attribute">
 <dt id="lagom.runner.Trajectory.T">
@@ -236,21 +243,32 @@ can use Segment instead.</p>
 <dt id="lagom.runner.Trajectory.add_info">
 <code class="descname">add_info</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/trajectory.html#Trajectory.add_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Trajectory.add_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add additional information for current trajectory</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of the information
-value (object): value of the information</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of the information</li>
+<li><strong>value</strong> (<em>object</em>) – value of the information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.runner.Trajectory.add_transition">
 <code class="descname">add_transition</code><span class="sig-paren">(</span><em>transition</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/trajectory.html#Trajectory.add_transition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Trajectory.add_transition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a new transition to append in the trajectory</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>transition (Transition): given transition</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>transition</strong> (<a class="reference internal" href="#lagom.runner.Transition" title="lagom.runner.Transition"><em>Transition</em></a>) – given transition</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -262,7 +280,7 @@ last transition with both ‘V_s’ and ‘V_s_next’.</p>
 <p>If last transition with done=True, then V_s_next should be zero as terminal state value.</p>
 <p>TD error is calculated as following:
 delta_t = r_{t+1} + gamma V(s_{t+1}) - V(s_t)</p>
-<p>Note that we would like to use raw float dtype, rather than Tensor. 
+<p>Note that we would like to use raw float dtype, rather than Tensor.
 Because we often do not backprop via TD error.</p>
 </dd></dl>
 
@@ -299,7 +317,7 @@ G_t = sum_{i=t}^{T} gamma^{i - t} r_i</p>
 <dl class="attribute">
 <dt id="lagom.runner.Trajectory.all_gae">
 <code class="descname">all_gae</code><a class="headerlink" href="#lagom.runner.Trajectory.all_gae" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of GAE. 
+<dd><p>Return a list of GAE.
 <a class="reference external" href="https://arxiv.org/abs/1506.02438">https://arxiv.org/abs/1506.02438</a></p>
 <p>TODO: remaining work.</p>
 </dd></dl>
@@ -308,12 +326,16 @@ G_t = sum_{i=t}^{T} gamma^{i - t} r_i</p>
 <dt id="lagom.runner.Trajectory.all_info">
 <code class="descname">all_info</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/trajectory.html#Trajectory.all_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Trajectory.all_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return specified information for all transitions</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of the information</dd>
-<dt>Returns:</dt>
-<dd>list of specified information for all transitions</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) – name of the information</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of specified information for all transitions</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -344,10 +366,10 @@ G_t = sum_{i=t}^{T} r_i</p>
 <dl class="class">
 <dt id="lagom.runner.Segment">
 <em class="property">class </em><code class="descclassname">lagom.runner.</code><code class="descname">Segment</code><span class="sig-paren">(</span><em>gamma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment.html#Segment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Segment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Segment of interactions between agent and environment. 
+<dd><p>Segment of interactions between agent and environment.
 It consists of a sequence of transitions.</p>
 <p>Note that it can contain sequence of transitions from multiple episodes successively in general.</p>
-<p>A special case can be a trajectory such that the sequence of transitions are coming from 
+<p>A special case can be a trajectory such that the sequence of transitions are coming from
 part of a single episode.</p>
 <p>The number of episodes’ data contained can be clarifed by looking at list of done in all transitions:
 We split with following cases when value of done, e.g. for a segment with length 6
@@ -355,7 +377,7 @@ We split with following cases when value of done, e.g. for a segment with length
 2. Part of single episode with final terminal transition: [False, False, False, False, False, True]
 3. Parts of two episodes (first episode terminates): [False, False, True, False, False]
 4. Parts of two episodes (both episodes terminate): [False, False, True, False, True]</p>
-<p>Some common properties for such transitions are provided as class method. 
+<p>Some common properties for such transitions are provided as class method.
 i.e. all states, all actions, all state values, all TD errors etc.</p>
 <dl class="attribute">
 <dt id="lagom.runner.Segment.T">
@@ -373,21 +395,32 @@ i.e. all states, all actions, all state values, all TD errors etc.</p>
 <dt id="lagom.runner.Segment.add_info">
 <code class="descname">add_info</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment.html#Segment.add_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Segment.add_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add additional information for the segment</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of the information
-value (object): value of the information</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of the information</li>
+<li><strong>value</strong> (<em>object</em>) – value of the information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="lagom.runner.Segment.add_transition">
 <code class="descname">add_transition</code><span class="sig-paren">(</span><em>transition</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment.html#Segment.add_transition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Segment.add_transition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a new transition to append in the segment</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>transition (Transition): given transition</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>transition</strong> (<a class="reference internal" href="#lagom.runner.Transition" title="lagom.runner.Transition"><em>Transition</em></a>) – given transition</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -399,7 +432,7 @@ last transition in an episode with both ‘V_s’ and ‘V_s_next’.</p>
 <p>If done=True, then V_s_next should be zero as terminal state value.</p>
 <p>TD error is calculated as following:
 delta_t = r_{t+1} + gamma V(s_{t+1}) - V(s_t)</p>
-<p>Note that we would like to use raw float dtype, rather than Tensor. 
+<p>Note that we would like to use raw float dtype, rather than Tensor.
 Because we often do not backprop via TD error.</p>
 <p>Note that it is okay when the history is a segment with transitions from several
 episodes, in other words, some done is True for intermediate time steps and
@@ -483,12 +516,16 @@ will be recalculated from that time step on.</p>
 <dl class="method">
 <dt id="lagom.runner.Segment.all_gae">
 <code class="descname">all_gae</code><span class="sig-paren">(</span><em>gae_lambda</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment.html#Segment.all_gae"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Segment.all_gae" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of GAE. 
+<dd><p>Return a list of GAE.
 <a class="reference external" href="https://arxiv.org/abs/1506.02438">https://arxiv.org/abs/1506.02438</a></p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>gae_lambda (float): GAE lambda, in range [0, 1]</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>gae_lambda</strong> (<em>float</em>) – GAE lambda, in range [0, 1]</td>
+</tr>
+</tbody>
+</table>
 <p>TODO: remaining work.</p>
 </dd></dl>
 
@@ -496,12 +533,16 @@ will be recalculated from that time step on.</p>
 <dt id="lagom.runner.Segment.all_info">
 <code class="descname">all_info</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment.html#Segment.all_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.Segment.all_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return specified information for all transitions</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>name (str): name of the information</dd>
-<dt>Returns:</dt>
-<dd>list of specified information for all transitions</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) – name of the information</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of specified information for all transitions</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -540,7 +581,7 @@ will be recalculated from that time step on.</p>
 <dl class="attribute">
 <dt id="lagom.runner.Segment.split_transitions">
 <code class="descname">split_transitions</code><a class="headerlink" href="#lagom.runner.Segment.split_transitions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of splitted transitions for different episodes contained in the segment. 
+<dd><p>Return a list of splitted transitions for different episodes contained in the segment.
 If there are only single episodic transitions, the length of the list is one.</p>
 </dd></dl>
 
@@ -554,9 +595,9 @@ If there are only single episodic transitions, the length of the list is one.</p
 <dl class="class">
 <dt id="lagom.runner.TrajectoryRunner">
 <em class="property">class </em><code class="descclassname">lagom.runner.</code><code class="descname">TrajectoryRunner</code><span class="sig-paren">(</span><em>agent</em>, <em>env</em>, <em>gamma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/trajectory_runner.html#TrajectoryRunner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.TrajectoryRunner" title="Permalink to this definition">¶</a></dt>
-<dd><p>Batched data collection for an agent in one environment for a number of trajectories and a certain time steps. 
-It includes successive transitions (observation, action, reward, next observation, done) and 
-additional data useful for training the agent such as the action log-probabilities, policy entropies, 
+<dd><p>Batched data collection for an agent in one environment for a number of trajectories and a certain time steps.
+It includes successive transitions (observation, action, reward, next observation, done) and
+additional data useful for training the agent such as the action log-probabilities, policy entropies,
 Q values etc.</p>
 <p>The collected data in each trajectory will be wrapped in an individual Trajectory object. Each call
 of the runner will return a list of Trajectory objects.</p>
@@ -567,7 +608,7 @@ terminal state.</p>
 <p>Let s_t be state at time step t and s_T be terminal state.</p>
 <ol class="arabic simple">
 <li><dl class="first docutils">
-<dt>Part of single episode from initial observation: </dt>
+<dt>Part of single episode from initial observation:</dt>
 <dd>s_0 -&gt; s_1 -&gt; s_2 -&gt; s_3</dd>
 </dl>
 </li>
@@ -586,18 +627,18 @@ terminal state.</p>
 <dl class="class">
 <dt id="lagom.runner.SegmentRunner">
 <em class="property">class </em><code class="descclassname">lagom.runner.</code><code class="descname">SegmentRunner</code><span class="sig-paren">(</span><em>agent</em>, <em>env</em>, <em>gamma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/runner/segment_runner.html#SegmentRunner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.runner.SegmentRunner" title="Permalink to this definition">¶</a></dt>
-<dd><p>Batched data collection for an agent in one or multiple environments for a certain time steps. 
-It includes successive transitions (observation, action, reward, next observation, done) and 
-additional data useful for training the agent such as the action log-probabilities, policy entropies, 
+<dd><p>Batched data collection for an agent in one or multiple environments for a certain time steps.
+It includes successive transitions (observation, action, reward, next observation, done) and
+additional data useful for training the agent such as the action log-probabilities, policy entropies,
 Q values etc.</p>
 <p>The collected data in each environment will be wrapped in an individual Segment object. Each call
 of the runner will return a list of Segment objects each with length same as the number of time steps.</p>
-<p>Note that we allow transitions coming from multiple episodes successively. 
+<p>Note that we allow transitions coming from multiple episodes successively.
 For example, for a Segment with length 4, it can have either of following cases:</p>
 <p>Let s_t^i be state at time step t in episode i and s_T^i be terminal state in episode i.</p>
 <ol class="arabic simple">
 <li><dl class="first docutils">
-<dt>Part of single episode from initial observation: </dt>
+<dt>Part of single episode from initial observation:</dt>
 <dd>s_0^1 -&gt; s_1^1 -&gt; s_2^1 -&gt; s_3^1</dd>
 </dl>
 </li>
@@ -625,11 +666,11 @@ For example, for a Segment with length 4, it can have either of following cases:
 <p>Be aware that if the transitions coming from more than one episode, then the episodes should be
 in a successive order, and all preceding episodes but the last one should reach a terminal state
 before starting the new episode and each succeeding episode starts from initial observation.</p>
-<p>In order to make such data collection possible, the environment must be of type VecEnv to support 
-batched data. VecEnv will continuously collect data in all environment, for each occurrence of 
+<p>In order to make such data collection possible, the environment must be of type VecEnv to support
+batched data. VecEnv will continuously collect data in all environment, for each occurrence of
 <cite>done=True</cite>, the environment will be automatically reset and continue. So if we want to collect data
 from initial observation in all environments, the method <cite>reset</cite> should be called.</p>
-<p>The SegmentRunner is very general, for runner that only collects transitions from a single 
+<p>The SegmentRunner is very general, for runner that only collects transitions from a single
 episode (start from initial observation) one can use TrajectoryRunner instead.</p>
 </dd></dl>
 

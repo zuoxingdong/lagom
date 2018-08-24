@@ -200,23 +200,26 @@ e.g. observation with first dimension as batch or learning data is a batched lis
 <dl class="method">
 <dt id="lagom.agents.BaseAgent.choose_action">
 <code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.choose_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>The agent selects an action based on given observation. 
+<dd><p>The agent selects an action based on given observation.
 The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
-<dd>environment. Tensor conversion should be handled here. And it is batched data
-i.e. first dimension as batch dimension</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of action selection output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obs</strong> (<em>object</em>) – agent’s observation. Note that this is raw observation returned from
+environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of action selection output.</dt>
 <dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -224,20 +227,23 @@ i.e. first dimension as batch dimension</dd>
 <code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/base_agent.html#BaseAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.BaseAgent.learn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Learning rule about how agent updates itself given batched data.
 The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>D (list): batched data to train the agent. </dt>
-<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of learning output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>D</strong> (<em>list</em>) – batched data to train the agent.
+e.g. In policy gradient, this can be a list of Trajectory or Segment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of learning output.</dt>
 <dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -246,10 +252,14 @@ The output is a dictionary containing useful items, i.e. loss, batched_policy_lo
 <dd><p>Load the parameters of the agent from a file</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -258,10 +268,14 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Save the current parameters of the agent.</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -277,23 +291,26 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dl class="method">
 <dt id="lagom.agents.RandomAgent.choose_action">
 <code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.choose_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>The agent selects an action based on given observation. 
+<dd><p>The agent selects an action based on given observation.
 The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
-<dd>environment. Tensor conversion should be handled here. And it is batched data
-i.e. first dimension as batch dimension</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of action selection output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obs</strong> (<em>object</em>) – agent’s observation. Note that this is raw observation returned from
+environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of action selection output.</dt>
 <dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -301,20 +318,23 @@ i.e. first dimension as batch dimension</dd>
 <code class="descname">learn</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/random_agent.html#RandomAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.RandomAgent.learn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Learning rule about how agent updates itself given batched data.
 The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>D (list): batched data to train the agent. </dt>
-<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of learning output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>D</strong> (<em>list</em>) – batched data to train the agent.
+e.g. In policy gradient, this can be a list of Trajectory or Segment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of learning output.</dt>
 <dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -323,10 +343,14 @@ The output is a dictionary containing useful items, i.e. loss, batched_policy_lo
 <dd><p>Load the parameters of the agent from a file</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -335,10 +359,14 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Save the current parameters of the agent.</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -355,23 +383,26 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dl class="method">
 <dt id="lagom.agents.REINFORCEAgent.choose_action">
 <code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.choose_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>The agent selects an action based on given observation. 
+<dd><p>The agent selects an action based on given observation.
 The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
-<dd>environment. Tensor conversion should be handled here. And it is batched data
-i.e. first dimension as batch dimension</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of action selection output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obs</strong> (<em>object</em>) – agent’s observation. Note that this is raw observation returned from
+environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of action selection output.</dt>
 <dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -379,20 +410,23 @@ i.e. first dimension as batch dimension</dd>
 <code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/reinforce_agent.html#REINFORCEAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.REINFORCEAgent.learn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Learning rule about how agent updates itself given batched data.
 The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>D (list): batched data to train the agent. </dt>
-<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of learning output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>D</strong> (<em>list</em>) – batched data to train the agent.
+e.g. In policy gradient, this can be a list of Trajectory or Segment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of learning output.</dt>
 <dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -401,10 +435,14 @@ The output is a dictionary containing useful items, i.e. loss, batched_policy_lo
 <dd><p>Load the parameters of the agent from a file</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -413,10 +451,14 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Save the current parameters of the agent.</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -431,23 +473,26 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dl class="method">
 <dt id="lagom.agents.VPGAgent.choose_action">
 <code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.choose_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>The agent selects an action based on given observation. 
+<dd><p>The agent selects an action based on given observation.
 The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
-<dd>environment. Tensor conversion should be handled here. And it is batched data
-i.e. first dimension as batch dimension</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of action selection output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obs</strong> (<em>object</em>) – agent’s observation. Note that this is raw observation returned from
+environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of action selection output.</dt>
 <dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -455,20 +500,23 @@ i.e. first dimension as batch dimension</dd>
 <code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/vpg_agent.html#VPGAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.VPGAgent.learn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Learning rule about how agent updates itself given batched data.
 The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>D (list): batched data to train the agent. </dt>
-<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of learning output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>D</strong> (<em>list</em>) – batched data to train the agent.
+e.g. In policy gradient, this can be a list of Trajectory or Segment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of learning output.</dt>
 <dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -477,10 +525,14 @@ The output is a dictionary containing useful items, i.e. loss, batched_policy_lo
 <dd><p>Load the parameters of the agent from a file</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -489,10 +541,14 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Save the current parameters of the agent.</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -506,29 +562,32 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Advantage Actor-Critic (A2C) with option to use Generalized Advantage Estimate (GAE)</p>
 <p>The main difference of A2C is to use bootstrapping for estimating the advantage function and training value function.</p>
 <p>Reference: <a class="reference external" href="https://arxiv.org/abs/1602.01783">https://arxiv.org/abs/1602.01783</a></p>
-<p>Note that we use fixed-length segments of experiment to compute returns and advantages. 
+<p>Note that we use fixed-length segments of experiment to compute returns and advantages.
 <a class="reference external" href="https://blog.openai.com/baselines-acktr-a2c/">https://blog.openai.com/baselines-acktr-a2c/</a></p>
 <p>For this purpose, please use SegmentRunner, not TrajectoryRunner to collect data for A2CAgent.</p>
 <dl class="method">
 <dt id="lagom.agents.A2CAgent.choose_action">
 <code class="descname">choose_action</code><span class="sig-paren">(</span><em>obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.choose_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.choose_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>The agent selects an action based on given observation. 
+<dd><p>The agent selects an action based on given observation.
 The output is a dictionary containing useful items, e.g. action, action_logprob, state_value</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>obs (object): agent’s observation. Note that this is raw observation returned from </dt>
-<dd>environment. Tensor conversion should be handled here. And it is batched data
-i.e. first dimension as batch dimension</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of action selection output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obs</strong> (<em>object</em>) – agent’s observation. Note that this is raw observation returned from
+environment. Tensor conversion should be handled here. And it is batched data
+i.e. first dimension as batch dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of action selection output.</dt>
 <dd>Possible keys: [‘action’, ‘action_logprob’, ‘state_value’, ‘Q_value’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -536,20 +595,23 @@ i.e. first dimension as batch dimension</dd>
 <code class="descname">learn</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lagom/agents/a2c_agent.html#A2CAgent.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lagom.agents.A2CAgent.learn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Learning rule about how agent updates itself given batched data.
 The output is a dictionary containing useful items, i.e. loss, batched_policy_loss</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>D (list): batched data to train the agent. </dt>
-<dd>e.g. In policy gradient, this can be a list of Trajectory or Segment</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>output (dict): a dictionary of learning output. </dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>D</strong> (<em>list</em>) – batched data to train the agent.
+e.g. In policy gradient, this can be a list of Trajectory or Segment</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dictionary of learning output.</dt>
 <dd>Possible keys: [‘loss’, ‘batch_policy_loss’]</dd>
 </dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">output (dict)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -558,10 +620,14 @@ The output is a dictionary containing useful items, i.e. loss, batched_policy_lo
 <dd><p>Load the parameters of the agent from a file</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -570,10 +636,14 @@ BaseNetwork internal save/load function for network parameters in PyTorch.</p>
 <dd><p>Save the current parameters of the agent.</p>
 <p>If the agent uses a BaseNetwork object, it is recommended to call
 BaseNetwork internal save/load function for network parameters in PyTorch.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filename (str): name of the file</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – name of the file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
