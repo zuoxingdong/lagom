@@ -64,6 +64,12 @@ extensions = [
     'sphinx.ext.napoleon'  # Support Google Style docstring, i.e. Args/Returns
 ]
 
+# Napoleon settings
+napoleon_include_init_with_doc = True  # show docstring of __init__
+napoleon_include_private_with_doc = True  # show docstring of _method
+napoleon_include_special_with_doc = True  # show docstring of __method__
+napoleon_use_ivar = True  # show argument dtype with link
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['ntemplates']
 
