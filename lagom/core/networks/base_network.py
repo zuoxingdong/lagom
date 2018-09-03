@@ -4,20 +4,51 @@ from torch.nn.utils import vector_to_parameters, parameters_to_vector
 
 
 class BaseNetwork(nn.Module):
-    """
-    Base class for neural networks. 
+    r"""Base class for all neural networks. 
     
-    Depending on the type of neural networks (e.g. policy network, Q-network), it is recommended
-    to override the constructor __init__ to provide essential items for the neural network. 
+    Any neural network should subclass this class. 
     
-    Note that if subclass overrides __init__, remember to provide
-    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    The subclass should implement at least the following:
     
-    All inherited subclasses should at least implement the following functions:
-    1. make_params(self, config)
-    2. init_params(self, config)
+    - :meth:`make_params`
+    - :meth:`init_params`
+    - :meth:`forward`
+    
+    Example::
+    
+        import torch.nn as nn
+        import torch.nn.functional as F
+        from lagom.core.networks import BaseNetwork
+
+
+        class Network(BaseNetwork):
+            def make_params(self, config):
+                self.fc1 = nn.Linear(3, 2)
+                self.fc2 = nn.Linear(2, 1)
+
+            def init_params(self, config):
+                gain = nn.init.calculate_gain('relu')
+
+                nn.init.orthogonal_(self.fc1.weight, gain=gain)
+                nn.init.constant_(self.fc1.bias, 0.0)
+
+                nn.init.orthogonal_(self.fc2.weight, gain=gain)
+                nn.init.constant_(self.fc2.bias, 0.0)
+
+            def forward(self, x):
+                x = F.relu(self.fc1(x))
+                x = self.fc2(x)
+
+                return x
+
     """
     def __init__(self, config=None, **kwargs):
+        r"""Initialize the neural network.
+        
+        Args:
+            config (dict): A dictionary of configurations. 
+            **kwargs: keyword arguments to specify the network. 
+        """
         super().__init__()
         
         self.config = config
@@ -26,71 +57,73 @@ class BaseNetwork(nn.Module):
         for key, val in kwargs.items():
             self.__setattr__(key, val)
     
-        # User-defined function to create all trainable parameters (layers)
+        # User-defined function to create all trainable parameters/layers
         self.make_params(self.config)
         
-        # User-defined function to initialize all created parameters
+        # User-defined function to initialize all created parameters/layers
         self.init_params(self.config)
         
     def make_params(self, config):
-        """
-        User-defined function to create all trainable parameters (layers)
+        r"""User-defined function to create all trainable parameters/layers for the neural network
+        according to a given configuration. 
         
         Args:
-            config (Config): configurations
-            
-        Examples:
-            Refer to each inherited subclass with individual documentation. 
+            config (dict): A dictionary of configurations. 
         """
         raise NotImplementedError
         
     def init_params(self, config):
-        """
-        User-defined function to initialize all created parameters
+        r"""User-defined function to initialize all created parameters in :meth:`make_params` according
+        to a given configuration. 
         
         Args:
-            config (Config): configurations
+            config (dict): A dictionary of configurations. 
         """
         raise NotImplementedError
         
     @property
     def num_params(self):
-        """
-        Returns the number of trainable parameters. 
-        """
+        r"""Returns the total number of trainable parameters in the neural network."""
         return sum(param.numel() for param in self.parameters() if param.requires_grad)
     
     def save(self, f):
-        """
-        Save the model parameters. It is saved by using recommended way from PyTorch documentation. 
-        https://pytorch.org/docs/master/notes/serialization.html#best-practices
+        r"""Save the network parameters to a file. 
+        
+        It complies with the `recommended approach for saving a model in PyTorch documentation`_. 
+        
+        .. note::
+            It uses the highest pickle protocol to serialize the network parameters. 
         
         Args:
-            f (str): saving path
+            f (str): file path. 
+            
+        .. _recommended approach for saving a model in PyTorch documentation:
+            https://pytorch.org/docs/master/notes/serialization.html#best-practices
         """
-        torch.save(self.state_dict(), f)
+        import pickle
+        torch.save(self.state_dict(), f, pickle.HIGHEST_PROTOCOL)
         
     def load(self, f):
-        """
-        Load the model parameters. It is loaded by using recommended way from PyTorch documentation. 
-        https://pytorch.org/docs/master/notes/serialization.html#best-practices
+        r"""Load the network parameters from a file. 
+        
+        It complies with the `recommended approach for saving a model in PyTorch documentation`_. 
         
         Args:
-            f (str): loading path
+            f (str): file path. 
+            
+        .. _recommended approach for saving a model in PyTorch documentation:
+            https://pytorch.org/docs/master/notes/serialization.html#best-practices
         """
         self.load_state_dict(torch.load(f))
         
     def to_vec(self):
-        """
-        Flatten the network parameters into a single big vector. 
-        """
+        r"""Returns the network parameters as a single flattened vector. """
         return parameters_to_vector(parameters=self.parameters())
     
     def from_vec(self, x):
-        """
-        Unflatten the given vector as the network parameters. 
+        r"""Set the network parameters from a single flattened vector.
         
         Args:
-            x (Tensor): flattened single vector with size consistent of the number of network paramters. 
+            x (Tensor): A single flattened vector of the network parameters with consistent size.
         """
         vector_to_parameters(vec=x, parameters=self.parameters())
