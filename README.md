@@ -101,7 +101,7 @@ pytest test -v
 
 # Reference
 
-This repo is inspired by [OpenAI rllab](https://github.com/rll/rllab), [OpenAI baselines](https://github.com/openai/baselines), [RLPyTorch](https://github.com/pytorch/ELF/tree/master/src_py/rlpytorch), [TensorForce](https://github.com/reinforceio/tensorforce), and [Intel Coach](https://github.com/NervanaSystems/coach)
+This repo is inspired by [OpenAI rllab](https://github.com/rll/rllab), [OpenAI baselines](https://github.com/openai/baselines), [RLPyTorch](https://github.com/pytorch/ELF/tree/master/src_py/rlpytorch), [TensorForce](https://github.com/reinforceio/tensorforce) [Intel Coach](https://github.com/NervanaSystems/coach) and [Dopamine](https://github.com/google/dopamine)
 
 Please use this bibtex if you want to cite this repository in your publications:
 

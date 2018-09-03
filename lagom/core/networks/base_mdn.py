@@ -8,6 +8,11 @@ from torch.distributions import Categorical, Normal
 
 from .base_network import BaseNetwork
 
+####################
+# TODO: update
+# - do not overwrite __init__
+# - put everything in make_params
+# - in example, use make_fc/make_cnn
 
 class BaseMDN(BaseNetwork):
     """

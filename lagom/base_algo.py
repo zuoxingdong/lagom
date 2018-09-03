@@ -25,7 +25,5 @@ class BaseAlgorithm(object):
         -------
         result : object
             result of the execution. If no need to return anything, then an ``None`` should be returned. 
-        result2: int
-            test
         """
         raise NotImplementedError
