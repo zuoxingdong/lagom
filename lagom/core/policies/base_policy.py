@@ -1,62 +1,61 @@
+from lagom.envs.vec_env import VecEnv
+
+
 class BasePolicy(object):
-    """
-    Base class for the policy. 
+    r"""Base class for all policies.
     
-    It receives user-defined network (must be of types in lagom.core.networks),
-    environment specification (of type EnvSpec) and configuration. 
+    Any policy should subclass this class.
     
-    All inherited subclasses should at least implement the following functions
-    1. __call__(self, x)
-    2. process_network_output(self, network_out)
+    The subclass should implement at least the following:
+    
+    - :meth:`__call__`
+    
+    .. note::
+        
+        For the consistency of different variants of policies and fast prototyping, we restrict that all
+        policies should deal with VecEnv (batched data).
+    
     """
-    def __init__(self, network, env_spec, config, **kwargs):
-        """
+    def __init__(self, config, network, env_spec, **kwargs):
+        r"""Initialize the policy. 
+        
         Args:
-            network (BaseNetwork): an instantiated user-defined network. 
+            config (dict): A dictionary of configurations. 
+            network (BaseNetwork): a neural network as function approximator in the policy. 
             env_spec (EnvSpec): environment specification. 
-            config (dict): A dictionary for the configuration. 
-            *kwargs: keyword aguments used to specify the policy. 
+            **kwargs: keyword arguments to specify the policy. 
         """
+        self.config = config
         self.network = network
         self.env_spec = env_spec
-        self.config = config
+        
+        msg = f'expected type VecEnv, got {type(self.env_spec.env)}'
+        assert isinstance(self.env_spec.env, VecEnv), msg
         
         # Set all keyword arguments
         for key, val in kwargs.items():
             self.__setattr__(key, val)
         
     def __call__(self, x):
-        """
-        User-defined function to run the policy network given the input. 
+        r"""Define the computation of the policy given input data at every call. 
         
-        It should use the forward() function of internal network, e.g. `self.network(x)`
-        
-        Note that it must return a dictionary of output. 
+        Should be overridden by all subclasses.
         
         Args:
-            x (Tensor): input data. 
+            x (object): input data to the policy. 
             
-        Returns:
-            network_out (dict): A dictionary of output data from running the policy network of given input. 
-                It must contain at least one key, 'action'. Other possible keys include 
-                ['action_logprob', 'state_value']
+        Returns
+        -------
+        out_policy : dict
+            A dictionary of output data about the computation of the policy. It should contain
+            at least one key 'action'. Other possible keys include ['action_logprob', 'state_value'
+            'entropy', 'perplexity']. 
         """
         raise NotImplementedError
         
-    def process_network_output(self, network_out):
-        """
-        User-defined function to support additional processing of the 
-        output from the internal network. 
+    def __repr__(self):
+        r"""Returns a string representation of the policy network. """
+        string = self.__class__.__name__ + '\n'
+        string += '\tNetwork: ' + self.network.__repr__() + '\n'
         
-        It can also return a processed output. If there is nothing to do, 
-        then return it back, i.e. return network_out
-        
-        Args:
-            network_out (dict): Dictionary of data returned from forward pass of internal network. 
-            
-        Returns:
-            processed_network_out (dict): A dictionary of processed network output. 
-                It will be returned together in __call__. Default to return back
-                of network_out
-        """
-        raise NotImplementedError
+        return string

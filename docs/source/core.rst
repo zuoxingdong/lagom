@@ -73,15 +73,17 @@ Networks
 
 .. currentmodule:: lagom.core.networks
 
+.. autofunction:: ortho_init
+
 .. autoclass:: BaseNetwork
     :members:
     
-.. autoclass:: BaseMLP
-    :members:
-    
-.. autoclass:: BaseCNN
-    :members:
-    
+.. autofunction:: make_fc
+
+.. autofunction:: make_cnn
+
+.. autofunction:: make_transposed_cnn
+        
 .. autoclass:: BaseMDN
     :members:
     
@@ -113,10 +115,10 @@ Policies
 .. autoclass:: RandomPolicy
     :members:
     
-.. autoclass:: BaseCategoricalPolicy
+.. autoclass:: CategoricalPolicy
     :members:
     
-.. autoclass:: BaseGaussianPolicy
+.. autoclass:: GaussianPolicy
     :members:
     
 Transformations
