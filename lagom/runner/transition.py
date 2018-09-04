@@ -30,11 +30,12 @@ class Transition(object):
         .. note::
         
             For certain information, the specific key is required. It shows as following
+            
             * ``'V_s'``: state value for current state (i.e. :attr:`s`)
             
             * ``'V_s_next'``: state value for next state (i.e. :attr:`s_next`). Note that
               it should only be added for the last transition in either :class:`Trajectory`
-              or :class:`Segment`
+              or :class:`Segment` to save memory. 
         
         Args:
             name (str): name of the information
@@ -44,13 +45,12 @@ class Transition(object):
         
     @property
     def V_s(self):
-        r"""Return the state value for the given state, self.s"""
+        r"""Return the state value for the current state, i.e. :attr:`s`"""
         return self.info['V_s']
     
     @property
     def V_s_next(self):
-        """
-        Return the state value for the next state, self.s_next. 
+        r"""Return the state value for the next state, i.e. :attr:`s_next` 
         
         Note that we do not set zero value for terminal state, because this function
         often returns the Tensor dtype, used for backprop. 
