@@ -48,18 +48,14 @@ class Logger(logging.Logger):
         >> logger.dump()
         Iteration: [1, 2, 3]
         Training Loss: [0.12, 0.11, 0.09]
-        
         >> logger.dump(keys=None, index=None, indent=1)
         	Iteration: [1, 2, 3]
             Training Loss: [0.12, 0.11, 0.09]
-            
         >> logger.dump(keys=['iteration'], index=None, indent=0)
         Iteration: [1, 2, 3]
-        
         >> logger.dump(keys=None, index=0, indent=0)
         Iteration: 1
         Training Loss: 0.12
-        
         >> logger.dump(keys=None, index=[0, 2], indent=0)
         Iteration: [1, 3]
         Training Loss: [0.12, 0.09]
@@ -130,8 +126,6 @@ class Logger(logging.Logger):
             # Print given indentation
             if indent > 0:
                 print('\t'*indent, end='')  # do not create a new line
-            
-            #print(keys)
             
             # Get logged information based on index
             if idx == 'all':
