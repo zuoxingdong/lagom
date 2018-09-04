@@ -90,7 +90,7 @@ class TestRunner(object):
         assert transition.a == 2.0
         assert transition.r == -1.0
         assert transition.s_next == 1.5
-        assert transition.done
+        assert transition.done == True
         
         assert len(transition.info) == 0
         
