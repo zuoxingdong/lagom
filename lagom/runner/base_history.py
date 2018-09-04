@@ -83,7 +83,7 @@ class BaseHistory(object):
         Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
         .. math::
-            `G_t = \sum_{i=t}^{T} r_i` for all :math:`t`. 
+            G_t = \sum_{i=t}^{T} r_i, \forall t
         
         .. note::
         
@@ -99,7 +99,7 @@ class BaseHistory(object):
         Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
         .. math::
-            `G_t = \sum_{i=t}^{T} \gamma^{i - t} r_i` for all :math:`t`
+            G_t = \sum_{i=t}^{T} \gamma^{i - t} r_i, \forall t
         
         .. note::
         
@@ -116,7 +116,7 @@ class BaseHistory(object):
         Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
         .. math::
-            `Q_t = r_t + r_{t+1} + \dots + r_T + V(s_{T+1})`
+            Q_t = r_t + r_{t+1} + \dots + r_T + V(s_{T+1})
         
         .. note::
         
@@ -132,7 +132,7 @@ class BaseHistory(object):
         Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
         .. math::
-            `Q_t = r_t + \gamma r_{t+1} + \dots + \gamma^{T - t} r_T + \gamma^{T - t + 1} V(s_{T+1})`
+            Q_t = r_t + \gamma r_{t+1} + \dots + \gamma^{T - t} r_T + \gamma^{T - t + 1} V(s_{T+1})
         
         .. note::
         
@@ -160,7 +160,7 @@ class BaseHistory(object):
         values :math:`(V(s_1), \dots, V(s_T), V(s_{T+1}))`, it computes
         
         .. math::
-            `\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)`
+            \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)
         
         .. note::
         
