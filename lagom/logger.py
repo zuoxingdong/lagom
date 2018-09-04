@@ -40,37 +40,37 @@ class Logger(logging.Logger):
     
     * Default::
     
-        >> logger = Logger(name='logger')
-        >> logger.log('iteration', 1)
-        >> logger.log('training_loss', 0.12)
-        >> logger.log('iteration', 2)
-        >> logger.log('training_loss', 0.11)
-        >> logger.log('iteration', 3)
-        >> logger.log('training_loss', 0.09)
-        >> logger.dump()
+        >>> logger = Logger(name='logger')
+        >>> logger.log('iteration', 1)
+        >>> logger.log('training_loss', 0.12)
+        >>> logger.log('iteration', 2)
+        >>> logger.log('training_loss', 0.11)
+        >>> logger.log('iteration', 3)
+        >>> logger.log('training_loss', 0.09)
+        >>> logger.dump()
         Iteration: [1, 2, 3]
         Training Loss: [0.12, 0.11, 0.09]
         
     * With indentation::
     
-        >> logger.dump(keys=None, index=None, indent=1)
+        >>> logger.dump(keys=None, index=None, indent=1)
         	Iteration: [1, 2, 3]
-            Training Loss: [0.12, 0.11, 0.09]
+        	Training Loss: [0.12, 0.11, 0.09]
         
     * With specified keys::
     
-        >> logger.dump(keys=['iteration'], index=None, indent=0)
+        >>> logger.dump(keys=['iteration'], index=None, indent=0)
         Iteration: [1, 2, 3]
         
     * With specified single index::
     
-        >> logger.dump(keys=None, index=0, indent=0)
+        >>> logger.dump(keys=None, index=0, indent=0)
         Iteration: 1
         Training Loss: 0.12
         
     * With specified list of indices::
     
-        >> logger.dump(keys=None, index=[0, 2], indent=0)
+        >>> logger.dump(keys=None, index=[0, 2], indent=0)
         Iteration: [1, 3]
         Training Loss: [0.12, 0.09]
     
