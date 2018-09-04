@@ -33,8 +33,8 @@ class GaussianPolicy(BasePolicy):
         
     * :attr:`std_style` indicates the parameterization of the standard deviation. 
 
-        * For std_style='exp', the standard deviation is obtained by applying exponentiation on log-variance.
-          i.e. :math:`\exp(0.5\log\sigma^2)`
+        * For std_style='exp', the standard deviation is obtained by applying exponentiation on log-variance
+          i.e. :math:`\exp(0.5\log\sigma^2)`.
         * For std_style='softplus', the standard deviation is obtained by applying softplus operation on
           log-variance, i.e. :math:`f(x) = \log(1 + \exp(x))`.
             
