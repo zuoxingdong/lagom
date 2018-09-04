@@ -29,33 +29,40 @@ class GaussianPolicy(BasePolicy):
     There are several options for modelling the standard deviation:
     
     * :attr:`min_std` constrains the standard deviation with a lower bound threshould. This helps to avoid
-        numerical instability, e.g. producing ``NaN``
+      numerical instability, e.g. producing ``NaN``
         
     * :attr:`std_style` indicates the parameterization of the standard deviation. 
-    
+
         * For std_style='exp', the standard deviation is obtained by applying exponentiation on log-variance.
-            i.e. :math:`\exp(0.5\log\sigma^2)`
+          i.e. :math:`\exp(0.5\log\sigma^2)`
         * For std_style='softplus', the standard deviation is obtained by applying softplus operation on
-            log-variance, i.e. :math:`f(x) = \log(1 + \exp(x))`.
+          log-variance, i.e. :math:`f(x) = \log(1 + \exp(x))`.
             
     * :attr:`constant_std` indicates whether to use constant standard deviation or learning it instead.
-        If a ``None`` is given, then the standard deviation will be learned. Note that a scalar value
-        should be given if using constant value for all dimensions.
+      If a ``None`` is given, then the standard deviation will be learned. Note that a scalar value
+      should be given if using constant value for all dimensions.
         
     * :attr:`std_state_dependent` indicates whether to learn standard deviation with dependency on state.
     
         * For std_state_dependent=True, the log-variance head is created and its forward pass takes
-            last feature values as input. 
+          last feature values as input. 
         * For std_state_dependent=False, the independent trainable nn.Parameter will be created. It
-            does not need forward pass, but the backpropagation will calculate its gradients. 
+          does not need forward pass, but the backpropagation will calculate its gradients. 
             
     * :attr:`init_std` controls the initial values for independently learnable standard deviation. 
-        Note that this is only valid when :attr:`std_state_dependent`=False. 
+      Note that this is only valid when :attr:`std_state_dependent`=False. 
     
     Example::
     
-        >>> policy = GaussianPolicy()
-        
+        >>> policy = GaussianPolicy(config=config, 
+                                    network=network, 
+                                    env_spec=env_spec, 
+                                    min_std=1e-06, 
+                                    std_style='exp', 
+                                    constant_std=None, 
+                                    std_state_dependent=True, 
+                                    init_std=None)
+        >>> policy(observation)
     """
     def __init__(self,
                  config,
@@ -188,8 +195,10 @@ class GaussianPolicy(BasePolicy):
         Args:
             action (Tensor): action sampled from Normal distribution. 
             
-        Returns:
-            constrained_action (Tensor): constrained action. 
+        Returns
+        -------
+        constrained_action : Tensor
+            constrained action.
         """
         # Get valid range
         low = np.unique(self.env_spec.action_space.low)
