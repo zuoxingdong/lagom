@@ -4,20 +4,11 @@ import torch.nn as nn
 def make_fc(input_dim, hidden_sizes):
     r"""Returns a ModuleList of fully connected layers. 
     
-    Args:
-        input_dim (int): input dimension in the first fully connected layer. 
-        hidden_sizes (list): a list of hidden sizes, each for one fully connected layer. 
-    
-    Returns
-    -------
-    fc : nn.ModuleList
-        A ModuleList of fully connected layers. 
-        
     .. note::
     
         All submodules can be automatically tracked because it uses nn.ModuleList. One can
         use this function to generate parameters in :class:`BaseNetwork`. 
-        
+    
     Example::
     
         >>> make_fc(3, [4, 5, 6])
@@ -26,7 +17,15 @@ def make_fc(input_dim, hidden_sizes):
           (1): Linear(in_features=4, out_features=5, bias=True)
           (2): Linear(in_features=5, out_features=6, bias=True)
         )
-        
+    
+    Args:
+        input_dim (int): input dimension in the first fully connected layer. 
+        hidden_sizes (list): a list of hidden sizes, each for one fully connected layer. 
+    
+    Returns
+    -------
+    fc : nn.ModuleList
+        A ModuleList of fully connected layers.     
     """
     assert isinstance(hidden_sizes, list), f'expected as list, got {type(hidden_sizes)}'
     
@@ -47,18 +46,6 @@ def make_fc(input_dim, hidden_sizes):
 def make_cnn(input_channel, channels, kernels, strides, paddings):
     r"""Returns a ModuleList of 2D convolution layers. 
     
-    Args:
-        input_channel (int): input channel in the first convolution layer. 
-        channels (list): a list of channels, each for one convolution layer.
-        kernels (list): a list of kernels, each for one convolution layer.
-        strides (list): a list of strides, each for one convolution layer. 
-        paddings (list): a list of paddings, each for one convolution layer. 
-    
-    Returns
-    -------
-    cnn : nn.ModuleList
-        A ModuleList of 2D convolution layers.
-        
     .. note::
     
         All submodules can be automatically tracked because it uses nn.ModuleList. One can
@@ -71,7 +58,18 @@ def make_cnn(input_channel, channels, kernels, strides, paddings):
           (0): Conv2d(3, 16, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
           (1): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1))
         )
-        
+    
+    Args:
+        input_channel (int): input channel in the first convolution layer. 
+        channels (list): a list of channels, each for one convolution layer.
+        kernels (list): a list of kernels, each for one convolution layer.
+        strides (list): a list of strides, each for one convolution layer. 
+        paddings (list): a list of paddings, each for one convolution layer. 
+    
+    Returns
+    -------
+    cnn : nn.ModuleList
+        A ModuleList of 2D convolution layers.    
     """
     N = len(channels)
     
@@ -103,19 +101,6 @@ def make_cnn(input_channel, channels, kernels, strides, paddings):
 def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, output_paddings):
     r"""Returns a ModuleList of 2D transposed convolution layers. 
     
-    Args:
-        input_channel (int): input channel in the first transposed convolution layer. 
-        channels (list): a list of channels, each for one transposed convolution layer.
-        kernels (list): a list of kernels, each for one transposed convolution layer.
-        strides (list): a list of strides, each for one transposed convolution layer. 
-        paddings (list): a list of paddings, each for one transposed convolution layer. 
-        output_paddings (list): a list of output paddings, each for one transposed convolution layer. 
-    
-    Returns
-    -------
-    transposed_cnn : nn.ModuleList
-        A ModuleList of 2D transposed convolution layers.
-        
     .. note::
     
         All submodules can be automatically tracked because it uses nn.ModuleList. One can
@@ -133,7 +118,19 @@ def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, out
           (0): ConvTranspose2d(3, 16, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), output_padding=(1, 1))
           (1): ConvTranspose2d(16, 32, kernel_size=(3, 3), stride=(1, 1))
         )
-        
+    
+    Args:
+        input_channel (int): input channel in the first transposed convolution layer. 
+        channels (list): a list of channels, each for one transposed convolution layer.
+        kernels (list): a list of kernels, each for one transposed convolution layer.
+        strides (list): a list of strides, each for one transposed convolution layer. 
+        paddings (list): a list of paddings, each for one transposed convolution layer. 
+        output_paddings (list): a list of output paddings, each for one transposed convolution layer. 
+    
+    Returns
+    -------
+    transposed_cnn : nn.ModuleList
+        A ModuleList of 2D transposed convolution layers.    
     """
     N = len(channels)
     
