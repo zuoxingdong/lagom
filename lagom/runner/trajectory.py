@@ -39,24 +39,10 @@ class Trajectory(BaseHistory):
     
     @property
     def all_discounted_returns(self):
-        """
-        Return a list of discounted returns for all time steps. 
-        
-        Suppose we have all rewards [r_1, ..., r_T], it computes
-        G_t = \sum_{i=t}^{T} \gamma^{i - t} r_i
-        """
         return ExpFactorCumSum(self.gamma)(self.all_r)
     
     @property
     def all_V(self):
-        """
-        Return a list of all state values, from first to last state. 
-        
-        It takes information with the key 'V_s' for all transitions
-        and augment it with 'V_s_next' of the last transition. 
-        
-        Note that we would like to keep Tensor dtype, used for backprop.
-        """
         return [transition.V_s for transition in self.transitions] + [self.transitions[-1].V_s_next]
     
     @property
@@ -94,31 +80,5 @@ class Trajectory(BaseHistory):
         return all_TD.astype(np.float32).tolist()
     
     @property
-    def all_gae(self, gae_lambda):
-        """
-        Return a list of GAE. 
-        https://arxiv.org/abs/1506.02438
-        
-        TODO: remaining work. 
-        """
+    def all_GAE(self, gae_lambda):
         raise NotImplementedError
-    
-    def all_info(self, name):
-        """
-        Return specified information for all transitions
-        
-        Args:
-            name (str): name of the information
-            
-        Returns:
-            list of specified information for all transitions
-        """
-        info = [transition.info[name] for transition in self.transitions]
-        
-        return info
-    
-    def __repr__(self):
-        string = 'Trajectory: \n'
-        for transition in self.transitions:
-            string += '\t' + transition.__repr__() + '\n'
-        return string
