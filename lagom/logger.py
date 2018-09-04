@@ -36,7 +36,9 @@ class Logger(logging.Logger):
     level, for example we want to log the policy loss with goal number 34 and internal training iteration
     20, the key can be 'goal_34:train:iter_20:policy_loss'. 
     
-    Example::
+    Example:
+    
+    * Default::
     
         >> logger = Logger(name='logger')
         >> logger.log('iteration', 1)
@@ -49,21 +51,25 @@ class Logger(logging.Logger):
         Iteration: [1, 2, 3]
         Training Loss: [0.12, 0.11, 0.09]
         
-        
+    * With indentation::
+    
         >> logger.dump(keys=None, index=None, indent=1)
         	Iteration: [1, 2, 3]
             Training Loss: [0.12, 0.11, 0.09]
         
-        
+    * With specified keys::
+    
         >> logger.dump(keys=['iteration'], index=None, indent=0)
         Iteration: [1, 2, 3]
         
-        
+    * With specified single index::
+    
         >> logger.dump(keys=None, index=0, indent=0)
         Iteration: 1
         Training Loss: 0.12
         
-        
+    * With specified list of indices::
+    
         >> logger.dump(keys=None, index=[0, 2], indent=0)
         Iteration: [1, 3]
         Training Loss: [0.12, 0.09]
