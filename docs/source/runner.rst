@@ -8,15 +8,21 @@ Transitions
 
 .. autoclass:: Transition
     :members:
-    
+
+History
+----------------------------------
+
+.. autoclass:: BaseHistory
+    :members:
+
 Trajectory
-----------
+~~~~~~~~~~
 
 .. autoclass:: Trajectory
     :members:
     
 Segments
---------
+~~~~~~~~
 
 .. autoclass:: Segment
     :members:
