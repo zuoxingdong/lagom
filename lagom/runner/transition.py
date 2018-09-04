@@ -52,12 +52,12 @@ class Transition(object):
     def V_s_next(self):
         r"""Return the state value for the next state, i.e. :attr:`s_next` 
         
-        Note that we do not set zero value for terminal state, because this function
-        often returns the Tensor dtype, used for backprop. 
+        .. note::
         
-        Please be careful when using returned values in later phase !
+            Often it returns as Tensor dtype, it can be useful for backprop to train
+            value function. However, be cautious of handling the raw value e.g. zero
+            value should be replaced when the next state is terminal state. 
         """
-        # TODO: it might be memory costly to have V_s_next in each transition. 
         return self.info['V_s_next']
     
     def __repr__(self):
