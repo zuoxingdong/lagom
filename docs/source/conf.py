@@ -18,13 +18,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # Exclude some dependencies for Read the Docs to compile with
 import mock
-MOCK_MODULES = [#'torch', 
-                #'torch.nn', 
-                #'torch.nn.functional',
-                #'torch.nn.utils',
-                #'torch.optim', 
-                #'torch.distributions', 
-                'seaborn', 
+MOCK_MODULES = ['seaborn', 
                 'matplotlib',
                 'matplotlib.pyplot',
                 '_tkinter']
