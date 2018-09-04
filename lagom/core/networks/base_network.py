@@ -12,7 +12,7 @@ class BaseNetwork(nn.Module):
     
     - :meth:`make_params`
     - :meth:`init_params`
-    
+    - :meth:`forward`
     
     Example::
     
