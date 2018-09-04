@@ -4,6 +4,13 @@ class Transition(object):
     Formally, it stores the transition tuple :math:`(s, a, r, s_{\text{next}}, \text{done})`. 
     
     It also stores additional useful information, e.g. log-probability of action, state value etc. 
+    
+    Example::
+    
+        >>> transition = Transition(s=0.2, a=1.3, r=-1.0, s_next=0.8, done=True)
+        >>> transition
+        Transition: (s=0.2, a=1.3, r=-1.0, s_next=0.8, done=True)
+        
     """
     def __init__(self, s, a, r, s_next, done):
         r"""Initialize the transition
@@ -55,10 +62,11 @@ class Transition(object):
         .. note::
         
             Often it returns as Tensor dtype, it can be useful for backprop to train
-            value function. However, be cautious of handling the raw value e.g. zero
-            value should be replaced when the next state is terminal state. 
+            value function. However, be cautious of handling the raw value e.g. calculate
+            bootstrapped returns, then zero value should be replaced when the next state 
+            is terminal state. 
         """
         return self.info['V_s_next']
     
     def __repr__(self):
-        return f'Transition: ({self.s}, {self.a}, {self.r}, {self.s_next}, {self.done})'
+        return f'Transition: (s={self.s}, a={self.a}, r={self.r}, s_next={self.s_next}, done={self.done})'
