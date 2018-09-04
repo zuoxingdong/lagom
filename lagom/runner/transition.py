@@ -1,16 +1,15 @@
 class Transition(object):
-    """
-    Data for one transition by taking an action given a state, it also contains additional useful information.
+    r"""Define one transition from current state to next state by taking an action. 
     
-    i.e. one transition is of form (state, action, reward, next_state, done)
-    Useful information: log-probability of action, state value etc. 
+    Formally, it stores the transition tuple :math:`(s, a, r, s_{\text{next}}, \text{done})`. 
+    
+    It also stores additional useful information, e.g. log-probability of action, state value etc. 
     """
     def __init__(self, s, a, r, s_next, done):
-        """
-        Initialize a transition
+        r"""Initialize the transition
         
         Args:
-            s (object): given state
+            s (object): current state
             a (object): action
             r (float): reward
             s_next (object): next state
@@ -26,8 +25,16 @@ class Transition(object):
         self.info = {}
         
     def add_info(self, name, value):
-        """
-        Add additional information for current transition
+        r"""Add additional information for the transition. 
+        
+        .. note::
+        
+            For certain information, the specific key is required. It shows as following
+            * ``'V_s'``: state value for current state (i.e. :attr:`s`)
+            
+            * ``'V_s_next'``: state value for next state (i.e. :attr:`s_next`). Note that
+              it should only be added for the last transition in either :class:`Trajectory`
+              or :class:`Segment`
         
         Args:
             name (str): name of the information
@@ -37,9 +44,7 @@ class Transition(object):
         
     @property
     def V_s(self):
-        """
-        Return the state value for the given state, self.s
-        """
+        r"""Return the state value for the given state, self.s"""
         return self.info['V_s']
     
     @property
