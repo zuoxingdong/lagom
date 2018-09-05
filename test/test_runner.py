@@ -103,6 +103,74 @@ class TestRunner(object):
         assert transition.V_s_next == 10.0
         assert np.allclose(transition.info['extra'], [1, 2, 3, 4])
         
+    def test_trajectory(self):
+        transition1 = Transition(s=1, 
+                                 a=0.1, 
+                                 r=0.5, 
+                                 s_next=2, 
+                                 done=False)
+        transition1.add_info(name='V_s', value=10.0)
+
+        transition2 = Transition(s=2, 
+                                 a=0.2, 
+                                 r=0.5, 
+                                 s_next=3, 
+                                 done=False)
+        transition2.add_info(name='V_s', value=20.0)
+
+        transition3 = Transition(s=3, 
+                                 a=0.3, 
+                                 r=1.0, 
+                                 s_next=4, 
+                                 done=True)
+        transition3.add_info(name='V_s', value=30.0)
+        transition3.add_info(name='V_s_next', value=40.0)  # Note that here non-zero value
+
+        trajectory = Trajectory(gamma=0.1)
+
+        assert trajectory.gamma == 0.1
+        assert len(trajectory.info) == 0
+        assert trajectory.T == 0
+
+        trajectory.add_info(name='extra', value=[1, 2, 3])
+        assert len(trajectory.info) == 1
+        assert np.allclose(trajectory.info['extra'], [1, 2, 3])
+
+        trajectory.add_transition(transition=transition1)
+        trajectory.add_transition(transition=transition2)
+        trajectory.add_transition(transition=transition3)
+
+        assert trajectory.T == 3
+        
+        # Test error to add one more transition, not allowed because last transition already done=True
+        transition4 = Transition(s=0.1, 
+                                 a=0.1, 
+                                 r=1.0, 
+                                 s_next=0.2, 
+                                 done=False)
+        with pytest.raises(AssertionError):
+            trajectory.add_transition(transition=transition4)
+
+        assert np.allclose(trajectory.all_s, [1, 2, 3, 4])
+        assert np.allclose(trajectory.all_a, [0.1, 0.2, 0.3])
+        assert np.allclose(trajectory.all_r, [0.5, 0.5, 1.0])
+        assert np.allclose(trajectory.all_done, [False, False, True])
+        assert np.allclose(trajectory.all_returns, [2.0, 1.5, 1.0])
+        assert np.allclose(trajectory.all_discounted_returns, [0.56, 0.6, 1.0])
+        assert np.allclose(trajectory.all_bootstrapped_returns, [2.0, 1.5, 1.0])
+        assert np.allclose(trajectory.all_bootstrapped_discounted_returns, [0.56, 0.6, 1.0])
+        assert np.allclose(trajectory.all_V, [10, 20, 30, 40])
+        assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -29])
+        assert np.allclose(trajectory.all_info(name='V_s'), [10, 20, 30])
+        
+        # Make last transition: done=False
+        trajectory.transitions[-1].done = False
+        assert np.allclose(trajectory.all_done, [False, False, False])
+        assert np.allclose(trajectory.all_bootstrapped_returns, [42, 41.5, 41])
+        assert np.allclose(trajectory.all_bootstrapped_discounted_returns, [0.6, 1, 5])
+        assert np.allclose(trajectory.all_V, [10, 20, 30, 40])
+        assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -25])
+        
     def test_segment(self):
         # All test cases in the following use 4 transitions
         # states: 10, 20, ...
@@ -354,55 +422,6 @@ class TestRunner(object):
         all_V = [V.item() if torch.is_tensor(V) else V for V in segment.all_V]
         assert np.allclose(segment.all_V, [100, 150, 200, 300, 400, 500])
         assert np.allclose(segment.all_TD, [-99, -168, -257, -396])
-        
-    def test_trajectory(self):
-        transition1 = Transition(s=1, 
-                                 a=0.1, 
-                                 r=0.5, 
-                                 s_next=2, 
-                                 done=False)
-        transition1.add_info(name='V_s', value=10)
-
-        transition2 = Transition(s=2, 
-                                 a=0.2, 
-                                 r=0.5, 
-                                 s_next=3, 
-                                 done=False)
-        transition2.add_info(name='V_s', value=20)
-
-        transition3 = Transition(s=3, 
-                                 a=0.3, 
-                                 r=1.0, 
-                                 s_next=4, 
-                                 done=True)
-        transition3.add_info(name='V_s', value=30)
-        transition3.add_info(name='V_s_next', value=0.0)
-
-        trajectory = Trajectory(gamma=0.1)
-
-        assert trajectory.gamma == 0.1
-        assert len(trajectory.info) == 0
-        assert trajectory.T == 0
-
-        trajectory.add_info(name='extra', value=[1, 2, 3])
-        assert len(trajectory.info) == 1
-        assert np.allclose(trajectory.info['extra'], [1, 2, 3])
-
-        trajectory.add_transition(transition=transition1)
-        trajectory.add_transition(transition=transition2)
-        trajectory.add_transition(transition=transition3)
-
-        assert trajectory.T == 3
-
-        assert np.allclose(trajectory.all_s, [1, 2, 3, 4])
-        assert np.allclose(trajectory.all_a, [0.1, 0.2, 0.3])
-        assert np.allclose(trajectory.all_r, [0.5, 0.5, 1.0])
-        assert np.allclose(trajectory.all_done, [False, False, True])
-        assert np.allclose(trajectory.all_returns, [2.0, 1.5, 1.0])
-        assert np.allclose(trajectory.all_discounted_returns, [0.56, 0.6, 1.0])
-        assert np.allclose(trajectory.all_V, [10, 20, 30, 0])
-        assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -29])
-        assert np.allclose(trajectory.all_info(name='V_s'), [10, 20, 30])
         
     def test_trajectoryrunner(self):
         def helper(agent, env):
