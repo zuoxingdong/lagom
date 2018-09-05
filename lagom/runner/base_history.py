@@ -89,6 +89,10 @@ class BaseHistory(object):
         
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
             
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
+            
         """
         raise NotImplementedError
     
@@ -105,6 +109,10 @@ class BaseHistory(object):
         
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
             
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
+            
         """
         raise NotImplementedError
         
@@ -120,7 +128,15 @@ class BaseHistory(object):
         
         .. note::
         
+            The state value for terminal state is set as zero !
+        
+        .. note::
+        
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
+            
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
             
         """
         raise NotImplementedError
@@ -136,7 +152,15 @@ class BaseHistory(object):
         
         .. note::
         
+            The state value for terminal state is set as zero !
+        
+        .. note::
+        
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
+            
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
             
         """
         raise NotImplementedError
@@ -148,6 +172,11 @@ class BaseHistory(object):
         .. note::
         
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
+            
+        .. note::
+            
+            It returns Tensor dtype, used for backprop to train value function. It does not set
+            zero value for terminal state !
             
         """
         raise NotImplementedError
@@ -164,7 +193,15 @@ class BaseHistory(object):
         
         .. note::
         
+            The state value for terminal state is set as zero !
+        
+        .. note::
+        
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
+            
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
             
         """
         raise NotImplementedError
@@ -175,7 +212,15 @@ class BaseHistory(object):
         
         .. note::
         
+            The state value for terminal state is set as zero !
+        
+        .. note::
+        
             This behaves differently for :class:`Trajectory` and :class:`Segment`. 
+            
+        .. note::
+        
+            It returns raw values instead of Tensor dtype, not to be used for backprop. 
         
         .. _generalized advantage estimates:
             https://arxiv.org/abs/1506.02438

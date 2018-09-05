@@ -18,6 +18,27 @@ class Trajectory(BaseHistory):
     
     Example::
     
+        >>> transition1 = Transition(s=1, a=0.1, r=0.5, s_next=2, done=False)
+        >>> transition1.add_info(name='V_s', value=10.0)
+
+        >>> transition2 = Transition(s=2, a=0.2, r=0.5, s_next=3, done=False)
+        >>> transition2.add_info(name='V_s', value=20.0)
+
+        >>> transition3 = Transition(s=3, a=0.3, r=1.0, s_next=4, done=True)
+        >>> transition3.add_info(name='V_s', value=30.0)
+        >>> transition3.add_info(name='V_s_next', value=40.0)
+
+        >>> trajectory = Trajectory(gamma=0.1)
+        >>> trajectory.add_transition(transition1)
+        >>> trajectory.add_transition(transition2)
+        >>> trajectory.add_transition(transition3)
+
+        >>> trajectory.all_discounted_returns
+        [0.56, 0.6, 1.0]
+
+        >>> trajectory.all_TD
+        [-7.5, -16.5, -29.0]
+    
     """
     def add_transition(self, transition):
         # Sanity check for trajectory
@@ -41,34 +62,55 @@ class Trajectory(BaseHistory):
     def all_discounted_returns(self):
         return ExpFactorCumSum(self.gamma)(self.all_r)
     
+    def _rewards_with_bootstrapping(self):
+        # Get last state value and last done
+        last_V = self.transitions[-1].V_s_next
+        last_done = self.transitions[-1].done
+        # Get raw value if Tensor dtype
+        if torch.is_tensor(last_V):
+            last_V = last_V.item()
+        assert isinstance(last_V, float), f'expected float dtype, got {type(last_V)}'
+        
+        # Set zero value if terminal state
+        if last_done:
+            last_V = 0.0
+            
+        return self.all_r + [last_V]
+    
+    @property
+    def all_bootstrapped_returns(self):
+        bootstrapped_rewards = self._rewards_with_bootstrapping()
+        
+        out = ExpFactorCumSum(1.0)(bootstrapped_rewards)
+        # Take out last one, because it is just last state value itself
+        out = out[:-1]
+        
+        return out
+        
+    @property
+    def all_bootstrapped_discounted_returns(self):
+        bootstrapped_rewards = self._rewards_with_bootstrapping()
+        
+        out = ExpFactorCumSum(self.gamma)(bootstrapped_rewards)
+        # Take out last one, because it is just last state value itself
+        out = out[:-1]
+        
+        return out
+    
     @property
     def all_V(self):
         return [transition.V_s for transition in self.transitions] + [self.transitions[-1].V_s_next]
     
     @property
     def all_TD(self):
-        r"""
-        Return a list of TD errors for all time steps. 
-        
-        It requires that each transition has the information with key 'V_s' and
-        last transition with both 'V_s' and 'V_s_next'.
-        
-        If last transition with done=True, then V_s_next should be zero as terminal state value. 
-        
-        TD error is calculated as following:
-        \delta_t = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
-        
-        Note that we would like to use raw float dtype, rather than Tensor. 
-        Because we often do not backprop via TD error. 
-        """
         # Get all rewards
         all_r = np.array(self.all_r)
         
-        # Get all state values
-        # Retrieve raw value if dtype is Tensor
+        # Get all state values with raw values if Tensor dtype
         all_V = np.array([v.item() if torch.is_tensor(v) else v for v in self.all_V])
-        if self.all_done[-1]:  # value of terminal state is zero
-            assert all_V[-1] == 0.0
+        # Set last state value as zero if terminal state
+        if self.all_done[-1]:
+            all_V[-1] = 0.0
         
         # Unpack state values into current and next time step
         all_V_s = all_V[:-1]
@@ -81,4 +123,5 @@ class Trajectory(BaseHistory):
     
     @property
     def all_GAE(self, gae_lambda):
+        # TODO: implement it + add to test_runner
         raise NotImplementedError
