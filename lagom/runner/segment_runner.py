@@ -15,7 +15,7 @@ class SegmentRunner(BaseRunner):
         By default, the agent handles batched data returned from :class:`VecEnv` type of environment.
         And the collected data is a list of :class:`Segment`. 
     
-    Each :class:`Segment` should store successive transitions i.e. :math:`(s_t, a_t, r_t, s_{t+1}, \text{done})`
+    Each :class:`Segment` should store successive transitions i.e. :math:`(s_t, a_t, r_t, s_{t+1}, \text{done}_t)`
     and all corresponding useful information such as log-probabilities of actions, state values, Q values etc.
     
     The collected transitions in each :class:`Segment` come from one or multiple episodes. The first state is not
