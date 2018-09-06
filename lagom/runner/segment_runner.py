@@ -32,12 +32,37 @@ class SegmentRunner(BaseRunner):
     
     Example::
     
-    
+        >>> list_make_env = make_envs(make_env=make_gym_env, 
+                                      env_id='CartPole-v1', 
+                                      num_env=2, 
+                                      init_seed=0)
+        >>> env = SerialVecEnv(list_make_env=list_make_env)
+        >>> env_spec = EnvSpec(env)
+
+        >>> agent = RandomAgent(env_spec=env_spec)
+        >>> runner = SegmentRunner(agent=agent, env=env, gamma=1.0)
+
+        >>> runner(T=3, reset=False)
+        [Segment: 
+            Transition: (s=[-0.04002427  0.00464987 -0.01704236 -0.03673052], a=0, r=1.0, s_next=[-0.03993127 -0.1902236  -0.01777697  0.25052702], done=False)
+            Transition: (s=[-0.03993127 -0.1902236  -0.01777697  0.25052702], a=1, r=1.0, s_next=[-0.04373575  0.00514764 -0.01276643 -0.04770968], done=False)
+            Transition: (s=[-0.04373575  0.00514764 -0.01276643 -0.04770968], a=0, r=1.0, s_next=[-0.04363279 -0.18978895 -0.01372062  0.24091814], done=False),
+         Segment: 
+            Transition: (s=[ 0.00854682  0.00830137 -0.03052506  0.03439879], a=0, r=1.0, s_next=[ 0.00871284 -0.18636984 -0.02983709  0.31729661], done=False)
+            Transition: (s=[ 0.00871284 -0.18636984 -0.02983709  0.31729661], a=0, r=1.0, s_next=[ 0.00498545 -0.38105439 -0.02349115  0.60042265], done=False)
+            Transition: (s=[ 0.00498545 -0.38105439 -0.02349115  0.60042265], a=1, r=1.0, s_next=[-0.00263564 -0.18561182 -0.0114827   0.30043392], done=False)]
+            
+        >>> runner(T=1, reset=False)
+        [Segment: 
+            Transition: (s=[-0.04363279 -0.18978895 -0.01372062  0.24091814], a=1, r=1.0, s_next=[-0.04742857  0.00552629 -0.00890226 -0.05606087], done=False),
+         Segment: 
+            Transition: (s=[-0.00263564 -0.18561182 -0.0114827   0.30043392], a=1, r=1.0, s_next=[-0.00634788  0.0096719  -0.00547402  0.00415181], done=False)]
+        
     """
     def __init__(self, agent, env, gamma):
         super().__init__(agent=agent, env=env, gamma=gamma)
         
-        # Buffer for observation (continuous with next call)
+        # Buffer for current observation (continuous with next call)
         self.obs_buffer = None
         
     def __call__(self, T, reset=False):
@@ -68,55 +93,61 @@ class SegmentRunner(BaseRunner):
             
         # Iterate over the number of time steps
         for t in range(T):
-            # Action selection by the agent
-            output_agent = self.agent.choose_action(self.obs_buffer)
+            # Action selection by the agent (handles batched data)
+            out_agent = self.agent.choose_action(self.obs_buffer)
             
-            # Unpack action from output. 
-            # We record Tensor dtype for backprop (propagate via Transitions)
-            action = output_agent.pop('action')  # pop-out
-            state_value = output_agent.pop('state_value', None)
-            
-            # Obtain raw action from Tensor for environment to execute
+            # Unpack action
+            action = out_agent.pop('action')  # pop-out
+            # Get raw action if Tensor dtype for feeding the environment
             if torch.is_tensor(action):
-                raw_action = action.detach().cpu().numpy()
-                raw_action = list(raw_action)
+                raw_action = list(action.detach().cpu().numpy())
             else:  # Non Tensor action, e.g. from RandomAgent
                 raw_action = action
-            # Execute the action
+                
+            # Unpack state value if available
+            state_value = out_agent.pop('state_value', None)
+            
+            # Execute the action in the environment
             obs_next, reward, done, info = self.env.step(raw_action)
             
-            # Iterate over all Segments to add transitions
+            # Iterate over all Segments to add data to transitions
             for i, segment in enumerate(D):
                 # Create and record a Transition
+                # Retrieve the corresponding values for each Segment
                 transition = Transition(s=self.obs_buffer[i], 
                                         a=action[i], 
                                         r=reward[i], 
                                         s_next=obs_next[i], 
                                         done=done[i])
-                # Record state value if required
+                
+                # Record state value if available
                 if state_value is not None:
                     transition.add_info('V_s', state_value[i])
-                # Record additional information from output_agent
+                
+                # Record additional information from out_agent to transitions
                 # Note that 'action' and 'state_value' already poped out
-                for key, val in output_agent.items():
-                    transition.add_info(key, val[i])
-                    
+                [transition.add_info(key, val[i]) for key, val in out_agent.items()]
+            
                 # Add transition to Segment
                 segment.add_transition(transition)
-                
-            # Back up obs_next in self.obs_buffer for next iteration to feed into agent
-            # Update the ones with done=True, use their info['init_observation']
-            # Because VecEnv automatically reset and continue with new episode when done=True
+            
+            # Update self.obs_buffer as obs_next for next iteration to feed into agent
+            # When done=True, use info['init_observation'] as initial observation
+            # Because VecEnv automaticaly reset and continue with new episode
             for k in range(len(D)):  # iterate over each result
                 if done[k]:  # terminated, use info['init_observation']
                     self.obs_buffer[k] = info[k]['init_observation']
                 else:  # non-terminal, continue with obs_next
                     self.obs_buffer[k] = obs_next[k]
             
-        # Call agent again to compute state value for final observation in collected segment
+        # If state value available, calculate state value for final observation
+        # Note that do NOT use self.obs_buffer, because it contains initial observation for new episode
+        # but we want to have state value for terminal states instead
         if state_value is not None:
-            V_s_next = self.agent.choose_action(self.obs_buffer)['state_value']
-            # Add V_s_next to final transitions in each segment
+            V_s_next = self.agent.choose_action(obs_next)['state_value']
+            # Add to final transition in each Segment
+            # Do not set zero for terminal state, useful for backprop to learn value function
+            # It will be handled in Trajectory or Segment method when calculating things like returns/TD errors
             for i, segment in enumerate(D):
                 segment.transitions[-1].add_info('V_s_next', V_s_next[i])
 
