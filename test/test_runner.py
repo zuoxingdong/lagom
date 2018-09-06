@@ -10,8 +10,13 @@ import torch.nn.functional as F
 
 from torch.distributions import Categorical
 
-from lagom.envs import EnvSpec, GymEnv
-from lagom.agents import BaseAgent, RandomAgent
+from lagom.envs import EnvSpec
+from lagom.envs import make_gym_env
+from lagom.envs import make_envs
+from lagom.envs.vec_env import SerialVecEnv
+
+from lagom.agents import BaseAgent
+from lagom.agents import RandomAgent
 
 from lagom.runner import Transition
 from lagom.runner import Trajectory
@@ -20,6 +25,7 @@ from lagom.runner import Segment
 from lagom.runner import SegmentRunner
 
 
+# CartPole-v1
 class Agent1(BaseAgent):
     def __init__(self, config):
         super().__init__(config)
@@ -41,7 +47,7 @@ class Agent1(BaseAgent):
         
         return output
         
-    def learn(self, x):
+    def learn(self, D):
         pass
     
     def save(self, filename):
@@ -51,6 +57,7 @@ class Agent1(BaseAgent):
         pass
     
     
+# Pendulum-v0
 class Agent2(BaseAgent):
     def __init__(self, config):
         super().__init__(config)
@@ -65,10 +72,11 @@ class Agent2(BaseAgent):
         
         output = {}
         output['action'] = action
+        output['action_logprob'] = [0.0]
         
         return output
         
-    def learn(self, x):
+    def learn(self, D):
         pass
     
     def save(self, filename):
@@ -420,40 +428,71 @@ class TestRunner(object):
         del all_info
         
     def test_trajectoryrunner(self):
-        def helper(agent, env):
-            env = GymEnv(env)
+        def check(agent_name, env_name):
+            # Create environment
+            list_make_env = make_envs(make_env=make_gym_env, 
+                                      env_id=env_name, 
+                                      num_env=1, 
+                                      init_seed=0)
+            env = SerialVecEnv(list_make_env=list_make_env)
             env_spec = EnvSpec(env)
-
-            if agent == 'random':
+            
+            # Create agent
+            if agent_name == 'random':
                 agent = RandomAgent(env_spec=env_spec, config=None)
-            elif agent == 'agent1':
+            elif agent_name == 'agent1':
                 agent = Agent1(config=None)
-            elif agent == 'agent2':
+            elif agent_name == 'agent2':
                 agent = Agent2(config=None)
             else:
                 raise ValueError('Wrong agent name')
+            
+            # Test: not allowed more than one environment for TrajectoryRunner
+            with pytest.raises(AssertionError):
+                list_make_env2 = make_envs(make_env=make_gym_env, 
+                                          env_id=env_name, 
+                                          num_env=2, 
+                                          init_seed=0)
+                env2 = SerialVecEnv(list_make_env=list_make_env2)
 
+                runner2 = TrajectoryRunner(agent=agent, env=env2, gamma=1.0)
+            
+            # Create runner
             runner = TrajectoryRunner(agent=agent, env=env, gamma=1.0)
 
+            # Small batch
             D = runner(N=3, T=4)
 
             assert len(D) == 3
-            assert np.alltrue([isinstance(d, Trajectory) for d in D])
-            assert np.alltrue([d.T == 4 for d in D])
-            assert np.alltrue([d.gamma == runner.gamma for d in D])
+            assert all([isinstance(d, Trajectory) for d in D])
+            assert all([d.T == 4 for d in D])
+            assert all([d.gamma == 1.0 for d in D])
+
+            # Check additional information
+            for d in D:
+                for t in d.transitions:
+                    if agent_name != 'random':
+                        assert 'action_logprob' in t.info
+
+            # Check if s in transition is equal to s_next in previous transition
+            for d in D:
+                for s1, s2 in zip(d.transitions[:-1], d.transitions[1:]):
+                    assert np.allclose(s1.s_next, s2.s)
+        
+            # Long horizon
+            D = runner(N=3, T=1000)
+            for d in D:
+                if d.T < 1000:
+                    assert d.all_done[-1] == True
             
         # Test for random agent
         # Discrete action space
-        env = gym.make('CartPole-v1')
-        helper('random', env)
+        check('random', 'CartPole-v1')
         # Continuous action space
-        env = gym.make('Pendulum-v0')
-        helper('random', env)
+        check('random', 'Pendulum-v0')
 
         # Test for PyTorch agent
         # Discrete action space
-        env = gym.make('CartPole-v1')
-        helper('agent1', env)
+        check('agent1', 'CartPole-v1')
         # Continuous action space
-        env = gym.make('Pendulum-v0')
-        helper('agent2', env)
+        check('agent2', 'Pendulum-v0')

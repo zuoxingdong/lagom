@@ -41,6 +41,10 @@ class BaseAgent(object):
             
         Returns:
             output (dict): a dictionary of action selection output. 
+            
+            NOTE: everything should be batched, e.g. scalar loss -> [loss]
+            
+            
                 Possible keys: ['action', 'action_logprob', 'state_value', 'Q_value']
         """
         raise NotImplementedError

@@ -3,73 +3,61 @@ import torch
 from lagom.runner import Transition
 from lagom.runner import Segment
 
-from lagom.envs.vec_env import VecEnv
+from .base_runner import BaseRunner
 
 
-class SegmentRunner(object):
-    """
-    Batched data collection for an agent in one or multiple environments for a certain time steps. 
-    It includes successive transitions (observation, action, reward, next observation, done) and 
-    additional data useful for training the agent such as the action log-probabilities, policy entropies, 
-    Q values etc.
+class SegmentRunner(BaseRunner):
+    r"""Define a data collection interface by running the agent in an environment and collecting a batch
+    of segments for a certain time steps. 
     
-    The collected data in each environment will be wrapped in an individual Segment object. Each call
-    of the runner will return a list of Segment objects each with length same as the number of time steps.
-    
-    Note that we allow transitions coming from multiple episodes successively. 
-    For example, for a Segment with length 4, it can have either of following cases:
-    
-    Let s_t^i be state at time step t in episode i and s_T^i be terminal state in episode i. 
-    
-    1. Part of single episode from initial observation: 
-        s_0^1 -> s_1^1 -> s_2^1 -> s_3^1
-    2. A complete episode:
-        s_0^1 -> s_1^1 -> s_2^1 -> s_T^1
-    3. Intermediate part of a single episode:
-        s_5^1 -> s_6^1 -> s_7^1 -> s_8^1
-    4. Two complete episodes:
-        s_0^1 -> s_T^1 -> s_0^2 -> s_T^2
-    5. Parts from two episodes:
-        s_3^1 -> s_T^1 -> s_0^2 -> s_1^2
+    .. note::
         
-    Be aware that if the transitions coming from more than one episode, then the episodes should be
-    in a successive order, and all preceding episodes but the last one should reach a terminal state
-    before starting the new episode and each succeeding episode starts from initial observation. 
+        By default, the agent handles batched data returned from :class:`VecEnv` type of environment.
+        And the collected data is a list of :class:`Segment`. 
     
-    In order to make such data collection possible, the environment must be of type VecEnv to support 
-    batched data. VecEnv will continuously collect data in all environment, for each occurrence of 
-    `done=True`, the environment will be automatically reset and continue. So if we want to collect data
-    from initial observation in all environments, the method `reset` should be called. 
+    Each :class:`Segment` should store successive transitions i.e. :math:`(s_t, a_t, r_t, s_{t+1}, \text{done})`
+    and all corresponding useful information such as log-probabilities of actions, state values, Q values etc.
     
-    The SegmentRunner is very general, for runner that only collects transitions from a single 
-    episode (start from initial observation) one can use TrajectoryRunner instead. 
+    The collected transitions in each :class:`Segment` come from one or multiple episodes. The first state is not
+    restricted to be initial observation from an episode, this allows a rolling segments of episodic transitions. 
+    And all segments have the same number of transitions (time steps). For detailed description, see the docstring
+    in :class:`Segment`. 
+    
+    Be aware that if the transitions come from more than one episode, the succeeding transitions for the next episode
+    start from initial observation. 
+    
+    .. note::
+        
+        For collecting batch of trajectories, one should use :class:`TrajectoryRunner` instead. 
+    
+    Example::
+    
+    
     """
     def __init__(self, agent, env, gamma):
-        self.agent = agent
-        self.env = env
-        assert isinstance(self.env, VecEnv), 'The environment must be of type VecEnv. '
-        self.gamma = gamma
+        super().__init__(agent=agent, env=env, gamma=gamma)
         
         # Buffer for observation (continuous with next call)
         self.obs_buffer = None
         
     def __call__(self, T, reset=False):
-        """
-        Run the agent in the batched environments and collect all necessary data for given number of 
-        time steps for each Segment (one Segment for each environment). 
+        r"""Run the agent in the vectorized environment (one or multiple environments) and collect 
+        a number of segments each with exactly T time steps. 
         
-        Note that we do not reset all environments for each call as it does in TrajectoryRunner. 
-        An option `reset` is provided to decide if reset all environment before data collection.
-        
-        This is because for SegmentRunner, we often need to continuously collect a batched data 
-        with small time steps, so each `__call__` will continuously collect data until `reset=True`.
+        .. note::
+            
+            One can continuously call this method to collect a rolling of segments for episodic transitions
+            until :attr:`reset` set to be ``True``. 
         
         Args:
-            T (int): Number of time steps
-            reset (bool): Whether to reset all environments (in VecEnv). 
+            T (int): number of time steps to collect
+            reset (bool, optional): If ``True``, then reset all internal environments in VecEnv. 
+                Default: ``False``
             
-        Returns:
-            D (list of Segment): list of collected segments. 
+        Returns
+        -------
+        D : list
+            a list of collected :class:`Segment`
         """ 
         # Initialize all Segment for each environment
         D = [Segment(gamma=self.gamma) for _ in range(self.env.num_env)]
