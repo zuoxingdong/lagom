@@ -33,6 +33,12 @@ class Trajectory(BaseHistory):
         >>> trajectory.add_transition(transition2)
         >>> trajectory.add_transition(transition3)
         
+        >>> trajectory
+        Trajectory: 
+            Transition: (s=1, a=0.1, r=0.5, s_next=2, done=False)
+            Transition: (s=2, a=0.2, r=0.5, s_next=3, done=False)
+            Transition: (s=3, a=0.3, r=1.0, s_next=4, done=True)
+        
         >>> trajectory.all_s
         [1, 2, 3, 4]
         

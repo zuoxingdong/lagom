@@ -15,7 +15,7 @@ class TrajectoryRunner(BaseRunner):
         By default, the agent handles batched data returned from :class:`VecEnv` type of environment.
         And the collected data is a list of :class:`Trajectory`. 
     
-    Each :class:`Trajectory` should store successive transitions i.e. :math:`(s_t, a_t, r_t, s_{t+1}, \text{done})`
+    Each :class:`Trajectory` should store successive transitions i.e. :math:`(s_t, a_t, r_t, s_{t+1}, \text{done}_t)`
     and all corresponding useful information such as log-probabilities of actions, state values, Q values etc.
     
     The collected transitions in each :class:`Trajectory` come from a single episode starting from initial observation
