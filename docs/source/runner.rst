@@ -30,6 +30,9 @@ Segments
 Runners
 ----------------------------------
 
+.. autoclass:: BaseRunner
+    :members:
+
 Trajectory Runner
 ~~~~~~~~~~~~~~~~~
 
