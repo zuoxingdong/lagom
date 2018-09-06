@@ -72,7 +72,7 @@ class Agent2(BaseAgent):
         
         output = {}
         output['action'] = action
-        output['action_logprob'] = [0.0]
+        output['action_logprob'] = [0.0]*action.shape[0]
         
         return output
         
@@ -496,3 +496,75 @@ class TestRunner(object):
         check('agent1', 'CartPole-v1')
         # Continuous action space
         check('agent2', 'Pendulum-v0')
+
+    def test_segmentrunner(self):
+        def check(agent_name, env_name):
+            # Create environment
+            list_make_env = make_envs(make_env=make_gym_env, 
+                                      env_id=env_name, 
+                                      num_env=2, 
+                                      init_seed=0)
+            env = SerialVecEnv(list_make_env=list_make_env)
+            env_spec = EnvSpec(env)
+            assert env.num_env == 2
+
+            # Create agent
+            if agent_name == 'random':
+                agent = RandomAgent(env_spec=env_spec, config=None)
+            elif agent_name == 'agent1':
+                agent = Agent1(config=None)
+            elif agent_name == 'agent2':
+                agent = Agent2(config=None)
+            else:
+                raise ValueError('Wrong agent name')
+
+            # Create runner
+            runner = SegmentRunner(agent=agent, env=env, gamma=1.0)
+
+            # Small batch
+            D = runner(T=3, reset=False)
+
+            assert len(D) == 2
+            assert all([isinstance(d, Segment) for d in D])
+            assert all([d.T == 3 for d in D])
+            assert all([d.gamma == 1.0 for d in D])
+
+            # Check additional information
+            for d in D:
+                for t in d.transitions:
+                    if agent_name != 'random':
+                        assert 'action_logprob' in t.info
+
+            # Check if s in transition is equal to s_next in previous transition
+            for d in D:
+                for s1, s2 in zip(d.transitions[:-1], d.transitions[1:]):
+                    assert np.allclose(s1.s_next, s2.s)
+
+            # Take one more step, test rolling effect, i.e. first state should be same as last state in previous D
+            D2 = runner(T=1, reset=False)
+            assert len(D2) == 2
+            assert all([d.T == 1 for d in D2])
+            for d, d2 in zip(D, D2):
+                assert np.allclose(d2.all_s[0], d.transitions[-1].s_next)
+
+            # Long horizon
+            D = runner(T=200, reset=True)
+            # Segment with identical time steps
+            assert all([d.T == 200 for d in D])
+            # For CartPole, 200 time steps, should be somewhere done=True
+            if env_name == 'CartPole-v1':
+                assert any([True in d.all_done for d in D])
+                assert all([len(d.trajectories) > 1 for d in D])
+        
+        # Test for random agent
+        # Discrete action space
+        check('random', 'CartPole-v1')
+        # Continuous action space
+        check('random', 'Pendulum-v0')
+
+        # Test for PyTorch agent
+        # Discrete action space
+        check('agent1', 'CartPole-v1')
+        # Continuous action space
+        check('agent2', 'Pendulum-v0')
+        
