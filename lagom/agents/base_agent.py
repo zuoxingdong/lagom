@@ -1,9 +1,8 @@
 class BaseAgent(object):
-    """
-    Base class of the agent for action selection and learning rule. 
+    r"""Base class of the agent for action selection and learning rule. 
     
     Depending on the type of agent (e.g. policy-based or value-based), it is recommended
-    to override the constructor __init__() to provide essential items for the agent. 
+    to override the constructor __init__() to provide essential items for the agent.
     
     Note that if subclass overrides __init__, remember to provide
     keywords aguments, i.e. **kwargs passing to super().__init__. 
