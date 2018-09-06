@@ -8,7 +8,7 @@ from .base_history import BaseHistory
 
 
 class Trajectory(BaseHistory):
-    r"""Define a trajectory, consisting of successive transitions. 
+    r"""Define a trajectory of successive transitions from a single episode. 
     
     .. note::
     
@@ -32,6 +32,21 @@ class Trajectory(BaseHistory):
         >>> trajectory.add_transition(transition1)
         >>> trajectory.add_transition(transition2)
         >>> trajectory.add_transition(transition3)
+        
+        >>> trajectory.all_s
+        [1, 2, 3, 4]
+        
+        >>> trajectory.all_r
+        [0.5, 0.5, 1.0]
+        
+        >>> trajectory.all_done
+        [False, False, True]
+        
+        >>> trajectory.all_V
+        [10.0, 20.0, 30.0, 40.0]
+        
+        >>> trajectory.all_bootstrapped_returns
+        [2.0, 1.5, 1.0]
 
         >>> trajectory.all_discounted_returns
         [0.56, 0.6, 1.0]
@@ -49,7 +64,7 @@ class Trajectory(BaseHistory):
     
     @property
     def all_s(self):
-        r"""Return a list of all states in the trajectory, from first state to the last state (i.e. ``s_next`` in 
+        r"""Return a list of all states in the trajectory, from first state to the last state (i.e. ``.s_next`` in 
         last transition). 
         """
         return [transition.s for transition in self.transitions] + [self.transitions[-1].s_next]
@@ -121,7 +136,6 @@ class Trajectory(BaseHistory):
         
         return all_TD.astype(np.float32).tolist()
     
-    @property
     def all_GAE(self, gae_lambda):
         # TODO: implement it + add to test_runner
         raise NotImplementedError
