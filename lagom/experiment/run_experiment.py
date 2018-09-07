@@ -7,6 +7,12 @@ from datetime import timedelta
 
 
 def ask_yes_or_no(msg):
+    r"""Ask user to enter yes or no to a given message. 
+    
+    Args:
+        msg (str): a message
+    """
+    
     print(msg)
     
     while True:
@@ -20,23 +26,20 @@ def ask_yes_or_no(msg):
             print("Please answer 'yes' or 'no':")
             
 def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_worker=None):
-    """
-    This function runs given experiments in parallel (master-worker) with defined configurations. 
+    r"""Run the given experiment in parallel (master-worker) for all defined configurations. 
     
     Args:
         worker_class (BaseExperimentWorker): user-defined experiment worker class.
         master_class (BaseExperimentMaster): user-defined experiment master class.
-        max_num_worker (int, optional): maximum number of workers. It has following use cases:
-                - If None, then number of wokers set to be the total number of configurations. 
-                - If number of configurations less than this max bound, then the number of workers
-                    will be automatically reduced to the number of configurations.
-                - If number of configurations larger than this max bound, then the rest of configurations
-                    will be fed in iteratively complying with this max bound. 
-                
-                Recommended to set to be the same as number of CPU cores, however, it is not necessary.
-        daemonic_worker (bool): If True, then set each worker to be daemonic. 
-            For details of daemonic worker, please refer to documentations in classes of 
-            BaseWorker/BaseMaster
+        max_num_worker (int, optional): maximum number of workers. It has the following use cases:
+            * If ``None``, then the number of wokers set to be the total number of configurations. 
+            * If the number of configurations is less than this max bound, then the number of 
+              workers will be automatically reduced to the number of configurations.
+            * If the number of configurations is larger than this max bound, then the rest of 
+              configurations will be fed in iteratively as batches each with the size maximally
+              equal to this bound. 
+        daemonic_worker (bool, optional): If ``True``, then set each worker to be daemonic. 
+            See :class:`BaseWorker` and :class:`BaseMaster` for more details about daemonic
     """
     # Set start time
     t = time()

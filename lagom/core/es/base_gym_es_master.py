@@ -2,19 +2,21 @@ from .base_es_master import BaseESMaster
 
 
 class BaseGymESMaster(BaseESMaster):
-    """
-    Base class for master of evolution strategies with OpenAI gym environment.
+    r"""Base class for master of evolution strategies with OpenAI gym environment.
     
-    It is similar to the class, BaseESMaster, the major difference is that
-    this class receives a `make_env()` function and pack it with each task
-    sending to the workers. Each worker can use it to create an environment. 
+    .. note::
     
-    For more details about how master class works, please refer
-    to the documentation of the class, BaseIterativeMaster. 
+        It is similar to :class:`BaseESMaster`, the major difference is that this class
+        receives an argument :attr:`make_env()` in the constructor and pack it with each 
+        task sending to the workers. Each worker can use it to create an environment. 
     
-    All inherited subclasses should at least implement the following functions:
-    1. make_es(self)
-    2. _process_es_result(self, result)
+    See :class:`BaseESMaster` for more details about the msater for ES. 
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`make_es`
+    - :meth:`_process_es_result`
+    
     """
     def __init__(self,
                  make_env, 

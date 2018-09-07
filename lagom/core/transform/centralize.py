@@ -4,19 +4,18 @@ from .base_transform import BaseTransform
 
 
 class Centralize(BaseTransform):
-    """
-    Centralize the input data: Subtracted by mean. 
-    """
+    r"""Centralize the input data: Subtracted by mean. """
     def __call__(self, x, mean=None):
-        """
-        Centralize the input data: Subtracted by mean. 
+        r"""Centralize the input data: Subtracted by mean. 
         
         Args:
             x (scalar/list/ndarray): input data. 
             mean (float): If not None, then use specific mean to centralize the input data. 
         
-        Returns:
-            out (ndarray): centralized data
+        Returns
+        -------
+        out : ndarray
+            centralized data
         """
         # Convert input to ndarray
         x = self.make_input(x)

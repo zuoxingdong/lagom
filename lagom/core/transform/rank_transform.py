@@ -4,8 +4,7 @@ from .base_transform import BaseTransform
 
 
 class RankTransform(BaseTransform):
-    """
-    Rank transformation of the input vector. The rank has the same dimensionality as input vector.
+    r"""Rank transformation of the input vector. The rank has the same dimensionality as input vector.
     Each element in the rank indicates the index of the ascendingly sorted input.
     i.e. ranks[i] = k, it means i-th element in the input is k-th smallest value. 
     
@@ -16,17 +15,19 @@ class RankTransform(BaseTransform):
     Note that a centered rank transformation to the range [-0.5, 0.5] is supported by an option. 
     """
     def __call__(self, x, centered=True):
-        """
-        Rank transformation of the input vector. 
+        r"""Rank transformation of the input vector. 
         
         Args:
             x (list/ndarray): Input data. Note that it should be only 1-dim vector
             centered (bool): If True, then centered the rank transformation to [-0.5, 0.5]
 
-        Returns:
-            ranks (ndarray): Ranks of input data
+        Returns
+        -------
+        ranks : ndarray
+            ranks of input data
 
-        Examples:
+        Example::
+        
             >>> x = [3, 14, 1]
             >>> rank_transform = RankTransform()
             >>> rank_transform(x, centered=True)

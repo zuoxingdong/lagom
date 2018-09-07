@@ -2,17 +2,17 @@ from lagom.core.multiprocessing import BaseWorker
 
 
 class BaseESWorker(BaseWorker):
-    """
-    Base class for the worker of parallelized evolution strategies (ES). 
+    r"""Base class for the worker of parallelized evolution strategies (ES). 
     
     It defines an objective function to evaluate the given solution 
-    candidate and compute a objective function value. 
+    candidate. 
     
-    For more details about how worker class works, please refer
-    to the documentation of the class, BaseWorker. 
+    See :class:`BaseWorker` for more details about the workers.
     
-    All inherited subclasses should at least implement the following function:
-    1. f(self, solution, seed)
+    The subclass should implement at least the following:
+    
+    - :meth:`f`
+    
     """
     def work(self, master_cmd):
         # Unpack master command
@@ -24,22 +24,23 @@ class BaseESWorker(BaseWorker):
         return solution_id, function_value
     
     def f(self, solution, seed):
-        """
-        User-defined function to define the objective function given
-        the solution candidate. 
+        r"""Defines an objective function to evaluate a given solution candidate. 
         
-        Note that the solution argument can contain additional information 
-        needed for evaluating the objective function value. For example, 
-        if the usecase is doing RL with gym environments, then solution
-        could contain a function to create an environment. 
-        e.g. `solution, make_env = solution`
+        .. note::
+        
+            In :attr:`solution`, it could contain additional information for the
+            objective function evaluation. e.g. If it needs a gym environment for RL, 
+            then :attr:`solution` should contain a function to create an environment. 
+            e.g. ``solution, make_env = solution``
         
         Args:
             solution (object): given solution candidate. 
-            seed (int): random seed contained in master_cmd. 
-                It can be used to seed the current evaluation, e.g. gym environment. 
+            seed (int): random seed contained in master_cmd. It can be used to seed 
+                the current evaluation, e.g. gym environment. 
             
-        Returns:
-            function_value (float): objective function value
+        Returns
+        -------
+        function_value : float
+            objective function value for the given candidate. 
         """
         raise NotImplementedError

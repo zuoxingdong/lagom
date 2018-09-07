@@ -18,27 +18,31 @@ from lagom import Seeder
 
 
 class BaseMaster(object):
-    """
-    Base class of a callable master to parallelize solving a set of tasks, each with a worker. 
+    r"""Base class of all callable master to parallelize for solving a set of tasks, each with a worker. 
     
-    Each calling it initialize all the workers (each opens a Process) and independent Pipe connections
-    between each worker and itself. And then it makes a set of tasks and assign each task to a worker.
-    After processing each working results received from workers, it stops all workers and terminate
-    all processes. 
+    For each calling, the master will initialize all the workers (each with an individual Process) and create 
+    independent Pipe connections between master and each worker. Then it makes a set of tasks and assign
+    each task to a worker. After all workers finish their jobs with the results processed, it stops
+    all workers and terminate all processes. 
     
-    Note that it is possible to make less tasks than the number of workers, however, it is not generally
-    recommended to do so. 
+    .. note::
     
-    All inherited subclasses should at least implement the following functions:
-    1. make_tasks(self)
-    2. _process_workers_result(self, tasks, workers_result)
+        It is possible to make less number of tasks than the number of workers, however, it is not 
+        generally recommended to do so. 
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`make_tasks`
+    - :meth:`_process_workers_result`
+    
     """
     def __init__(self, 
                  worker_class, 
                  num_worker,
                  init_seed=0, 
                  daemonic_worker=None):
-        """
+        r""" Initialize the master. 
+        
         Args:
             worker_class (BaseWorker): a callable worker class. Note that it is not recommended to 
                 send instantiated object of the worker class, but send class instead. 
@@ -56,9 +60,10 @@ class BaseMaster(object):
         self.seeder = Seeder(init_seed=self.init_seed)
         
     def __call__(self):
-        """
-        It initializes the workers, makes a set of tasks and assign each task to a worker. 
-        After finish processing results from all workers, stop them and terminate all processes. 
+        r"""Initialize all the workers, make a set of tasks and assign each task to a worker. 
+        
+        After all workers finish their jobs with results processed, then stop all workers and 
+        terminate all processes. 
         """
         # Initialize all workers
         self.initialize_workers()
@@ -72,9 +77,9 @@ class BaseMaster(object):
         self.stop_workers()
         
     def initialize_workers(self):
-        """
-        Initialize all workers, each opens a Process. 
-        Create an independent Pipe connection between master and each worker. 
+        r"""Initialize all workers, each opens a Process. 
+        
+        Create independent Pipe connection between master and each worker. 
         """
         # Create pipes as communicators between master and workers
         self.master_conns, self.worker_conns = zip(*[Pipe() for _ in range(self.num_worker)])
@@ -94,17 +99,17 @@ class BaseMaster(object):
         [worker_conn.close() for worker_conn in self.worker_conns]
         
     def make_tasks(self):
-        """
-        Returns a set of tasks.
+        r"""Returns a set of tasks.
         
-        Returns:
-            tasks (list): a list of tasks
+        Returns
+        -------
+        tasks : list
+            a list of tasks
         """
         raise NotImplementedError
         
     def assign_tasks(self, tasks):
-        """
-        Assign each task to a worker. And process the results from all tasks. 
+        r"""Assign each task to a worker. And process the results from all tasks. 
         
         Args:
             tasks (list): a list of tasks
@@ -144,8 +149,7 @@ class BaseMaster(object):
         self._process_workers_result(tasks, workers_result)
     
     def _process_workers_result(self, tasks, workers_result):
-        """
-        Process the results from all workers. 
+        r"""Process the results from all workers. 
         
         Args:
             tasks (list): a list of tasks corresponding to workers results.
@@ -154,9 +158,7 @@ class BaseMaster(object):
         raise NotImplementedError
     
     def stop_workers(self):
-        """
-        Stop all the workers by sending a 'close' signal via pipe connection and join all processes.
-        """
+        r"""Stop all the workers by sending a 'close' signal via pipe connection and join all processes."""
         # Tell all workers to stop working
         [master_conn.send('close') for master_conn in self.master_conns]
         # Sanity check if all workers confirmed to be closed successfully

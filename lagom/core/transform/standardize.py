@@ -4,23 +4,22 @@ from .base_transform import BaseTransform
 
 
 class Standardize(BaseTransform):
-    """
-    Standardize the input data: Subtracted by mean and divided by standard deviation
-    """
+    r"""Standardize the input data: Subtracted by mean and divided by standard deviation"""
     def __init__(self, eps=np.finfo(np.float32).eps):
         self.eps = eps
         
     def __call__(self, x, mean=None, std=None):
-        """
-        Standardize the input data: Subtracted by mean and divided by standard deviation. 
+        r"""Standardize the input data: Subtracted by mean and divided by standard deviation. 
         
         Args:
             x (object): input data
             mean (float): If not None, then use specific mean to standardize the input data. 
             std (float): If not None, then use specific standard deviation to standardize the input data. 
         
-        Returns:
-            out (list): standardized data
+        Returns
+        -------
+        out : list
+            standardized data
         """
         # Convert input to ndarray
         x = self.make_input(x)

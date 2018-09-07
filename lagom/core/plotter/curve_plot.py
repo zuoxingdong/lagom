@@ -8,12 +8,15 @@ from functools import partial
 from .base_plot import BasePlot
 
 class CurvePlot(BasePlot):
-    """
-    Compare different curves in one plot. In machine learning research, it is 
-    extremely useful, e.g. compare training losses with different baselines. 
+    r"""Compare different curves in one plot. 
     
-    Note that the uncertainty (error bands) is supported, a standard use case
-    is that each baseline run several times by using different random seeds. 
+    In machine learning research, it is extremely useful
+    e.g. compare training losses with different baselines. 
+    
+    .. note::
+    
+        The uncertainty (error bands) is supported, a standard use case
+        is that each baseline run several times by using different random seeds. 
     
     Either with or without uncertainty, it depends on what kind of data added
     to the plotter via `add(name, data)`. If the data is one-dimentional, it will
@@ -23,16 +26,17 @@ class CurvePlot(BasePlot):
     To generate a modern high quality research plot, we use Seaborn.lineplot with 
     Pandas.DataFrame data structure. 
     
-    For more advanced use cases, feel free to inherit this class and overide `__call__`. 
+    For more advanced use cases, one could inherit this class and overide :meth:`__call__`. 
     """
     def add(self, name, data, xvalues=None):
-        """
-        Add a curve data (either one of multiple) with option to select range of values
+        r"""Add a curve data (either one of multiple) with option to select range of values
         for horizontal axis. If not provided, then it will be automatically set to integers. 
         
-        Note that only one list of xvalues needed, because all curve data should share identical
-        horizontal axis. If a batch of xvalues are provided and they are not identical, 
-        then each line will be interpolated and new shared xvalues and queried y values will be computed.
+        .. note::
+            
+            Only one list of xvalues needed, because all curve data should share identical 
+            horizontal axis. If a batch of xvalues are provided and they are not identical,  
+            then each line will be interpolated and new shared xvalues and queried y values will be computed.
         
         Args:
             name (str): name of the curve
@@ -72,7 +76,8 @@ class CurvePlot(BasePlot):
                  scales=None, 
                  alphas=None, 
                  **kwargs):
-        """
+        r"""Generate plots with uncertainty. 
+        
         Args:
             colors (list): A list of colors, each for plotting one data item
             scales (list): A list of scales of standard deviation, each for plotting one uncertainty band
@@ -92,10 +97,12 @@ class CurvePlot(BasePlot):
                      - legend_loc (str): location string of the legend.
                      - num_tick (int): Maximum number of major ticks in horizontal axis. 
                      - xscale_magnitude (str): Format the major ticks in horizontal axis based on 
-                         the given magnitude. e.g. 'N': raw value, 'K': every one thousand or 'M': every one million.
+                       the given magnitude. e.g. 'N': raw value, 'K': every one thousand or 'M': every one million.
 
-        Returns:
-            ax (Axes): A matplotlib Axes representing the generated plot.
+        Returns
+        -------
+        ax : Axes
+            a matplotlib Axes representing the generated plot.
         """
         # Use seaborn to make figure looks modern
         sns.set()
@@ -200,8 +207,7 @@ class CurvePlot(BasePlot):
         return x
     
     def _interp_data(self, all_x, all_y, num_points=500):
-        """
-        Piecewise linear interpolation for each line and return the x-y values from interpolated line. 
+        r"""Piecewise linear interpolation for each line and return the x-y values from interpolated line. 
         
         This is for the case that multiple lines have different x value points, which is impossible
         to plot uncertainty bands. 
@@ -211,9 +217,12 @@ class CurvePlot(BasePlot):
             all_y (list): y values for each line
             num_points (int): number of points to generate from interpolated lines. 
             
-        Returns:
-            new_x (list): shared query x values between minimum and maximum possible x values.
-            interp_all_y (list): y values from each interpolated line. 
+        Returns
+        -------
+        new_x : list
+            shared query x values between minimum and maximum possible x values.
+        interp_all_y :list
+            y values from each interpolated line. 
         """
         # Obtain minimum and maximum x values from given data
         # We iterate over each line, because they might have different length, and impossible to broadcast

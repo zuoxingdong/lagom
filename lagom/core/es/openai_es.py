@@ -10,13 +10,13 @@ from lagom.core.transform import RankTransform
 
 
 class OpenAIES(BaseES):
-    """
-    Simple version of OpenAI evolution strategies.
+    r"""Implements OpenAI evolution strategies.
     
-    Note that we minimize the objective, i.e. function values in tell(). 
+    .. note::
     
-    A practical tip, the learning rate is better to be proportional to batch size
-    i.e. larger batch size, use larger learning rate and vise versa. 
+        In practice, the learning rate is better to be proportional to the batch size.
+        i.e. for larger batch size, use larger learning rate and vise versa. 
+        
     """
     def __init__(self, 
                  mu0, 
@@ -29,7 +29,8 @@ class OpenAIES(BaseES):
                  min_lr=1e-2, 
                  antithetic=False,
                  rank_transform=True):
-        """
+        r"""Initialize OpenAI-ES. 
+        
         Args:
             mu0 (ndarray): initial mean
             std0 (float): initial standard deviation

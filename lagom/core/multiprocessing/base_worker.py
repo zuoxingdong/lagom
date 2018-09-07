@@ -1,23 +1,30 @@
 class BaseWorker(object):
-    """
-    Base class of a callable worker to work on a task assigned by the master.
+    r"""Base class of all callable worker to work on a task assigned by the master.
     
-    Each calling it stands by with a infinite while loop, waiting for master's command to work
-    and it receives Pipe connection ends between master and itself. 
+    For each calling, the worker will stand-by in an infinite loop waiting for command from master to do
+    the working and send back working result. 
     
-    When it receives a 'close' command from master, it close the worker connection and break the loop.
+    If the master's command is 'close', then it breaks the infinite loop and the connections will be
+    closed. 
     
-    Note that it is a good practice to close the master connection although it is not used
-    because the forked process for the worker will anyway copy both connection ends. 
+    The subclass should implement at least the following:
     
-    All inherited subclasses should at least implement the following functions:
-    1. work(self, master_cmd)
+    - :meth:`work`
     
-    Remark: To be optimally user-friendly, it is highly recommended not to override constructor __init__
-        All additional settings for the worker should be sent directly through `master_cmd`. 
-        Thus each time the master can create a worker with a Process without passing arguments to constructor. 
+    .. note::
+    
+        It is highly discouraged to override the constructor ``__init__``. Because the master will create
+        a worker with a Process without passing any argument to the constructor. All additional settings 
+        for the worker should be sent directly through ``master_cmd``
     """
     def __call__(self, master_conn, worker_conn):
+        r"""Stand-by infinitely waiting for master's command and do the work until a 'close'
+        is received. 
+        
+        Args:
+            master_conn (Pipe.Connection): Pipe connection from the master side
+            worker_conn (Pipe.Connection): Pipe connection for the worker side
+        """
         # Close the master connection end as it is not used here
         # The forked process with copy both connections anyway
         master_conn.close()
@@ -29,7 +36,7 @@ class BaseWorker(object):
                 worker_conn.send('confirmed')
                 worker_conn.close()
                 break
-            elif master_cmd == 'cozy':
+            elif master_cmd == 'cozy':  # no work to do
                 worker_conn.send('roger')
             else:
                 task_id, result = self.work(master_cmd)
@@ -38,14 +45,16 @@ class BaseWorker(object):
                 worker_conn.send([task_id, result])
         
     def work(self, master_cmd):
-        """
-        Define how to do the work given the master's command and returns the working result.
+        r"""Define how to do the work given the master's command and returns the working result.
         
         Args:
             master_cmd (list): master's command. [task_id, task, seed]
             
-        Returns:
-            task_id (int): task ID
-            result (object): working result
+        Returns
+        -------
+        task_id : int
+            task ID
+        result : object
+            working result
         """
         raise NotImplementedError

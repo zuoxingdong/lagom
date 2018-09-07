@@ -2,35 +2,38 @@ import numpy as np
 
 
 class BaseTransform(object):
-    """
-    Base class for transforms, clipping, normalize, centralize, standardize etc. 
+    r"""Base class for all transformations e.g. clipping, normalize, centralize, standardize etc. 
     
-    Note that all inherited class should support only scalar value or 1-dim vector. 
-    Because it has much higher risk to introduce bugs with larger dimensionality. 
+    .. note::
+    
+        All inherited class should support only scalar value or 1-dim vector. 
+        Because it has much higher risk to introduce bugs with larger dimensionality. 
     
     It is recommended to convert all numpy processed data to type, np.float32
     becuase it is more compatible with PyTorch. Numpy default float64 often 
     can lead to numerical issues or raised exceptions in PyTorch. Similarly
     for np.int32. 
     
-    All inherited subclasses should at least implement the following functions:
-    1. __call__(self, x)
+    The subclass should implement at least the following:
+    
+    - :meth:`__call__`
+    
     """
     def __call__(self, x):
-        """
-        Process the input data
+        r"""Transform the input data
         
         Args:
             x (scalar/list/ndarray): input data
             
-        Returns:
-            out: The processed data
+        Returns
+        -------
+        out : object
+            the processed data
         """
         raise NotImplementedError
         
     def make_input(self, x):
-        """
-        Conver the input as scalar or 1-dim ndarray
+        r"""Conver the input as scalar or 1-dim ndarray
         
         1. scalar: retain the same
         2. list: convert to 1-dim ndarray with shape [D]
@@ -38,8 +41,10 @@ class BaseTransform(object):
         Args:
             x (scalar/list/ndarray): input data
             
-        Returns:
-            x (ndarray): converted data
+        Returns
+        -------
+        x : ndarray
+            converted data
         """
         # Enforce tuple becomes list
         if isinstance(x, tuple):
