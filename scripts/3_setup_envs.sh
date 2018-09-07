@@ -57,7 +57,7 @@ $CONDA install -y patchelf
 
 # Install some pip packages
 pip install pandas seaborn
-pip install jupyterlab
+pip install jupyterlab cloudpickle
 pip install mujoco-py gym[all] cma
 pip install pytest flake8 sphinx sphinx_rtd_theme
 

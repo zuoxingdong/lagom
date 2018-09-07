@@ -18,3 +18,11 @@ Utils
 
 .. autoclass:: Seeder
     :members:
+    
+.. autofunction:: pickle_load
+
+.. autofunction:: pickle_dump
+
+.. autofunction:: yaml_load
+
+.. autofunction:: yaml_dump
