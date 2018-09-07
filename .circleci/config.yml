@@ -8,7 +8,7 @@ jobs:  # Build-Test-Deplot (BTD) process
         docker:  # run with Docker
             - image: circleci/python:3.6.6  # Python container
         
-        parallelism: 16  # speed up with max value in free account
+        parallelism: 4  # speed up with max value in free account
 
         # CircleCI working directory to run the steps
         working_directory: ~/project
