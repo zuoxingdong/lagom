@@ -2,6 +2,7 @@
 <!--- <img src='doc/img/infrastructure.png' width='300'> --->
 
 [![Build Status](https://travis-ci.org/zuoxingdong/lagom.svg?branch=master)](https://travis-ci.org/zuoxingdong/lagom)
+[![CircleCI](https://circleci.com/gh/zuoxingdong/lagom.svg?style=svg)](https://circleci.com/gh/zuoxingdong/lagom)
 [![Documentation Status](https://readthedocs.org/projects/lagom/badge/?version=latest)](https://lagom.readthedocs.io/en/latest/?badge=latest)
 
 **lagom is a light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.** [Lagom](https://sv.wikipedia.org/wiki/Lagom) is a 'magic' word in Swedish, *"inte för mycket och inte för lite, enkelhet är bäst"*, meaning *"not too much and not too little, simplicity is often the best"*. lagom is the philosophy on which this library was designed. 

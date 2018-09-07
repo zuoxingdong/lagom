@@ -8,6 +8,8 @@ jobs:  # Build-Test-Deplot (BTD) process
         docker:  # run with Docker
             - image: circleci/python:3.6.6  # Python container
         
+        parallelism: 16  # speed up with max value in free account
+
         # CircleCI working directory to run the steps
         working_directory: ~/project
         
@@ -48,6 +50,9 @@ jobs:  # Build-Test-Deplot (BTD) process
             - run:  # Run tests !
                 name: Run tests
                 command: |
+                    # Activate conda environment
+                    export PATH="$HOME/miniconda/bin:$PATH"
+                    source activate CI
                     # Run test files
                     pytest test/ -v
                     # flake8 check for code style and quality
