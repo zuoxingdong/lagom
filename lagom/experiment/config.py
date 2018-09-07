@@ -23,9 +23,13 @@ class Config(object):
     By calling :meth:`make_configs`, it will automatically generation a list of all
     possible configurations, each associated with a unique ID. In practice, it is also
     recommended to create an individual directory for each ID. 
+    
+    Example::
+    
+    
     """
     def __init__(self):
-        self.config_settings = OrderedDict()
+        self.settings = OrderedDict()
         self.configs = None
         
     def add_item(self, name, val):
@@ -42,9 +46,9 @@ class Config(object):
             >>> add_item(name='env:id', val='CartPole-v1')
             
         """
-        assert name not in self.config_settings, 'The key is already existed. '
+        assert name not in self.settings, 'The key is already existed. '
         
-        self.config_settings[name] = [val]
+        self.settings[name] = [val]
         
     def add_grid(self, name, val):
         r"""Add a list of configurations. 
@@ -63,11 +67,11 @@ class Config(object):
             >>> add_grid(name='lr', val=[1e-3, 5e-4, 1e-4])
             
         """
-        assert name not in self.config_settings, 'The key is already existed. '
+        assert name not in self.settings, 'The key is already existed. '
         
         assert isinstance(val, list)
         
-        self.config_settings[name] = val
+        self.settings[name] = val
         
     def add_random_discrete(self, name, list_val, num_sample, replace=True):
         r"""Add a discrete list of values to sample from. 
@@ -90,12 +94,12 @@ class Config(object):
             array([64, 32])
         
         """
-        assert name not in self.config_settings, 'The key is already existed. '
+        assert name not in self.settings, 'The key is already existed. '
         
         samples = np.random.choice(list_val, size=num_sample, replace=replace)
         samples = samples.tolist()
         
-        self.config_settings[name] = samples
+        self.settings[name] = samples
         
     def add_random_continuous(self, name, low, high, num_sample):
         r"""Add a continuous range to sample from. 
@@ -117,12 +121,12 @@ class Config(object):
             array([0.55075687, 1.7957111 ])
         
         """
-        assert name not in self.config_settings, 'The key is already existed. '
+        assert name not in self.settings, 'The key is already existed. '
         
         samples = np.random.uniform(low=low, high=high, size=num_sample)
         samples = samples.tolist()
         
-        self.config_settings[name] = samples
+        self.settings[name] = samples
     
     def add_random_eps(self, name, base, low, high, num_sample):
         r"""Add a range of very small continuous positive values to sample from
@@ -148,12 +152,12 @@ class Config(object):
         .. _numerical instability:
             http://cs231n.github.io/neural-networks-3/#hyper
         """
-        assert name not in self.config_settings, 'The key is already existed. '
+        assert name not in self.settings, 'The key is already existed. '
         
         samples = base**np.random.uniform(low=low, high=high, size=num_sample)
         samples = samples.tolist()
         
-        self.config_settings[name] = samples
+        self.settings[name] = samples
     
     def make_configs(self):
         r"""Generate a list of all possible combinations of configurations
@@ -170,13 +174,13 @@ class Config(object):
         configs = []
         
         # Cartesian product of all possible configurations
-        for i, items in enumerate(product(*self.config_settings.values())):
+        for i, items in enumerate(product(*self.settings.values())):
             # Create one configuration
             config = OrderedDict()
             # Augment a unique ID
             config['ID'] = i
             # Add all configuration items
-            for key, item in zip(self.config_settings.keys(), items):
+            for key, item in zip(self.settings.keys(), items):
                 config[key] = item
                 
             # Record configuration
@@ -187,7 +191,7 @@ class Config(object):
             
         return configs
     
-    def save_config_settings(self, f):
+    def save_settings(self, f):
         r"""Save the settings of the configurations using pickle.
         
         .. note::

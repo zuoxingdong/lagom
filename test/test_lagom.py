@@ -6,10 +6,14 @@ import os
 
 from lagom import Seeder
 from lagom import Logger
+from lagom import pickle_load
+from lagom import pickle_dump
+from lagom import yaml_load
+from lagom import yaml_dump
 
 
 class TestLagom(object):
-    def test_utils(self):
+    def test_seeding(self):
         seeder = Seeder(init_seed=0)
         
         # Single list of seeds
@@ -23,6 +27,33 @@ class TestLagom(object):
         assert np.alltrue(np.array(seeds).shape == (1, 3))
         seeds = seeder(size=[2, 3])
         assert np.alltrue(np.array(seeds).shape == (2, 3))
+        
+    def test_pickle_yaml(self):
+        # Create some data
+        a = {'one': 1, 'two': [2, 3]}
+        b = {'three': 3, 'four': [4, 5]}
+        c = [a, b]
+        
+        def _check(x):
+            assert isinstance(x, list)
+            assert len(x) == 2
+            assert all([isinstance(i, dict) for i in x])
+            assert list(x[0].keys()) == ['one', 'two']
+            assert list(x[1].keys()) == ['three', 'four']
+            assert list(x[0].values()) == [1, [2, 3]]
+            assert list(x[1].values()) == [3, [4, 5]]
+        
+        # Pickle
+        pickle_dump(c, 'test/.tmp_pickle')
+        _check(pickle_load('test/.tmp_pickle.pkl'))
+        # remove the file
+        os.unlink('test/.tmp_pickle.pkl')
+        
+        # Yaml
+        yaml_dump(c, 'test/.tmp_yaml')
+        _check(yaml_load('test/.tmp_yaml.yml'))
+        # remove the file
+        os.unlink('test/.tmp_yaml.yml')
     
     def test_logger(self):
         logger = Logger(name='logger')
