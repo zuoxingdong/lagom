@@ -1,3 +1,4 @@
+cloudpickle>=0.5.3
 cython>=0.28.4
 pyyaml>=3.12
 setuptools>=39.0.1
