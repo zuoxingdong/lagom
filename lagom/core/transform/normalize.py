@@ -4,23 +4,22 @@ from .base_transform import BaseTransform
 
 
 class Normalize(BaseTransform):
-    """
-    Normalize the input data: Subtracted by minimal and divided by range (maximal - minimal)
-    """
+    r"""Normalize the input data: Subtracted by minimal and divided by range (maximal - minimal)"""
     def __init__(self, eps=np.finfo(np.float32).eps):
         self.eps = eps
     
     def __call__(self, x, min_val=None, max_val=None):
-        """
-        Normalize the input data: Subtracted by minimal and divided by range (maximal - minimal)
+        r"""Normalize the input data: Subtracted by minimal and divided by range (maximal - minimal)
         
         Args:
             x (object): input data. 
             min_val (float): If not None, then use specific min values to normalize the input. 
             max_val (float): If not None, then use specific max values to normalize the input. 
             
-        Returns:
-            out (ndarray): normalized data
+        Returns
+        -------
+        out : ndarray
+            normalized data
         """
         # Convert input to ndarray
         x = self.make_input(x)

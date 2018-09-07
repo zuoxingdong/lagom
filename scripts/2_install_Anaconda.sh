@@ -2,7 +2,7 @@
 
 #############################
 # Install Anaconda with env #
-# Date: 2018-07-05  	    #
+# Date: 2018-09-07  	    #
 # Author: Xingdong Zuo      #
 #############################
 
@@ -12,6 +12,7 @@ set -e
 # Create list of variables
 export ANACONDA=Anaconda3-5.2.0-Linux-x86_64.sh  # Check new version
 export ENV_NAME=RL  # name of Anaconda environment
+export PYTHON_VERSION=3.7  # Python version
 
 # Download and install Anaconda
 # Select NO to append the installation path to /.bashrc
@@ -30,8 +31,8 @@ export CONDA=$HOME/anaconda3/bin/conda
 # Update Anaconda to latest version
 $CONDA update -n base conda
 
-# Create an Anaconda environment
-$CONDA create -n $ENV_NAME
+# Create an Anaconda environment with latest Python
+$CONDA create -n $ENV_NAME python=$PYTHON_VERSION
 
 # Append to bashrc to automatically load virtual environment for each start
 echo "conda activate $ENV_NAME  # automatically activate virtual envs" >> ~/.bashrc  # double quotation works for variable

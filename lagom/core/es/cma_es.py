@@ -2,18 +2,24 @@ from .base_es import BaseES
 
 
 class CMAES(BaseES):
-    """
-    Wrapper of original CMA-ES implementation at https://github.com/CMA-ES/pycma
+    r"""Implements CMA-ES algorithm. 
     
-    Note that we minimize the objective, i.e. function values in tell(). 
+    .. note::
+    
+        It is a wrapper of the `original CMA-ES implementation`_. 
+        
+    .. _original CMA-ES implementation:
+        https://github.com/CMA-ES/pycma
+    
     """
     def __init__(self, 
                  mu0, 
                  std0, 
                  popsize):
-        """
+        r"""Initialize CMA-ES
+        
         Args:
-            mu0 (list or ndarray): initial mean
+            mu0 (list/ndarray): initial mean
             std0 (float): initial standard deviation
             popsize (int): population size
         """

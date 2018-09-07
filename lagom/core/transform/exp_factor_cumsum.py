@@ -4,24 +4,26 @@ from .base_transform import BaseTransform
 
 
 class ExpFactorCumSum(BaseTransform):
-    """
-    Calculate future accumulated sums with exponential factor. 
+    r"""Calculate future accumulated sums with exponential factor. 
     
-    e.g. Given input [x_1, ..., x_n] and factor \alpha, the computation returns an array y with same length
-    and y_i = x_i + \alpha*x_{i+1} + \alpha^2*x_{i+2} + ... + \alpha^{n-i-1}*x_{n-1} + \alpha^{n-i}*x_{n}
+    Given input :math:`[x_1, ..., x_n]` and factor :math:`\alpha`, the computation returns an array y 
+    with same length and 
+    
+    .. math::
+        y_i = x_i + \alpha*x_{i+1} + \alpha^2*x_{i+2} + \dots + \alpha^{n-i-1}*x_{n-1} + \alpha^{n-i}*x_{n}
     
     Commonly useful for calculating returns in RL. 
     """
     def __init__(self, alpha):
-        """
+        r"""Initialize
+        
         Args:
             alpha (float): exponential factor
         """
         self.alpha = alpha
         
     def __call__(self, x, mask=None):
-        """
-        Calculate future accumulated sums with exponential factor. 
+        r"""Calculate future accumulated sums with exponential factor. 
         
         An option with binary mask is provided. 
         Intuitively, the computation will restart for each occurrence
@@ -31,8 +33,10 @@ class ExpFactorCumSum(BaseTransform):
             x (list): input data
             mask (list): binary mask for each data item. 
             
-        Returns:
-            out (list): calculated data
+        Returns
+        -------
+        out : list
+            calculated data
         """
         # Convert input to ndarray
         x = self.make_input(x)

@@ -2,24 +2,19 @@ from .base_master import BaseMaster
 
 
 class BaseIterativeMaster(BaseMaster):
-    """
-    Base class for iterative version of a callable master. 
-    It supports iterative procedure during each call as following
+    r"""Base class for iterative version of a callable :class:`BaseMaster`. 
     
-    # Initialize all workers
-    self.initialize_workers()
+    For each call, it has the following iterative procedure:
     
-    # Iteratively make and assign tasks
-    for iteration in range(num_iterations):
-        self.make_tasks(iteration)
-        self.assign_tasks()
+    1. Initialize all workers
+    2. Iteratively make tasks and assign each task to a worker to work
+    3. Stop all workers
     
-    # Stop all workers and terminate all processes
-    self.stop_workers()
+    The subclass should implement at least the following:
     
-    All inherited subclasses should at least implement the following function
-    1. make_tasks(self, iteration)
-    2. _process_workers_result(self, tasks, workers_result)
+    - :meth:`make_tasks`
+    - :meth:`_process_workers_result`
+    
     """
     def __init__(self,
                  num_iteration, 
@@ -27,7 +22,8 @@ class BaseIterativeMaster(BaseMaster):
                  num_worker,
                  init_seed=0, 
                  daemonic_worker=None):
-        """
+        r"""Initialize the iterative master. 
+        
         Args:
             num_iteration (int): number of iterative procedures
             worker_class (BaseWorker): a callable worker class. Note that it is not recommended to 
@@ -45,10 +41,11 @@ class BaseIterativeMaster(BaseMaster):
         self.num_iteration = num_iteration
         
     def __call__(self):
-        """
-        It initializes the workers and then iteratively makes a set of iteration-dependent tasks 
+        r"""Initialize all the workers, then iteratively make a set of iteration-dependent tasks 
         and assign each task to a worker. 
-        After processing results from all workers and iterations, stop them and terminate all processes. 
+        
+        After all workers finish their jobs with results processed and all iterations are completed, 
+        then stop all workers and terminate all processes. 
         """
         # Initialize all workers
         self.initialize_workers()
@@ -63,13 +60,14 @@ class BaseIterativeMaster(BaseMaster):
         self.stop_workers()
         
     def make_tasks(self, iteration):
-        """
-        Returns a set of iteration-dependent tasks.
+        r"""Returns a set of iteration-dependent tasks.
         
         Args:
             iteration (int): the iteration index
             
-        Returns:
-            tasks (list): a list of tasks
+        Returns
+        -------
+        tasks : list
+            a list of tasks
         """
         raise NotImplementedError

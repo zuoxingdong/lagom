@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 from itertools import product
 
@@ -7,48 +9,59 @@ from collections import OrderedDict
 
 
 class Config(object):
-    """
-    It defines the configurations for the experiments
+    r"""Defines the set of configurations for the experiment 
     e.g. hyperparamters, environments/algorithm/logging settings
     
-    All the configurations saved in a OrderedDict, and when there
-    are too many configurations, it is then recommended to divide
-    then into groups by adding tags in the key, e.g. {'network: lr': 1e-3}
+    All the configurations are saved in a ``OrderedDict``, and when there are too 
+    many configurations, it is then recommended to group the key by adding separation 
+    symbol (semicolon, :), e.g. ``{'network:lr': 1e-3}``
     
-    Note that it supports both grid search and random search. 
+    .. note::
     
-    It is recommended to save loggings for each ID with an individual directory. 
-    e.g. top folder 'logs', and subfolders with name as ID number. 
-    This is automatically provided by method in `experiment/run_experiment.py`. 
+        It supports both grid search and random search. 
+    
+    By calling :meth:`make_configs`, it will automatically generation a list of all
+    possible configurations, each associated with a unique ID. In practice, it is also
+    recommended to create an individual directory for each ID. 
     """
     def __init__(self):
         self.config_settings = OrderedDict()
         self.configs = None
         
     def add_item(self, name, val):
-        """
-        Add a single item for the configuration. 
+        r"""Add a single item in the configuration. 
         
         It will be wrapped as a list with single element. 
         
         Args:
             name (str): the name for the configuration item
             val (object): the value for the configuration item
+            
+        Example::
+        
+            >>> add_item(name='env:id', val='CartPole-v1')
+            
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
         self.config_settings[name] = [val]
         
     def add_grid(self, name, val):
-        """
-        Add a list of configurations. 
+        r"""Add a list of configurations. 
         
-        This can be used for grid search. 
-        The auto-config generation will iterate over each element. 
+        .. note::
+        
+            This can be used for grid search. The :meth:`make_configs` will
+            automatically iterate over each element in the list. 
         
         Args:
             name (str): the name for the configuration item
             val (list): a list of configuration items
+        
+        Example::
+        
+            >>> add_grid(name='lr', val=[1e-3, 5e-4, 1e-4])
+            
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
@@ -57,16 +70,25 @@ class Config(object):
         self.config_settings[name] = val
         
     def add_random_discrete(self, name, list_val, num_sample, replace=True):
-        """
-        Add a discrete list of values to sample from. 
+        r"""Add a discrete list of values to sample from. 
         
-        This can be used for random search sampled from given discrete list of items. 
+        .. note::
+        
+            This can be used for random search. The items are sampled from
+            the given list of possible values. 
         
         Args:
             name (str): name of configuration item
-            list_val (list): list of discrete values to sample
+            list_val (list): list of possible values to sample from
             num_sample (int): number of samples
-            replace (bool): If True, then sampling with replacement. Default: True
+            replace (bool, optional): If True, then sampling with replacement. 
+                Default: ``True``
+                
+        Example::
+        
+            >>> add_random_discrete(name='batch_size', list_val=[16, 32, 64], num_sample=2, replace=False)
+            array([64, 32])
+        
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
@@ -76,16 +98,24 @@ class Config(object):
         self.config_settings[name] = samples
         
     def add_random_continuous(self, name, low, high, num_sample):
-        """
-        Add a continuous range to sample from uniformly. 
+        r"""Add a continuous range to sample from. 
         
-        This can be used for random search sampled from a given continuous range. 
+        .. note::
+        
+            This can be used for random search. The items are sampled from
+            the given continuous range. 
         
         Args:
             name (str): name of configuration item
             low (float): lowest value
             high (float): highest value
             num_sample (int): number of samples
+            
+        Example::
+        
+            >>> add_random_continuous(name='entropy_coef', low=0, high=2, num_sample=2)
+            array([0.55075687, 1.7957111 ])
+        
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
@@ -95,15 +125,13 @@ class Config(object):
         self.config_settings[name] = samples
     
     def add_random_eps(self, name, base, low, high, num_sample):
-        """
-        Add a range of very small continuous positive values to sample from
+        r"""Add a range of very small continuous positive values to sample from
         e.g. learning rates
         
-        For numerical stability:
-        http://cs231n.github.io/neural-networks-3/#hyper
+        .. note::
         
-        sample = base**np.random.uniform(low=low, high=high, size=num_sample)
-        e.g. base=10, low=-6, high=0
+            This can be useful to sample very small positive values like learning rate.
+            Because direct uniform sampling leads to `numerical instability`_. 
         
         Args:
             name (str): name of configuration item
@@ -111,6 +139,14 @@ class Config(object):
             low (float): lowest exponent
             high (float): highest exponent
             num_sample (int): number of samples
+            
+        Example::
+        
+            >>> add_random_eps(name='lr', base=10, low=-6, high=0, num_sample=2)
+            array([1.56058072e-03, 2.18785186e-06])
+            
+        .. _numerical instability:
+            http://cs231n.github.io/neural-networks-3/#hyper
         """
         assert name not in self.config_settings, 'The key is already existed. '
         
@@ -120,12 +156,16 @@ class Config(object):
         self.config_settings[name] = samples
     
     def make_configs(self):
-        """
-        Generate a list of combination of configurations
-        i.e. list of OrderedDict, each augmented with a unique ID. 
+        r"""Generate a list of all possible combinations of configurations
         
-        Returns:
-            configs (list): list of configurations
+        .. note::
+        
+            Each combination of configuration will be assigned a unique ID.
+        
+        Returns
+        -------
+        configs : list
+            a list of all possible configurations
         """
         configs = []
         
@@ -147,9 +187,21 @@ class Config(object):
             
         return configs
     
-    def save_configs(self, f):
+    def save_config_settings(self, f):
+        r"""Save the settings of the configurations using pickle.
+        
+        .. note::
+        
+            Using pickle instead of ``numpy.save`` is because it is more convenient
+            and faster for a small dictionary. 
+            
+        Args:
+            f (str): file path to save the dictionary of configuration settings. 
         """
-        Save all generated configurations, an individual file for each configuration
+        pickle.dump()
+    
+    def save_configs(self, f):
+        r"""Save all generated configurations, an individual file for each configuration
         and named by its ID. 
         
         Args:
@@ -160,11 +212,10 @@ class Config(object):
            
     @staticmethod
     def print_config(config):
-        """
-        Helper function to print all items in the given configuration. 
+        r"""Print all items for a given configuration. 
         
         Args:
-            config (dict): Dictionary of configurations. 
+            config (dict): a dictionary of configurations. 
         """
         print(f'{"#":#^50}')
         [print(f'# {key}: {val}') for key, val in config.items()]
@@ -172,14 +223,15 @@ class Config(object):
         
     @staticmethod
     def to_pandas_dataframe(list_config):
-        """
-        Helper function to create a Pandas DataFrame for given list of configurations. 
+        r"""Create a Pandas DataFrame of the given list of configurations. 
         
         Args:
-            list_config (list of dict): A list of configurations, each one is a dictionary. 
+            list_config (list): A list of configurations, each one is a dictionary. 
             
-        Returns:
-            config_dataframe (DataFrame): Pandas DataFrame for list of configurations
+        Returns
+        -------
+        config_dataframe : DataFrame
+            Pandas DataFrame for list of configurations
         """
         # Create a list of DataFrame, each for one configuration
         list_dataframe = [pd.DataFrame([config.values()], columns=config.keys()) for config in list_config]
@@ -196,8 +248,7 @@ class Config(object):
     
     @staticmethod
     def subset_configs(config_dataframe, keyvalues):
-        """
-        Take a subset of given configurations based on the selection criterion for certain key and certain values. 
+        r"""Take a subset of given configurations based on the selection criterion for certain key and certain values. 
         
         For example, we want to select the configuration with seed only in the range of [20, 52, 70], and 
         learning rate in the range of [1e-3, 5e-4, 1e-4], one could do it as following:
@@ -210,8 +261,10 @@ class Config(object):
             keyvalues (dict): A dictionary of subset selection criterion. The keys corresponds to the columns in 
                 the DataFrame. Each value should be a list of considered column values. 
         
-        Returns:
-            subset (DataFrame): selected subset of configurations as DataFrame.
+        Returns
+        -------
+        subset : DataFrame
+            selected subset of configurations as DataFrame.
         """
         assert isinstance(keyvalues, dict), f'expected dict dtype, but got {type(keyvalues)}'
         [isinstance(value, list) for value in keyvalues.values()]
@@ -227,8 +280,7 @@ class Config(object):
             
     @staticmethod
     def partition_IDs(config_dataframe, group_keys):
-        """
-        Reorganize DataFrame of all configurations by grouping some given keys in the combination 
+        r"""Reorganize DataFrame of all configurations by grouping some given keys in the combination 
         of all other keys and provide IDs for each group. 
 
         For example, if we want to plot training loss with different random seeds, although there are
@@ -256,9 +308,12 @@ class Config(object):
             config_dataframe (DataFrame): configuration DataFrame
             group_keys (list): list of keys to group up. 
 
-        Returns:
-            grouped_config (DataFrameGroupby): processed DataFrame
-            transformed_config (DataFrame): useful for Notebook visualization
+        Returns
+        -------
+        grouped_config : DataFrameGroupby
+            processed DataFrame
+        transformed_config : DataFrame
+            useful for Notebook visualization
         """
         assert isinstance(config_dataframe, pd.DataFrame)
         assert 'ID' not in group_keys

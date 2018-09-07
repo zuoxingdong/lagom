@@ -1,42 +1,45 @@
 class BaseES(object):
-    """
-    Base class for evolution strategies. 
+    r"""Base class for all evolution strategies. 
     
-    Note that the optimization should be treated as minimization. 
+    .. note::
     
-    All inherited subclasses should at least implement the following functions:
-    1. ask(self)
-    2. tell(self, solutions, function_values)
-    3. @property: result(self)
+        The optimization is treated as minimization. So if the goal is to maximize rewards, it could
+        be simply formulated as minimize negative rewards. 
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`ask`
+    - :meth:`tell`
+    - :meth:`result`
+    
     """
     def ask(self):
-        """
-        Sample new candidate solutions. 
+        r"""Sample a set of new candidate solutions. 
         
-        Returns:
-            solutions (list/ndarray): sampled candidate solutions
+        Returns
+        -------
+        solutions : list
+            sampled candidate solutions
         """
         raise NotImplementedError
         
     def tell(self, solutions, function_values):
-        """
-        Use the values of objective function evaluated for sampled solutions to prepare for next iteration.
-        i.e. update the parameters of the population. 
+        r"""Update the parameters of the population for a new generation based on the values of the objective
+        function evaluated for sampled solutions. 
         
         Args:
-            solutions (list/ndarray): candidate solutions sampled from ask()
-            function_values (list): objective function values evaluated for sampled solutions
-        Returns:
+            solutions (list/ndarray): candidate solutions returned from :meth:`ask`
+            function_values (list): a list of objective function values evaluated for the sampled solutions.
         """
         raise NotImplementedError
         
     @property
     def result(self):
-        """
-        Return all necessary results after the optimization. 
+        r"""Return a dictionary of all necessary results for the optimization. 
         
-        Returns:
-            results (dict): a dictionary of results. 
-                e.g. ['best_param', 'best_f_val', 'hist_best_param', 'stds']
+        Returns
+        -------
+        results : dict
+            a dictionary of results e.g. ['best_param', 'best_f_val', 'hist_best_param', 'stds']
         """
         raise NotImplementedError
