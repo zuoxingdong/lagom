@@ -6,10 +6,9 @@ from lagom.core.plotter import BasePlot
 
 
 class GridImage(BasePlot):
-    """
-    Generate a grid of images. The images can be iteratively added. 
+    r"""Generate a grid of images. The images can be iteratively added. 
     
-    Examples:
+    Example::
     
         grid = GridImage(ncol=8, padding=5, pad_value=0)
 
@@ -17,12 +16,16 @@ class GridImage(BasePlot):
         grid.add(a)
         grid()
     
-    Reference: 
-        https://github.com/pytorch/vision/blob/master/torchvision/utils.py
-        https://github.com/facebookresearch/visdom/blob/master/py/visdom/__init__.py
+    Reference:
+    
+        * https://github.com/pytorch/vision/blob/master/torchvision/utils.py
+        
+        * https://github.com/facebookresearch/visdom/blob/master/py/visdom/__init__.py
+        
     """
     def __init__(self, ncol=8, padding=2, pad_value=0):
-        """
+        r"""Initialize the grid image.
+        
         Args:
             ncol (int, optional): Number of images to show in each row of the grid. 
                 Final grid size is [N/ncol, ncol]. Default: 8. 
@@ -40,8 +43,7 @@ class GridImage(BasePlot):
         self.x = None
 
     def add(self, x):
-        """
-        Add new data for making grid images. 
+        r"""Add a new data for making grid images. 
         
         Args:
             x (list/ndarray): a list or ndarray of images, with shape either [H, W], [C, H, W] or [N, C, H, W]
@@ -70,14 +72,15 @@ class GridImage(BasePlot):
             self.x = np.concatenate([self.x, x], axis=0)
         
     def __call__(self, **kwargs):
-        """
-        Make grid of images. 
+        r"""Make grid of images. 
         
         Args:
             **kwargs: keyword aguments used to specify the grid of images. 
             
-        Returns:
-            img (Image): grid of image with shape [H, W, C]
+        Returns
+        -------
+        img : Image
+            a grid of image with shape [H, W, C]
         """
         # Total number of images
         N = self.x.shape[0]

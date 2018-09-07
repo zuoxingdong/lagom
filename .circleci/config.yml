@@ -1,0 +1,63 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2  # CircleCI version
+jobs:  # Build-Test-Deplot (BTD) process
+    build:  # a build job
+        docker:  # run with Docker
+            - image: circleci/python:3.6.6  # Python container
+        
+        # CircleCI working directory to run the steps
+        working_directory: ~/project
+        
+        # Perform the job
+        steps:
+            - checkout  # Check out the source code into working directory
+            
+            - restore_cache:  # use saved dependency cache if no change in requirements.txt
+                keys:
+                    - v1-dependencies-{{ checksum "requirements.txt" }}
+                    # fallback to using the latest cache if checksum fails
+                    - v1-dependencies-
+            
+            - run:  # Create Miniconda (faster than Anaconda for CI) and install dependencies
+                name: Install dependencies
+                command: |
+                    # Build virtual environment with Miniconda
+                    sudo apt update  # update system list
+                    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+                    bash miniconda.sh -b -p $HOME/miniconda
+                    export PATH="$HOME/miniconda/bin:$PATH"
+                    hash -r
+                    conda config --set always_yes yes --set changeps1 no
+                    conda update -q conda
+                    conda info -a
+                    conda create -q -n CI -c pytorch python=3.6 numpy mock pytorch-cpu
+                    source activate CI
+                    # Install required dependencies
+                    pip install -r requirements.txt
+                    # Install current project
+                    pip install -e .
+            
+            - save_cache:  # Save dependency cache
+                key: v1-dependencies-{{ checksum "requirements.txt" }}
+                paths:
+                    - ./cache
+            
+            - run:  # Run tests !
+                name: Run tests
+                command: |
+                    # Run test files
+                    pytest test/ -v
+                    # flake8 check for code style and quality
+                    flake8 .
+            
+            - store_artifacts:  # Save artifacts
+                path: artifacts/
+                destination: build
+
+            - store_test_results:  # Upload test results
+                path: test-reports
+                destination: test-reports
+

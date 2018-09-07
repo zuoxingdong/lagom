@@ -4,10 +4,6 @@ from .base_test_function import BaseTestFunction
 
 
 class Rastrigin(BaseTestFunction):
-    """
-    Rastrigin test objective function for optimization
-    https://en.wikipedia.org/wiki/Test_functions_for_optimization
-    """
     def __init__(self):
         self.search_domain = [-5.12, 5.12]
     

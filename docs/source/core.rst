@@ -104,6 +104,9 @@ Plotter
 .. autoclass:: GridImage
     :members:
     
+.. autoclass:: ImageViewer
+    :members:
+    
 Policies
 ----------------------
 

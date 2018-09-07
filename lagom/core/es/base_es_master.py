@@ -2,19 +2,20 @@ from lagom.core.multiprocessing import BaseIterativeMaster
 
 
 class BaseESMaster(BaseIterativeMaster):
-    """
-    Base class for master of parallelized evolution strategies (ES). 
+    r"""Base class for the master of parallelized evolution strategies (ES). 
     
     It internally defines an ES algorithm. 
-    In each generation, it distributes all sampled solution candidates, each for one worker,
-    to compute a list of object function values and then update the ES. 
+    For each generation (iteration in master), it samples a set of solution candidates each assigned to
+    an individual :class:`BaseESWorker`, all the workers will compute the value of the object function
+    and send them back to the master. Then the master does an ES update. 
     
-    For more details about how master class works, please refer
-    to the documentation of the class, BaseIterativeMaster. 
+    See :class:`BaseIterativeMaster` for more details about the iterative master. 
     
-    All inherited subclasses should at least implement the following function:
-    1. make_es(self)
-    2. _process_es_result(self, result)
+    The subclass should implement at least the following:
+    
+    - :meth:`make_es`
+    - :meth:`_process_es_result`
+    
     """
     def __init__(self,
                  num_iteration, 
@@ -33,17 +34,21 @@ class BaseESMaster(BaseIterativeMaster):
         assert self.es.popsize == self.num_worker
         
     def make_es(self):
-        """
-        User-defined function to create an ES algorithm. 
+        r"""Create an ES algorithm. 
         
-        Returns:
-            es (BaseES): An instantiated object of an ES class. 
+        Returns
+        -------
+        es : BaseES
+            an instantiated object of an ES class. 
             
-        Examples:
-            cmaes = CMAES(mu0=[3]*100, 
-                          std0=0.5, 
-                          popsize=12)
-            return cmaes
+        Example::
+        
+            def make_es(self):
+                cmaes = CMAES(mu0=[3]*100, 
+                              std0=0.5, 
+                              popsize=12)
+                return cmaes
+                
         """
         raise NotImplementedError
 
@@ -75,19 +80,22 @@ class BaseESMaster(BaseIterativeMaster):
         self._process_es_result(result)
             
     def _process_es_result(self, result):
-        """
-        User-defined function to process the result from ES. 
+        r"""Processes the results from one update of the ES. 
         
-        Note that the user can use the class memeber `self.generation` which indicate the index of
-        the current generation, it is automatically incremented each time when sample a set of
-        solution candidates. 
+        .. note::
+        
+            One can make use of the attribute :attr:`generation` for the current generation number. 
+            It is automatically incremented for each iteration of the master when a new set of solution
+            candidates is sampled.
         
         Args:
-            result (dict): A dictionary of result returned from es.result. 
+            result (dict): A dictionary of result returned from ``es.result``. 
             
-        Examples:
+        Example::
+        
             best_f_val = result['best_f_val']
             if self.generation == 0 or (self.generation+1) % 100 == 0:
                 print(f'Best function value at generation {self.generation+1}: {best_f_val}')
+                
         """
         raise NotImplementedError

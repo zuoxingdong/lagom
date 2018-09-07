@@ -4,8 +4,7 @@ from .base_transform import BaseTransform
 
 
 class RunningMeanStd(BaseTransform):
-    """
-    Online algorithm for estimating sample mean and standard deviation
+    r"""Online algorithm for estimating sample mean and standard deviation
     
     https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
     """
@@ -19,8 +18,7 @@ class RunningMeanStd(BaseTransform):
         self.dtype = dtype
         
     def __call__(self, x):
-        """
-        Update the mean and variance given an additional data. 
+        r"""Update the mean and variance given an additional data. 
         
         Note that the additional data is supported for both scalar, vector or multidimensional array
         For scalar: a single scalar value
@@ -70,9 +68,7 @@ class RunningMeanStd(BaseTransform):
 
     @property
     def mu(self):
-        """
-        Running mean
-        """
+        r"""Running mean"""
         if self.dtype == 'list':
             return self.mean.squeeze().astype(np.float32).tolist()  # enforce raw float dtype
         elif self.dtype == 'ndarray':
@@ -80,9 +76,7 @@ class RunningMeanStd(BaseTransform):
         
     @property
     def sigma(self):
-        """
-        Running standard deviation
-        """
+        r"""Running standard deviation"""
         if self.dtype == 'list':
             return np.sqrt(self.var).squeeze().astype(np.float32).tolist()  # enforce raw float dtype
         elif self.dtype == 'ndarray':
@@ -90,7 +84,5 @@ class RunningMeanStd(BaseTransform):
     
     @property
     def n(self):
-        """
-        Number of samples
-        """
+        r"""Number of samples"""
         return self.N
