@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 import numpy as np
 import random
@@ -86,8 +88,11 @@ def pickle_load(f):
         ``np.load`` because it is often much slower. 
         
     Args:
-        f (str): file path
+        f (str/Path): file path
     """
+    if isinstance(f, Path):
+        f = f.as_posix()
+
     with open(f, 'rb') as file:
         return cloudpickle.load(file)
 
@@ -107,9 +112,12 @@ def pickle_dump(obj, f, ext='.pkl'):
     
     Args:
         obj (object): a serializable object
-        f (str): file path
+        f (str/Path): file path
         ext (str, optional): file extension. Default: .pkl
     """
+    if isinstance(f, Path):
+        f = f.as_posix()
+    
     with open(f+ext, 'wb') as file:
         return cloudpickle.dump(obj=obj, file=file, protocol=pickle.HIGHEST_PROTOCOL)
     
@@ -128,8 +136,11 @@ def yaml_load(f):
         ``np.save`` because it is often much slower. 
     
     Args:
-        f (str): file path
+        f (str/Path): file path
     """
+    if isinstance(f, Path):
+        f = f.as_posix()
+    
     with open(f, 'r') as file:
         return yaml.load(file)
     
@@ -157,9 +168,12 @@ def yaml_dump(obj, f, ext='.yml'):
         
     Args:
         obj (object): a serializable object
-        f (str): file path
+        f (str/Path): file path
         ext (str, optional): file extension. Default: .yml
     """
+    if isinstance(f, Path):
+        f = f.as_posix()
+    
     # Create representer to preserve the order of dict
     # TODO: remove it when PyYAML supports it officially. 
     tag = 'tag:yaml.org,2002:map'
