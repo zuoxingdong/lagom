@@ -15,11 +15,12 @@ class BaseAlgorithm(object):
         """
         self.name = name
         
-    def __call__(self, config):
-        r"""Run the algorithm with given configuration. 
+    def __call__(self, config, seed):
+        r"""Run the algorithm with a configuration and a random seed. 
         
         Args:
-            config (OrderedDict): dictionary of configurations
+            config (dict): a dictionary of configuration items
+            seed (int): a random seed to run the algorithm
             
         Returns
         -------

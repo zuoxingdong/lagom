@@ -7,7 +7,7 @@ lagom.experiment
 Config
 ----------------------------------
 
-.. autoclass:: Config
+.. autoclass:: Configurator
     :members:
     
 Experiment Master
