@@ -4,21 +4,32 @@ from lagom.core.multiprocessing import BaseWorker
 
 
 class BaseExperimentWorker(BaseWorker):
-    """
-    Base class of the worker for parallelized experiment. 
+    r"""Base class for the worker of parallelized experiment. 
     
-    For details about worker in general, please refer to 
-    the documentation of the class, BaseWorker. 
+    It executes the algorithm with the configuration and random seed which are distributed by the master. 
     
-    All inherited subclasses should at least implement the following functions:
-    1. make_algo(self)
+    .. note::
+    
+        If the configuration indicates to use GPU (i.e. ``config['cuda']=True``), then each worker will
+        assign a specific CUDA device for PyTorch in rolling manner. Concretely, if there are 5 GPUs
+        available and the master assigns 30 workers in current iteration, then each GPU will be assigned
+        by 6 workers. The GPU is chosen by the worker ID modulus total number of GPUs. In other words, the 
+        workers iterate over all GPUs in rolling manner trying to use all GPUs exhaustively for maximal speedup. 
+    
+    See :class:`BaseWorker` for more details about the workers.
+    
+    The subclass should implement at least the following:
+
+    - :meth:`make_algo`
+    
     """
     def work(self, master_cmd):
-        task_id, task, seed = master_cmd
+        task_id, task, _worker_seed = master_cmd
+        # Do not use the worker seed
+        # Use seed packed inside task instead
         
-        # Don't use this seed
-        # Set seed inside config
-        config = task
+        # Unpack task
+        config, seed = task
         
         # Assign a GPU card for this task, rolling with total number of GPUs
         # e.g. we have 30 tasks and 5 GPUs, then each GPU will be assigned with 6 tasks
@@ -33,16 +44,17 @@ class BaseExperimentWorker(BaseWorker):
         # Instantiate an algorithm
         algo = self.make_algo()
         
-        # Run the algorithm with given configuration
-        result = algo(config)
+        # Run the algorithm with given configuration and seed
+        result = algo(config, seed)
         
         return task_id, result
     
     def make_algo(self):
-        """
-        User-defined function to create an algorithm object. 
+        r"""Returns an instantiated object of an Algorithm class. 
         
-        Returns:
-            algo (Algorithm): instantiated algorithm object. 
+        Returns
+        -------
+        algo : BaseAlgorithm
+            an instantiated object of an Algorithm class. 
         """
         raise NotImplementedError
