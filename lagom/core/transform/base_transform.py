@@ -6,13 +6,7 @@ class BaseTransform(object):
     
     .. note::
     
-        All inherited class should support only scalar value or 1-dim vector. 
-        Because it has much higher risk to introduce bugs with larger dimensionality. 
-    
-    It is recommended to convert all numpy processed data to type, np.float32
-    becuase it is more compatible with PyTorch. Numpy default float64 often 
-    can lead to numerical issues or raised exceptions in PyTorch. Similarly
-    for np.int32. 
+        All numpy processed data should be of dtype, np.int32 or np.float32, for PyTorch compatibility. 
     
     The subclass should implement at least the following:
     
@@ -20,10 +14,10 @@ class BaseTransform(object):
     
     """
     def __call__(self, x):
-        r"""Transform the input data
+        r"""Transform the input data. 
         
         Args:
-            x (scalar/list/ndarray): input data
+            x (object): input data
             
         Returns
         -------
@@ -32,35 +26,21 @@ class BaseTransform(object):
         """
         raise NotImplementedError
         
-    def make_input(self, x):
-        r"""Conver the input as scalar or 1-dim ndarray
-        
-        1. scalar: retain the same
-        2. list: convert to 1-dim ndarray with shape [D]
+    def to_numpy(self, x, dtype):
+        r"""Converts the input data to numpy dtype with PyTorch compatibility. 
         
         Args:
-            x (scalar/list/ndarray): input data
+            x (object): input data
+            dtype (dtype): data type with PyTorch compatibility, e.g. np.int32, np.float32
             
         Returns
         -------
-        x : ndarray
-            converted data
+        out : ndarray
+            converted data with numpy dtype
         """
-        # Enforce tuple becomes list
-        if isinstance(x, tuple):
-            x = list(x)
+        # Make array type
+        x = np.asarray(x)
+        # Convert dtype
+        x = x.astype(dtype)
         
-        if np.isscalar(x) or isinstance(x, (list, np.ndarray)):  # scalar, list or ndarray
-            x = np.array(x)
-            # Convert to type of int32 or float32 with compatibility to PyTorch
-            if x.dtype == np.int:
-                x = x.astype(np.int32)
-            elif x.dtype == np.float:
-                x = x.astype(np.float32)
-
-            if x.ndim <= 1:
-                return x
-            else:
-                raise ValueError('Only scalar or 1-dim vector are supported. ')
-        else:
-            raise TypeError('Only following types are supported: scalar, list, ndarray. ')
+        return x

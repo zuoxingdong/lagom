@@ -8,40 +8,58 @@ from .spaces import Box
 
 
 class EnvSpec(object):
-    """
-    Create specifications of the environment. 
+    r"""Summarize the specifications of the environment. 
     
-    Currently supported:
-    - observation_space: observation space
-    - action_space: action space
-    - T: maximum allowed horizon
-    - max_episode_reward: maximum episode reward
-    - control_type: 'Discrete' or 'Continuous' control
+    It collects useful properties of an environment which can be very convenient for
+    designing generic APIs to train RL agents, such as observation and action spaces, 
+    maximum allowed horizon, discrete or continuous control type etc. 
     """
     def __init__(self, env):
-        if not isinstance(env, (Env, VecEnv)):
-            raise TypeError('The object env must be of type lagom Env or VecEnv.')
+        r"""Initialize the environment specification. 
+        
+        Args:
+            env (Env/VecEnv): an environment object. 
+        """
+        assert isinstance(env, (Env, VecEnv)), f'expected Env or VecEnv dtype, got {type(env)}'
         
         self.env = env
     
     @property
-    def T(self):
-        return self.env.T
-    
-    @property
-    def max_episode_reward(self):
-        return self.env.max_episode_reward
-        
-    @property
     def observation_space(self):
+        r"""Returns the observation space of the environment. """
         return self.env.observation_space
     
     @property
     def action_space(self):
+        r"""Returns the action space of the environment. """
         return self.env.action_space
     
     @property
+    def T(self):
+        r"""Returns the maximum horizon of the environment. """
+        return self.env.T
+    
+    @property
+    def max_episode_reward(self):
+        r"""Returns the maximum episodic rewards of the environment. """
+        return self.env.max_episode_reward
+    
+    @property
+    def reward_range(self):
+        r"""Returns a tuple of min and max possible rewards. """
+        return self.env.reward_range
+    
+    @property
     def control_type(self):
+        r"""Returns a string to indicate if the environment is discrete or continuous control. 
+        
+        It returns one of the following strings:
+        
+        * 'Discrete': if the action space is of type :class:`Discrete`
+        
+        * 'Continuous': if the action space is of type :class:`Box`
+        
+        """
         if isinstance(self.env.action_space, Discrete):
             return 'Discrete'
         elif isinstance(self.env.action_space, Box):

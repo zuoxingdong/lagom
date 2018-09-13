@@ -4,36 +4,82 @@ from .base_transform import BaseTransform
 
 
 class RunningMeanStd(BaseTransform):
-    r"""Online algorithm for estimating sample mean and standard deviation
+    r"""Estimates sample mean and standard deviation by using `Chan's method`_. 
     
-    https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+    .. note::
+    
+        It supports for both scalar and high-dimensional data. If input data is a scalar
+        value or a single vector of values, then it would be treated as a batch with the
+        batch size :math:`1`. Otherwise, the first dimension will always be treated as
+        batch dimension. Note that there is an ambiguity of a single vector of values, it
+        can be either a batch of scalars or a single high-dimensional data, here it is treated
+        as a batch of scalars, so for the latter case, the user has to add a batch dimension
+        before feeding such data. 
+    
+    .. warning::
+    
+        The internal batched mean and variance are calculated over the first dimension. This allows
+        to deal with batched data with shape ``[N, ...]`` where ``N`` is the batch size.
+    
+    Example::
+    
+        >>> runningavg = RunningMeanStd()
+        >>> [runningavg(i) for i in [1, 2, 3, 4]]
+        >>> runningavg.mu
+        array(2.5, dtype=float32)
+        
+        >>> runningavg.sigma
+        array(1.118034, dtype=float32)
+        
+        >>> runningavg = RunningMeanStd()
+        >>> runningavg([[1, 4], [2, 3], [3, 2], [4, 1]])
+        >>> runningavg.mu
+        array([2.5, 2.5], dtype=float32)
+        
+        >>> runningavg.sigma
+        array([1.118034, 1.118034], dtype=float32)
+    
+    .. _Chan's method:
+        https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+        
     """
-    def __init__(self, dtype='list'):
+    def __init__(self):
         self.mean = None
         self.var = None
+        self.shape = None  # maintain the identical shape
         self.N = 0
-        
-        # dtype to output mu and sigma
-        # Possible: ['list', 'ndarray']
-        self.dtype = dtype
         
     def __call__(self, x):
         r"""Update the mean and variance given an additional data. 
         
-        Note that the additional data is supported for both scalar, vector or multidimensional array
-        For scalar: a single scalar value
-        For vector: a sequence of scalar values. 
-        For multidimensional array: first dimension is batch size, the batch regarded as a sequence. 
+        Args:
+            x (object): additional data to update the estimation of mean and standard deviation. 
         """
-        # Make input as batched shape
-        x = self.make_input(x)
+        # Convert input to ndarray
+        x = self.to_numpy(x, np.float32)
         
-        # Compute mean and variance over the batch size
-        batch_mean = np.mean(x, axis=0)
-        batch_var = np.var(x, axis=0)
+        # Store the original data shape, useful for returning mu and sigma with idential shape
+        # Only for first time that data comes in, so assume all data flow with same shape
+        if self.shape is None:
+            if x.ndim == 0 or x.ndim == 1:  # scalar or vector of scalars
+                self.shape = ()
+            else:  # >=2 dimensions, first dimension is batch dimension
+                self.shape = x.shape[1:]
+        
+        # Make data as batch
+        if x.ndim == 0:  # scalar: to shape [1, 1]
+            x = x.reshape([1, 1])
+        elif x.ndim == 1:  # single vector: to shape [N, 1]
+            x = np.expand_dims(x, axis=1)
+        assert x.ndim >= 2
+        
+        # Compute batch mean and variance over first dimension
+        # Keep the original dimension
+        batch_mean = x.mean(0, keepdims=True)
+        batch_var = x.var(0, keepdims=True)
         batch_N = x.shape[0]
         
-        # Compute the updated mean, variance
+        # Update mean and variance
         if self.mean is None or self.var is None:  # Initialize mean and variance
             new_mean = batch_mean
             new_var = batch_var
@@ -54,35 +100,24 @@ class RunningMeanStd(BaseTransform):
         self.mean = new_mean
         self.var = new_var
         self.N = new_N
-        
-    def make_input(self, x):
-        # Enforce ndarray type
-        x = np.array(x)
-        
-        if x.ndim == 0:  # scalar value: convert to shape [1, 1]
-            x = x.reshape([1, 1])
-        elif x.ndim == 1:  # vector: sequence of values, add scalar data dimension [N, 1] forming a batch
-            x = np.expand_dims(x, axis=1)
-            
-        return x
 
     @property
     def mu(self):
-        r"""Running mean"""
-        if self.dtype == 'list':
-            return self.mean.squeeze().astype(np.float32).tolist()  # enforce raw float dtype
-        elif self.dtype == 'ndarray':
-            return self.mean.squeeze().astype(np.float32)
+        r"""Returns the current running mean. """
+        if self.mean is None:
+            return None
+        else:
+            return self.mean.reshape(self.shape)
         
     @property
     def sigma(self):
-        r"""Running standard deviation"""
-        if self.dtype == 'list':
-            return np.sqrt(self.var).squeeze().astype(np.float32).tolist()  # enforce raw float dtype
-        elif self.dtype == 'ndarray':
-            return np.sqrt(self.var).squeeze().astype(np.float32)
+        r"""Returns the current running standard deviation. """
+        if self.var is None:
+            return None
+        else:
+            return np.sqrt(self.var).reshape(self.shape)
     
     @property
     def n(self):
-        r"""Number of samples"""
+        r"""Returns the total number of samples so far. """
         return self.N

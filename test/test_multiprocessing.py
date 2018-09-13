@@ -66,7 +66,8 @@ class TestMultiprocessing(object):
     def test_seeder(self):
         seeder = Seeder(init_seed=0)
         
-        assert np.random.get_state()[1][0] == 0
+        assert seeder.rng.get_state()[1][0] == 0
+        assert np.random.get_state()[1][20] != seeder.rng.get_state()[1][20]
         
         assert len(seeder(size=1)) == 1
         

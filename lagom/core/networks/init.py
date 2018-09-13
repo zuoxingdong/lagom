@@ -20,8 +20,9 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
     
     Example::
     
-    >> a = nn.Linear(2, 3)
-    >> ortho_init(a)
+        >>> a = nn.Linear(2, 3)
+        >>> ortho_init(a)
+    
     """
     # Get the gain (scaling factor)
     if nonlinearity is not None:  # based on nonlinearity

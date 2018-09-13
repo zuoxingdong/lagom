@@ -1,32 +1,39 @@
 import numpy as np
 
-from lagom.envs.vec_env import VecEnv
+from .vec_env import VecEnv
 
 
 class SerialVecEnv(VecEnv):
-    """
-    Run vectorized environment serially. 
+    r"""A vectorized environment runs serially for each sub-environment. 
     
-    Note that it is recommended to use this environment only if step() in the environment
-    needs very few computation, otherwise it will be slower than doing it parallelly. For 'slow' environment, 
-    it is recommended to use ParallelVecEnv instead. 
+    For each :meth:`step` and :meth:`reset`, the command is executed in one sub-environment
+    at a time. 
     
-    Examples:
-        def make_env():
-            env = gym.make('CartPole-v0')
-            env = GymEnv(env)
-
-            return env
-
-        env = SerialVecEnv([make_env]*5)
-        env.reset()
-        for _ in range(100):
-            env.step([0]*5)
+    .. note::
+    
+        It is recommended to use this if the simulator is very fast. In this case, :class:`ParallelVecEnv`
+        would have too much computation overheads which might even slow down the speed.
+        However, if the simulator is very computationally expensive, one should use
+        :class:`ParallelVecEnv` instead. 
+    
+    Example::
+    
+        >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0)
+        >>> env = SerialVecEnv(list_make_env=list_make_env)
+        >>> env
+        <SerialVecEnv: CartPole-v1, n: 3>
+        
+        >>> env.reset()
+        [array([-0.04002427,  0.00464987, -0.01704236, -0.03673052]),
+         array([ 0.00854682,  0.00830137, -0.03052506,  0.03439879]),
+         array([0.00025361, 0.02915667, 0.01103413, 0.04977449])]
+    
     """
     def __init__(self, list_make_env):
-        """
+        r"""Initialize the vectorized environment. 
+        
         Args:
-            list_make_env (list): list of functions to generate an environment. 
+            list_make_env (list): a list of functions to generate environments. 
         """
         # Create list of environments
         self.list_env = [make_env() for make_env in list_make_env]
@@ -35,21 +42,26 @@ class SerialVecEnv(VecEnv):
         super().__init__(list_make_env=list_make_env, 
                          observation_space=self.list_env[0].observation_space, 
                          action_space=self.list_env[0].action_space)
+        assert len(self.list_env) == self.num_env
         
     def step_async(self, actions):
-        # Record current actions
-        self.actions = actions
+        assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
+
+        self.actions = actions  # Record as current actions
         
     def step_wait(self):
-        # Execute the recorded actions, each for one environment
+        # Result buffers
         observations = []
         rewards = []
         dones = []
         infos = []
+        
+        # Execute the recorded actions for each environment
         for env, action in zip(self.list_env, self.actions):
             observation, reward, done, info = env.step(action)
             
-            # If episode terminates, reset the environment and record initial observation in info
+            # If episode terminates, reset this environment and record initial observation in info
+            # because terminal observation is still useful, one might needs it to train value function
             if done:
                 init_observation = env.reset()
                 info['init_observation'] = init_observation
@@ -68,28 +80,20 @@ class SerialVecEnv(VecEnv):
         
         return observations
     
-    def render(self, mode='human'):
-        # Render all the environments and return rendered images
-        imgs = [env.render(mode='rgb_array') for env in self.list_env]
-        
-        return imgs
+    def get_images(self):
+        return [env.render(mode='rgb_array') for env in self.list_env]
     
-    def close(self):
-        # Close all the environments
-        [env.close() for env in self.list_env]
-        
-    def seed(self, seeds):
-        # Seed all the environments with given seeds
-        [env.seed(seed) for env, seed in zip(self.list_env, seeds)]
-        
+    def close_extras(self):
+        return [env.close() for env in self.list_env]
+    
     @property
     def T(self):
-        all_T = [env.T for env in self.list_env]
-        
-        return all_T
+        return self.list_env[0].T
     
     @property
     def max_episode_reward(self):
-        all_max_episode_reward = [env.max_episode_reward for env in self.list_env]
-        
-        return all_max_episode_reward
+        return self.list_env[0].max_episode_reward
+    
+    @property
+    def reward_range(self):
+        return self.list_env[0].reward_range

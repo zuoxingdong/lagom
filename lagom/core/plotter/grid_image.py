@@ -80,7 +80,7 @@ class GridImage(BasePlot):
         Returns
         -------
         img : Image
-            a grid of image with shape [H, W, C]
+            a grid of image with shape [H, W, C] and dtype ``np.uint8``
         """
         # Total number of images
         N = self.x.shape[0]

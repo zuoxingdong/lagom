@@ -1,6 +1,14 @@
 import numpy as np
+
 import pyglet
-import pyglet.gl as gl
+
+try:
+    from pyglet.gl import *
+except Exception:
+    msg1 = '1. make sure OpenGL is installed by running `sudo apt install python-opengl`. \n'
+    msg2 = '2. if you are on a server, then create a fake screen with xvfb-run and make sure nvidia driver '
+    msg3 = 'is installed with --no-opengl-files and cuda with --no-opengl-libs'
+    raise ImportError(msg1+msg2+msg3) from None
 
 
 class ImageViewer(pyglet.window.Window):

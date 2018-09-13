@@ -75,10 +75,6 @@ def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_wor
     
     # Create path to log directory defined in the configuration
     log_path = Path(experiment.configs[0]['log.dir'])
-    
-    
-    
-    
     if not log_path.exists():  # Make directory if it does not exist
         log_path.mkdir(parents=True)  # create recursively for all missing directories
     else:  # already existed, ask user whether to remove old logs

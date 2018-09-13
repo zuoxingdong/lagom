@@ -4,19 +4,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.distributions import Categorical, Normal
+from torch.distributions import Categorical
+from torch.distributions import Normal
 
 from .base_network import BaseNetwork
 
-####################
-# TODO: update
-# - do not overwrite __init__
-# - put everything in make_params
-# - in example, use make_fc/make_cnn
 
 class BaseMDN(BaseNetwork):
-    """
-    Base class for mixture density networks (we use Gaussian mixture). 
+    r"""Base class for Mixture Density Networks (we use Gaussian mixture). 
     
     This class defines the mixture density networks using isotropic Gaussian densities. 
     
@@ -26,150 +21,140 @@ class BaseMDN(BaseNetwork):
     Specifically, their dimensions are following, given N is batch size, K is the number of densities
     and D is the data dimension
     
-    - mixing coefficients: [N, K, D]
-    - mean: [N, K, D]
-    - variance: [N, K, D]
+    - mixing coefficients: ``[N, K, D]``
+    - mean: ``[N, K, D]``
+    - variance: ``[N, K, D]``
     
-    Note that if subclass overrides __init__, remember to provide
-    keywords aguments, i.e. **kwargs passing to super().__init__. 
+    The subclass should implement at least the following:
+
+    - :meth:`make_feature_layers`
+    - :meth:`make_mdn_heads`
+    - :meth:`init_params`
+    - :meth:`feature_forward`
     
-    All inherited subclasses should at least implement the following functions:
-    1. make_feature_layers(self, config)
-    2. make_mdn_heads(self, config)
-    3. init_params(self, config)
-    4. feature_forward(self, x)
     
-    Examples:
+    Example::
     
-    class MDN(BaseMDN):
-        def make_feature_layers(self, config):
-            fc1 = nn.Linear(in_features=1, out_features=15)
-            fc2 = nn.Linear(in_features=15, out_features=15)
+        class MDN(BaseMDN):
+            def make_feature_layers(self, config):
+                out = make_fc(input_dim=1, hidden_sizes=[15, 15])
+                last_dim = 15
 
-            feature_layers = nn.ModuleList([fc1, fc2])
+                return out, last_dim
 
-            return feature_layers
+            def make_mdn_heads(self, config, last_dim):
+                out = {}
 
-        def make_mdn_heads(self, config):
-            unnormalized_pi_head = nn.Linear(in_features=15, out_features=20*1)
-            mu_head = nn.Linear(in_features=15, out_features=20*1)
-            logvar_head = nn.Linear(in_features=15, out_features=20*1)
+                num_density = 20
+                data_dim = 1
 
-            num_densities = 20
-            data_dim = 1
+                out['unnormalized_pi_head'] = nn.Linear(in_features=last_dim, out_features=num_density*data_dim)
+                out['mu_head'] = nn.Linear(in_features=last_dim, out_features=num_density*data_dim)
+                out['logvar_head'] = nn.Linear(in_features=last_dim, out_features=num_density*data_dim)
+                out['num_density'] = num_density
+                out['data_dim'] = data_dim
 
-            return unnormalized_pi_head, mu_head, logvar_head, num_densities, data_dim
+                return out
 
-        def init_params(self, config):
-            for module in self.feature_layers:
-                gain = nn.init.calculate_gain('tanh')
+            def init_params(self, config):
+                for layer in self.feature_layers:
+                    ortho_init(layer, nonlinearity='tanh', weight_scale=1.0, constant_bias=0.0)
 
-                nn.init.orthogonal_(module.weight, gain=gain)
-                nn.init.constant_(module.bias, 0.0)
+                ortho_init(self.unnormalized_pi_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+                ortho_init(self.mu_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+                ortho_init(self.logvar_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
 
-            nn.init.orthogonal_(self.unnormalized_pi_head.weight, gain=gain)
-            nn.init.constant_(self.unnormalized_pi_head.bias, 0.0)
+            def feature_forward(self, x):
+                for layer in self.feature_layers:
+                    x = torch.tanh(layer(x))
 
-            nn.init.orthogonal_(self.mu_head.weight, gain=gain)
-            nn.init.constant_(self.mu_head.bias, 0.0)
-
-            nn.init.orthogonal_(self.logvar_head.weight, gain=gain)
-            nn.init.constant_(self.logvar_head.bias, 0.0)
-
-        def feature_forward(self, x):
-            for module in self.feature_layers:
-                x = torch.tanh(module(x))
-
-            return x
-    """
-    def __init__(self, config=None, **kwargs):
-        # Override this constructor
-        super(BaseNetwork, self).__init__()  # call nn.Module.__init__()
-        
-        self.config = config
-        
-        # Set all keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
-        
+                return x
+    
+    """    
+    def make_params(self, config):
         # Create feature layers
-        self.feature_layers = self.make_feature_layers(self.config)
+        self.feature_layers, self.last_dim = self.make_feature_layers(config)
         assert isinstance(self.feature_layers, nn.ModuleList)
-        # Create MDN heads for unnormalized pi (mixing coeffcients), mean and log-variance
-        # Note that log operation allows to optimize including negative values,
-        # though variance must be non-negative
-        out_heads = self.make_mdn_heads(self.config)
-        self.unnormalized_pi_head, self.mu_head, self.logvar_head = out_heads[:3]
-        self.num_densities, self.data_dim = out_heads[3:]
+        assert isinstance(self.last_dim, int)
+        
+        # Create MDN heads: unnormalized pi, mean and log-variance
+        # also returns number of densities and data dimension
+        out_heads = self.make_mdn_heads(self.config, last_dim=self.last_dim)
+        assert isinstance(out_heads, dict) and len(out_heads) == 5
+        # unpack
+        self.unnormalized_pi_head = out_heads['unnormalized_pi_head']
+        self.mu_head = out_heads['mu_head']
+        self.logvar_head = out_heads['logvar_head']
+        self.num_density = out_heads['num_density']
+        self.data_dim = out_heads['data_dim']
+        # sanity check
         assert isinstance(self.unnormalized_pi_head, nn.Module)
         assert isinstance(self.mu_head, nn.Module)
         assert isinstance(self.logvar_head, nn.Module)
-        assert isinstance(self.num_densities, int)
+        assert isinstance(self.num_density, int)
         assert isinstance(self.data_dim, int)
-        
-        # User-defined function to initialize all created parameters
-        self.init_params(self.config)
-        
-    def make_params(self, config):
-        # Not used, since we have additional user-defined functions for encoder/decoder
-        pass
     
     def make_feature_layers(self, config):
-        """
-        User-defined function to create the parameters for all the feature layers. 
+        r"""Create and return the parameters for all the feature layers. 
         
-        Note that it must return a ModuleList, otherwise they cannot be tracked by PyTorch. 
+        .. note::
         
+            For being able to track the parameters automatically, a ``nn.ModuleList`` should
+            be returned. Also the dimension of last feature should also be returned.
+            
         Args:
-            config (Config): configurations
+            config (dict): a dictionary of configurations. 
             
-        Returns:
-            feature_layers (nn.ModuleList): ModuleList of feature layers
-            
-        Examples:
-            TODO:
+        Returns
+        -------
+        out : ModuleList
+            a ModuleList of feature layers. 
+        last_dim : int
+            the dimension of last feature
         """
         raise NotImplementedError
+
+    def make_mdn_heads(self, config, last_dim):
+        r"""Create and returns all parameters/layers for MDN heads. 
         
-    def make_mdn_heads(self, config):
-        """
-        User-defined function to create all the parameters (layers) for heads of
-        unnormalized pi (mixing coefficient), mu and logvar. Note that they should
-        output dimensions, K*D, where K is the number of densities and D is 
-        the data dimensions. 
+        It includes the following:
         
-        Note that it must return a ModuleList, otherwise they cannot be tracked by PyTorch. 
+        * ``unnormalized_pi_head pi``: a Module for mixing coefficient with output shape :math:`K\times D`
+        * ``mu_head``: a Module for mean of Gaussian with output shape :math:`K\times D`
+        * ``logvar_head``: a Module for log-variance of Gaussian with output shape :math:`K\times D`
+        * ``num_density``: an integer :math:`K` number of densities
+        * ``data_dim``: an integer :math:`D` dimension of data
+        
+        .. note::
+        
+            A dictionary of all created modules should be returned with the keys
+            as their names. 
         
         Args:
-            config (Config): configurations
+            config (dict): a dictionary of configurations. 
+            last_dim (int): last feature dimension helps to define layers for MDN heads. 
             
-        Returns:
-            unnormalized_pi_head (nn.Module): A module for un-normalized pi (mixing coefficients). 
-            mu_head (nn.Module): A module for mean head. 
-            logvar_head (nn.Module): A module for log-variance head. 
-            num_densities (int): number of densities
-            data_dim (int): data dimension
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : dict
+            a dictionary of required output described above. 
         """
         raise NotImplementedError
         
     def feature_forward(self, x):
-        """
-        User-defined function to define forward pass of feature layers, before MDN heads. 
+        r"""Defines forward pass of feature layers, before MDN heads. 
         
-        It should use the class member, self.feature_layers, 
-        which is a ModuleList consisting of all defined parameters (layers). 
+        .. note::
+        
+            It should use the class member ``self.feature_layers`` (a ModuleList). 
         
         Args:
             x (Tensor): input tensor
             
-        Returns:
-            x (Tensor): feature tensor before the MDN heads. 
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : Tensor
+            feature tensor before MDN heads
         """
         raise NotImplementedError
         
@@ -180,7 +165,7 @@ class BaseMDN(BaseNetwork):
         # Forward pass through the head of unnormalized pi (mixing coefficient)
         unnormalized_pi = self.unnormalized_pi_head(x)
         # Convert to tensor with shape [N, K, D]
-        unnormalized_pi = unnormalized_pi.view(-1, self.num_densities, self.data_dim)
+        unnormalized_pi = unnormalized_pi.view(-1, self.num_density, self.data_dim)
         # Enforce each of coefficients are non-negative and summed up to 1
         # Note that it's LogSoftmax to compute numerically stable loss via log-sum-exp trick
         log_pi = F.log_softmax(unnormalized_pi, dim=1)
@@ -188,70 +173,107 @@ class BaseMDN(BaseNetwork):
         # Forward pass through mean head
         mu = self.mu_head(x)
         # Convert to tensor with shape [N, K, D]
-        mu = mu.view(-1, self.num_densities, self.data_dim)
+        mu = mu.view(-1, self.num_density, self.data_dim)
         
         # Forward pass through log-variance head
         logvar = self.logvar_head(x)
         # Convert to tensor with shape [N, K, D]
-        logvar = logvar.view(-1, self.num_densities, self.data_dim)
+        logvar = logvar.view(-1, self.num_density, self.data_dim)
         # Retrieve std from logvar
         # For numerical stability: exp(0.5*logvar)
+        # TODO: support softplus option, see `GaussianPolicy` class
         std = torch.exp(0.5*logvar)
         
         return log_pi, mu, std
     
-    def _calculate_batched_logprob(self, mu, std, x):
-        """
-        Calculate the log-probabilities for each data sampled by each density component. 
+    def calculate_batched_logprob(self, mu, std, x, _fast_code=True):
+        r"""Calculate the log-probabilities for each data sampled by each density component. 
         Here the density is Gaussian. 
+        
+        .. warning::
+        
+            Currently there are fast and slow implementations temporarily with an option
+            to select one to use. Once it is entirely sure the fast implementation is correct
+            then this feature will be removed. A benchmark indicates that the fast implementation
+            is roughly :math:`14x` faster !
         
         Args:
             mu (Tensor): mean of Gaussian mixtures, shape [N, K, D]
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
             x (Tensor): input tensor, shape [N, D]
+            _fast_code (bool, optional): if ``True``, then using fast implementation. 
             
-        Returns:
-            log_probs (Tensor): the calculated log-probabilities for each data and each density, shape [N, K, D]
+        Returns
+        -------
+        log_probs : Tensor
+            the calculated log-probabilities for each data and each density, shape [N, K, D]
         """
         # Set up lower bound of std, since zero std can lead to NaN log-probability
         # Used for: torch.clamp(std_i, min=min_std...)
         # min_std = 1e-12
         
-        log_probs = []
-        
-        # Iterate over all density components
-        for i in range(self.num_densities):
-            # Retrieve means and stds
-            mu_i = mu[:, i, :]
-            std_i = std[:, i, :]
-            # Thresholding std, if std is 0, it leads to NaN loss. 
-            # std_i = torch.clamp(std_i, min=min_std, max=std_i.max().item())
+        def _fast(mu, std, x):
             # Create Gaussian distribution
-            dist = Normal(loc=mu_i, scale=std_i)
-            # Calculate the log-probability
-            logp = dist.log_prob(x)
-            # Record the log probability for current density
-            log_probs.append(logp)
+            dist = Normal(loc=mu, scale=std)
+            # Calculate the log-probabilities
+            log_probs = dist.log_prob(x.unsqueeze(1).expand(-1, self.num_density, -1))
             
-        # Stack log-probabilities with shape [N, K, D]
-        log_probs = torch.stack(log_probs, dim=1)
+            return log_probs
+        def _slow(mu, std, x):
+            log_probs = []
+
+            # Iterate over all density components
+            for i in range(self.num_density):
+                # Retrieve means and stds
+                mu_i = mu[:, i, :]
+                std_i = std[:, i, :]
+                # Thresholding std, if std is 0, it leads to NaN loss. 
+                # std_i = torch.clamp(std_i, min=min_std, max=std_i.max().item())
+                # Create Gaussian distribution
+                dist = Normal(loc=mu_i, scale=std_i)
+                # Calculate the log-probability
+                logp = dist.log_prob(x)
+                # Record the log probability for current density
+                log_probs.append(logp)
+
+            # Stack log-probabilities with shape [N, K, D]
+            log_probs = torch.stack(log_probs, dim=1)
+            
+            return log_probs
         
-        return log_probs
-    
+        # select code
+        if _fast_code:
+            return _fast(mu=mu, std=std, x=x)
+        else:
+            return _slow(mu=mu, std=std, x=x)
+
     def MDN_loss(self, log_pi, mu, std, target):
-        """
-        Calculate the loss function
+        r"""Calculate the MDN loss function. 
         
-        i.e. negative log-likelihood of the target given the parameters of Gaussian mixtures
-        L = -\frac{1}{N}\sum_{n=1}^{N}(\ln(\sum_{k=1}^{K} pi_k*Gaussian probability))
-        For better numerical stability, we could use log-scale of denstiy mixture 
-        L = -\frac{1}{N}\sum_{n=1}^{N}(\ln(\sum_{k=1}^{K} \exp( \log pi_k + \log Gaussian probability)) )
+        The loss function (negative log-likelihood) is defined by:
         
-        Note that simply computing this loss function is numerically unstable.
-        Due to the fact that the density mixture might be very small value, resulting in +/- Inf.
-        To address this problem, we use log-sum-exp trick
+        .. math::
+            L = -\frac{1}{N}\sum_{n=1}^{N}\ln \left( \sum_{k=1}^{K}\prod_{d=1}^{D} \pi_{k}(x_{n, d})
+            \mathcal{N}\left( \mu_k(x_{n, d}), \sigma_k(x_{n,d}) \right) \right)
+            
+        For better numerical stability, we could use log-scale:
         
-        i.e. \log\sum_{i=1}^{N}\exp(x_i) = a + \log\sum_{i=1}^{N}\exp(x_i - a), where a = \max_i(x_i)
+        .. math::
+            L = -\frac{1}{N}\sum_{n=1}^{N}\ln \left( \sum_{k=1}^{K}\exp \left\{ \sum_{d=1}^{D} 
+            \ln\pi_{k}(x_{n, d}) + \ln\mathcal{N}\left( \mu_k(x_{n, d}), \sigma_k(x_{n,d}) 
+            \right) \right\} \right) 
+        
+        .. note::
+        
+            One should always use the second formula via log-sum-exp trick. The first formula
+            is numerically unstable resulting in +/- ``Inf`` and ``NaN`` error. 
+        
+        The log-sum-exp trick is defined by
+        
+        .. math::
+            \log\sum_{i=1}^{N}\exp(x_i) = a + \log\sum_{i=1}^{N}\exp(x_i - a)
+            
+        where :math:`a = \max_i(x_i)`
         
         Args:
             log_pi (Tensor): log-scale mixing coefficients, shape [N, K, D]
@@ -259,43 +281,59 @@ class BaseMDN(BaseNetwork):
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
             target (Tensor): target tensor, shape [N, D]
 
-        Returns:
-            loss (Tensor): calculated loss
+        Returns
+        -------
+        loss : Tensor
+            calculated loss
         """
         # Enforce the shape of target to be consistent with output dimension
         target = target.view(-1, self.data_dim)
         
         # Calculate Gaussian log-probabilities over batch for each mixture and each data dimension
-        log_gaussian_probs = self._calculate_batched_logprob(mu=mu, 
-                                                             std=std, 
-                                                             x=target)
+        log_gaussian_probs = self.calculate_batched_logprob(mu=mu, 
+                                                            std=std, 
+                                                            x=target, 
+                                                            _fast_code=True)
         
-        # Calculate the loss via log-sum-exp trick
-        # It calculates over K (mixing coefficient) dimension, produce tensor with shape [N, D]
-        loss = -torch.logsumexp(log_pi + log_gaussian_probs, dim=1, keepdim=False)
+        # Calculate the joint log-probabilities from [N, K, D] to [N, K]
+        joint_log_probs = torch.sum(log_pi + log_gaussian_probs, dim=-1, keepdim=False)
         
-        # Sum up loss over elements and average over batch
-        loss = loss.sum(1).mean()
+        
+        # Calculate the loss via log-sum-exp trick, from [N, K] to [N]
+        # It calculates over K (mixing coefficient) dimension, produce tensor with shape [N]
+        loss = -torch.logsumexp(joint_log_probs, dim=-1, keepdim=False)
+        
+        # Mean loss over the batch to scalar value
+        loss = loss.mean(0)
         
         return loss
     
-    def sample(self, log_pi, mu, std, tau=1.0):
-        """
-        Sampling from Gaussian mixture using reparameterization trick.
+    def sample(self, log_pi, mu, std, tau=1.0, _fast_code=True):
+        r"""Sample from Gaussian mixture using reparameterization trick.
         
-        - Firstly sample categorically from mixing coefficients to determine a Gaussian distribution
+        - Firstly sample categorically over mixing coefficients to determine a specific Gaussian
         - Then sample from selected Gaussian distribution
+        
+        .. warning::
+        
+            Currently there are fast and slow implementations temporarily with an option
+            to select one to use. Once it is entirely sure the fast implementation is correct
+            then this feature will be removed. A benchmark indicates that the fast implementation
+            is roughly :math:`280x` faster on a large dataset !
         
         Args:
             log_pi (Tensor): log-scale mixing coefficients, shape [N, K, D]
             mu (Tensor): mean of Gaussian mixtures, shape [N, K, D]
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
-            tau (float): temperature during sampling, controlling uncertainty. 
-                If tau > 1: increase uncertainty
-                If tau < 1: decrease uncertainty
+            tau (float): temperature during sampling, it controls uncertainty. 
+                * If :math:`\tau > 1`: increase uncertainty
+                * If :math:`\tau < 1`: decrease uncertainty
+            _fast_code (bool, optional): if ``True``, then using fast implementation. 
         
-        Returns:
-            x (Tensor): sampled data, shape [N, D]
+        Returns
+        -------
+        x : Tensor
+            sampled data with shape [N, D]
         """
         # Get all shapes [batch size, number of densities, data dimension]
         N, K, D = log_pi.shape
@@ -308,27 +346,50 @@ class BaseMDN(BaseNetwork):
         if tau == 1.0:  # normal sampling, no uncertainty control
             pi = torch.exp(log_pi)
         else:  # use temperature
-            pi = F.softmax(log_pi/tau, dim=1)
+            pi = F.softmax(log_pi/tau, dim=1)  # now shape [N*D, K]
         # Create a categorical distribution for mixing coefficients
         pi_dist = Categorical(probs=pi)
         # Sampling mixing coefficients to determine which Gaussian to sample from for each data
-        pi_samples = pi_dist.sample()
-        # Convert 
-        # Iteratively sample from selected Gaussian distributions
-        samples = []
-        for N_idx, pi_idx in enumerate(pi_samples):
-            # Retrieve selected Gaussian distribution
-            mu_i = mu[N_idx, pi_idx]
-            std_i = std[N_idx, pi_idx]
+        pi_samples = pi_dist.sample()  # shape [N*D]
+        
+        def _slow(mu, std, pi_samples):
+            # Iteratively sample from selected Gaussian distributions
+            samples = []
+            for N_idx, pi_idx in enumerate(pi_samples):
+                # Retrieve selected Gaussian distribution
+                mu_i = mu[N_idx, pi_idx]
+                std_i = std[N_idx, pi_idx]
+                # Create standard Gaussian noise for reparameterization trick
+                eps = torch.randn_like(std_i)
+                # Sampling via reparameterization trick
+                if tau == 1.0:  # normal sampling, no uncertainty control
+                    samples.append(mu_i + eps*std_i)
+                else:  # use temperature
+                    samples.append(mu_i + eps*std_i*math.sqrt(tau))
+
+            # Convert sampled data to a Tensor and reshape to [N, D]
+            samples = torch.stack(samples, dim=0).view(N, D)
+
+            return samples
+        def _fast(mu, std, pi_samples):
+            # Select mu and std with selected pi
+            mu = mu[torch.arange(N*D), pi_samples.long()]
+            std = std[torch.arange(N*D), pi_samples.long()]
             # Create standard Gaussian noise for reparameterization trick
-            eps = torch.randn_like(std_i)
+            eps = torch.rand_like(std)
             # Sampling via reparameterization trick
             if tau == 1.0:  # normal sampling, no uncertainty control
-                samples.append(mu_i + eps*std_i)
+                samples = mu + eps*std
             else:  # use temperature
-                samples.append(mu_i + eps*std_i*math.sqrt(tau))
-            
-        # Convert sampled data to a Tensor and reshape to [N, D]
-        samples = torch.stack(samples, dim=0).view(N, D)
+                samples = mu + eps*std*math.sqrt(tau)
+                
+            # Reshape to [N, D]
+            samples = samples.view(N, D)
+                
+            return samples
         
-        return samples
+        # Select code
+        if _fast_code:
+            return _fast(mu=mu, std=std, pi_samples=pi_samples)
+        else:
+            return _slow(mu=mu, std=std, pi_samples=pi_samples)

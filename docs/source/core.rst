@@ -134,28 +134,31 @@ Transformations
     
 .. autoclass:: Centralize
     :members:
-    
-.. autoclass:: Normalize
-    :members:
-    
-.. autoclass:: Standardize
-    :members:
-    
+
 .. autoclass:: Clip
     :members: 
     
 .. autoclass:: ExpFactorCumSum
-    :members:
+    :members:    
     
-.. autoclass:: PolySmooth
+.. autoclass:: InterpCurve
+    :members:
+
+.. autoclass:: Normalize
     :members:
     
 .. autoclass:: RankTransform
     :members:
-    
+
 .. autoclass:: RunningMeanStd
     :members:
     
+.. autoclass:: SmoothFilter
+    :members:
+
+.. autoclass:: Standardize
+    :members:
+
 Utils
 ----------------------
 
