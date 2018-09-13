@@ -4,15 +4,18 @@ from .space import Space
 
 
 class Product(Space):
-    """
-    A product (tuple) of elementary spaces.
+    r"""A product (tuple) of elementary spaces.
+    
+    Example::
+    
+        >>> Product((Discrete(5), Box(-1.0, 1.0, shape=(2, 3), dtype=np.float32)))
+        
     """
     def __init__(self, spaces):
-        """
-        Define a product of elementary spaces.
+        r"""Define a product of elementary spaces.
         
-        Example:
-            Product((Discrete(5), Box(-1.0, 1.0, shape=(2, 3), dtype=np.float32)))
+        Args:
+            spaces (list): a list of elementary spaces. 
         """
         self.spaces = tuple(spaces)
         
@@ -24,11 +27,11 @@ class Product(Space):
     def contains(self, x):
         x = tuple(x)  # ensure tuple type
         
-        return np.all([space.contains(x_part) for x_part, space in zip(x, self.spaces)])
+        return all([space.contains(x_part) for x_part, space in zip(x, self.spaces)])
     
     @property
     def flat_dim(self):
-        return int(np.sum([space.flat_dim for space in self.spaces]))  # PyTorch Tensor dimension only accepts raw int type
+        return int(np.sum([space.flat_dim for space in self.spaces]))  # PyTorch compatibility
     
     def flatten(self, x):
         return np.concatenate([space.flatten(x_part) for x_part, space in zip(x, self.spaces)])

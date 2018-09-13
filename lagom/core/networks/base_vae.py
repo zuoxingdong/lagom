@@ -4,219 +4,168 @@ import torch.nn.functional as F
 
 from .base_network import BaseNetwork
 
-####################
-# TODO: update
-# - do not overwrite __init__
-# - put everything in make_params
-# - in example, use make_fc/make_cnn
-
 
 class BaseVAE(BaseNetwork):
+    r"""Base class for variational autoencoders (VAE). 
+    
+    This is a general class that could work for both MLP and CNN versions.
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`make_encoder`
+    - :meth:`make_moment_heads`
+    - :meth:`make_decoder`
+    - :meth:`init_params`
+    - :meth:`encoder_forward`
+    - :meth:`decoder_forward`
+    
+    Example::
+    
+    
     """
-    Base class for variational autoencoders (VAE), works for both MLP and CNN versions.
-    
-    Note that if subclass overrides __init__, remember to provide
-    keywords aguments, i.e. **kwargs passing to super().__init__. 
-    
-    All inherited subclasses should at least implement the following functions:
-    1. make_encoder(self, config)
-    2. make_moment_heads(self, config)
-    3. make_decoder(self, config)
-    4. init_params(self, config)
-    5. encoder_forward(self, x)
-    6. decoder_forward(self, x)
-    
-    Examples:
-    
-    class VAE(BaseVAE):
-        def make_encoder(self, config):
-            fc1 = nn.Linear(in_features=16, out_features=8)
-            fc2 = nn.Linear(in_features=8, out_features=4)
-
-            encoder = nn.ModuleList([fc1, fc2])
-
-            return encoder
-
-        def make_moment_heads(self, config):
-            mu_head = nn.Linear(in_features=4, out_features=2)
-            logvar_head = nn.Linear(in_features=4, out_features=2)
-
-            return mu_head, logvar_head
-
-        def make_decoder(self, config):
-            fc1 = nn.Linear(in_features=2, out_features=4)
-            fc2 = nn.Linear(in_features=4, out_features=8)
-            fc3 = nn.Linear(in_features=8, out_features=16)
-
-            decoder = nn.ModuleList([fc1, fc2, fc3])
-
-            return decoder
-
-        def init_params(self, config):
-            gain = nn.init.calculate_gain('relu')
-
-            for module in self.encoder:
-                nn.init.orthogonal_(module.weight, gain=gain)
-                nn.init.constant_(module.bias, 0.0)
-
-            nn.init.orthogonal_(self.mu_head.weight, gain=gain)
-            nn.init.constant_(self.mu_head.bias, 0.0)
-            nn.init.orthogonal_(self.logvar_head.weight, gain=gain)
-            nn.init.constant_(self.logvar_head.bias, 0.0)
-
-            for module in self.decoder:
-                nn.init.orthogonal_(module.weight, gain=gain)
-                nn.init.constant_(module.bias, 0.0)
-
-        def encoder_forward(self, x):
-            for module in self.encoder:
-                x = F.relu(module(x))
-
-            return x
-
-        def decoder_forward(self, x):
-            for module in self.decoder[:-1]:
-                x = F.relu(module(x))
-
-            # Element-wise binary output
-            x = torch.sigmoid(self.decoder[-1](x))
-
-            return x
-    """
-    def __init__(self, config=None, **kwargs):
-        # Override this constructor
-        super(BaseNetwork, self).__init__()  # call nn.Module.__init__()
-        
-        self.config = config
-        
-        # Set all keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
-        
+    def make_params(self, config):
         # Create encoder
-        self.encoder = self.make_encoder(self.config)
+        self.encoder, self.last_dim = self.make_encoder(config)
         assert isinstance(self.encoder, nn.ModuleList)
-        # Create heads for mean and log-variance (moments of latent variable)
-        # Note that log operation allows to optimize negative values,
-        # though variance must be non-negative
-        self.mu_head, self.logvar_head = self.make_moment_heads(self.config)
+        assert isinstance(self.last_dim, int)
+        
+        # Create moment heads: mu and log-variance
+        # also return the dimension for the latent variable z
+        out_heads = self.make_moment_heads(config, last_dim=self.last_dim)
+        assert isinstance(out_heads, dict) and len(out_heads) == 3
+        # unpack
+        self.mu_head = out_heads['mu_head']
+        self.logvar_head = out_heads['logvar_head']
+        self.z_dim = out_heads['z_dim']
+        # sanity check
         assert isinstance(self.mu_head, nn.Module)
         assert isinstance(self.logvar_head, nn.Module)
+        assert isinstance(self.z_dim, int)
+        
         # Create decoder
-        self.decoder = self.make_decoder(self.config)
+        self.decoder = self.make_decoder(config, z_dim=self.z_dim)
         assert isinstance(self.decoder, nn.ModuleList)
         
-        # User-defined function to initialize all created parameters
-        self.init_params(self.config)
-        
-    def make_params(self, config):
-        # Not used, since we have additional user-defined functions for encoder/decoder
-        pass
-        
     def make_encoder(self, config):
-        """
-        User-defined function to create all the parameters (layers) for encoder
+        r"""Create and return all the parameters/layers for the encoder. 
         
-        Note that it must return a ModuleList, otherwise they cannot be tracked by PyTorch. 
+        .. note::
+        
+            For being able to track the parameters automatically, a ``nn.ModuleList`` should
+            be returned. Also the dimension of last feature should also be returned.
         
         Args:
-            config (Config): configurations
+            config (dict): a dictionary of configurations. 
             
-        Returns:
-            encoder (ModuleList): ModuleList of encoder. 
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : ModuleList
+            a ModuleList of encoder
+        last_dim : int
+            the dimension of last feature
         """
         raise NotImplementedError
         
-    def make_moment_heads(self, config):
-        """
-        User-defined function to create all the parameters (layers) for heads of mu and logvar. 
+    def make_moment_heads(self, config, last_dim):
+        r"""Create and return all the parameters for mu and logvar heads. 
         
-        Note that it must return a ModuleList, otherwise they cannot be tracked by PyTorch. 
+        It includes the following:
+        
+        * ``mu_head``: a Module for mean of latent Gaussian.
+        * ``logvar_head``: a Module for log-variance of latent Gaussian. 
+        * ``z_dim``: an integer of the latent variable dimension. 
+        
+        .. note::
+        
+            A dictionary of all created modules should be returned with the keys
+            as their names. 
         
         Args:
-            config (Config): configurations
+            config (dict): a dictionary of configurations. 
+            z_dim (int): the dimension of latent variable
             
-        Returns:
-            mu_head (nn.Module): A module for mu head
-            logvar_head (nn.Module): A module for logvar head
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : dict
+            a dictionary of required output described above. 
         """
         raise NotImplementedError
         
-    def make_decoder(self, config):
-        """
-        User-defined function to create all the parameters (layers) for decoder
+    def make_decoder(self, config, z_dim):
+        r"""Create and return all the parameters/layers for the decoder. 
         
-        Note that it must return a ModuleList, otherwise they cannot be tracked by PyTorch. 
+        .. note::
+        
+            For being able to track the parameters automatically, a ``nn.ModuleList`` should
+            be returned.
         
         Args:
-            config (Config): configurations
+            config (dict): a dictionary of configurations. 
+            z_dim (int): the dimension of latent variable
             
-        Returns:
-            decoder (ModuleList): ModuleList of decoder. 
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : ModuleList
+            a ModuleList of decoder
         """
         raise NotImplementedError
         
     def encoder_forward(self, x):
-        """
-        User-defined function to define forward pass of encoder. 
+        r"""Defines forward pass of encoder. 
         
-        It should use the class member, self.encoder, 
-        which is a ModuleList consisting of all defined parameters (layers) for encoder. 
+        .. note::
+        
+            It should use the class member ``self.encoder`` (a ModuleList). 
         
         Args:
-            x (Tensor): input tensor to encoder
+            x (Tensor): input tensor
             
-        Returns:
-            x (Tensor): features of encoder
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        out : Tensor
+            feature tensor before moment heads of latent variable
         """
         raise NotImplementedError
         
-    def decoder_forward(self, x):
-        """
-        User-defined function to define forward pass of decoder. 
+    def decoder_forward(self, z):
+        r"""Defines forward pass of decoder. 
         
-        It should use the class member, self.decoder, 
-        which is a ModuleList consisting of all defined parameters (layers) for decoder. 
+        .. note::
+        
+            It should use the class member ``self.decoder`` (a ModuleList)
         
         Args:
-            x (Tensor): the sampled latent variable according to output from moment heads
+            z (Tensor): the sampled latent variable from moment heads
             
-        Returns:
-            x (Tensor): the reconstruction of the input
-            
-        Examples:
-            TODO
+        Returns
+        -------
+        re_x : Tensor
+            the reconstruction of the input
         """
         raise NotImplementedError
         
     def reparameterize(self, mu, logvar):
-        """
-        Sampling using reparameterization trick
+        r"""Sampling using reparameterization trick. 
         
-        i.e. mu + eps*std, eps sampled from N(0, 1)
+        .. note::
+        
+            It is a differentiable transformation, so one could use backpropagation
+            through it. 
+            
+        Formally, it does :math:`\mu + \epsilon\cdot\sigma` where :math:`\epsilon\sim\mathcal{N}(0, 1)`
         
         Args:
             mu (Tensor): mean of a Gaussian random variable
             logvar (Tensor): log-variance of a Gaussian random variable
-                Note that log operation allows to optimize negative values,
-                though variance must be non-negative.
+                Note that log operation allows to optimize negative values, though 
+                variance must be non-negative.
         
-        Returns:
+        Returns
+        -------
+        out : Tensor
             sampled tensor according to the reparameterization trick
         """
-        # TODO: using PyTorch distributions rsample()
+        # TODO: add option for std parameterization (softplus), see `GaussianPolicy`
         if self.training:  # training: sample with reparameterization trick
             # Recover std from log-variance
             # 0.5*logvar by logarithm law is more numerically stable than taking square root
@@ -230,64 +179,81 @@ class BaseVAE(BaseNetwork):
         
     def forward(self, x):
         # Forward pass through encoder to obtain features
-        x = self.encoder_forward(x)
+        features = self.encoder_forward(x)
+        
+        # Flatten features with shape [N, D], useful for ConvVAE
+        features = features.flatten(start_dim=1)
+        
         # Forward pass through moment heads to obtain mu and logvar for latent variable
-        # Enforce features with shape [N, D], useful for ConvVAE
-        x = x.view(x.size(0), -1)
-        mu = self.mu_head(x)
-        logvar = self.logvar_head(x)
+        mu = self.mu_head(features)
+        logvar = self.logvar_head(features)
+        
         # Sample latent variable by using reparameterization trick
         z = self.reparameterize(mu, logvar)
+        
         # Forward pass through decoder of sampled latent variable to obtain reconstructed input
-        reconstructed_x = self.decoder_forward(z)
+        re_x = self.decoder_forward(z)
         
-        return reconstructed_x, mu, logvar
+        return re_x, mu, logvar
     
-    def calculate_loss(self, reconstructed_x, x, mu, logvar, reconstruction_loss_type='BCE'):
-        """
-        Calculate the VAE loss function
-        VAE_loss = Reconstruction_loss + KL_loss
-        Note that the losses are summed over all elements and batch
+    def calculate_loss(self, re_x, x, mu, logvar, loss_type='BCE'):
+        r"""Calculate `VAE loss function`_. 
         
-        For details, see https://arxiv.org/abs/1312.6114
-        The KL loss is derived in Appendix B
+        VAE_loss = Reconstruction_loss + KL_loss
+        
+        .. note::
+        
+            The losses are summed over all elements and batch. 
+        
+        .. _VAE loss function:
+            https://arxiv.org/abs/1312.6114
         
         Args:
-            reconstructed_x (Tensor): reconstructed x output from decoder
-            x (Tensor): ground-truth x
+            re_x (Tensor): reconstructed input returned from decoder
+            x (Tensor): ground-truth input
             mu (Tensor): mean of the latent variable
             logvar (Tensor): log-variance of the latent variable
             loss_type (str): Type of reconstruction loss, supported ['BCE', 'MSE']
         
-        Returns:
-            loss (Tensor): VAE loss
+        Returns
+        -------
+        out : dict
+            a dictionary of selected output such as loss, reconstruction loss and KL loss. 
         """
-        # Reshape the reconstruction as [N, D]
-        N = reconstructed_x.shape[0]
-        reconstructed_x = reconstructed_x.view(N, -1)
-        # Enforce the shape of x is the same as reconstructed x
-        x = x.view_as(reconstructed_x)
+        assert loss_type in ['BCE', 'MSE'], f'expected either BCE or MSE, got {loss_type}'
         
-        # Calculate reconstruction loss
-        if reconstruction_loss_type == 'BCE':
-            reconstruction_loss = F.binary_cross_entropy(reconstructed_x, 
-                                                         x, 
-                                                         reduction='none')  # all losses for [N, D]
-        elif reconstruction_loss_type == 'MSE':
-            reconstruction_loss = F.mse_loss(reconstructed_x, 
-                                             x, 
-                                             reduction='none')  # all losses for [N, D]
-        # sum up loss for each data item, with shape [N]
-        reconstruction_loss = reconstruction_loss.sum(1)
+        out = {}
+        
+        # flatten the reconstructed input as [N, D]
+        re_x = re_x.flatten(start_dim=1)
+        
+        # Enforce same shape of x as reconstructed x
+        x = x.view_as(re_x)
+        
+        # make loss function
+        if loss_type == 'BCE':
+            loss_f = F.binary_cross_entropy
+        elif loss_type == 'MSE':
+            loss_f = F.mse_loss
+        else:
+            raise ValueError
             
-        # Calculate KL loss for each element
-        # Gaussian: 0.5*sum(1 + log(sigma^2) - mu^2 - sigma^2)
+        # Calculate reconstruction loss for all elements in [N, D]
+        re_loss = loss_f(input=re_x, target=x, reduction='none')
+        # Sum up over data dimension, from [N, D] to [N]
+        re_loss = re_loss.sum(1)
+        
+        # Calculate KL loss for each element to shape [N]
+        # Gaussian: -0.5*sum(1 + log(sigma^2) - mu^2 - sigma^2)
         KL_loss = -0.5*torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1)
         
-        # Compute total loss
-        losses = reconstruction_loss + KL_loss
+        # Compute total loss with shape [N]
+        losses = re_loss + KL_loss
         
+        # Record output
         # Average losses over batch
-        loss = losses.mean()
+        out['loss'] = losses.mean()
+        out['re_loss'] = re_loss.mean()
+        out['KL_loss'] = KL_loss.mean()
         
-        return loss, reconstruction_loss.mean(), KL_loss.mean()
+        return out

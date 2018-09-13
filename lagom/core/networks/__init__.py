@@ -1,4 +1,5 @@
 from .base_network import BaseNetwork
+
 from .base_vae import BaseVAE
 from .base_mdn import BaseMDN
 

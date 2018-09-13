@@ -57,27 +57,32 @@ class BaseNetwork(nn.Module):
         for key, val in kwargs.items():
             self.__setattr__(key, val)
     
-        # User-defined function to create all trainable parameters/layers
+        # Create all trainable parameters/layers
         self.make_params(self.config)
         
-        # User-defined function to initialize all created parameters/layers
+        # Initialize all created parameters/layers
         self.init_params(self.config)
         
     def make_params(self, config):
-        r"""User-defined function to create all trainable parameters/layers for the neural network
-        according to a given configuration. 
+        r"""Create all trainable parameters/layers for the neural network according to 
+        a given configuration. 
+        
+        .. note::
+        
+            All created layers must be assigned as a class attributes to be automatically
+            tracked. e.g. ``self.fc = nn.Linear(3, 2)``. 
         
         Args:
-            config (dict): A dictionary of configurations. 
+            config (dict): a dictionary of configurations. 
         """
         raise NotImplementedError
         
     def init_params(self, config):
-        r"""User-defined function to initialize all created parameters in :meth:`make_params` according
-        to a given configuration. 
+        r"""Initialize all created parameters in :meth:`make_params` according to a 
+        given configuration. 
         
         Args:
-            config (dict): A dictionary of configurations. 
+            config (dict): a dictionary of configurations. 
         """
         raise NotImplementedError
         

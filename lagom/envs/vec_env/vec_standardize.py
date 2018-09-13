@@ -1,43 +1,68 @@
 import numpy as np
 
+from lagom import pickle_dump
+
 from lagom.core.transform import RunningMeanStd
 
-from lagom.envs.vec_env import VecEnvWrapper
+from .vec_env import VecEnvWrapper
 
 
-class StandardizeVecEnv(VecEnvWrapper):
-    """
-    Standardize the observations and rewards by using running average. 
-    i.e. subtract by running mean and divided by running standard deviation. 
+class VecStandardize(VecEnvWrapper):
+    r"""A vectorized environment wrapper that standardizes the observations and rewards
+    from the environments by using running average. 
     
-    Or the user can also provide constant mean and standard deviation for standardization. 
+    Each :meth:`step_wait` and :meth:`reset`, the observation and reward are fed into
+    a processor to update the running average, and then the observation is standardized
+    by subtracting the running mean and devided by running standard deviation.
     
-    Note that we do not subtract the mean from rewards but only divided by standard deviation. 
-    And the reward running average is computed by discounted returns continuously. 
+    .. note::
     
-    Also note that each `reset()` we do not clean up the `self.all_returns` buffer. 
-    Because of discount factor (< 1), the running averages will be converged after some iterations. 
-    Therefore, we do not allow discounted factor as 1.0, as it will lead to unbounded explosion 
-    of reward running averages. 
+        We do not subtract running mean from reward but only divides it by running
+        standard deviation. Because subtraction by mean will alter the reward shape
+        so this might degrade the performance. 
+        
+    .. note::
     
-    IMPORTANT: Remember to save and load observation scaling for evaluating the agent. 
+        Each :meth:`reset`, we do not clean up the ``self.all_returns`` buffer. Because
+        of discount factor (:math:`< 1`), the running averages will converge after some iterations. 
+        Therefore, we do not allow discounted factor as :math:`1.0` since it will lead to
+        unbounded explosion of reward running averages. 
+        
+    .. warning::
     
-    Examples:
+        To evaluate the agent trained on standardized environment, remember to
+        save and load observation scalings, otherwise, the performance will be incorrect. 
+        One could use :meth:`save_running_average`. 
+    
+    See :class:`RunningMeanStd` for more details about running average. 
+    
+    Example::
     
         list_make_env = make_envs(make_env=make_gym_env, 
                                   env_id='Pendulum-v0', 
                                   num_env=2, 
                                   init_seed=1)
-
         venv = SerialVecEnv(list_make_env=list_make_env)
+        venv = VecStandardize(venv=venv, 
+                              use_obs=True, 
+                              use_reward=True, 
+                              clip_obs=10.0, 
+                              clip_reward=10.0, 
+                              gamma=0.99, 
+                              eps=1e-8)
+                                 
+        >>> venv
+        <VecStandardize: Pendulum-v0, n: 2>
+        
+        >>> venv.reset()
+        array([[ 1.0000001 ,  0.99999997, -0.99999997],
+               [-0.99999993, -1.00000007,  0.99999986]])
+               
+        >>> venv.running_averages
+        {'obs_avg': {'mu': array([-0.6503495,  0.5606869,  0.4055612], dtype=float32),
+          'sigma': array([0.33465797, 0.388175  , 0.23515129], dtype=float32)},
+         'r_avg': {'sigma': None}}
 
-        env = StandardizeVecEnv(venv=venv, 
-                                use_obs=True, 
-                                use_reward=True, 
-                                clip_obs=10.0, 
-                                clip_reward=10.0, 
-                                gamma=0.99, 
-                                eps=1e-8)
     """
     def __init__(self,
                  venv, 
@@ -50,19 +75,20 @@ class StandardizeVecEnv(VecEnvWrapper):
                  constant_obs_mean=None, 
                  constant_obs_std=None, 
                  constant_reward_std=None):
-        """
+        r"""Initialize the wrapper. 
+        
         Args:
-            venv (VecEnv): vectorized environment
+            venv (VecEnv): a vectorized environment
             use_obs (bool): Whether to standardize the observation by using its running average
             use_reward (bool): Whether to standardize the reward by using its running average
-                Note that running average here is computed by discounted returns iteratively. 
+                Note that running average here is computed with discounted returns iteratively. 
             clip_obs (float/ndarray): clipping range of standardized observation, i.e. [-clip_obs, clip_obs]
             clip_reward (float): clipping range of standardized reward, i.e. [-clip_reward, clip_reward]
             gamma (float): discounted factor. Note that the value 1.0 should not be used. 
-                It will let the reward running average (computed with discounted returns) exploits
+                It will cause reward running average (computed with discounted returns) to exploit
                 unboundly. 
             eps (float): a small epsilon for numerical stability of dividing by standard deviation. 
-                 e.g. when standard deviation is zero.
+                e.g. when standard deviation is zero.
             constant_obs_mean (ndarray): Constant mean to standardize observation. Note that when it is
                 provided, then running average will be ignored. 
             constant_obs_std (ndarray): Constant standard deviation to standardize observation. Note that
@@ -71,8 +97,9 @@ class StandardizeVecEnv(VecEnvWrapper):
                 when it is provided, then running average will be ignored. 
         """
         super().__init__(venv)
-        self.obs_runningavg = RunningMeanStd(dtype='ndarray')
-        self.reward_runningavg = RunningMeanStd(dtype='ndarray')
+        
+        self.obs_runningavg = RunningMeanStd()
+        self.reward_runningavg = RunningMeanStd()
         
         self.use_obs = use_obs
         self.use_reward = use_reward
@@ -87,14 +114,27 @@ class StandardizeVecEnv(VecEnvWrapper):
         self.constant_obs_std = constant_obs_std
         self.constant_reward_std = constant_reward_std
         
-        self.all_returns = np.zeros(self.num_env)
+        # Buffer to save discounted returns from each environment
+        self.all_returns = np.zeros(self.num_env).astype(np.float32)
     
     def step_wait(self):
         # Call original step_wait to get results from all environments
         observations, rewards, dones, infos = self.venv.step_wait()
         
-        return self.process_obs(observations), self.process_reward(rewards), dones, infos
+        # Set discounted return buffer as zero for those episodes which terminate
+        self.all_returns[dones] = 0.0
         
+        return self.process_obs(observations), self.process_reward(rewards), dones, infos
+    
+    def reset(self):
+        # Reset returns buffer, because all environments are also reset
+        self.all_returns.fill(0.0)
+        
+        return self.process_obs(self.venv.reset())
+    
+    def close_extras(self):
+        return self.venv.close()
+    
     def process_reward(self, rewards):
         if self.use_reward and self.constant_reward_std is None:  # using running average
             # Compute discounted returns
@@ -146,5 +186,37 @@ class StandardizeVecEnv(VecEnvWrapper):
         else:  # return original observation if use_obs is turned off
             return obs
         
-    def reset(self):
-        return self.process_obs(self.venv.reset())
+    @property
+    def running_averages(self):
+        r"""Returns the running averages for observation and reward in a dictionary. 
+        
+        A dictionary with keys 'obs_avg' and 'r_avg' will be created. Each key
+        contains sub-keys ['mu', 'sigma'] except for reward which only contains 'sigma'. 
+        
+        Returns
+        -------
+        out : dict
+            a dictionary of running averages
+        """
+        # Create a dictionary of running averages
+        out = {'obs_avg': {'mu': self.obs_runningavg.mu, 
+                           'sigma': self.obs_runningavg.sigma}, 
+               'r_avg': {'sigma': self.reward_runningavg.sigma}}
+        
+        return out
+        
+    def save_running_average(self, f):
+        r"""Save the running averages for observation and reward in a dictionary by pickling. 
+        
+        It saves the mean and standard deviation for observation running average and the standard deviation
+        for reward running average. A dictionary with keys 'obs_avg' and 'r_avg' will be created. Each key
+        contains sub-keys ['mu', 'sigma']. 
+        
+        Args:
+            f (str): saving path
+        """
+        # Get running average dictionary
+        out = self.running_averages
+        
+        # Pickle it
+        pickle_dump(obj=out, f=f, ext='.pkl')
