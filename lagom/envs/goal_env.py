@@ -3,35 +3,62 @@ from .spaces import Dict
 
 
 class GoalEnv(Env):
-    """
-    A goal-based environment. The observation space is a dictionary space consisting of 
-    - 'observation': same like regular observation
-    - 'achieved_goal': the goal is currently achieved by the agent
-    - 'desired_goal': the goal should be achieved by the agent
+    r"""A goal-based environment. 
+    
+    The observation space is a dictionary space (i.e. :class:`Dict`) with at least the following keys:
+    
+    * 'observation': same like usual observation
+    * 'desired_goal': the goal should be achieved by the agent
+    * 'achieved_goal': the goal is currently achieved by the agent
+    
+    The subclass should implement at least the following:
+
+    - :meth:`step`
+    - :meth:`compute_reward`
+    - :meth:`render`
+    - :meth:`close`
+    - :meth:`seed`
+    - :meth:`T`
+    - :meth:`observation_space`
+    - :meth:`action_space`
+    - :meth:`max_episode_reward`
+    - :meth:`reward_range`
+    
     """
     def reset(self):
         # Ensure the observation space is Dictionary space
-        if not isinstance(self.observation_space, Dict):
-            raise TypeError('The observation space of GoalEnv must be of type Dict')
+        assert isinstance(self.observation_space, Dict), f'expected Dict space, got {type(self.observation_space)}'
+        # Get goal-based observation
         observation = super().reset()
-        for key in ['observation', 'achieved_goal', 'desired_goal']:
-            if key not in observation:
-                raise KeyError(f'The key ({key}) must be contained in the observation dictionary. ')
+        # Sanity check
+        msg = 'must contain at least three keys, [observation, achieved_goal, desired_goal]'
+        assert all([key in observation for key in ['observation', 'achieved_goal', 'desired_goal']]), msg
+        
         return observation
     
     def compute_reward(self, achieved_goal, desired_goal, info):
-        """
-        Compute the step reward dependent on a desired goal and a goal that was achieved. 
+        r"""Compute the step reward depending on a desired goal and a goal that is currently achieved. 
+        
+        .. note::
+        
+            If it needs to include additional rewards that are independent of the goal, the values should
+            be in the info and compute it accordingly. 
+            
+        .. note::
+        
+            The following should always hold true::
+            
+                >>> observation, reward, done, info = env.step()
+                >>> assert reward == env.compute_reward(observation['achieved_goal'], observation['desired_goal'], info)
         
         Args:
-            achieved_goal (object): the goal that was achieved
+            achieved_goal (object): the goal that is currently achieved. 
             desired_goal (object): the desired goal that agent should achieve
-            info (dict): additional information, e.g. additional rewards that are independent of goal. 
+            info (dict): a dictionary of additional information e.g. goal-independent rewards 
             
-        Returns:
-            reward (float): the reward according to achieved goal and desired goal.
-                    Note that the following should be true:
-                        observation, reward, done, info = env.step()
-                        assert reward == env.compute_reward(observation['achieved_goal'], observation['desired_goal'], info)
+        Returns
+        -------
+        reward : float
+            the reward based on currently achieved goal and desired goal.            
         """
         raise NotImplementedError

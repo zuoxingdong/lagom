@@ -2,15 +2,16 @@ import numpy as np
 
 
 class Space(object):
-    """
-    Base class for observation and action space e.g. applied to Env.
+    r"""Base class for all observation and action spaces which could be applied to :class:`Env`.
     
-    All inherited subclasses should at least implement the following functions:
-    1. sample(self)
-    2. @property: flat_dim(self)
-    3. flatten(self, x)
-    4. unflatten(self, x)
-    5. contains(self, x)
+    The subclass should implement at least the following:
+    
+    - :meth:`sample`
+    - :meth:`flat_dim`
+    - :meth:`flatten`
+    - :meth:`unflatten`
+    - :meth:`contains`
+    
     """
     def __init__(self, shape=None, dtype=None):
         if shape is None:
@@ -24,32 +25,25 @@ class Space(object):
             self.dtype = np.dtype(dtype)  # create a dtype object
     
     def sample(self):
-        """
-        Uniformly sample an element from this space.
-        """
+        r"""Uniformly sample an element from this space."""
         raise NotImplementedError
     
     @property
     def flat_dim(self):
-        """
-        Return a flattened dimension
-        """
+        r"""Return a flattened dimension. """
         raise NotImplementedError
         
     def flatten(self, x):
-        """
-        Return the flattened x.
-        """
+        r"""Returns the flattened x. """
         raise NotImplementedError
         
     def unflatten(self, x):
-        """
-        Return the unflattened x according to defined shape
-        """
+        r"""Returns the unflattened x according to defined shape. """
         raise NotImplementedError
 
     def contains(self, x):
-        """
-        Return True if x is contained in this space.
-        """
+        r"""Return ``True`` if x is contained in this space. """
         raise NotImplementedError
+        
+    def __contains__(self, x):
+        return self.contains(x)

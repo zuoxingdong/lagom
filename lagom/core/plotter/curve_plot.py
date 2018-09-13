@@ -5,7 +5,10 @@ import numpy as np
 
 from functools import partial
 
+from lagom.core.transform import InterpCurve
+
 from .base_plot import BasePlot
+
 
 class CurvePlot(BasePlot):
     r"""Compare different curves in one plot. 
@@ -27,6 +30,26 @@ class CurvePlot(BasePlot):
     Pandas.DataFrame data structure. 
     
     For more advanced use cases, one could inherit this class and overide :meth:`__call__`. 
+    
+    Example::
+    
+        x1 = [1, 4, 5, 7, 9, 13, 20]
+        y1 = [0.1, 0.25, 0.22, 0.53, 0.37, 0.5, 0.55]
+        x2 = [2, 4, 6, 7, 9, 11, 15]
+        y2 = [0.03, 0.12, 0.4, 0.2, 0.18, 0.32, 0.39]
+        
+        interp = InterpCurve()
+        new_x, (new_y1, new_y2) = interp([x1, x2], [y1, y2], num_point=100)
+        
+        plot = CurvePlot()
+        plot.add('curve1', [y1, y2], xvalues=[x1, x2])
+        ax = plot()
+        
+        ax.plot(x1, y1, 'red')
+        ax.plot(x2, y2, 'green')
+        
+        >>> ax.figure
+    
     """
     def add(self, name, data, xvalues=None):
         r"""Add a curve data (either one of multiple) with option to select range of values
@@ -61,7 +84,8 @@ class CurvePlot(BasePlot):
             # Interpolate the lines to share same x values if check is failed to pass
             if not check_pass:
                 # Get new shared xvalues and queried y values from interpolated lines
-                xvalues, data = self._interp_data(all_x=xvalues, all_y=data, num_points=500)
+                interp = InterpCurve()
+                xvalues, data = interp(xvalues, data, num_point=500)
             else:  # passed the check, batch with same xvalues, but we want one xvalues only
                 xvalues = xvalues[0]  # take first one, because rest of them are identical
         
@@ -206,39 +230,8 @@ class CurvePlot(BasePlot):
             
         return x
     
-    def _interp_data(self, all_x, all_y, num_points=500):
-        r"""Piecewise linear interpolation for each line and return the x-y values from interpolated line. 
-        
-        This is for the case that multiple lines have different x value points, which is impossible
-        to plot uncertainty bands. 
-        
-        Args:
-            all_x (list): x values for each line
-            all_y (list): y values for each line
-            num_points (int): number of points to generate from interpolated lines. 
-            
-        Returns
-        -------
-        new_x : list
-            shared query x values between minimum and maximum possible x values.
-        interp_all_y :list
-            y values from each interpolated line. 
-        """
-        # Obtain minimum and maximum x values from given data
-        # We iterate over each line, because they might have different length, and impossible to broadcast
-        min_x = min([np.min(x) for x in all_x])
-        max_x = max([np.max(x) for x in all_x])
-        # Generate an array of new query x values between min and max possible x values
-        new_x = np.linspace(min_x, max_x, num=num_points)
-        
-        # Generate new y values from each interpolated line given the shared query x values
-        interp_all_y = [np.interp(new_x, x, y) for x, y in zip(all_x, all_y)]
-        
-        return new_x, interp_all_y
-        
     def tick_formatter(self, x, pos, scale_magnitude=None):
-        """
-        A function to set major functional formatter. 
+        r"""A function to set major functional formatter. 
 
         Args:
             x (object): data value, internal argument used by Matplotlib
@@ -251,8 +244,10 @@ class CurvePlot(BasePlot):
                     - 'M': every one million
                 When None is given, then it automatically detect for N, K or M. 
 
-        Returns:
-            A formatted string of the tick given the data value. 
+        Returns
+        -------
+        out : str
+            a formatted string of the tick given the data value. 
         """
         msg = f'expected K, M or None, got {scale_magnitude}'
         assert scale_magnitude in ['N', 'K', 'M', None], msg

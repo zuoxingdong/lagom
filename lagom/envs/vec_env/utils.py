@@ -1,6 +1,5 @@
 class CloudpickleWrapper(object):
-    """
-    Uses cloudpickle to serialize contents (multiprocessing uses pickle by default)
+    r"""Uses cloudpickle to serialize contents (multiprocessing uses pickle by default)
     
     This is useful when passing lambda definition through Process arguments.
     """

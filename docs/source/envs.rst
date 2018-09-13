@@ -7,20 +7,24 @@ lagom.envs
 Spaces
 ----------------
 
-.. autoclass:: lagom.envs.spaces.Space
+.. currentmodule:: lagom.envs.spaces
+
+.. autoclass:: Space
     :members:
     
-.. autoclass:: lagom.envs.spaces.Discrete
+.. autoclass:: Discrete
     :members:
     
-.. autoclass:: lagom.envs.spaces.Box
+.. autoclass:: Box
     :members:
     
-.. autoclass:: lagom.envs.spaces.Product
+.. autoclass:: Product
     :members:
     
-.. autoclass:: lagom.envs.spaces.Dict
+.. autoclass:: Dict
     :members:
+    
+.. autofunction:: convert_gym_space
 
 Environment
 ---------------
@@ -34,57 +38,60 @@ Environment
 .. autoclass:: GoalEnv
     :members:
     
-.. autoclass:: GymEnv
-    :members:
-    
 .. autofunction:: make_gym_env
 
 .. autofunction:: make_envs
 
+.. autofunction:: make_vec_env
+
 Wrappers
 --------------
 
-.. autoclass:: lagom.envs.wrappers.Wrapper
+.. currentmodule:: lagom.envs.wrappers
+
+.. autoclass:: Wrapper
     :members:
     
-.. autoclass:: lagom.envs.wrappers.ObservationWrapper
+.. autoclass:: ObservationWrapper
     :members:
     
-.. autoclass:: lagom.envs.wrappers.ActionWrapper
+.. autoclass:: ActionWrapper
     :members:
     
-.. autoclass:: lagom.envs.wrappers.RewardWrapper
+.. autoclass:: RewardWrapper
     :members:
     
-.. autoclass:: lagom.envs.wrappers.StackObservation
+.. autoclass:: GymWrapper
+    :members:
+
+.. autoclass:: FlattenObservation
+    :members:
+
+.. autoclass:: FlattenDictWrapper
     :members:
     
-.. autoclass:: lagom.envs.wrappers.SparseReward
-    :members:
-    
-.. autoclass:: lagom.envs.wrappers.PartialFlattenDict
-    :members:
-    
-.. autoclass:: lagom.envs.wrappers.FlattenObservation
+.. autoclass:: FrameStack
     :members:
 
 Vectorized Environment
 --------------------------
 
-.. autoclass:: lagom.envs.vec_env.VecEnv
+.. currentmodule:: lagom.envs.vec_env
+
+.. autoclass:: VecEnv
     :members:
     
-.. autoclass:: lagom.envs.vec_env.SerialVecEnv
+.. autoclass:: SerialVecEnv
     :members:
     
-.. autoclass:: lagom.envs.vec_env.ParallelVecEnv
+.. autoclass:: ParallelVecEnv
     :members:
     
-.. autoclass:: lagom.envs.vec_env.VecEnvWrapper
+.. autoclass:: VecEnvWrapper
     :members:
     
-.. autoclass:: lagom.envs.vec_env.StandardizeVecEnv
+.. autoclass:: VecStandardize
     :members:
     
-.. autoclass:: lagom.envs.vec_env.CloudpickleWrapper
+.. autoclass:: CloudpickleWrapper
     :members:

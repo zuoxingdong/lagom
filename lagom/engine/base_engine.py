@@ -1,23 +1,24 @@
 class BaseEngine(object):
-    r"""Base class for all engines
+    r"""Base class for all engines. 
     
     It defines the training and evaluation process. 
     
     The subclass should implement at least the following:
     
     - :meth:`train`
+    - :meth:`log_train`
     - :meth:`eval`
+    - :meth:`log_eval`
     
     """
-    def __init__(self, agent, runner, config, logger, **kwargs):
+    def __init__(self, agent, runner, config, **kwargs):
         self.agent = agent
         self.runner = runner
         self.config = config
-        self.logger = logger
         
         # Set keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
+        for key, value in kwargs.items():
+            self.__setattr__(key, value)
         
     def train(self, n=None):
         r"""Agent training process for one iteration. 
@@ -38,7 +39,7 @@ class BaseEngine(object):
         Internally, a Logger will be created and save all the logged information. 
         
         Args:
-            train_output (dict): dictionary of training output returned from `train()`
+            train_output (dict): a dictionary of training output returned from :meth:`train`
             **kwargs: keyword aguments used for logging. 
             
         Returns
@@ -67,7 +68,7 @@ class BaseEngine(object):
         Internally, a Logger will be created and save all the logged information. 
         
         Args:
-            eval_output (dict): dictionary of evaluation output returned from `eval()`
+            eval_output (dict): a dictionary of evaluation output returned from :meth:`eval`
             **kwargs: keyword aguments used for logging. 
             
         Returns

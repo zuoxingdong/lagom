@@ -4,14 +4,22 @@ from .base_transform import BaseTransform
 
 
 class Clip(BaseTransform):
-    r"""Clip the input data"""
+    r"""Clip the input data with lower and upper bounds. 
+    
+    Example::
+    
+        >>> clip = Clip()
+        >>> clip(x=[1, 2, 3, 4, 5], a_min=2.5, a_max=3.5)
+        array([2.5, 2.5, 3. , 3.5, 3.5], dtype=float32)
+    
+    """
     def __call__(self, x, a_min, a_max):
-        r"""Clip values by min/max bounds
+        r"""Clip values by min/max bounds. 
         
         Args:
             x (object): input data
-            a_min (float): minimum value
-            a_max (float): maximum value
+            a_min (float/ndarray): minimum value
+            a_max (float/ndarray): maximum value
         
         Returns
         -------
@@ -19,9 +27,9 @@ class Clip(BaseTransform):
             clipped data
         """
         # Convert input to ndarray
-        x = self.make_input(x)
+        x = self.to_numpy(x, np.float32)
         
         # Clip the data
-        out = np.clip(x, a_min=a_min, a_max=a_max)
+        out = np.clip(x, a_min, a_max).astype(x.dtype)
         
-        return out.astype(np.float32).tolist()  # enforce raw float dtype
+        return out

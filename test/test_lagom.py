@@ -44,16 +44,16 @@ class TestLagom(object):
             assert list(x[1].values()) == [3, [4, 5]]
         
         # Pickle
-        pickle_dump(c, 'test/.tmp_pickle')
-        _check(pickle_load('test/.tmp_pickle.pkl'))
+        pickle_dump(c, '.tmp_pickle')
+        _check(pickle_load('.tmp_pickle.pkl'))
         # remove the file
-        os.unlink('test/.tmp_pickle.pkl')
+        os.unlink('.tmp_pickle.pkl')
         
         # Yaml
-        yaml_dump(c, 'test/.tmp_yaml')
-        _check(yaml_load('test/.tmp_yaml.yml'))
+        yaml_dump(c, '.tmp_yaml')
+        _check(yaml_load('.tmp_yaml.yml'))
         # remove the file
-        os.unlink('test/.tmp_yaml.yml')
+        os.unlink('.tmp_yaml.yml')
     
     def test_logger(self):
         logger = Logger(name='logger')
