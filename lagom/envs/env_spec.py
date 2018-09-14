@@ -66,3 +66,14 @@ class EnvSpec(object):
             return 'Continuous'
         else:
             raise TypeError(f'expected type as Discrete or Box, got {type(self.env.action_space)}.')
+
+    def __repr__(self):
+        string = f'<{type(self).__name__}, {self.env}>\n'
+        string += f'\tObservation space: {self.observation_space}\n'
+        string += f'\tAction space: {self.action_space}\n'
+        string += f'\tControl type: {self.control_type}\n'
+        string += f'\tT: {self.T}\n'
+        string += f'\tMax episode reward: {self.max_episode_reward}\n'
+        string += f'\tReward range: {self.reward_range}'
+        
+        return string
