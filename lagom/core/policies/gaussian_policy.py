@@ -50,7 +50,7 @@ class GaussianPolicy(BasePolicy):
           does not need forward pass, but the backpropagation will calculate its gradients. 
             
     * :attr:`init_std` controls the initial values for independently learnable standard deviation. 
-      Note that this is only valid when :attr:`std_state_dependent`=False. 
+      Note that this is only valid when ``std_state_dependent=False``. 
     
     """
     def __init__(self,

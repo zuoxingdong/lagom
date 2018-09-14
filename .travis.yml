@@ -34,6 +34,9 @@ script:
     - pytest test/ -v
     # flake8 check for code style and quality
     - flake8 lagom/
+    # make docs
+    - cd docs
+    - make html
     
 # Only master branch
 branches:

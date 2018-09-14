@@ -4,8 +4,6 @@ class BaseAgent(object):
     Depending on the type of agent (e.g. policy-based or value-based), it is recommended
     to override the constructor __init__() to provide essential items for the agent.
     
-    Note that if subclass overrides __init__, remember to provide
-    keywords aguments, i.e. **kwargs passing to super().__init__. 
     
     All Agent should by default handle batched data
     e.g. observation with first dimension as batch or learning data is a batched list of Trajectory or Segment. 

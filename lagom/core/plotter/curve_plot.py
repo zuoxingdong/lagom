@@ -109,6 +109,7 @@ class CurvePlot(BasePlot):
             alphas (list): A list of alphas (transparency), each for plotting one uncertainty band
             **kwargs: keyword aguments used to specify the plotting options. 
                  A list of possible options:
+                 
                      - ax (Axes): given Matplotlib Axes to plot the figure
                      - title (str): title of the plot
                      - xlabel (str): label of horizontal axis
@@ -240,6 +241,7 @@ class CurvePlot(BasePlot):
             scale_magnitude (str): string description of scaling magnitude, use functools.partial
                 to make a function specified with this scaler but without put it as a required argument. 
                 Possible values: 
+                
                     - 'N': no scaling, raw value
                     - 'K': every one thousand
                     - 'M': every one million
