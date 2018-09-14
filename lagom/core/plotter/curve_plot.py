@@ -243,6 +243,7 @@ class CurvePlot(BasePlot):
                     - 'N': no scaling, raw value
                     - 'K': every one thousand
                     - 'M': every one million
+                    
                 When None is given, then it automatically detect for N, K or M. 
 
         Returns

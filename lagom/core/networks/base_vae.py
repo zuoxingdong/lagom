@@ -199,14 +199,14 @@ class BaseVAE(BaseNetwork):
     def calculate_loss(self, re_x, x, mu, logvar, loss_type='BCE'):
         r"""Calculate `VAE loss function`_. 
         
-        VAE_loss = Reconstruction_loss + KL_loss
+        The VAE loss is the summation of reconstruction loss and KL loss. 
+        
+        .. _VAE loss function:
+            https://arxiv.org/abs/1312.6114
         
         .. note::
         
             The losses are summed over all elements and batch. 
-        
-        .. _VAE loss function:
-            https://arxiv.org/abs/1312.6114
         
         Args:
             re_x (Tensor): reconstructed input returned from decoder
