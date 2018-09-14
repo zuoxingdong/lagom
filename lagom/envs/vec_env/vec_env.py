@@ -4,7 +4,12 @@ from abc import ABC
 from abc import abstractmethod
 
 from lagom.core.plotter import GridImage
-from lagom.core.plotter import ImageViewer
+
+try:  # workaround on server without fake screen but still running other things well
+    from lagom.core.plotter import ImageViewer
+except ImportError:
+    import warnings
+    warnings.warn('ImageViewer failed to import due to pyglet. ')
 
 
 class VecEnv(ABC):
