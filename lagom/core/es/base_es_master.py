@@ -40,7 +40,8 @@ class BaseESMaster(BaseIterativeMaster):
         -------
         es : BaseES
             an instantiated object of an ES class. 
-            
+        
+        
         Example::
         
             def make_es(self):
