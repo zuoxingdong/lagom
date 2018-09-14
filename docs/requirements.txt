@@ -9,3 +9,5 @@ matplotlib
 scikit-image
 imageio
 pyglet
+cloudpickle
+pyyaml

@@ -42,7 +42,7 @@ class Configurator(object):
         >>> configurator.grid('network.lr', [1e-2, 5e-3])
         >>> configurator.grid('env.id', ['CartPole-v1', 'Ant-v2'])
         >>> list_config = configurator.make_configs()
-        >>> Configurator.to_dataframe(list_config)
+        >>> config_dataframe = Configurator.to_dataframe(list_config)
            ID    log.dir  network.lr       env.id
         0   0  some path       0.010  CartPole-v1
         1   1  some path       0.010       Ant-v2

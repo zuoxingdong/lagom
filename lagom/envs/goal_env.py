@@ -48,9 +48,13 @@ class GoalEnv(Env):
         
             The following should always hold true::
             
-                >>> observation, reward, done, info = env.step()
-                >>> assert reward == env.compute_reward(observation['achieved_goal'], observation['desired_goal'], info)
-        
+                import gym
+
+                env = gym.make('FetchPush-v1')
+                env.reset()
+                observation, reward, done, info = env.step(env.action_space.sample())
+                assert reward == env.compute_reward(observation['achieved_goal'], observation['desired_goal'], info)
+
         Args:
             achieved_goal (object): the goal that is currently achieved. 
             desired_goal (object): the desired goal that agent should achieve

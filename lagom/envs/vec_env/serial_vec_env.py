@@ -18,6 +18,7 @@ class SerialVecEnv(VecEnv):
     
     Example::
     
+        >>> from lagom.envs import make_envs, make_gym_env
         >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0)
         >>> env = SerialVecEnv(list_make_env=list_make_env)
         >>> env

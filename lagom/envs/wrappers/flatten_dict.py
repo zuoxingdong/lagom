@@ -11,6 +11,8 @@ class FlattenDictWrapper(ObservationWrapper):
     
     Example::
     
+        >>> import gym
+        >>> from lagom.envs.wrappers import GymWrapper
         >>> env = gym.make('FetchPush-v1')
         >>> env = GymWrapper(env)
         >>> env.observation_space

@@ -18,6 +18,7 @@ class Trajectory(BaseHistory):
     
     Example::
     
+        >>> from lagom.runner import Transition
         >>> transition1 = Transition(s=1, a=0.1, r=0.5, s_next=2, done=False)
         >>> transition1.add_info(name='V_s', value=10.0)
 
@@ -65,7 +66,7 @@ class Trajectory(BaseHistory):
         # Sanity check for trajectory
         # Not allowed to add more transition if it already contains done=True
         if len(self.transitions) > 0:  # non-empty
-            assert self.transitions[-1].done == False, 'not allowed to add transition, because already contains done=True'
+            assert not self.transitions[-1].done, 'not allowed to add transition, because already contains done=True'
         super().add_transition(transition)
     
     @property

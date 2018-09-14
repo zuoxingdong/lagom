@@ -32,10 +32,10 @@ class SegmentRunner(BaseRunner):
     
     Example::
     
-        >>> list_make_env = make_envs(make_env=make_gym_env, 
-                                      env_id='CartPole-v1', 
-                                      num_env=2, 
-                                      init_seed=0)
+        >>> from lagom.agents import RandomAgent
+        >>> from lagom.envs import make_envs, make_gym_env, EnvSpec
+        >>> from lagom.envs.vec_env import SerialVecEnv
+        >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=2, init_seed=0)
         >>> env = SerialVecEnv(list_make_env=list_make_env)
         >>> env_spec = EnvSpec(env)
 

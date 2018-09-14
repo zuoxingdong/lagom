@@ -144,6 +144,8 @@ class A2CAgent(BaseAgent):
     
     def load(self, filename):
         self.policy.network.load(filename)
+
+        
 """
             
             # Generalized Advantage Estimation (GAE)

@@ -13,6 +13,7 @@ class Dict(Space):
     
     * Simple example::
     
+        >>> from lagom.envs.spaces import Discrete, Box
         >>> space = Dict({'position': Discrete(2), 'velocity': Box(low=-1.0, high=1.0, shape=(1, 2), dtype=np.float32)})
         >>> space.sample()
         OrderedDict([('position', 0),
@@ -20,8 +21,7 @@ class Dict(Space):
     
     * Nested example::
     
-        >>> sensor_space = Dict({'position': Box(-100, 100, shape=(3,), dtype=np.float32), 
-                             'velocity': Box(-1, 1, shape=(3,), dtype=np.float32)})
+        >>> sensor_space = Dict({'position': Box(-100, 100, shape=(3,), dtype=np.float32), 'velocity': Box(-1, 1, shape=(3,), dtype=np.float32)})
         >>> space = Dict({'sensors': sensor_space, 'score': Discrete(100)})
         >>> space.sample()
         OrderedDict([('score', 47),

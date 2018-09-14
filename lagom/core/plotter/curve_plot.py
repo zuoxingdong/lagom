@@ -33,20 +33,21 @@ class CurvePlot(BasePlot):
     
     Example::
     
-        x1 = [1, 4, 5, 7, 9, 13, 20]
-        y1 = [0.1, 0.25, 0.22, 0.53, 0.37, 0.5, 0.55]
-        x2 = [2, 4, 6, 7, 9, 11, 15]
-        y2 = [0.03, 0.12, 0.4, 0.2, 0.18, 0.32, 0.39]
+        >>> import matplotlib.pyplot as plt
+        >>> x1 = [1, 4, 5, 7, 9, 13, 20]
+        >>> y1 = [0.1, 0.25, 0.22, 0.53, 0.37, 0.5, 0.55]
+        >>> x2 = [2, 4, 6, 7, 9, 11, 15]
+        >>> y2 = [0.03, 0.12, 0.4, 0.2, 0.18, 0.32, 0.39]
         
-        interp = InterpCurve()
-        new_x, (new_y1, new_y2) = interp([x1, x2], [y1, y2], num_point=100)
+        >>> interp = InterpCurve()
+        >>> new_x, (new_y1, new_y2) = interp([x1, x2], [y1, y2], num_point=100)
         
-        plot = CurvePlot()
-        plot.add('curve1', [y1, y2], xvalues=[x1, x2])
-        ax = plot()
+        >>> plot = CurvePlot()
+        >>> plot.add('curve1', [y1, y2], xvalues=[x1, x2])
+        >>> ax = plot()
         
-        ax.plot(x1, y1, 'red')
-        ax.plot(x2, y2, 'green')
+        >>> ax.plot(x1, y1, 'red')
+        >>> ax.plot(x2, y2, 'green')
         
         >>> ax.figure
     

@@ -52,17 +52,6 @@ class GaussianPolicy(BasePolicy):
     * :attr:`init_std` controls the initial values for independently learnable standard deviation. 
       Note that this is only valid when :attr:`std_state_dependent`=False. 
     
-    Example::
-    
-        >>> policy = GaussianPolicy(config=config, 
-                                    network=network, 
-                                    env_spec=env_spec, 
-                                    min_std=1e-06, 
-                                    std_style='exp', 
-                                    constant_std=None, 
-                                    std_state_dependent=True, 
-                                    init_std=None)
-        >>> policy(observation)
     """
     def __init__(self,
                  config,
