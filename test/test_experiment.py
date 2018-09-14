@@ -16,8 +16,8 @@ from lagom import BaseAlgorithm
 
 
 class SimpleAlgorithm(BaseAlgorithm):
-    def __call__(self, config, seed):
-        return config['ID'], seed, f'ID: {config["ID"]}, seed: {seed}, Finished the work !'
+    def __call__(self, config, seed, device_str):
+        return config['ID'], seed, f'ID: {config["ID"]}, seed: {seed}, device_str: {device_str}, Finished the work !'
 
     
 class ExperimentWorker(BaseExperimentWorker):

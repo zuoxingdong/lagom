@@ -1,3 +1,6 @@
+from torch.nn import RNNBase
+from torch.nn.modules.rnn import RNNCellBase  # TODO: torch>0.4.1, use torch.nn.RNNCellBase
+
 import torch.nn as nn
 
 
@@ -31,7 +34,7 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         gain = weight_scale
         
     # Initialization
-    if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):  # RNN
+    if isinstance(module, (RNNBase, RNNCellBase)):  # RNN
         # Iterate over named parameters
         for name, param in module.named_parameters():
             if 'weight' in name:  # Weight

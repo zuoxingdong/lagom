@@ -5,6 +5,8 @@ from pathlib import Path
 from time import time
 from datetime import timedelta
 
+from lagom import yaml_dump
+
 
 def ask_yes_or_no(msg):
     r"""Ask user to enter yes or no to a given message. 
@@ -101,6 +103,8 @@ def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_wor
         for seed in experiment.seeds:  # iterate over all seeds
             p = log_path / f'{ID}' / f'{seed}'
             p.mkdir(parents=True)
+        # Yaml dump configuration dictionary
+        yaml_dump(obj=config, f=log_path/f'{ID}'/'config', ext='.yml')
 
     # Save all configurations
     experiment.save_configs(log_path / 'configs')

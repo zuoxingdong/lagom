@@ -1,8 +1,8 @@
-from algo import Algorithm
-
-from lagom.experiment import Config
+from lagom.experiment import Configurator
 from lagom.experiment import BaseExperimentWorker
 from lagom.experiment import BaseExperimentMaster
+
+from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
@@ -13,20 +13,29 @@ class ExperimentWorker(BaseExperimentWorker):
 
 
 class ExperimentMaster(BaseExperimentMaster):
-    def process_algo_result(self, config, result):
-        assert result is None
-        
     def make_configs(self):
-        config = Config()
+        configurator = Configurator('grid')
         
-        config.add_grid(name='use_ConvVAE', val=[True, False])
+        configurator.fixed('cuda', True)
         
-        config.add_item(name='num_epochs', val=100)
-        config.add_item(name='cuda', val=True)
-        config.add_item(name='seed', val=1)
-        config.add_item(name='batch_size', val=128)
-        config.add_item(name='log_interval', val=100)
+        configurator.grid('network.type', ['VAE', 'ConvVAE'])
+        configurator.fixed('network.z_dim', 8)
         
-        configs = config.make_configs()
+        configurator.fixed('train.num_epoch', 100)
+        configurator.fixed('train.batch_size', 128)
+        configurator.fixed('eval.batch_size', 128)
         
-        return configs
+        configurator.fixed('log.interval', 100)
+        configurator.fixed('log.dir', 'logs')
+
+        list_config = configurator.make_configs()
+        
+        return list_config
+    
+    def make_seeds(self):
+        list_seed = [1]
+        
+        return list_seed
+    
+    def process_algo_result(self, config, seed, result):
+        assert result is None
