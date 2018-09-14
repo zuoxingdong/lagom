@@ -6,5 +6,5 @@ from experiment import ExperimentMaster
 
 run_experiment(worker_class=ExperimentWorker, 
                master_class=ExperimentMaster, 
-               num_worker=2, 
+               max_num_worker=None, 
                daemonic_worker=None)

@@ -17,7 +17,7 @@ setup(name='lagom',
       long_description=long_description, 
       long_description_content_type='text/markdown',
       url='https://github.com/zuoxingdong/lagom',
-      # Install dependencies
+      # Minimal requried dependencies (full dependencies in requirements.txt)
       install_requires=['numpy', 
                         'scipy', 
                         'matplotlib', 
@@ -30,7 +30,8 @@ setup(name='lagom',
                         'cma', 
                         'flake8', 
                         'sphinx', 
-                        'sphinx_rtd_theme'],
+                        'sphinx_rtd_theme', 
+                        'cloudpickle'],
       tests_require=['pytest'],
       # Only Python 3+
       python_requires='>=3',
