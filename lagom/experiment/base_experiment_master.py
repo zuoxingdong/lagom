@@ -20,10 +20,9 @@ class BaseExperimentMaster(BaseIterativeMaster):
     The total number of jobs is the number of configurations times the number of random seeds.
     
     .. note::
-    
         If the number of configurations is larger than the number of workers, then the jobs are splitted
         into iterations, each iteration has the maximum capacity as the number of workers. 
-    
+        
     See :class:`BaseIterativeMaster` for more details about the iterative master.
     
     The subclass should implement at least the following:
@@ -42,7 +41,7 @@ class BaseExperimentMaster(BaseIterativeMaster):
         Args:
             worker_class (BaseExperimentWorker): a class of the type of :class:`BaseExperimentWorker`. Note
                 that it is the class itself, not an instantiated object. 
-            max_num_worker (int, optional): maximum number of workers. It has following use cases:
+            max_num_worker (int, optional): maximum number of workers. It has following use cases::
                 * If ``None``, then number of wokers set to be the total number of configurations
                   times the number of random seeds. 
                 * If number of configurations less than this max bound, then the number of workers
@@ -50,6 +49,7 @@ class BaseExperimentMaster(BaseIterativeMaster):
                 * If number of configurations larger than this max bound, then the number of workers
                   equals to this max bound. The rest of configurations are splitted into batches, 
                   and run them iteratively with this max bound.
+                  
             daemonic_worker (bool): If ``True``, then set all workers to be daemonic. The reason to 
                 use daemonic process is because if main process crashes, we should not cause things to hang.
         """
