@@ -14,6 +14,7 @@
     - [Install dependencies](#install-dependencies)
     - [Install lagom](#install-lagom)
 - [Getting Started](#getting-started)
+- [Documentation](#documentation)
 - [Examples](#examples)
 - [Test](#test)
 - [Roadmap](#roadmap)
@@ -36,38 +37,39 @@ A graphical illustration is coming soon.
 # Installation
 
 ## Install dependencies
-This repository requires following packages:
+Run the following command to install [all the dependencies](./requirements.txt):
 
-- Python >= 3.6
-- Cython >= 0.28.4
-- setuptools >= 39.0.1
-- Numpy >= 1.14.5
-- Scipy >= 1.1.0
-- Matplotlib >= 2.2.2
-- Scikit-image >= 0.14.0
-- Imageio >= 2.3.0
-- Pandas >= 0.23.3
-- Seaborn >= 0.9.dev
-- Jupyterlab >= 0.32.1
-- gym >= 0.10.5
-- cma >= 2.6.0
-- pytest >= 3.6.3
-- flake8 >= 3.5.0
-- sphinx >= 1.7.6
-- PyTorch >= 0.5.0a0
+```bash
+pip install -r requirements.txt
+```
 
-There are bash scripts in [scripts/](scripts/) directory to automatically set up the conda environment and dependencies.
+Note that it is highly recommanded to use an Anaconda environment:
+
+```bash
+conda create -n lagom python=3.7
+```
+
+We also provide some bash scripts in [scripts/](scripts/) directory to automatically set up the conda environment and dependencies.
 
 ## Install lagom
+
+Run the following command to install from source:
+
 ```bash
 git clone https://github.com/zuoxingdong/lagom.git
 cd lagom
 pip install -e .
 ```
 
+Installing from source allows to flexibly modify and adapt the code as you pleased, this is very convenient for research purpose which often needs fast prototyping. 
+
 # Getting Started
 
 Detailed tutorials is coming soon. For now, it is recommended to have a look in [examples/](examples/) or the source code. 
+
+# Documentation
+
+The documentation hosted by ReadTheDocs is available online at [http://lagom.readthedocs.io](http://lagom.readthedocs.io)
 
 # Examples
 
@@ -76,6 +78,7 @@ We shall continuously provide [examples/](examples/) to use lagom.
 # Test
 
 We are using [pytest](https://docs.pytest.org) for tests. Feel free to run via
+
 ```bash
 pytest test -v
 ```
@@ -102,7 +105,7 @@ pytest test -v
 
 # Reference
 
-This repo is inspired by [OpenAI rllab](https://github.com/rll/rllab), [OpenAI baselines](https://github.com/openai/baselines), [RLPyTorch](https://github.com/pytorch/ELF/tree/master/src_py/rlpytorch), [TensorForce](https://github.com/reinforceio/tensorforce) [Intel Coach](https://github.com/NervanaSystems/coach) and [Dopamine](https://github.com/google/dopamine)
+This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [OpenAI rllab](https://github.com/rll/rllab), [OpenAI baselines](https://github.com/openai/baselines), [RLPyTorch](https://github.com/pytorch/ELF/tree/master/src_py/rlpytorch), [TensorForce](https://github.com/reinforceio/tensorforce) [Intel Coach](https://github.com/NervanaSystems/coach) and [Dopamine](https://github.com/google/dopamine)
 
 Please use this bibtex if you want to cite this repository in your publications:
 
