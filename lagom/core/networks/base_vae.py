@@ -21,6 +21,57 @@ class BaseVAE(BaseNetwork):
     
     Example::
     
+        class VAE(BaseVAE):
+            def make_encoder(self, config):
+                last_dim = 400
+                out = make_fc(input_dim=784, hidden_sizes=[last_dim])
+
+                return out, last_dim
+
+            def make_moment_heads(self, config, last_dim):
+                out = {}
+
+                z_dim = config['network.z_dim']
+
+                out['mu_head'] = nn.Linear(in_features=last_dim, out_features=z_dim)
+                out['logvar_head'] = nn.Linear(in_features=last_dim, out_features=z_dim)
+                out['z_dim'] = z_dim
+
+                return out
+
+            def make_decoder(self, config, z_dim):
+                out = make_fc(input_dim=z_dim, hidden_sizes=[self.last_dim, 784])
+
+                return out
+
+            def init_params(self, config):
+                for layer in self.encoder:
+                    ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+
+                ortho_init(self.mu_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+                ortho_init(self.logvar_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+
+                for layer in self.decoder:
+                    ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+
+            def encoder_forward(self, x):
+                # flatten input
+                x = x.flatten(start_dim=1)
+
+                for layer in self.encoder:
+                    x = F.relu(layer(x))
+
+                return x
+
+            def decoder_forward(self, z):
+                # decoding until last layer
+                for layer in self.decoder[:-1]:
+                    z = F.relu(layer(z))
+
+                # Elementwise binary output (BCE loss)
+                x = torch.sigmoid(self.decoder[-1](z))
+
+                return x
     
     """
     def make_params(self, config):
