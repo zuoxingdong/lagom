@@ -41,7 +41,8 @@ class BaseExperimentMaster(BaseIterativeMaster):
         Args:
             worker_class (BaseExperimentWorker): a class of the type of :class:`BaseExperimentWorker`. Note
                 that it is the class itself, not an instantiated object. 
-            max_num_worker (int, optional): maximum number of workers. It has following use cases::
+            max_num_worker (int, optional): maximum number of workers. It has following use cases:
+            
                 * If ``None``, then number of wokers set to be the total number of configurations
                   times the number of random seeds. 
                 * If number of configurations less than this max bound, then the number of workers
