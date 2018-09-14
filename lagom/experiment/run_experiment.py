@@ -26,7 +26,8 @@ def ask_yes_or_no(msg):
             return False
         else:
             print("Please answer 'yes' or 'no':")
-            
+
+
 def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_worker=None):
     r"""A convenient function to launch a parallelized experiment (Master-Worker). 
     

@@ -17,11 +17,13 @@ class SmoothFilter(BaseTransform):
     
     Example::
     
-        x = np.linspace(0, 4*2*np.pi, num=100)
-        y = x*(np.sin(x) + np.random.random(100)*4)
+        >>> import matplotlib.pyplot as plt
+    
+        >>> x = np.linspace(0, 4*2*np.pi, num=100)
+        >>> y = x*(np.sin(x) + np.random.random(100)*4)
         
-        smooth = SmoothFilter()
-        y2 = smooth(y, window_length=31, polyorder=10)
+        >>> smooth = SmoothFilter()
+        >>> y2 = smooth(y, window_length=31, polyorder=10)
         
         >>> plt.plot(x, y)
         >>> plt.plot(x, y2, 'red')

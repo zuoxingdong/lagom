@@ -54,8 +54,8 @@ class Logger(logging.Logger):
     * With indentation::
     
         >>> logger.dump(keys=None, index=None, indent=1)
-        	Iteration: [1, 2, 3]
-        	Training Loss: [0.12, 0.11, 0.09]
+            Iteration: [1, 2, 3]
+            Training Loss: [0.12, 0.11, 0.09]
         
     * With specified keys::
     

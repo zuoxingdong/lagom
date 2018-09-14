@@ -34,4 +34,3 @@ class BaseRunner(object):
     def __call__(self, N, T):
         r"""Run the agent in the environment and collect all necessary interaction data as a batch. """
         raise NotImplementedError
-        

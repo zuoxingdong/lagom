@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 
 from lagom.core.plotter import GridImage
+from lagom.core.plotter import ImageViewer
 
 
 class VecEnv(ABC):

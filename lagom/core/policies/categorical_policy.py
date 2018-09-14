@@ -20,11 +20,6 @@ class CategoricalPolicy(BasePolicy):
         action spaces. Note that the network must have an attribute ``.last_feature_dim`` of type
         ``int`` for the policy to create the final output layer (fully-connected), and this is
         recommended to be done in the method :meth:`~BaseNetwork.make_params` of the network class.
-    
-    Example::
-
-        >>> policy = CategoricalPolicy(config=config, network=network, env_spec=env_spec)
-        >>> policy(observation)
         
     """
     def __init__(self, config, network, env_spec, **kwargs):

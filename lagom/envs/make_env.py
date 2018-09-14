@@ -43,6 +43,7 @@ def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
     
     return env
     
+
 def make_envs(make_env, env_id, num_env, init_seed, **kwargs):
     r"""Create a list of argument-free make_env() functions based on the given settings. 
     
@@ -79,6 +80,7 @@ def make_envs(make_env, env_id, num_env, init_seed, **kwargs):
     
     return list_make_env
 
+
 def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, **kwargs):
     r"""Create a vectorized environment (i.e. :class:`VecEnv`). 
     
@@ -97,6 +99,7 @@ def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, **kwargs):
         
     Example::
     
+        >>> from lagom.envs.vec_env import SerialVecEnv
         >>> make_vec_env(vec_env_class=SerialVecEnv, make_env=make_gym_env, env_id='CartPole-v1', num_env=5, init_seed=1)
         <SerialVecEnv: CartPole-v1, n: 5>
     

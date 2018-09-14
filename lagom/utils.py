@@ -96,6 +96,7 @@ def pickle_load(f):
     with open(f, 'rb') as file:
         return cloudpickle.load(file)
 
+
 def pickle_dump(obj, f, ext='.pkl'):
     r"""Serialize an object using pickling and save in a file. 
     
@@ -120,7 +121,8 @@ def pickle_dump(obj, f, ext='.pkl'):
     
     with open(f+ext, 'wb') as file:
         return cloudpickle.dump(obj=obj, file=file, protocol=pickle.HIGHEST_PROTOCOL)
-    
+
+
 def yaml_load(f):
     r"""Read the data from a YAML file. 
     
@@ -143,7 +145,8 @@ def yaml_load(f):
     
     with open(f, 'r') as file:
         return yaml.load(file)
-    
+
+
 def yaml_dump(obj, f, ext='.yml'):
     r"""Serialize a Python object using YAML and save in a file. 
     
