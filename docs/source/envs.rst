@@ -29,6 +29,8 @@ Spaces
 Environment
 ---------------
 
+.. currentmodule:: lagom.envs
+
 .. autoclass:: Env
     :members:
     
