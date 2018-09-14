@@ -298,7 +298,6 @@ class BaseMDN(BaseNetwork):
         # Calculate the joint log-probabilities from [N, K, D] to [N, K]
         joint_log_probs = torch.sum(log_pi + log_gaussian_probs, dim=-1, keepdim=False)
         
-        
         # Calculate the loss via log-sum-exp trick, from [N, K] to [N]
         # It calculates over K (mixing coefficient) dimension, produce tensor with shape [N]
         loss = -torch.logsumexp(joint_log_probs, dim=-1, keepdim=False)

@@ -8,6 +8,7 @@ class Product(Space):
     
     Example::
     
+        >>> from lagom.envs.spaces import Discrete, Box
         >>> Product((Discrete(5), Box(-1.0, 1.0, shape=(2, 3), dtype=np.float32)))
         
     """

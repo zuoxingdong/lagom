@@ -38,19 +38,11 @@ class VecStandardize(VecEnvWrapper):
     
     Example::
     
-        list_make_env = make_envs(make_env=make_gym_env, 
-                                  env_id='Pendulum-v0', 
-                                  num_env=2, 
-                                  init_seed=1)
-        venv = SerialVecEnv(list_make_env=list_make_env)
-        venv = VecStandardize(venv=venv, 
-                              use_obs=True, 
-                              use_reward=True, 
-                              clip_obs=10.0, 
-                              clip_reward=10.0, 
-                              gamma=0.99, 
-                              eps=1e-8)
-                                 
+        >>> from lagom.envs import make_envs, make_gym_env
+        >>> from lagom.envs.vec_env import SerialVecEnv
+        >>> list_make_env = make_envs(make_env=make_gym_env, env_id='Pendulum-v0', num_env=2, init_seed=1)
+        >>> venv = SerialVecEnv(list_make_env=list_make_env)
+        >>> venv = VecStandardize(venv=venv, use_obs=True, use_reward=True, clip_obs=10.0, clip_reward=10.0, gamma=0.99, eps=1e-8)                                 
         >>> venv
         <VecStandardize: Pendulum-v0, n: 2>
         
@@ -142,7 +134,7 @@ class VecStandardize(VecEnvWrapper):
             # Update with calculated discounted returns
             self.reward_runningavg(self.all_returns)
             # Standardize the reward
-            mean = self.reward_runningavg.mu
+            # mean = self.reward_runningavg.mu  # not useful
             std = self.reward_runningavg.sigma
             # Note that we do not subtract from mean, but only divided by std
             if not np.allclose(std, 0.0):  # only non-zero std

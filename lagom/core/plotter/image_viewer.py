@@ -3,7 +3,7 @@ import numpy as np
 import pyglet
 
 try:
-    from pyglet.gl import *
+    import pyglet.gl as gl
 except Exception:
     msg1 = '1. make sure OpenGL is installed by running `sudo apt install python-opengl`. \n'
     msg2 = '2. if you are on a server, then create a fake screen with xvfb-run and make sure nvidia driver '

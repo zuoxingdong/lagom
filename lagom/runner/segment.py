@@ -62,6 +62,8 @@ class Segment(BaseHistory):
     
     Example::
     
+        >>> import torch
+        >>> from lagom.runner import Transition
         >>> transition1 = Transition(s=10, a=-1, r=1, s_next=20, done=False)
         >>> transition1.add_info('V_s', torch.tensor(100.))
 
@@ -151,9 +153,9 @@ class Segment(BaseHistory):
         
         #########
         # Use itertools.chain().from_iterable, on average 50% faster than following method
-        #transitions = []
-        #for trajectory in self.trajectories:
-        #    transitions.extend(trajectory.transitions)
+        # transitions = []
+        # for trajectory in self.trajectories:
+        #     transitions.extend(trajectory.transitions)
         ########
         
         transitions = list(chain.from_iterable([trajectory.transitions for trajectory in self.trajectories]))
@@ -184,6 +186,7 @@ class Segment(BaseHistory):
         out = list(chain.from_iterable([trajectory.all_returns for trajectory in self.trajectories]))
         
         return out
+
     @property
     def all_discounted_returns(self):
         # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`

@@ -25,6 +25,7 @@ class FrameStack(ObservationWrapper):
     
     Example::
     
+        >>> from lagom.envs import make_gym_env
         >>> env = make_gym_env(env_id='CartPole-v1', seed=1)
         >>> env = FrameStack(env, num_stack=4)
         >>> env
@@ -79,7 +80,7 @@ class FrameStack(ObservationWrapper):
 
     def process_observation(self, observation):
         # Shift the oldest observation to the front
-        self.stack_buffer  = np.roll(self.stack_buffer, shift=1, axis=-1)
+        self.stack_buffer = np.roll(self.stack_buffer, shift=1, axis=-1)
         # Replace the front as new observation
         self.stack_buffer[..., 0] = observation
         
