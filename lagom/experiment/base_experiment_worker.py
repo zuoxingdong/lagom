@@ -38,14 +38,18 @@ class BaseExperimentWorker(BaseWorker):
             num_gpu = torch.cuda.device_count()
             # Compute which GPU to assign with rolling ID
             device_id = task_id % num_gpu
-            # Assign the GPU device for PyTorch
+            # Assign the GPU device in PyTorch
             torch.cuda.set_device(device_id)
+            # Create a device string
+            device_str = f'cuda:{device_id}'
+        else:  # not using CUDA, only CPU
+            device_str = 'cpu'
         
         # Instantiate an algorithm
         algo = self.make_algo()
         
-        # Run the algorithm with given configuration and seed
-        result = algo(config, seed)
+        # Run the algorithm with given configuration and seed, and device string
+        result = algo(config, seed, device_str=device_str)
         
         return task_id, result
     
