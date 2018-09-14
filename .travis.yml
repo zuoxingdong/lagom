@@ -8,8 +8,8 @@ python:
 
 # Install dependencies
 install:
-    # Build virtual environment and install PyTorch
-    - sudo apt update
+    # Build virtual environment with Miniconda
+    - sudo apt update  # update system list
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -18,16 +18,22 @@ install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n test-environment -c pytorch python=$TRAVIS_PYTHON_VERSION numpy mock pytorch-cpu
-    - source activate test-environment
-    - python setup.py install
+    - conda create -q -n CI -c pytorch python=$TRAVIS_PYTHON_VERSION numpy mock pytorch-cpu
+    - source activate CI
     # Install required dependencies
     - pip install -r requirements.txt
+    # Install current project
+    - pip install -e .
+
 # Command to run tests
 script:
-    - pip install -e .
-    - pytest test/ -v  # run test files
-    - flake8  # check code style and quality
+    # Activate conda environment
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - source activate CI
+    # Run test files
+    - pytest test/ -v
+    # flake8 check for code style and quality
+    - flake8 lagom/
     
 # Only master branch
 branches:

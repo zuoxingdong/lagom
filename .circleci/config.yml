@@ -56,7 +56,7 @@ jobs:  # Build-Test-Deplot (BTD) process
                     # Run test files
                     pytest test/ -v
                     # flake8 check for code style and quality
-                    flake8 .
+                    flake8 lagom/
             
             - store_artifacts:  # Save artifacts
                 path: artifacts/
