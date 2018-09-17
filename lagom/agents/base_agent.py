@@ -1,87 +1,92 @@
 class BaseAgent(object):
-    r"""Base class of the agent for action selection and learning rule. 
+    r"""Base class for all agents. 
     
-    Depending on the type of agent (e.g. policy-based or value-based), it is recommended
-    to override the constructor __init__() to provide essential items for the agent.
+    The agent could select an action from a given observation and update itself by defining a certain learning
+    mechanism. 
     
+    Any agent should subclass this class, e.g. policy-based or value-based. 
     
-    All Agent should by default handle batched data
-    e.g. observation with first dimension as batch or learning data is a batched list of Trajectory or Segment. 
+    .. note::
     
-    All inherited subclasses should at least implement the following functions:
-    1. choose_action(self, obs)
-    2. learn(self, x)
-    3. save(self, filename)
-    4. load(self, filename)
+        All agents should by default handle batched data e.g. batched observation returned from :class:`VecEnv`
+        and batched action for each sub-environment of a :class:`VecEnv`. 
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`choose_action`
+    - :meth:`learn`
+    - :meth:`save`
+    - :meth:`load`
+    
     """
     def __init__(self, config, **kwargs):
-        """
+        r"""Initialize the agent. 
+        
         Args:
-            config (dict): the configurations
-            **kwargs: TODO for documentation
+            config (dict): a dictionary of configurations
+            **kwargs: keyword aguments used to specify the agent
         """
         self.config = config
         
-        # Set all keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
+        # Set keyword arguments
+        for key, value in kwargs.items():
+            self.__setattr__(key, value)
         
     def choose_action(self, obs):
-        """
-        The agent selects an action based on given observation. 
+        r"""Returns an (batched) action selected by the agent from received (batched) observation/
+        
+        .. note::
+        
+            Tensor conversion should be handled here instead of in policy or network forward pass.
+        
         The output is a dictionary containing useful items, e.g. action, action_logprob, state_value
         
         Args:
-            obs (object): agent's observation. Note that this is raw observation returned from 
-                environment. Tensor conversion should be handled here. And it is batched data
-                i.e. first dimension as batch dimension
+            obs (object): batched observation returned from the environment. First dimension is treated
+                as batch dimension. 
             
-        Returns:
-            output (dict): a dictionary of action selection output. 
-            
-            NOTE: everything should be batched, e.g. scalar loss -> [loss]
-            
-            
-                Possible keys: ['action', 'action_logprob', 'state_value', 'Q_value']
+        Returns
+        -------
+        out : dict
+            a dictionary of action selection output. It should also contain all useful information
+            to be stored during interaction with :class:`BaseRunner`. This allows a generic API of
+            the runner classes for all kinds of agents. Note that everything should be batched even
+            if for scalar loss, i.e. ``scalar_loss -> [scalar_loss]``
         """
         raise NotImplementedError
         
     def learn(self, D):
-        """
-        Learning rule about how agent updates itself given batched data.
-        The output is a dictionary containing useful items, i.e. loss, batched_policy_loss
+        r"""Defines learning mechanism to update the agent from a batched data. 
         
         Args:
-            D (list): batched data to train the agent. 
-                e.g. In policy gradient, this can be a list of Trajectory or Segment
+            D (list): a list of batched data to train the agent e.g. in policy gradient, this can be 
+                a list of :class:`Trajectory` or :class:`Segment`
             
-        Returns:
-            output (dict): a dictionary of learning output. 
-                Possible keys: ['loss', 'batch_policy_loss']
+        Returns
+        -------
+        out : dict
+            a dictionary of learning output. This could contain the loss. 
         """
         raise NotImplementedError
         
-    def save(self, filename):
-        """
-        Save the current parameters of the agent. 
+    def save(self, f):
+        r"""Save the current parameters of the agent. 
         
-        If the agent uses a BaseNetwork object, it is recommended to call
-        BaseNetwork internal save/load function for network parameters in PyTorch. 
+        If the agent uses a :class:`BaseNetwork`, it is recommended to call its internal
+        ``save`` function to serialize its parameters. 
         
         Args:
-            filename (str): name of the file
+            f (str): name of the file
         """
         raise NotImplementedError
         
-    def load(self, filename):
-        """
-        Load the parameters of the agent from a file
+    def load(self, f):
+        r"""Load the parameters of the agent from a file.
         
-        If the agent uses a BaseNetwork object, it is recommended to call
-        BaseNetwork internal save/load function for network parameters in PyTorch. 
+        If the agent uses a :class:`BaseNetwork`, it is recommended to call its internal
+        ``load`` function to load network parameters. 
         
         Args:
-            filename (str): name of the file
-        
+            f (str): name of the file
         """
         raise NotImplementedError

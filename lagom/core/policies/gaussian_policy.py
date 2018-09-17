@@ -109,7 +109,7 @@ class GaussianPolicy(BasePolicy):
         else:
             self.network.logvar_head = logvar_head
     
-    def __call__(self, x):
+    def __call__(self, x, out_keys=['action']):
         # Output dictionary
         out_policy = {}
         
@@ -140,31 +140,33 @@ class GaussianPolicy(BasePolicy):
         
         # Create independent Gaussian distributions i.e. Diagonal Gaussian
         action_dist = Independent(Normal(loc=mean, scale=std), 1)
+        
         # Sample action from the distribution (no gradient)
         # Do not use `rsample()`, it leads to zero gradient of mean head !
         action = action_dist.sample()
+        out_policy['action'] = action
+        
         # Calculate log-probability of the sampled action
-        action_logprob = action_dist.log_prob(action)
+        if 'action_logprob' in out_keys:
+            out_policy['action_logprob'] = action_dist.log_prob(action)
+        
         # Calculate policy entropy conditioned on state
-        entropy = action_dist.entropy()
+        if 'entropy' in out_keys:
+            out_policy['entropy'] = action_dist.entropy()
+        
         # Calculate policy perplexity i.e. exp(entropy)
-        perplexity = action_dist.perplexity()
+        if 'perplexity' in out_keys:
+            out_policy['perplexity'] = action_dist.perplexity()
         
         ##############################
         # TEMP: sanity check for NaN #
         ##############################
-        if torch.any(torch.isnan(action_logprob)):
+        if torch.any(torch.isnan(action)):
             while True:
                 print(f'NaN, check your std: {std}')
         
         # Constraint action in valid range
-        action = self.constraint_action(action)
-        
-        # Record output
-        out_policy['action'] = action
-        out_policy['action_logprob'] = action_logprob
-        out_policy['entropy'] = entropy
-        out_policy['perplexity'] = perplexity
+        out_policy['action'] = self.constraint_action(action)
         
         return out_policy
         

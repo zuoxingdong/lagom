@@ -26,3 +26,7 @@ Utils
 .. autofunction:: yaml_load
 
 .. autofunction:: yaml_dump
+
+.. autofunction:: color_str
+
+.. autofunction:: timed

@@ -1,0 +1,9 @@
+ID: 1
+cuda: true
+network.type: ConvVAE
+network.z_dim: 8
+train.num_epoch: 100
+train.batch_size: 128
+eval.batch_size: 128
+log.interval: 100
+log.dir: logs

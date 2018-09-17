@@ -21,9 +21,6 @@ ES infrastructure
 .. autoclass:: BaseESWorker
     :members:
     
-.. autoclass:: BaseGymESMaster
-    :members:
-    
 .. autoclass:: ESOptimizer
     :members:
     
