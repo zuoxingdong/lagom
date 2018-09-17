@@ -36,13 +36,23 @@ class BasePolicy(object):
         for key, val in kwargs.items():
             self.__setattr__(key, val)
         
-    def __call__(self, x):
+    def __call__(self, x, out_keys=['action']):
         r"""Define the computation of the policy given input data at every call. 
         
         Should be overridden by all subclasses.
         
+        .. note::
+        
+            There is an option to select metrics for the policy to calculate and only selected items will
+            be calculated and returned e.g. ``out_keys=['action', 'action_logprob', 'entropy']``. 
+            This is very useful to dramatically speedup in some scenarios. For example in ES, it
+            turns out that outputing all metrics of an action distribution makes training extremly
+            slow and only action is useful but others like log-probability, entropy etc. 
+        
         Args:
             x (object): input data to the policy. 
+            out_keys (list, optional): a list of required metrics for the policy to output. 
+                Default: ``['action']``
             
         Returns
         -------

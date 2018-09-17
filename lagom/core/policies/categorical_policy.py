@@ -36,7 +36,7 @@ class CategoricalPolicy(BasePolicy):
         # Augment to network (e.g. tracked by network.parameters() for optimizer to update)
         self.network.add_module('action_head', action_head)
         
-    def __call__(self, x):
+    def __call__(self, x, out_keys=['action']):
         # Output dictionary
         out_policy = {}
         
@@ -45,24 +45,29 @@ class CategoricalPolicy(BasePolicy):
         
         # Forward pass of action head to obtain action scores for categorical distribution
         action_score = self.network.action_head(features)
+        
         # Compute action probabilities by applying softmax
         action_prob = F.softmax(action_score, dim=-1)  # over last dimension
+        if 'action_prob' in out_keys:
+            out_policy['action_prob'] = action_prob
+            
         # Create a Categorical distribution
         action_dist = Categorical(probs=action_prob)
+        
         # Sample action from the distribution (no gradient)
         action = action_dist.sample()
-        # Calculate log-probability of the sampled action
-        action_logprob = action_dist.log_prob(action)
-        # Calculate policy entropy conditioned on state
-        entropy = action_dist.entropy()
-        # Calculate policy perplexity i.e. exp(entropy)
-        perplexity = action_dist.perplexity()
-        
-        # Record output
         out_policy['action'] = action
-        out_policy['action_prob'] = action_prob
-        out_policy['action_logprob'] = action_logprob
-        out_policy['entropy'] = entropy
-        out_policy['perplexity'] = perplexity
+        
+        # Calculate log-probability of the sampled action
+        if 'action_logprob' in out_keys:
+            out_policy['action_logprob'] = action_dist.log_prob(action)
+            
+        # Calculate policy entropy conditioned on state
+        if 'entropy' in out_keys:
+            out_policy['entropy'] = action_dist.entropy()
+        
+        # Calculate policy perplexity i.e. exp(entropy)
+        if 'perplexity' in out_keys:
+            out_policy['perplexity'] = action_dist.perplexity()
         
         return out_policy

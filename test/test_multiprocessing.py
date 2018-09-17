@@ -10,10 +10,7 @@ from lagom.core.multiprocessing import BaseIterativeMaster
 
 
 def naive_primality(integer):
-    """
-    Naive way to test a prime by iterating
-    over all preceding integers. 
-    """
+    r"""Naive way to test a prime by iterating over all preceding integers. """
     prime = True
     if integer <= 1:
         prime = False
@@ -26,7 +23,12 @@ def naive_primality(integer):
     
     
 class NaivePrimalityWorker(BaseWorker):
+    def prepare(self):
+        self.prepared = 'ok'
+    
     def work(self, master_cmd):
+        assert self.prepared == 'ok'
+        
         task_id, task, seed = master_cmd
         
         result = []

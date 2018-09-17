@@ -23,6 +23,9 @@ class BaseExperimentWorker(BaseWorker):
     - :meth:`make_algo`
     
     """
+    def prepare(self):
+        pass
+    
     def work(self, master_cmd):
         task_id, task, _worker_seed = master_cmd
         # Do not use the worker seed

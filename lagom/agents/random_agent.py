@@ -4,35 +4,30 @@ from lagom.envs.vec_env import VecEnv
 
 
 class RandomAgent(BaseAgent):
-    """
-    A random agent samples action uniformly from action space. 
-    
-    Note that the agent should handle batched data. 
-    """
-    def __init__(self, env_spec, config=None, **kwargs):
+    r"""A random agent samples action uniformly from action space. """
+    def __init__(self, config, env_spec, **kwargs):
         self.env_spec = env_spec
         
         super().__init__(config, **kwargs)
         
     def choose_action(self, obs):
+        out = {}
+        
         # Randomly sample an action from action space
         if isinstance(self.env_spec.env, VecEnv):
             num_env = self.env_spec.env.num_env
             action = [self.env_spec.action_space.sample() for _ in range(num_env)]
         else:
             action = self.env_spec.action_space.sample()
+        out['action'] = action
         
-        # Dictionary of output data
-        output = {}
-        output['action'] = action
+        return out
         
-        return output
-        
-    def learn(self, x):
+    def learn(self, D):
         pass
     
-    def save(self, filename):
+    def save(self, f):
         pass
     
-    def load(self, filename):
+    def load(self, f):
         pass

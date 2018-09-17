@@ -20,21 +20,30 @@ class BaseESMaster(BaseIterativeMaster):
     def __init__(self,
                  num_iteration, 
                  worker_class, 
-                 num_worker,
                  init_seed=0, 
-                 daemonic_worker=None):
+                 daemonic_worker=None, 
+                 config=None, 
+                 **kwargs):
+        self.config = config
+        
+        # Set all keyword arguments
+        for key, val in kwargs.items():
+            self.__setattr__(key, val)
+        
+        # Create ES solver
+        self.es = self.make_es(self.config)
+        
         super().__init__(num_iteration=num_iteration, 
                          worker_class=worker_class, 
-                         num_worker=num_worker,
+                         num_worker=self.es.popsize,
                          init_seed=init_seed, 
                          daemonic_worker=daemonic_worker)
-        # Create ES solver
-        self.es = self.make_es()
-        # It is better to force popsize to be number of workers
-        assert self.es.popsize == self.num_worker
         
-    def make_es(self):
+    def make_es(self, config):
         r"""Create an ES algorithm. 
+        
+        Args:
+            config (dict): a dictionary of configurations. 
         
         Returns
         -------
@@ -57,15 +66,20 @@ class BaseESMaster(BaseIterativeMaster):
         # ES samples new candidate solutions
         solutions = self.es.ask()
         
+        # Pack config into each solution candidates
+        tasks = list(zip(solutions, [self.config]*len(solutions)))
+        
         # Record iteration number, for logging in _process_workers_result()
         # And it also keeps API untouched for assign_tasks() in non-iterative Master class
         self.generation = iteration
         
-        return solutions
+        return tasks
         
     def _process_workers_result(self, tasks, workers_result):
         # Rename, in ES context, the task is to evalute the solution candidate
-        solutions = tasks
+        # task: [solution, config]
+        solutions, _ = zip(*tasks)
+        solutions = list(solutions)
         
         # Unpack function values from workers results, [solution_id, function_value]
         # Note that the workers result already sorted ascendingly with respect to task ID

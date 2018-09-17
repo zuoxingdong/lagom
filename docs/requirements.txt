@@ -11,3 +11,4 @@ imageio
 pyglet
 cloudpickle
 pyyaml
+colored

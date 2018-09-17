@@ -5,14 +5,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .base_agent import BaseAgent
+
+from lagom import Logger
 from lagom.core.transform import Standardize
 
 
 class REINFORCEAgent(BaseAgent):
-    """
-    REINFORCE algorithm (no baseline)
-    """
-    def __init__(self, policy, optimizer, config, **kwargs):
+    r"""REINFORCE agent (no baseline). """
+    def __init__(self, config, policy, optimizer, **kwargs):
         self.policy = policy
         self.optimizer = optimizer
         
@@ -21,23 +21,19 @@ class REINFORCEAgent(BaseAgent):
         self.accumulated_trained_timesteps = 0
         
     def choose_action(self, obs):
-        # Convert to Tensor
-        # Note that the observation should be batched already (even if only one trajectory)
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.array(obs)).float()
-            obs = obs.to(self.device)  # move to device
+        if not torch.is_tensor(obs):  # Tensor conversion, already batched observation
+            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
             
-        # Call policy
-        # Note that all metrics should also be batched for TrajectoryRunner to work properly, check policy/network output.   
+        # Call policy: all metrics should be batched properly for Runner to work properly
         out_policy = self.policy(obs)
-                
-        # Dictionary of output data
-        output = {}
-        output = {**out_policy}
-                
-        return output
         
+        return out_policy
+
     def learn(self, D):
+        out = {}
+        
+        logger = Logger()
+        
         batch_policy_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
@@ -117,8 +113,8 @@ class REINFORCEAgent(BaseAgent):
 
         return output
     
-    def save(self, filename):
-        self.policy.network.save(filename)
+    def save(self, f):
+        self.policy.network.save(f)
     
-    def load(self, filename):
-        self.policy.network.load(filename)
+    def load(self, f):
+        self.policy.network.load(f)
