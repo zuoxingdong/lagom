@@ -1,3 +1,11 @@
+import colored
+from colored import stylize
+
+from contextlib import contextmanager
+
+from time import time
+from datetime import timedelta
+
 from pathlib import Path
 
 import torch
@@ -185,3 +193,51 @@ def yaml_dump(obj, f, ext='.yml'):
     
     with open(f+ext, 'w') as file:
         return yaml.dump(obj, file, default_flow_style=False)
+
+    
+def color_str(string, color, attribute=None):
+    r"""Returns stylized string with color and attribute for printing. 
+    
+    Example::
+    
+        with timed():
+            <body function>
+    
+    See `colored`_ documentation for more details. 
+    
+    Args:
+        string (str): input string
+        color (str): color name
+        attribute (str, optional): attribute. Default: ``None``
+    
+    Returns
+    -------
+    out : str
+        stylized string
+    
+    .. _colored:
+        https://pypi.org/project/colored
+        
+    """
+    styles = colored.fg(color)
+    if attribute is not None:
+        styles += colored.attr(attribute)
+        
+    out = stylize(string, styles)
+    
+    return out
+
+
+@contextmanager
+def timed(color='green', attribute='bold'):
+    r"""A decorator to print the total time of executing a body function. 
+    
+    Args:
+        color (str, optional): color name. Default: 'green'
+        attribute (str, optional): attribute. Default: 'bold'
+    """
+    t = time()
+    yield
+    print(color_str(string=f'\nTotal time: {timedelta(seconds=round(time() - t))}', 
+                    color=color, 
+                    attribute=attribute))

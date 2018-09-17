@@ -11,19 +11,23 @@ class BaseESWorker(BaseWorker):
     
     The subclass should implement at least the following:
     
+    - :meth:`prepare`
     - :meth:`f`
     
     """
     def work(self, master_cmd):
         # Unpack master command
-        solution_id, solution, seed = master_cmd
+        solution_id, task, seed = master_cmd
+        
+        # Unpack task
+        solution, config = task
         
         # Evaluate the solution to obtain fitness to the objective function
-        function_value = self.f(solution, seed)
+        function_value = self.f(solution, seed, config)
         
         return solution_id, function_value
     
-    def f(self, solution, seed):
+    def f(self, solution, seed, config):
         r"""Defines an objective function to evaluate a given solution candidate. 
         
         .. note::
@@ -37,6 +41,7 @@ class BaseESWorker(BaseWorker):
             solution (object): given solution candidate. 
             seed (int): random seed contained in master_cmd. It can be used to seed 
                 the current evaluation, e.g. gym environment. 
+            config (dict): a dictionary of configurations
             
         Returns
         -------
