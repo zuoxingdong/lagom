@@ -5,53 +5,52 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .base_agent import BaseAgent
+
 from lagom.core.transform import Standardize
 
 
 class VPGAgent(BaseAgent):
-    """
-    Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function. 
-    """
-    def __init__(self, policy, optimizer, config, **kwargs):
+    r"""Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function. """
+    def __init__(self, config, policy, optimizer, **kwargs):
         self.policy = policy
         self.optimizer = optimizer
         
         super().__init__(config, **kwargs)
         
-        self.accumulated_trained_timesteps = 0
+        # accumulated trained timesteps
+        self.total_T = 0
         
     def choose_action(self, obs):
-        # Convert to Tensor
-        # Note that the observation should be batched already (even if only one trajectory)
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.array(obs)).float()
-            obs = obs.to(self.device)  # move to device
+        if not torch.is_tensor(obs):  # Tensor conversion, already batched observation
+            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
             
-        # Call policy
-        # Note that all metrics should also be batched for TrajectoryRunner to work properly, check policy/network output.
-        out_policy = self.policy(obs)
-                
-        # Dictionary of output data
-        output = {}
-        output = {**out_policy}
-                
-        return output
+        # Call policy: all metrics should be batched properly for Runner to work properly
+        out_policy = self.policy(obs, out_keys=['action', 'action_logprob', 'state_value'
+                                                'entropy', 'perplexity'])
+        
+        return out_policy
         
     def learn(self, D):
+        out = {}
+        
         batch_policy_loss = []
         batch_value_loss = []
         batch_entropy_loss = []
         batch_total_loss = []
         
-        # Iterate over list of Trajectory in D
-        for trajectory in D:
+        for trajectory in D:  # iterate over trajectories
             # Get all discounted returns as estimate of Q
             Qs = trajectory.all_discounted_returns
-            # TODO: when use GAE of TDs, really standardize it ? biased magnitude of learned value get wrong TD error
-            # Standardize advantage estimates if required
-            # encourage/discourage half of performed actions, respectively.
-            if self.config['agent:standardize']:
-                Qs = Standardize()(Qs)
+            
+            # Standardize: encourage/discourage half of performed actions
+            if self.config['agent.standardize_Q']:
+                Qs = Standardize()(Qs).tolist()
+            
+            
+            
+            
+            
+            
                 
             # Get all state values (without V_s_next in final transition)
             Vs = trajectory.all_info('V_s')

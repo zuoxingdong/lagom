@@ -52,7 +52,7 @@ class BaseHistory(object):
     
     @property
     def all_s(self):
-        r"""Return a list of all states in the history including the terminal state. 
+        r"""Return a list of all states in the history and the final state separately. 
         
         .. note::
             
@@ -167,7 +167,8 @@ class BaseHistory(object):
     
     @property
     def all_V(self):
-        r"""Return a list of all state values in the history including the terminal states.  
+        r"""Return a list of all state values in the history and the value for final state separately.
+        The final state is a pair of itself and ``done`` indicating whether the episode terminates. 
         
         .. note::
         
@@ -183,7 +184,7 @@ class BaseHistory(object):
     
     @property
     def all_TD(self):
-        r"""Return a list of all TD errors in the history including the terminal states. 
+        r"""Return a list of all TD errors in the history. 
         
         Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)` and all state
         values :math:`(V(s_1), \dots, V(s_T), V(s_{T+1}))`, it computes
@@ -207,8 +208,7 @@ class BaseHistory(object):
         raise NotImplementedError
     
     def all_GAE(self, gae_lambda):
-        r"""Return a list of all `generalized advantage estimates`_ (GAE) in the history including
-        the terminal states.
+        r"""Return a list of all `generalized advantage estimates`_ (GAE) in the history.
         
         .. note::
         

@@ -92,7 +92,7 @@ class Segment(BaseHistory):
             Transition: (s=40, a=-4, r=4.0, s_next=50, done=False)
         
         >>> segment.all_s
-        [10, 20, 30, 35, 40, 50]
+        ([10, 20, 35, 40], (30, 50))
         
         >>> segment.all_r
         [1.0, 2.0, 3.0, 4.0]
@@ -101,18 +101,14 @@ class Segment(BaseHistory):
         [False, True, False, False]
         
         >>> segment.all_V
-        [tensor(100.),
-         tensor(200.),
-         tensor(250.),
-         tensor(300.),
-         tensor(400.),
-         tensor(500.)]
+        ([tensor(100.), tensor(200.), tensor(300.), tensor(400.)],
+         ([tensor(250.), True], [tensor(500.), False]))
          
         >>> segment.all_returns
         [3.0, 2.0, 7.0, 4.0]
         
         >>> segment.all_discounted_returns
-        [3.0, 2.0, 507.0, 504.0]
+        [1.2, 2.0, 3.4, 4.0]
         
         >>> segment.all_bootstrapped_returns
         [3.0, 2.0, 507.0, 504.0]
@@ -171,14 +167,12 @@ class Segment(BaseHistory):
         
     @property
     def all_s(self):
-        r"""Return a list of all states in the segment, including all intermediate terminal states
-        (i.e. ``.s_next`` in each transition with ``done=True`` and last transition)
-        """
+        all_s, all_final = zip(*[trajectory.all_s for trajectory in self.trajectories])
         
         # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        all_s = list(chain.from_iterable([trajectory.all_s for trajectory in self.trajectories]))
+        all_s = list(chain.from_iterable(all_s))
         
-        return all_s
+        return all_s, all_final
     
     @property
     def all_returns(self):
@@ -213,11 +207,12 @@ class Segment(BaseHistory):
     
     @property
     def all_V(self):
+        out, all_final = zip(*[trajectory.all_V for trajectory in self.trajectories])
+        
         # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_V for trajectory in self.trajectories]
         out = list(chain.from_iterable(out))
         
-        return out
+        return out, all_final
     
     @property
     def all_TD(self):
