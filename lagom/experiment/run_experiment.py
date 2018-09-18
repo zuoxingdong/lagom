@@ -5,6 +5,7 @@ from pathlib import Path
 from time import time
 from datetime import timedelta
 
+from lagom import color_str
 from lagom import yaml_dump
 
 
@@ -114,4 +115,5 @@ def run_experiment(worker_class, master_class, max_num_worker=None, daemonic_wor
     experiment()
 
     # Total time logging
-    print(f'\nTotal time: {timedelta(seconds=round(time() - t))}')
+    msg = color_str(f'\nTotal time: {timedelta(seconds=round(time() - t))}', 'green', 'bold')
+    print(msg)
