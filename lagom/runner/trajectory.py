@@ -41,7 +41,7 @@ class Trajectory(BaseHistory):
             Transition: (s=3, a=0.3, r=1.0, s_next=4, done=True)
         
         >>> trajectory.all_s
-        [1, 2, 3, 4]
+        ([1, 2, 3], 4)
         
         >>> trajectory.all_r
         [0.5, 0.5, 1.0]
@@ -50,7 +50,7 @@ class Trajectory(BaseHistory):
         [False, False, True]
         
         >>> trajectory.all_V
-        [10.0, 20.0, 30.0, 40.0]
+        ([10.0, 20.0, 30.0], [40.0, True])
         
         >>> trajectory.all_bootstrapped_returns
         [2.0, 1.5, 1.0]
@@ -71,10 +71,7 @@ class Trajectory(BaseHistory):
     
     @property
     def all_s(self):
-        r"""Return a list of all states in the trajectory, from first state to the last state (i.e. ``.s_next`` in 
-        last transition). 
-        """
-        return [transition.s for transition in self.transitions] + [self.transitions[-1].s_next]
+        return [transition.s for transition in self.transitions], self.transitions[-1].s_next
     
     @property
     def all_returns(self):
@@ -121,7 +118,8 @@ class Trajectory(BaseHistory):
     
     @property
     def all_V(self):
-        return [transition.V_s for transition in self.transitions] + [self.transitions[-1].V_s_next]
+        final = [self.transitions[-1].V_s_next, self.transitions[-1].done]
+        return [transition.V_s for transition in self.transitions], final
     
     @property
     def all_TD(self):
@@ -129,7 +127,9 @@ class Trajectory(BaseHistory):
         all_r = np.array(self.all_r)
         
         # Get all state values with raw values if Tensor dtype
-        all_V = np.array([v.item() if torch.is_tensor(v) else v for v in self.all_V])
+        all_V = self.all_V
+        all_V = all_V[0] + [all_V[1][0]]  # unpack to state values from first to last
+        all_V = np.array([v.item() if torch.is_tensor(v) else v for v in all_V])
         # Set last state value as zero if terminal state
         if self.all_done[-1]:
             all_V[-1] = 0.0

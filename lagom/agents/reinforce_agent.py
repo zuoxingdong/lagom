@@ -25,7 +25,7 @@ class REINFORCEAgent(BaseAgent):
             obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
             
         # Call policy: all metrics should be batched properly for Runner to work properly
-        out_policy = self.policy(obs, out_keys=['action', 'action_logprob', 
+        out_policy = self.policy(obs, out_keys=['action', 'action_logprob', 'state_value'
                                                 'entropy', 'perplexity'])
         
         return out_policy

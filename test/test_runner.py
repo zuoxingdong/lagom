@@ -158,8 +158,11 @@ class TestRunner(object):
                                  done=False)
         with pytest.raises(AssertionError):
             trajectory.add_transition(transition=transition4)
-
-        assert np.allclose(trajectory.all_s, [1, 2, 3, 4])
+        
+        all_s = trajectory.all_s
+        assert isinstance(all_s, tuple) and len(all_s) == 2
+        assert np.allclose(all_s[0], [1, 2, 3])
+        assert all_s[1] == 4
         assert np.allclose(trajectory.all_a, [0.1, 0.2, 0.3])
         assert np.allclose(trajectory.all_r, [0.5, 0.5, 1.0])
         assert np.allclose(trajectory.all_done, [False, False, True])
@@ -167,7 +170,11 @@ class TestRunner(object):
         assert np.allclose(trajectory.all_discounted_returns, [0.56, 0.6, 1.0])
         assert np.allclose(trajectory.all_bootstrapped_returns, [2.0, 1.5, 1.0])
         assert np.allclose(trajectory.all_bootstrapped_discounted_returns, [0.56, 0.6, 1.0])
-        assert np.allclose(trajectory.all_V, [10, 20, 30, 40])
+        all_V = trajectory.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert np.allclose(all_V[0], [10, 20, 30])
+        assert isinstance(all_V[1], list) and len(all_V[1]) == 2
+        assert all_V[1][0] == 40 and all_V[1][1]
         assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -29])
         assert np.allclose(trajectory.all_info(name='V_s'), [10, 20, 30])
         
@@ -176,7 +183,11 @@ class TestRunner(object):
         assert np.allclose(trajectory.all_done, [False, False, False])
         assert np.allclose(trajectory.all_bootstrapped_returns, [42, 41.5, 41])
         assert np.allclose(trajectory.all_bootstrapped_discounted_returns, [0.6, 1, 5])
-        assert np.allclose(trajectory.all_V, [10, 20, 30, 40])
+        all_V = trajectory.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert np.allclose(all_V[0], [10, 20, 30])
+        assert isinstance(all_V[1], list) and len(all_V[1]) == 2
+        assert all_V[1][0] == 40 and not all_V[1][1]
         assert np.allclose(trajectory.all_TD, [-7.5, -16.5, -25])
         
     def test_segment(self):
@@ -226,7 +237,11 @@ class TestRunner(object):
         assert len(segment.trajectories) == 1
         assert segment.trajectories[0].T == 4
 
-        assert np.allclose(segment.all_s, [10, 20, 30, 40, 50])
+        all_s = segment.all_s
+        assert isinstance(all_s, tuple) and len(all_s) == 2
+        assert np.allclose(all_s[0], [10, 20, 30, 40])
+        assert isinstance(all_s[1], tuple) and len(all_s[1]) == 1
+        assert all_s[1][0] == 50
         assert np.allclose(segment.all_a, [-1, -2, -3, -4])
         assert np.allclose(segment.all_r, [1, 2, 3, 4])
         assert np.allclose(segment.all_done, [False, False, False, False])
@@ -234,7 +249,11 @@ class TestRunner(object):
         assert np.allclose(segment.all_discounted_returns, [1.234, 2.34, 3.4, 4])
         assert np.allclose(segment.all_bootstrapped_returns, [510, 509, 507, 504])
         assert np.allclose(segment.all_bootstrapped_discounted_returns, [1.284, 2.84, 8.4, 54])
-        assert segment.all_V == [torch.tensor(i) for i in [100., 200., 300., 400., 500.]]
+        all_V = segment.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert all_V[0] == [torch.tensor(i) for i in [100., 200., 300., 400.]]
+        assert isinstance(all_V[1], tuple) and len(all_V[1]) == 1
+        assert torch.is_tensor(all_V[1][0][0]) and all_V[1][0][0].item() == 500. and not all_V[1][0][1]
         assert np.allclose(segment.all_TD, [-79, -168, -257, -346])
 
         del segment
@@ -284,7 +303,11 @@ class TestRunner(object):
         assert segment.trajectories[0].T == 4
         assert len(segment.transitions) == 4
 
-        assert np.allclose(segment.all_s, [10, 20, 30, 40, 50])
+        all_s = segment.all_s
+        assert isinstance(all_s, tuple) and len(all_s) == 2
+        assert np.allclose(all_s[0], [10, 20, 30, 40])
+        assert isinstance(all_s[1], tuple) and len(all_s[1]) == 1
+        assert all_s[1][0] == 50
         assert np.allclose(segment.all_a, [-1, -2, -3, -4])
         assert np.allclose(segment.all_r, [1, 2, 3, 4])
         assert np.allclose(segment.all_done, [False, False, False, True])
@@ -292,7 +315,11 @@ class TestRunner(object):
         assert np.allclose(segment.all_discounted_returns, [1.234, 2.34, 3.4, 4])
         assert np.allclose(segment.all_bootstrapped_returns, [10, 9, 7, 4])
         assert np.allclose(segment.all_bootstrapped_discounted_returns, [1.234, 2.34, 3.4, 4])
-        assert segment.all_V == [torch.tensor(i) for i in [100., 200., 300., 400., 500.]]
+        all_V = segment.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert all_V[0] == [torch.tensor(i) for i in [100., 200., 300., 400.]]
+        assert isinstance(all_V[1], tuple) and len(all_V[1]) == 1
+        assert torch.is_tensor(all_V[1][0][0]) and all_V[1][0][0].item() == 500. and all_V[1][0][1]
         assert np.allclose(segment.all_TD, [-79, -168, -257, -396])
 
         del segment
@@ -345,7 +372,11 @@ class TestRunner(object):
         assert segment.trajectories[1].T == 2
         assert len(segment.transitions) == 4
 
-        assert np.allclose(segment.all_s, [10, 20, 30, 35, 40, 50])
+        all_s = segment.all_s
+        assert isinstance(all_s, tuple) and len(all_s) == 2
+        assert np.allclose(all_s[0], [10, 20, 35, 40])
+        assert isinstance(all_s[1], tuple) and len(all_s[1]) == 2
+        assert all_s[1] == (30, 50)
         assert np.allclose(segment.all_a, [-1, -2, -3, -4])
         assert np.allclose(segment.all_r, [1, 2, 3, 4])
         assert np.allclose(segment.all_done, [False, True, False, False])
@@ -353,7 +384,12 @@ class TestRunner(object):
         assert np.allclose(segment.all_discounted_returns, [1.2, 2, 3.4, 4])
         assert np.allclose(segment.all_bootstrapped_returns, [3, 2, 507, 504])
         assert np.allclose(segment.all_bootstrapped_discounted_returns, [1.2, 2, 8.4, 54])
-        assert segment.all_V == [torch.tensor(i) for i in [100., 200., 250., 300., 400., 500.]]
+        all_V = segment.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert all_V[0] == [torch.tensor(i) for i in [100., 200., 300., 400.]]
+        assert isinstance(all_V[1], tuple) and len(all_V[1]) == 2
+        assert torch.is_tensor(all_V[1][0][0]) and all_V[1][0][0].item() == 250. and all_V[1][0][1]
+        assert torch.is_tensor(all_V[1][1][0]) and all_V[1][1][0].item() == 500. and not all_V[1][1][1]
         assert np.allclose(segment.all_TD, [-79, -198, -257, -346])
 
         del segment
@@ -409,7 +445,11 @@ class TestRunner(object):
         assert segment.trajectories[2].T == 2
         assert len(segment.transitions) == 4
 
-        assert np.allclose(segment.all_s, [10, 20, 25, 30, 35, 40, 50])
+        all_s = segment.all_s
+        assert isinstance(all_s, tuple) and len(all_s) == 2
+        assert np.allclose(all_s[0], [10, 25, 35, 40])
+        assert isinstance(all_s[1], tuple) and len(all_s[1]) == 3
+        assert all_s[1] == (20, 30, 50)
         assert np.allclose(segment.all_a, [-1, -2, -3, -4])
         assert np.allclose(segment.all_r, [1, 2, 3, 4])
         assert np.allclose(segment.all_done, [True, True, False, True])
@@ -417,7 +457,13 @@ class TestRunner(object):
         assert np.allclose(segment.all_discounted_returns, [1, 2, 3.4, 4])
         assert np.allclose(segment.all_bootstrapped_returns, [1, 2, 7, 4])
         assert np.allclose(segment.all_bootstrapped_discounted_returns, [1, 2, 3.4, 4])
-        assert segment.all_V == [torch.tensor(i) for i in [100., 150., 200., 250., 300., 400., 500.]]
+        all_V = segment.all_V
+        assert isinstance(all_V, tuple) and len(all_V) == 2
+        assert all_V[0] == [torch.tensor(i) for i in [100., 200., 300., 400.]]
+        assert isinstance(all_V[1], tuple) and len(all_V[1]) == 3
+        assert torch.is_tensor(all_V[1][0][0]) and all_V[1][0][0].item() == 150. and all_V[1][0][1]
+        assert torch.is_tensor(all_V[1][1][0]) and all_V[1][1][0].item() == 250. and all_V[1][1][1]
+        assert torch.is_tensor(all_V[1][2][0]) and all_V[1][2][0].item() == 500. and all_V[1][2][1]
         assert np.allclose(segment.all_TD, [-99, -198, -257, -396])
 
         del segment
@@ -545,7 +591,7 @@ class TestRunner(object):
             assert len(D2) == 2
             assert all([d.T == 1 for d in D2])
             for d, d2 in zip(D, D2):
-                assert np.allclose(d2.all_s[0], d.transitions[-1].s_next)
+                assert np.allclose(d2.all_s[0][0], d.transitions[-1].s_next)
 
             # Long horizon
             D = runner(T=200, reset=True)
