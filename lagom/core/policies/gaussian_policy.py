@@ -158,12 +158,12 @@ class GaussianPolicy(BasePolicy):
         if 'perplexity' in out_keys:
             out_policy['perplexity'] = action_dist.perplexity()
         
-        ##############################
-        # TEMP: sanity check for NaN #
-        ##############################
+        # sanity check for NaN
         if torch.any(torch.isnan(action)):
             while True:
-                print(f'NaN, check: \n\t mean: {mean}, logvar: {logvar}')
+                msg = 'NaN ! A workaround is to learn state-independent std or use tanh rather than relu'
+                msg2 = f'check: \n\t mean: {mean}, logvar: {logvar}'
+                print(msg + msg2)
         
         # Constraint action in valid range
         out_policy['action'] = self.constraint_action(action)
