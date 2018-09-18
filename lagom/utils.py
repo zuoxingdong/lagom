@@ -205,6 +205,9 @@ def color_str(string, color, attribute=None):
     
     See `colored`_ documentation for more details. 
     
+    .. _colored:
+        https://pypi.org/project/colored
+    
     Args:
         string (str): input string
         color (str): color name
@@ -213,11 +216,7 @@ def color_str(string, color, attribute=None):
     Returns
     -------
     out : str
-        stylized string
-    
-    .. _colored:
-        https://pypi.org/project/colored
-        
+        stylized string    
     """
     styles = colored.fg(color)
     if attribute is not None:
