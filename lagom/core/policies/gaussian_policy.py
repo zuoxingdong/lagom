@@ -163,7 +163,7 @@ class GaussianPolicy(BasePolicy):
         ##############################
         if torch.any(torch.isnan(action)):
             while True:
-                print(f'NaN, check your std: {std}')
+                print(f'NaN, check: \n\t mean: {mean}, logvar: {logvar}')
         
         # Constraint action in valid range
         out_policy['action'] = self.constraint_action(action)
