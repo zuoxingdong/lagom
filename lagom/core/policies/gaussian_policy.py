@@ -57,12 +57,14 @@ class GaussianPolicy(BasePolicy):
                  config,
                  network, 
                  env_spec,
+                 learn_V=False,
                  min_std=1e-6, 
                  std_style='exp', 
                  constant_std=None,
                  std_state_dependent=True,
                  init_std=None,
                  **kwargs):
+        self.learn_V = learn_V
         
         super().__init__(config=config, network=network, env_spec=env_spec, **kwargs)
         
@@ -108,6 +110,12 @@ class GaussianPolicy(BasePolicy):
             self.network.add_module('logvar_head', logvar_head)
         else:
             self.network.logvar_head = logvar_head
+            
+        # Create value layer if required
+        if self.learn_V:
+            value_head = nn.Linear(in_features=self.network.last_feature_dim, out_features=1)
+            ortho_init(value_head, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
+            self.network.add_module('value_head', value_head)
     
     def __call__(self, x, out_keys=['action']):
         # Output dictionary
@@ -127,6 +135,10 @@ class GaussianPolicy(BasePolicy):
             logvar = logvar.expand_as(mean)
             # Same device with mean
             logvar = logvar.to(mean.device)
+            
+        # Forward pass of value head to obtain value function if required
+        if 'state_value' in out_keys:
+            out_policy['state_value'] = self.network.value_head(features).squeeze(-1)  # squeeze final single dim
         
         # Get std from logvar
         if self.std_style == 'exp':

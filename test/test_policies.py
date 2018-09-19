@@ -51,7 +51,10 @@ class TestCategoricalPolicy(object):
         env_spec = self.make_env_spec()
         network = Network(env_spec=env_spec)
         
-        policy = CategoricalPolicy(config=None, network=network, env_spec=env_spec)
+        tmp = CategoricalPolicy(config=None, network=network, env_spec=env_spec)
+        assert not hasattr(tmp.network, 'value_head')
+        
+        policy = CategoricalPolicy(config=None, network=network, env_spec=env_spec, learn_V=True)
         
         assert hasattr(policy, 'config')
         assert hasattr(policy, 'network')
@@ -59,12 +62,16 @@ class TestCategoricalPolicy(object):
         
         assert hasattr(policy.network, 'layers')
         assert hasattr(policy.network, 'action_head')
+        assert hasattr(policy.network, 'value_head')
         assert len(policy.network.layers) == 1
         assert policy.network.action_head.weight.abs().min().item() <= 0.01  # 0.01 scale for action head
         assert np.allclose(policy.network.action_head.bias.detach().numpy(), 0.0)
+        assert policy.network.value_head.weight.abs().max().item() >= 0.1  # roughly +- 0.3 - 0.5
+        assert np.allclose(policy.network.value_head.bias.detach().numpy(), 0.0)
         
         obs = torch.from_numpy(np.array(env_spec.env.reset())).float()
-        out_policy = policy(obs, out_keys=['action', 'action_prob', 'action_logprob', 'entropy', 'perplexity'])
+        out_policy = policy(obs, out_keys=['action', 'action_prob', 'action_logprob', 
+                                           'state_value', 'entropy', 'perplexity'])
         
         assert isinstance(out_policy, dict)
         assert 'action' in out_policy
@@ -73,6 +80,8 @@ class TestCategoricalPolicy(object):
         assert list(out_policy['action_prob'].shape) == [1, 2]
         assert 'action_logprob' in out_policy
         assert list(out_policy['action_logprob'].shape) == [1]
+        assert 'state_value' in out_policy
+        assert list(out_policy['state_value'].shape) == [1]
         assert 'entropy' in out_policy
         assert list(out_policy['entropy'].shape) == [1]
         assert 'perplexity' in out_policy
@@ -112,10 +121,14 @@ class TestGaussianPolicy(object):
             assert hasattr(policy.network, 'layers')
             assert hasattr(policy.network, 'mean_head')
             assert hasattr(policy.network, 'logvar_head')
+            assert hasattr(policy.network, 'value_head')
             assert len(policy.network.layers) == 1
             assert policy.network.mean_head.weight.numel() + policy.network.mean_head.bias.numel() == 17
             assert policy.network.mean_head.weight.abs().min().item() <= 0.01  # 0.01 scale for action head
             assert np.allclose(policy.network.mean_head.bias.detach().numpy(), 0.0)
+            assert policy.network.value_head.weight.numel() + policy.network.value_head.bias.numel() == 16+1
+            assert policy.network.value_head.weight.abs().max().item() >= 0.1  # roughly +- 0.3 - 0.5
+            assert np.allclose(policy.network.value_head.bias.detach().numpy(), 0.0)
 
             obs = torch.from_numpy(np.array(env_spec.env.reset())).float()
             out_policy = policy(obs, out_keys=['action', 'action_logprob', 'entropy', 'perplexity'])
@@ -127,51 +140,64 @@ class TestGaussianPolicy(object):
             assert torch.all(out_policy['action'] >= low)
             assert 'action_logprob' in out_policy
             assert list(out_policy['action_logprob'].shape) == [1]
+            assert 'state_value' in out_policy
+            assert list(out_policy['state_value'].shape) == [1]
             assert 'entropy' in out_policy
             assert list(out_policy['entropy'].shape) == [1]
             assert 'perplexity' in out_policy
             assert list(out_policy['perplexity'].shape) == [1]
+        
+        # test default without learn_V
+        tmp = GaussianPolicy(config=None, 
+                             network=network, 
+                             env_spec=env_spec)
+        assert not hasattr(tmp.network, 'value_head')
         
         # min_std
         network = Network(env_spec=env_spec)
         policy = GaussianPolicy(config=None, 
                                 network=network, 
                                 env_spec=env_spec, 
+                                learn_V=True,
                                 min_std=1e-06, 
                                 std_style='exp', 
                                 constant_std=None, 
                                 std_state_dependent=True, 
                                 init_std=None)
         _check_policy(policy)
-        assert policy.network.num_params - 81 == 17
+        assert policy.network.num_params - 98 == 17
         assert isinstance(policy.network.logvar_head, nn.Linear)
+        assert isinstance(policy.network.value_head, nn.Linear)
         
         # std_style
         network = Network(env_spec=env_spec)
         policy = GaussianPolicy(config=None, 
                                 network=network, 
                                 env_spec=env_spec, 
+                                learn_V=True,
                                 min_std=1e-06, 
                                 std_style='softplus', 
                                 constant_std=None, 
                                 std_state_dependent=True, 
                                 init_std=None)
         _check_policy(policy)
-        assert policy.network.num_params - 81 == 17
+        assert policy.network.num_params - 98 == 17
         assert isinstance(policy.network.logvar_head, nn.Linear)
+        assert isinstance(policy.network.value_head, nn.Linear)
         
         # constant_std
         network = Network(env_spec=env_spec)
         policy = GaussianPolicy(config=None, 
                                 network=network, 
                                 env_spec=env_spec, 
+                                learn_V=True,
                                 min_std=1e-06, 
                                 std_style='exp', 
                                 constant_std=0.1, 
                                 std_state_dependent=True, 
                                 init_std=None)
         _check_policy(policy)
-        assert policy.network.num_params - 81 == 0
+        assert policy.network.num_params - 98 == 0
         assert torch.is_tensor(policy.network.logvar_head)
         assert policy.network.logvar_head.allclose(torch.tensor(-4.6052))
         
@@ -180,13 +206,14 @@ class TestGaussianPolicy(object):
         policy = GaussianPolicy(config=None, 
                                 network=network, 
                                 env_spec=env_spec, 
+                                learn_V=True,
                                 min_std=1e-06, 
                                 std_style='exp', 
                                 constant_std=None, 
                                 std_state_dependent=False, 
                                 init_std=0.5)
         _check_policy(policy)
-        assert policy.network.num_params - 81 == 1
+        assert policy.network.num_params - 98 == 1
         assert isinstance(policy.network.logvar_head, nn.Parameter)
         assert policy.network.logvar_head.requires_grad == True
         assert policy.network.logvar_head.allclose(torch.tensor(-1.3863))
