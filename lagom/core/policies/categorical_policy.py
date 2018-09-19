@@ -22,19 +22,27 @@ class CategoricalPolicy(BasePolicy):
         recommended to be done in the method :meth:`~BaseNetwork.make_params` of the network class.
         
     """
-    def __init__(self, config, network, env_spec, **kwargs):
+    def __init__(self, config, network, env_spec, learn_V=False, **kwargs):
+        self.learn_V = learn_V
+        
         super().__init__(config=config, network=network, env_spec=env_spec, **kwargs)
         
         assert self.env_spec.control_type == 'Discrete', 'expected as Discrete control type'
         assert hasattr(self.network, 'last_feature_dim'), 'network expected to have an attribute `.last_feature_dim`'
         
-        # Create final output layer
+        # Create action layer
         action_head = nn.Linear(in_features=self.network.last_feature_dim, 
                                 out_features=self.env_spec.action_space.flat_dim)
         # Orthogonal initialization to the parameters with scale 0.01, i.e. uniformly distributed
         ortho_init(action_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
         # Augment to network (e.g. tracked by network.parameters() for optimizer to update)
         self.network.add_module('action_head', action_head)
+        
+        # Create value layer if required
+        if self.learn_V:
+            value_head = nn.Linear(in_features=self.network.last_feature_dim, out_features=1)
+            ortho_init(value_head, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
+            self.network.add_module('value_head', value_head)
         
     def __call__(self, x, out_keys=['action']):
         # Output dictionary
@@ -45,6 +53,10 @@ class CategoricalPolicy(BasePolicy):
         
         # Forward pass of action head to obtain action scores for categorical distribution
         action_score = self.network.action_head(features)
+        
+        # Forward pass of value head to obtain value function if required
+        if 'state_value' in out_keys:
+            out_policy['state_value'] = self.network.value_head(features).squeeze(-1)  # squeeze final single dim
         
         # Compute action probabilities by applying softmax
         action_prob = F.softmax(action_score, dim=-1)  # over last dimension
