@@ -38,7 +38,6 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
         configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
         
-        
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
         configurator.fixed('train.N', 1)  # number of trajectories per training iteration
         configurator.fixed('train.T', 200)  # max allowed horizon
