@@ -131,7 +131,7 @@ class TestGaussianPolicy(object):
             assert np.allclose(policy.network.value_head.bias.detach().numpy(), 0.0)
 
             obs = torch.from_numpy(np.array(env_spec.env.reset())).float()
-            out_policy = policy(obs, out_keys=['action', 'action_logprob', 'entropy', 'perplexity'])
+            out_policy = policy(obs, out_keys=['action', 'action_logprob', 'state_value', 'entropy', 'perplexity'])
 
             assert isinstance(out_policy, dict)
             assert 'action' in out_policy

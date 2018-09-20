@@ -89,7 +89,7 @@ class VPGAgent(BaseAgent):
         loss = torch.stack(batch_total_loss).mean()
         policy_loss = torch.stack(batch_policy_loss).mean()
         entropy_loss = torch.stack(batch_entropy_loss).mean()
-        value_loss = torch.stack(batch_value_loss).mean()        
+        value_loss = torch.stack(batch_value_loss).mean()
             
         # Zero-out gradient buffer
         self.optimizer.zero_grad()
