@@ -41,7 +41,6 @@ class VPGAgent(BaseAgent):
         for trajectory in D:  # iterate over trajectories
             # Get all discounted returns as estimate of Q
             Qs = trajectory.all_discounted_returns
-            
             # Standardize: encourage/discourage half of performed actions
             if self.config['agent.standardize_Q']:
                 Qs = Standardize()(Qs).tolist()
@@ -53,6 +52,9 @@ class VPGAgent(BaseAgent):
             
             # Advantage estimates
             As = [Q - V.item() for Q, V in zip(Qs, Vs)]
+            # Standardize advantage: encourage/discourage half of performed actions
+            if self.config['agent.standardize_adv']:
+                As = Standardize()(As).tolist()
             
             # Get all log-probabilities and entropies
             logprobs = trajectory.all_info('action_logprob')

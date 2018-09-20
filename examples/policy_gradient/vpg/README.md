@@ -1,6 +1,6 @@
-# Evolution Strategies (ES) in RL
+# Vanilla Policy Gradient (VPG)
 
-This example shows how to build an ES algorithm to train an RL agent to solve OpenAI Gym environment. 
+This is an implementation of [VPG](http://rll.berkeley.edu/deeprlcoursesp17/docs/lec2.pdf) algorithm. 
 
 # Usage
 
