@@ -57,7 +57,6 @@ class A2CAgent(BaseAgent):
         for segment in D:  # iterate over segments
             # Get all boostrapped discounted returns as estimate of Q
             Qs = segment.all_bootstrapped_discounted_returns
-        
             # Standardize: encourage/discourage half of performed actions
             if self.config['agent.standardize_Q']:
                 Qs = Standardize()(Qs).tolist()
@@ -69,6 +68,9 @@ class A2CAgent(BaseAgent):
                 
             # Advantage estimates
             As = [Q - V.item() for Q, V in zip(Qs, Vs)]    
+            # Standardize advantage: encourage/discourage half of performed actions
+            if self.config['agent.standardize_adv']:
+                As = Standardize()(As).tolist()
                 
             # Get all log-probabilities and entropies
             logprobs = segment.all_info('action_logprob')

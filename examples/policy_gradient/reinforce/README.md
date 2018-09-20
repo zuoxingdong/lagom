@@ -1,6 +1,6 @@
-# Evolution Strategies (ES) in RL
+# REINFORCE
 
-This example shows how to build an ES algorithm to train an RL agent to solve OpenAI Gym environment. 
+This is an implementation of [REINFORCE](https://link.springer.com/article/10.1007/BF00992696) algorithm. 
 
 # Usage
 

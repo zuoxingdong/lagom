@@ -22,22 +22,23 @@
 
 # Basics
 
-`lagom` balances between the flexibility and the userability when developing reinforcement learning (RL) algorithms. The library is built on top of [PyTorch](https://pytorch.org/) and provides modular tools to quickly prototype RL algorithms. However, we do not go overboard, because going too low level is rather time consuming and prone to potential bugs, while going too high level degrades the flexibility which makes it difficult to try out some crazy ideas. 
+`lagom` balances between the flexibility and the usability when developing reinforcement learning (RL) algorithms. The library is built on top of [PyTorch](https://pytorch.org/) and provides modular tools to quickly prototype RL algorithms. However, it does not go overboard, because too low level is often time consuming and prone to potential bugs, while too high level degrades the flexibility which makes it difficult to try out some crazy ideas fast. 
 
-We are continuously making `lagom` more 'self-contained' to run experiments quickly. Now, it internally supports base classes for multiprocessing ([master-worker framework](https://en.wikipedia.org/wiki/Master/slave_(technology))) to parallelize (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search. 
+We are continuously making `lagom` more 'self-contained' to set up and run experiments quickly. It internally supports base classes for multiprocessing ([master-worker framework](https://en.wikipedia.org/wiki/Master/slave_(technology))) for parallelization (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search. 
 
-One of the main pipelines to use `lagom` can be done as following:
-1. Define environment and RL agent
-2. User runner to collect data for agent
-3. Define algorithm to train agent
-4. Define experiment and configurations. 
+A common pipeline to use `lagom` can be done as following:
+1. Define [environment](lagom/envs) and [agent](lagom/agents) (mainly for RL)
+2. Use [runner](lagom/runner) to collect data (trajectories or segments) for agent
+3. Define [engine](lagom/engine) for training and evaluating the agent
+4. Define [algorithm](lagom/base_algo.py)
+5. Define [experiment](lagom/experiment) and [configurations](lagom/experiment/configurator.py)
 
 A graphical illustration is coming soon. 
 
 # Installation
 
 ## Install dependencies
-Run the following command to install [all the dependencies](./requirements.txt):
+Run the following command to install [all required dependencies](./requirements.txt):
 
 ```bash
 pip install -r requirements.txt
@@ -53,7 +54,7 @@ We also provide some bash scripts in [scripts/](scripts/) directory to automatic
 
 ## Install lagom
 
-Run the following command to install from source:
+Run the following commands to install lagom from source:
 
 ```bash
 git clone https://github.com/zuoxingdong/lagom.git
@@ -73,7 +74,7 @@ The documentation hosted by ReadTheDocs is available online at [http://lagom.rea
 
 # Examples
 
-We shall continuously provide [examples/](examples/) to use lagom. 
+We are continuously providing [examples/](examples/) to use lagom. 
 
 # Test
 
@@ -86,7 +87,6 @@ pytest test -v
 # Roadmap
 
 ## Core
-    - Readthedocs Documentation
     - Tutorials
 ## More standard RL baselines
     - TRPO/PPO
@@ -99,7 +99,6 @@ pytest test -v
 ## More standard networks
     - Monte Carlo Dropout/Concrete Dropout
 ## Misc
-    - VecEnv: similar to that of OpenAI baseline
     - Support pip install
     - Technical report
 
