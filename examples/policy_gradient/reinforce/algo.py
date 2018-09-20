@@ -43,7 +43,7 @@ class Algorithm(BaseAlgorithm):
         env = make_vec_env(vec_env_class=SerialVecEnv, 
                            make_env=make_gym_env, 
                            env_id=config['env.id'], 
-                           num_env=config['train.N'],  # batch size for multiple environments
+                           num_env=1,  # single environment, batch size handled by TrajectoryRunner
                            init_seed=seed)
         eval_env = make_vec_env(vec_env_class=SerialVecEnv, 
                                 make_env=make_gym_env, 
