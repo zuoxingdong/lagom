@@ -1,6 +1,6 @@
-# Evolution Strategies (ES) in RL
+# Advantage Actor Critic (A2C)
 
-This example shows how to build an ES algorithm to train an RL agent to solve OpenAI Gym environment. 
+This is an implementation of [A2C](https://blog.openai.com/baselines-acktr-a2c/) algorithm. 
 
 # Usage
 

@@ -28,6 +28,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('algo.gamma', 0.99)
         
         configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
+        configurator.fixed('agent.standardize_adv', True)  # whether to standardize advantage estimates
         configurator.fixed('agent.max_grad_norm', 0.5)  # grad clipping, set None to turn off
         configurator.fixed('agent.entropy_coef', 0.01)
         configurator.fixed('agent.value_coef', 0.5)

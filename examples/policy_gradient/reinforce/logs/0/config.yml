@@ -1,6 +1,6 @@
 ID: 0
 cuda: true
-env.id: Reacher-v2
+env.id: HalfCheetah-v2
 env.standardize: true
 network.hidden_sizes:
 - 64

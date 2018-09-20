@@ -18,7 +18,7 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('cuda', True)  # whether to use GPU
         
-        configurator.fixed('env.id', 'Reacher-v2')
+        configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
         configurator.fixed('network.hidden_sizes', [64, 64])
