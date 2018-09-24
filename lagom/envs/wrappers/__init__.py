@@ -8,3 +8,4 @@ from .gym_wrapper import GymWrapper
 from .flatten_observation import FlattenObservation
 from .flatten_dict import FlattenDictWrapper
 from .frame_stack import FrameStack
+from .reward_scale import RewardScale
