@@ -11,6 +11,7 @@ from lagom.envs import make_gym_env
 from lagom.envs.wrappers import Wrapper
 from lagom.envs.wrappers import GymWrapper
 from lagom.envs.wrappers import FrameStack
+from lagom.envs.wrappers import RewardScale
 
 # FlattenDictWrapper requires Mujoco, so omitted from test
 
@@ -52,6 +53,7 @@ def test_gym_wrapper():
     del gym_env
     del env
     
+    
 def test_frame_stack():
     env = make_gym_env(env_id='CartPole-v1', seed=1)
     env = FrameStack(env, num_stack=4)
@@ -75,3 +77,11 @@ def test_frame_stack():
     assert np.allclose(obs[:, 2], [0.03076804, -0.19321568, -0.03151444, 0.25146705])
     obs = env.step(1)[0]
     assert np.allclose(obs[:, -1], [0.03076804, -0.19321568, -0.03151444, 0.25146705])
+
+    
+def test_reward_scale():
+    env = make_gym_env(env_id='CartPole-v1', seed=0)
+    env = RewardScale(env, scale=0.02)
+    env.reset()
+    observation, reward, done, info = env.step(env.action_space.sample())
+    assert reward == 0.02
