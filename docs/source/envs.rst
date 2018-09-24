@@ -74,6 +74,9 @@ Wrappers
     
 .. autoclass:: FrameStack
     :members:
+    
+.. autoclass:: RewardScale
+    :members:
 
 Vectorized Environment
 --------------------------

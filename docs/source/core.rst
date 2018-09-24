@@ -80,11 +80,16 @@ Networks
 .. autofunction:: make_cnn
 
 .. autofunction:: make_transposed_cnn
+
+.. autofunction:: make_rnncell
         
 .. autoclass:: BaseMDN
     :members:
     
 .. autoclass:: BaseVAE
+    :members:
+    
+.. autoclass:: BaseRNN
     :members:
 
 Plotter
@@ -154,6 +159,9 @@ Transformations
     :members:
 
 .. autoclass:: Standardize
+    :members:
+    
+.. autoclass:: LinearSchedule
     :members:
 
 Utils
