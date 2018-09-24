@@ -12,7 +12,7 @@ class RandomPolicy(BasePolicy):
         policy(observation)
         
     """
-    def __call__(self, x, out_keys=['action']):
+    def __call__(self, x, out_keys=['action'], info={}, **kwargs):
         out_policy = {}
         
         # Randomly sample an batched action from action space for VecEnv
