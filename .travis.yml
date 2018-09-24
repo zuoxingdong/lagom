@@ -19,7 +19,7 @@ install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n CI -c pytorch python=$TRAVIS_PYTHON_VERSION numpy mock pytorch-nightly
+    - conda create -q -n CI -c pytorch python=$TRAVIS_PYTHON_VERSION cython numpy mock pytorch-nightly
     - source activate CI
     # Install required dependencies
     - pip install --upgrade pip
