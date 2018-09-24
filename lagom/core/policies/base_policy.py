@@ -1,7 +1,12 @@
+from abc import ABC
+from abc import abstractmethod
+
+from lagom.core.networks import BaseRNN
+
 from lagom.envs.vec_env import VecEnv
 
 
-class BasePolicy(object):
+class BasePolicy(ABC):
     r"""Base class for all policies.
     
     Any policy should subclass this class.
@@ -16,18 +21,20 @@ class BasePolicy(object):
         policies should deal with VecEnv (batched data).
     
     """
-    def __init__(self, config, network, env_spec, **kwargs):
+    def __init__(self, config, network, env_spec, device, **kwargs):
         r"""Initialize the policy. 
         
         Args:
             config (dict): A dictionary of configurations. 
             network (BaseNetwork): a neural network as function approximator in the policy. 
             env_spec (EnvSpec): environment specification. 
+            device (device): a PyTorch device for this policy. 
             **kwargs: keyword arguments to specify the policy. 
         """
         self.config = config
         self.network = network
-        self.env_spec = env_spec
+        self._env_spec = env_spec
+        self.device = device
         
         msg = f'expected type VecEnv, got {type(self.env_spec.env)}'
         assert isinstance(self.env_spec.env, VecEnv), msg
@@ -36,7 +43,8 @@ class BasePolicy(object):
         for key, val in kwargs.items():
             self.__setattr__(key, val)
         
-    def __call__(self, x, out_keys=['action']):
+    @abstractmethod
+    def __call__(self, x, out_keys=['action'], info={}, **kwargs):
         r"""Define the computation of the policy given input data at every call. 
         
         Should be overridden by all subclasses.
@@ -53,6 +61,8 @@ class BasePolicy(object):
             x (object): input data to the policy. 
             out_keys (list, optional): a list of required metrics for the policy to output. 
                 Default: ``['action']``
+            info (dict): a dictionary of additional information useful for action selection e.g. mask RNN states
+            **kwargs: keyword aguments used to specify the policy execution.
             
         Returns
         -------
@@ -61,11 +71,43 @@ class BasePolicy(object):
             at least one key 'action'. Other possible keys include ['action_logprob', 'state_value'
             'entropy', 'perplexity']. 
         """
-        raise NotImplementedError
+        pass
+        
+    @property
+    def env_spec(self):
+        r"""Returns the environment specifications. """
+        return self._env_spec
+        
+    @property
+    def observation_space(self):
+        r"""Returns the observation space that policy performs on. """
+        return self.env_spec.observation_space
+    
+    @property
+    def action_space(self):
+        r"""Returns the action space that policy performs on. """
+        return self.env_spec.action_space
+    
+    @property
+    def recurrent(self):
+        r"""Returns whether the policy is recurrent. """
+        if isinstance(self.network, BaseRNN):
+            return True
+        else:
+            return False
+    
+    def reset_rnn_states(self):
+        r"""Reset the current RNN states. """
+        if self.recurrent:
+            self.rnn_states = self.network.init_hidden_states(config=self.config, 
+                                                              batch_size=self.env_spec.num_env)
+        else:
+            raise TypeError('the network must be BaseRNN type. ')
         
     def __repr__(self):
         r"""Returns a string representation of the policy network. """
-        string = self.__class__.__name__ + '\n'
-        string += '\tNetwork: ' + self.network.__repr__() + '\n'
+        string = self.__class__.__name__
+        string += f'\n\tNetwork: {self.network.__repr__()}'
+        string += f'\n\tRecurrent: {self.recurrent}'
         
         return string

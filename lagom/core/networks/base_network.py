@@ -42,16 +42,18 @@ class BaseNetwork(nn.Module):
                 return x
 
     """
-    def __init__(self, config=None, **kwargs):
+    def __init__(self, config=None, device=None, **kwargs):
         r"""Initialize the neural network.
         
         Args:
             config (dict): A dictionary of configurations. 
+            device (device): a PyTorch device for this network. 
             **kwargs: keyword arguments to specify the network. 
         """
         super().__init__()
         
         self.config = config
+        self.device = device
         
         # Set all keyword arguments
         for key, val in kwargs.items():
@@ -62,6 +64,9 @@ class BaseNetwork(nn.Module):
         
         # Initialize all created parameters/layers
         self.init_params(self.config)
+        
+        # Put all created parameters on the given device
+        self.to(self.device)
         
     def make_params(self, config):
         r"""Create all trainable parameters/layers for the neural network according to 
