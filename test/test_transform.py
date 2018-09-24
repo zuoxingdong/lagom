@@ -10,6 +10,7 @@ from lagom.core.transform import Normalize
 from lagom.core.transform import RankTransform
 from lagom.core.transform import RunningMeanStd
 from lagom.core.transform import Standardize
+from lagom.core.transform import LinearSchedule
 
 
 class TestTransform(object):
@@ -290,3 +291,46 @@ class TestTransform(object):
         out = standardize([1, 2, 3, 4], mean=0, std=1)
         assert out.dtype == np.float32
         assert np.allclose(out, [1, 2, 3, 4])
+        
+    def test_linear_schedule(self):
+        # sanity check
+        with pytest.raises(AssertionError):
+            LinearSchedule(1.0, 0.1, 0, 0)
+        with pytest.raises(AssertionError):
+            LinearSchedule(1.0, 0.1, -1, 0)
+        with pytest.raises(AssertionError):
+            LinearSchedule(1.0, 0.1, 10, -1)
+        with pytest.raises(AssertionError):
+            LinearSchedule(1.0, 0.1, 10, 0)(-1)
+
+        # increasing: without warmup start
+        scheduler = LinearSchedule(initial=0.5, final=2.0, N=3, start=0)
+        assert scheduler(0) == 0.5
+        assert scheduler(1) == 1.0
+        assert scheduler(2) == 1.5
+        assert scheduler(3) == 2.0
+        assert all([scheduler(i) == 2.0] for i in [4, 5, 6, 7, 8])
+
+        # increasing: with warmup start
+        scheduler = LinearSchedule(initial=0.5, final=2.0, N=3, start=2)
+        assert all([scheduler(i) == 0.5] for i in [0, 1, 2])
+        assert scheduler(3) == 1.0
+        assert scheduler(4) == 1.5
+        assert scheduler(5) == 2.0
+        assert all([scheduler(i) == 2.0 for i in [6, 7, 8]])
+
+        # decreasing: without warmup start
+        scheduler = LinearSchedule(initial=1.0, final=0.1, N=3, start=0)
+        assert scheduler(0) == 1.0
+        assert scheduler(1) == 0.7
+        assert scheduler(2) == 0.4
+        assert scheduler(3) == 0.1
+        assert all([scheduler(i) == 0.1 for i in [4, 5, 6]])
+
+        # decreasing: with warmup start
+        scheduler = LinearSchedule(initial=1.0, final=0.1, N=3, start=2)
+        assert all([scheduler(i) for i in [0, 1, 2]])
+        assert scheduler(3) == 0.7
+        assert scheduler(4) == 0.4
+        assert scheduler(5) == 0.1
+        assert all([scheduler(i) == 0.1 for i in [6, 7, 8]])        

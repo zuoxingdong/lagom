@@ -9,3 +9,4 @@ from .rank_transform import RankTransform
 from .running_mean_std import RunningMeanStd
 from .smooth_filter import SmoothFilter
 from .standardize import Standardize
+from .linear_schedule import LinearSchedule
