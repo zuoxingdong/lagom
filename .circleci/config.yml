@@ -6,7 +6,7 @@ version: 2  # CircleCI version
 jobs:  # Build-Test-Deplot (BTD) process
     build:  # a build job
         docker:  # run with Docker
-            - image: circleci/python:3.6.6  # Python container
+            - image: circleci/python:3.7  # Python container
         
         parallelism: 4  # speed up with max value in free account
 
@@ -35,9 +35,10 @@ jobs:  # Build-Test-Deplot (BTD) process
                     conda config --set always_yes yes --set changeps1 no
                     conda update -q conda
                     conda info -a
-                    conda create -q -n CI -c pytorch python=3.6 numpy mock pytorch-cpu
+                    conda create -q -n CI -c pytorch python=3.6 numpy mock pytorch-nightly
                     source activate CI
                     # Install required dependencies
+                    pip install --upgrade pip
                     pip install -r requirements.txt
                     # Install current project
                     pip install -e .
