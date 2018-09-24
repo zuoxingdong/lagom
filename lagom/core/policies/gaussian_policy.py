@@ -56,17 +56,17 @@ class GaussianPolicy(BasePolicy):
     def __init__(self,
                  config,
                  network, 
-                 env_spec,
+                 env_spec, 
+                 device,
                  learn_V=False,
                  min_std=1e-6, 
                  std_style='exp', 
                  constant_std=None,
-                 std_state_dependent=True,
-                 init_std=None,
+                 std_state_dependent=False,
+                 init_std=1.0,
                  **kwargs):
+        super().__init__(config=config, network=network, env_spec=env_spec, device=device, **kwargs)
         self.learn_V = learn_V
-        
-        super().__init__(config=config, network=network, env_spec=env_spec, **kwargs)
         
         # Record additional arguments
         self.min_std = min_std
@@ -77,11 +77,18 @@ class GaussianPolicy(BasePolicy):
         
         assert self.env_spec.control_type == 'Continuous', 'expected as Continuous control type'
         assert hasattr(self.network, 'last_feature_dim'), 'network expected to have an attribute `.last_feature_dim`'
+        if self.constant_std is not None:
+            assert not self.std_state_dependent
         
-        # Create mean head
+        # Create mean head, orthogonal initialization and put onto device
         mean_head = nn.Linear(in_features=self.network.last_feature_dim, 
-                              out_features=self.env_spec.action_space.flat_dim)
-        # Create logvar head
+                              out_features=self.action_space.flat_dim)
+        ortho_init(mean_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)  # 0.01->almost zeros initially
+        mean_head = mean_head.to(self.device)
+        # Augment to network (e.g. tracked by network.parameters() for optimizer to update)
+        self.network.add_module('mean_head', mean_head)
+        
+        # Create logvar head, orthogonal initialization and put onto device
         if self.constant_std is not None:  # using constant std
             if np.isscalar(self.constant_std):  # scalar
                 logvar_head = torch.full(size=[self.env_spec.action_space.flat_dim], 
@@ -93,36 +100,44 @@ class GaussianPolicy(BasePolicy):
             if self.std_state_dependent:  # state dependent, so a layer
                 logvar_head = nn.Linear(in_features=self.network.last_feature_dim, 
                                         out_features=self.env_spec.action_space.flat_dim)
+                ortho_init(logvar_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)  # 0.01->almost 1.0 std
             else:  # state independent, so a learnable nn.Parameter
                 assert self.init_std is not None, f'expected init_std is given as scalar value, got {self.init_std}'
                 logvar_head = nn.Parameter(torch.full(size=[self.env_spec.action_space.flat_dim], 
                                                       fill_value=torch.log(torch.tensor(self.init_std)**2), 
                                                       requires_grad=True))  # with grad
-        
-        # Orthogonal initialization to the parameters with scale 0.01, i.e. almost zero action
-        ortho_init(mean_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
-        if isinstance(logvar_head, nn.Linear):  # linear layer with weights and bias
-            ortho_init(logvar_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
-        
-        # Augment to network (e.g. tracked by network.parameters() for optimizer to update)
-        self.network.add_module('mean_head', mean_head)
+        logvar_head = logvar_head.to(self.device)
+        # Augment to network as module or as attribute
         if isinstance(logvar_head, nn.Linear):
             self.network.add_module('logvar_head', logvar_head)
         else:
             self.network.logvar_head = logvar_head
             
-        # Create value layer if required
+        # Create value head (if required), orthogonal initialization and put onto device
         if self.learn_V:
             value_head = nn.Linear(in_features=self.network.last_feature_dim, out_features=1)
             ortho_init(value_head, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
+            value_head = value_head.to(self.device)
             self.network.add_module('value_head', value_head)
+            
+        # Initialize and track the RNN hidden states
+        if self.recurrent:
+            self.reset_rnn_states()
     
-    def __call__(self, x, out_keys=['action']):
+    def __call__(self, x, out_keys=['action'], info={}, **kwargs):
         # Output dictionary
         out_policy = {}
         
-        # Forward pass through neural network for the input
-        features = self.network(x)
+        # Forward pass of feature networks to obtain features
+        if self.recurrent:
+            out_network = self.network(x=x, 
+                                       hidden_states=self.rnn_states, 
+                                       mask=info.get('mask', None))
+            features = out_network['output']
+            # Update the tracking of current RNN hidden states
+            self.rnn_states = out_network['hidden_states']
+        else:
+            features = self.network(x)
         
         # Forward pass through mean head to obtain mean values for Gaussian distribution
         mean = self.network.mean_head(features)
@@ -133,8 +148,6 @@ class GaussianPolicy(BasePolicy):
             logvar = self.network.logvar_head
             # Expand as same shape as mean
             logvar = logvar.expand_as(mean)
-            # Same device with mean
-            logvar = logvar.to(mean.device)
             
         # Forward pass of value head to obtain value function if required
         if 'state_value' in out_keys:
@@ -147,7 +160,7 @@ class GaussianPolicy(BasePolicy):
             std = F.softplus(logvar)
         
         # Lower bound threshould for std
-        min_std = torch.full(std.size(), self.min_std).type_as(std).to(std.device)
+        min_std = torch.full(std.size(), self.min_std).type_as(std).to(self.device)
         std = torch.max(std, min_std)
         
         # Create independent Gaussian distributions i.e. Diagonal Gaussian
@@ -204,8 +217,8 @@ class GaussianPolicy(BasePolicy):
             constrained action.
         """
         # Get valid range
-        low = np.unique(self.env_spec.action_space.low)
-        high = np.unique(self.env_spec.action_space.high)
+        low = np.unique(self.action_space.low)
+        high = np.unique(self.action_space.high)
         assert low.ndim == 1 and high.ndim == 1, 'low and high should be identical for each dimension'
         assert -low.item() == high.item(), 'low and high should be identical with absolute value'
         

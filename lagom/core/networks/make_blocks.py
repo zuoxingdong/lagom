@@ -158,3 +158,56 @@ def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, out
     transposed_cnn = nn.ModuleList(transposed_cnn)
     
     return transposed_cnn
+
+
+def make_rnncell(cell_type, input_dim, hidden_sizes):
+    r"""Returns a ModuleList of RNN Cells.
+    
+    .. note::
+    
+        All submodules can be automatically tracked because it uses nn.ModuleList. One can
+        use this function to generate parameters in :class:`BaseNetwork`. 
+
+    Example::
+    
+        >>> make_rnncell('LSTMCell', 3, [51, 32, 16])
+        ModuleList(
+          (0): LSTMCell(3, 51)
+          (1): LSTMCell(51, 32)
+          (2): LSTMCell(32, 16)
+        )
+    
+    Args:
+        cell_type (str): RNNCell type e.g. ['RNNCell', 'LSTMCell', 'GRUCell']
+        input_dim (int): input dimension in the first recurrent layer. 
+        hidden_sizes (list): a list of hidden sizes, each for one recurrent layer. 
+    
+    Returns
+    -------
+    rnncell : nn.ModuleList
+        a ModuleList of recurrent layers (cells).
+        
+    """
+    assert isinstance(hidden_sizes, list), f'expected as list, got {type(hidden_sizes)}'
+    
+    if cell_type == 'RNNCell':
+        cell_f = nn.RNNCell
+    elif cell_type == 'LSTMCell':
+        cell_f = nn.LSTMCell
+    elif cell_type == 'GRUCell':
+        cell_f = nn.GRUCell
+    else:
+        raise ValueError(f'expected RNNCell/LSTMCell/GRUCell, got {cell_type}')
+    
+    # Augment the input dimension to the front of hidden sizes
+    hidden_sizes = [input_dim] + hidden_sizes
+    
+    # Iteratively create recurrent cell layers
+    rnncell = []
+    for input_size, hidden_size in zip(hidden_sizes[:-1], hidden_sizes[1:]):
+        rnncell.append(cell_f(input_size=input_size, hidden_size=hidden_size))
+        
+    # Make as ModuleList
+    rnncell = nn.ModuleList(rnncell)
+    
+    return rnncell
