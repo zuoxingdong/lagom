@@ -1,10 +1,11 @@
 # https://travis-ci.org/zuoxingdong/lagom
-sudo: false
+sudo: true
 
 language: python
 # Set Python version
 python:
-    - '3.6'
+    - '3.7'
+dist: xenial
 
 # Install dependencies
 install:
@@ -18,9 +19,10 @@ install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n CI -c pytorch python=$TRAVIS_PYTHON_VERSION numpy mock pytorch-cpu
+    - conda create -q -n CI -c pytorch python=$TRAVIS_PYTHON_VERSION numpy mock pytorch-nightly
     - source activate CI
     # Install required dependencies
+    - pip install --upgrade pip
     - pip install -r requirements.txt
     # Install current project
     - pip install -e .
