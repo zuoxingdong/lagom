@@ -7,6 +7,7 @@ pandas
 seaborn
 matplotlib
 scikit-image
+scikit-learn
 imageio
 pyglet
 cloudpickle
