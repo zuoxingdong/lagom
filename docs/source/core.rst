@@ -143,6 +143,9 @@ Transformations
 .. autoclass:: ExpFactorCumSum
     :members:    
     
+.. autoclass:: ExplainedVariance
+    :members:
+    
 .. autoclass:: InterpCurve
     :members:
 
