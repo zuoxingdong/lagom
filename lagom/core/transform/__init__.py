@@ -3,6 +3,7 @@ from .base_transform import BaseTransform
 from .centralize import Centralize
 from .clip import Clip
 from .exp_factor_cumsum import ExpFactorCumSum
+from .explained_variance import ExplainedVariance
 from .interp_curve import InterpCurve
 from .normalize import Normalize
 from .rank_transform import RankTransform

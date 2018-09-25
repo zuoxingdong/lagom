@@ -5,6 +5,7 @@ import pytest
 from lagom.core.transform import Centralize
 from lagom.core.transform import Clip
 from lagom.core.transform import ExpFactorCumSum
+from lagom.core.transform import ExplainedVariance
 from lagom.core.transform import InterpCurve
 from lagom.core.transform import Normalize
 from lagom.core.transform import RankTransform
@@ -151,6 +152,25 @@ class TestTransform(object):
         mask_k = [True, False, False]
         with pytest.raises(AssertionError):
             expfactorcumsum(k, mask_k)
+            
+    def test_explained_variance(self):
+        explained_variance = ExplainedVariance()
+        with pytest.raises(AssertionError):
+            explained_variance(1, 1)
+        with pytest.raises(AssertionError):
+            explained_variance([1, 2, 3], 2)
+
+        ev = explained_variance([3, -0.5, 2, 7], [2.5, 0.0, 2, 8])
+        assert np.isscalar(ev)
+        assert np.isclose(ev, 0.9571734666824341)
+
+        ev = explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]])
+        assert np.isscalar(ev)
+        assert np.isclose(ev, 0.9838709533214569)
+
+        ev = explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]])
+        assert np.isscalar(ev)
+        assert np.isclose(ev, 0.6704022586345673)
 
     def test_interp_curve(self):
         interp = InterpCurve()
