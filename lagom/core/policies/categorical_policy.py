@@ -1,5 +1,7 @@
 from .base_policy import BasePolicy
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -54,12 +56,19 @@ class CategoricalPolicy(BasePolicy):
         
         # Forward pass of feature networks to obtain features
         if self.recurrent:
+            if 'mask' in info:  # make the mask
+                mask = np.logical_not(info['mask']).astype(np.float32)
+                mask = torch.from_numpy(mask).unsqueeze(1).to(self.device)
+            else:
+                mask = None
+                
             out_network = self.network(x=x, 
                                        hidden_states=self.rnn_states, 
-                                       mask=info.get('mask', None))
+                                       mask=mask)
             features = out_network['output']
             # Update the tracking of current RNN hidden states
-            self.rnn_states = out_network['hidden_states']
+            if 'rnn_state_no_update' not in info:
+                self.rnn_states = out_network['hidden_states']
         else:
             features = self.network(x)
         
