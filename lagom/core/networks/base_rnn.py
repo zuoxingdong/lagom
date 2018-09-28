@@ -1,7 +1,10 @@
+from abc import ABC
+from abc import abstractmethod
+
 from .base_network import BaseNetwork
 
 
-class BaseRNN(BaseNetwork):
+class BaseRNN(BaseNetwork, ABC):
     r"""Base class for all recurrent neural networks. 
     
     .. note::
@@ -31,6 +34,7 @@ class BaseRNN(BaseNetwork):
 
             def init_hidden_states(self, config, batch_size, **kwargs):
                 h = torch.zeros(batch_size, 20)
+                h = h.to(self.device)
                 c = torch.zeros_like(h)
 
                 return [h, c]
@@ -38,6 +42,7 @@ class BaseRNN(BaseNetwork):
             def rnn_forward(self, x, hidden_states, mask=None, **kwargs):
                 # mask out hidden states if required
                 if mask is not None:
+                    mask = mask.to(self.device)
                     h, c = hidden_states
                     h = h*mask
                     c = c*mask
@@ -50,6 +55,7 @@ class BaseRNN(BaseNetwork):
                 return out
 
     """
+    @abstractmethod
     def init_hidden_states(self, config, batch_size, **kwargs):
         r"""Returns initialized hidden states for the recurrent neural network. 
         
@@ -63,8 +69,9 @@ class BaseRNN(BaseNetwork):
         hidden_states : object
             initialized hidden states
         """
-        raise NotImplementedError
+        pass
     
+    @abstractmethod
     def rnn_forward(self, x, hidden_states, mask=None, **kwargs):
         r"""Defines forward pass for recurrent neural networks. 
         
@@ -79,7 +86,7 @@ class BaseRNN(BaseNetwork):
         out : dict
             a dictionary of forward pass output, possible keys ['output', 'hidden_states']
         """
-        raise NotImplementedError
+        pass
         
     def forward(self, x, hidden_states, mask=None, **kwargs):
         out = self.rnn_forward(x, hidden_states, mask, **kwargs)

@@ -1,9 +1,12 @@
+from abc import ABC
+from abc import abstractmethod
+
 import torch
 import torch.nn as nn
 from torch.nn.utils import vector_to_parameters, parameters_to_vector
 
 
-class BaseNetwork(nn.Module):
+class BaseNetwork(nn.Module, ABC):
     r"""Base class for all neural networks. 
     
     Any neural network should subclass this class. 
@@ -68,6 +71,7 @@ class BaseNetwork(nn.Module):
         # Put all created parameters on the given device
         self.to(self.device)
         
+    @abstractmethod
     def make_params(self, config):
         r"""Create all trainable parameters/layers for the neural network according to 
         a given configuration. 
@@ -80,8 +84,9 @@ class BaseNetwork(nn.Module):
         Args:
             config (dict): a dictionary of configurations. 
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def init_params(self, config):
         r"""Initialize all created parameters in :meth:`make_params` according to a 
         given configuration. 
@@ -89,7 +94,7 @@ class BaseNetwork(nn.Module):
         Args:
             config (dict): a dictionary of configurations. 
         """
-        raise NotImplementedError
+        pass
         
     @property
     def num_params(self):

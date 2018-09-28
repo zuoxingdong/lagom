@@ -1,3 +1,6 @@
+from abc import ABC
+from abc import abstractmethod
+
 import math
 
 import torch
@@ -10,7 +13,7 @@ from torch.distributions import Normal
 from .base_network import BaseNetwork
 
 
-class BaseMDN(BaseNetwork):
+class BaseMDN(BaseNetwork, ABC):
     r"""Base class for Mixture Density Networks (we use Gaussian mixture). 
     
     This class defines the mixture density networks using isotropic Gaussian densities. 
@@ -94,6 +97,7 @@ class BaseMDN(BaseNetwork):
         assert isinstance(self.num_density, int)
         assert isinstance(self.data_dim, int)
     
+    @abstractmethod
     def make_feature_layers(self, config):
         r"""Create and return the parameters for all the feature layers. 
         
@@ -112,8 +116,9 @@ class BaseMDN(BaseNetwork):
         last_dim : int
             the dimension of last feature
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def make_mdn_heads(self, config, last_dim):
         r"""Create and returns all parameters/layers for MDN heads. 
         
@@ -139,8 +144,9 @@ class BaseMDN(BaseNetwork):
         out : dict
             a dictionary of required output described above. 
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def feature_forward(self, x):
         r"""Defines forward pass of feature layers, before MDN heads. 
         
@@ -156,7 +162,7 @@ class BaseMDN(BaseNetwork):
         out : Tensor
             feature tensor before MDN heads
         """
-        raise NotImplementedError
+        pass
         
     def forward(self, x):
         # Forward pass through feature layers to produce features before the MDN heads
