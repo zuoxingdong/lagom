@@ -118,6 +118,16 @@ class TestCategoricalPolicy(object):
             assert np.allclose(h0.detach().numpy(), 0.0)
             assert np.allclose(c0.detach().numpy(), 0.0)
             
+            h1 = torch.ones_like(h0) + 3
+            c1 = torch.ones_like(c0) + 4
+            new_states = [h1, c1]
+            policy.update_rnn_states(new_states)
+            rnn_states = policy.rnn_states
+            h, c = rnn_states
+            assert list(h.shape) == [3, 16] and list(c.shape) == [3, 16]
+            assert np.allclose(h.detach().numpy(), 4.0)
+            assert np.allclose(c.detach().numpy(), 5.0)
+            
         if network_type == 'FC':
             assert hasattr(policy.network, 'layers')
             assert len(policy.network.layers) == 1
@@ -143,8 +153,7 @@ class TestCategoricalPolicy(object):
             assert not np.allclose(h_new.detach().numpy(), 0.0)
             assert not np.allclose(c_new.detach().numpy(), 0.0)
             
-            mask = torch.ones(3, 16)*1000
-            mask[1] = mask[1].fill_(0.0)
+            mask = [False, True, False]
             out_policy=  policy(obs, 
                                 out_keys=['action', 'action_prob', 'action_logprob', 
                                           'state_value', 'entropy', 'perplexity'], 
@@ -222,6 +231,18 @@ class TestGaussianPolicy(object):
                 assert list(h0.shape) == [3, 16] and list(c0.shape) == list(h0.shape)
                 assert np.allclose(h0.detach().numpy(), 0.0)
                 assert np.allclose(c0.detach().numpy(), 0.0)
+
+                h1 = torch.ones_like(h0) + 3
+                c1 = torch.ones_like(c0) + 4
+                new_states = [h1, c1]
+                policy.update_rnn_states(new_states)
+                rnn_states = policy.rnn_states
+                h, c = rnn_states
+                assert list(h.shape) == [3, 16] and list(c.shape) == [3, 16]
+                assert np.allclose(h.detach().numpy(), 4.0)
+                assert np.allclose(c.detach().numpy(), 5.0)
+
+
             assert hasattr(policy, 'min_std')
             assert hasattr(policy, 'std_style')
             assert hasattr(policy, 'constant_std')
@@ -258,8 +279,7 @@ class TestGaussianPolicy(object):
                 assert not np.allclose(h_new.detach().numpy(), 0.0)
                 assert not np.allclose(c_new.detach().numpy(), 0.0)
                 
-                mask = torch.ones(3, 16)*1000
-                mask[1] = mask[1].fill_(0.0)
+                mask = [False, True, False]
                 out_policy = policy(obs, 
                                     out_keys=['action', 'action_logprob', 'state_value', 'entropy', 'perplexity'], 
                                     info={'mask': mask})
