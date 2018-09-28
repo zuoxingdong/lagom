@@ -1,3 +1,5 @@
+import pytest
+
 import numpy as np
 
 import gym
@@ -34,6 +36,9 @@ def test_make_gym_env():
     assert env_spec.T == 500
     assert env_spec.max_episode_reward == 475.0
     assert env_spec.reward_range == (-float('inf'), float('inf'))
+    
+    with pytest.raises(TypeError):
+        env_spec.num_env
 
     assert env.reset().shape == (4,)
     assert len(env.step(env.action_space.sample())) == 4
@@ -69,11 +74,15 @@ def test_make_envs():
     assert np.allclose(env.reset(), raw_env.reset())
     
 def test_make_vec_env():
-    venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
-    venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
+    venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1, True)
+    venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1, True)
     assert isinstance(venv1, VecEnv) and isinstance(venv1, SerialVecEnv)
     assert isinstance(venv2, VecEnv) and isinstance(venv2, ParallelVecEnv)
     assert venv1.num_env == venv2.num_env
+    env_spec1 = EnvSpec(venv1)
+    assert env_spec1.num_env == venv1.num_env
+    env_spec2 = EnvSpec(venv2)
+    assert env_spec2.num_env == venv2.num_env
     assert venv1.observation_space == venv2.observation_space
     assert venv1.action_space == venv2.action_space
     assert venv1.reward_range == venv2.reward_range
