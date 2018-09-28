@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.modules.rnn as rnn  # TODO: use nn.RNNCellBase for PyTorch 1.0
 
 
 def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
@@ -31,7 +32,7 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         gain = weight_scale
         
     # Initialization
-    if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):  # RNN
+    if isinstance(module, (nn.RNNBase, rnn.RNNCellBase)):  # RNN
         # Iterate over named parameters
         for name, param in module.named_parameters():
             if 'weight' in name:  # Weight
