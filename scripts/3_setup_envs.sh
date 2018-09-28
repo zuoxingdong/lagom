@@ -46,7 +46,7 @@ pip install setuptools wheel twine
 pip install pyglet
 
 # Install some conda packages
-$CONDA install -y numpy scipy matplotlib scikit-image
+$CONDA install -y numpy scipy matplotlib scikit-image scikit-learn
 
 # From PyTorch Github README
 $CONDA install -y pyyaml mkl mkl-include cffi typing
