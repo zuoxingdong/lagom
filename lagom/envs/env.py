@@ -1,4 +1,8 @@
-class Env(object):
+from abc import ABC
+from abc import abstractmethod
+
+
+class Env(ABC):
     r"""Base class for all environment used in lagom. 
     
     .. note::
@@ -20,6 +24,7 @@ class Env(object):
     - :meth:`reward_range`
     
     """
+    @abstractmethod
     def step(self, action):
         r"""Execute the given action for one time step through the environment's dynamics. 
         
@@ -43,8 +48,9 @@ class Env(object):
             a dictionary of additional information
             
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def reset(self):
         r"""Reset the state of the environment and return an initial observation.
         
@@ -53,8 +59,9 @@ class Env(object):
         observation : object
             initial observation after resetting the environment
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def render(self, mode='human'):
         r"""Render the environment. 
         
@@ -63,8 +70,9 @@ class Env(object):
                 * 'human': render to the current display
                 * 'rgb_array': numpy array with shape [x, y, 3] for RGB values.
         """
-        raise NotImplementedError
+        pass
     
+    @abstractmethod
     def close(self):
         r"""Close the environment. 
         
@@ -77,15 +85,16 @@ class Env(object):
             Override this method to do any further cleanup. 
             
         """
-        raise NotImplementedError
+        pass
     
+    @abstractmethod
     def seed(self, seed):
         r"""Set the random seed of the environment. 
         
         Args:
             seed (int): the seed to initialize the pseudo-random number generator. 
         """
-        raise NotImplementedError
+        pass
         
     @property
     def unwrapped(self):
@@ -96,26 +105,31 @@ class Env(object):
         return self
     
     @property
+    @abstractmethod
     def observation_space(self):
         r"""Returns a :class:`Space` object to define the observation space. """
-        raise NotImplementedError
+        pass
         
     @property
+    @abstractmethod
     def action_space(self):
         r"""Returns a :class:`Space` object to define the action space. """
-        raise NotImplementedError
+        pass
     
     @property
+    @abstractmethod
     def T(self):
         r"""Maximum horizon of the environment, if available. """
-        raise NotImplementedError
+        pass
         
     @property
+    @abstractmethod
     def max_episode_reward(self):
         r"""Maximum episodic rewards of the environment, if available. """
-        raise NotImplementedError
+        pass
     
     @property
+    @abstractmethod
     def reward_range(self):
         r"""Returns a tuple of min and max possible rewards. 
         
@@ -125,4 +139,4 @@ class Env(object):
             One can also set a narrower range. 
         
         """
-        raise NotImplementedError
+        pass
