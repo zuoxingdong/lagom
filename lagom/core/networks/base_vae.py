@@ -1,3 +1,6 @@
+from abc import ABC
+from abc import abstractmethod
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,7 +8,7 @@ import torch.nn.functional as F
 from .base_network import BaseNetwork
 
 
-class BaseVAE(BaseNetwork):
+class BaseVAE(BaseNetwork, ABC):
     r"""Base class for variational autoencoders (VAE). 
     
     This is a general class that could work for both MLP and CNN versions.
@@ -97,6 +100,7 @@ class BaseVAE(BaseNetwork):
         self.decoder = self.make_decoder(config, z_dim=self.z_dim)
         assert isinstance(self.decoder, nn.ModuleList)
         
+    @abstractmethod
     def make_encoder(self, config):
         r"""Create and return all the parameters/layers for the encoder. 
         
@@ -115,8 +119,9 @@ class BaseVAE(BaseNetwork):
         last_dim : int
             the dimension of last feature
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def make_moment_heads(self, config, last_dim):
         r"""Create and return all the parameters for mu and logvar heads. 
         
@@ -140,8 +145,9 @@ class BaseVAE(BaseNetwork):
         out : dict
             a dictionary of required output described above. 
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def make_decoder(self, config, z_dim):
         r"""Create and return all the parameters/layers for the decoder. 
         
@@ -159,8 +165,9 @@ class BaseVAE(BaseNetwork):
         out : ModuleList
             a ModuleList of decoder
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def encoder_forward(self, x):
         r"""Defines forward pass of encoder. 
         
@@ -176,8 +183,9 @@ class BaseVAE(BaseNetwork):
         out : Tensor
             feature tensor before moment heads of latent variable
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def decoder_forward(self, z):
         r"""Defines forward pass of decoder. 
         
@@ -193,7 +201,7 @@ class BaseVAE(BaseNetwork):
         re_x : Tensor
             the reconstruction of the input
         """
-        raise NotImplementedError
+        pass
         
     def reparameterize(self, mu, logvar):
         r"""Sampling using reparameterization trick. 
