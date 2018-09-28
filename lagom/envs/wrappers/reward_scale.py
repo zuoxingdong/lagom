@@ -10,6 +10,7 @@ class RewardScale(RewardWrapper):
         
     Example::
     
+        >>> from lagom.envs import make_gym_env
         >>> env = make_gym_env(env_id='CartPole-v1', seed=0)
         >>> env = RewardScale(env, scale=0.1)
         >>> env.reset()
