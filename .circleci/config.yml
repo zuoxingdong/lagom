@@ -68,6 +68,6 @@ jobs:  # Build-Test-Deplot (BTD) process
                 destination: build
 
             - store_test_results:  # Upload test results
-                path: test-reports
+                path: test-reports/
                 destination: test-reports
 
