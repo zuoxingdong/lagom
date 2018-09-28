@@ -1,4 +1,8 @@
-class BaseEngine(object):
+from abc import ABC
+from abc import abstractmethod
+
+
+class BaseEngine(ABC):
     r"""Base class for all engines. 
     
     It defines the training and evaluation process. 
@@ -20,6 +24,7 @@ class BaseEngine(object):
         for key, value in kwargs.items():
             self.__setattr__(key, value)
         
+    @abstractmethod
     def train(self, n=None):
         r"""Agent training process for one iteration. 
         
@@ -31,8 +36,9 @@ class BaseEngine(object):
         train_output : dict
             training output
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def log_train(self, train_output, **kwargs):
         r"""Log the information about the training. 
         
@@ -47,8 +53,9 @@ class BaseEngine(object):
         train_logger : Logger
             logger with training information. 
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def eval(self, n=None):
         r"""Agent evaluation process for one iteration. 
         
@@ -60,8 +67,9 @@ class BaseEngine(object):
         eval_output : dict
             evluation output
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def log_eval(self, eval_output, **kwargs):
         r"""Log the information about evaluation. 
         
@@ -76,4 +84,4 @@ class BaseEngine(object):
         eval_logger : Logger
             logger with evaluation information. 
         """
-        raise NotImplementedError
+        pass
