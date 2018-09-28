@@ -20,7 +20,7 @@ class SerialVecEnv(VecEnv):
     
         >>> from lagom.envs import make_envs, make_gym_env
         >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0)
-        >>> env = SerialVecEnv(list_make_env=list_make_env)
+        >>> env = SerialVecEnv(list_make_env=list_make_env, rolling=True)
         >>> env
         <SerialVecEnv: CartPole-v1, n: 3>
         
@@ -30,11 +30,12 @@ class SerialVecEnv(VecEnv):
          array([0.00025361, 0.02915667, 0.01103413, 0.04977449])]
     
     """
-    def __init__(self, list_make_env):
+    def __init__(self, list_make_env, rolling=True):
         r"""Initialize the vectorized environment. 
         
         Args:
             list_make_env (list): a list of functions to generate environments. 
+            rolling (bool): see docstring in :class:`VecEnv` for more details. 
         """
         # Create list of environments
         self.list_env = [make_env() for make_env in list_make_env]
@@ -42,7 +43,8 @@ class SerialVecEnv(VecEnv):
         # Call parent constructor
         super().__init__(list_make_env=list_make_env, 
                          observation_space=self.list_env[0].observation_space, 
-                         action_space=self.list_env[0].action_space)
+                         action_space=self.list_env[0].action_space, 
+                         rolling=rolling)
         assert len(self.list_env) == self.num_env
         
     def step_async(self, actions):
@@ -58,14 +60,20 @@ class SerialVecEnv(VecEnv):
         infos = []
         
         # Execute the recorded actions for each environment
-        for env, action in zip(self.list_env, self.actions):
-            observation, reward, done, info = env.step(action)
+        for i, (env, action) in enumerate(zip(self.list_env, self.actions)):
+            if not self.rolling and self.stops[i]:  # non-rolling and this sub-environment already terminated
+                observation, reward, done, info = [None]*4
+            else:  # rolling or non-terminated sub-environment
+                observation, reward, done, info = env.step(action)
             
             # If episode terminates, reset this environment and record initial observation in info
             # because terminal observation is still useful, one might needs it to train value function
             if done:
-                init_observation = env.reset()
-                info['init_observation'] = init_observation
+                if self.rolling:  # rolling, so reset the sub-environment
+                    init_observation = env.reset()
+                    info['init_observation'] = init_observation
+                else:  # non-rolling, set stop flag
+                    self.stops[i] = True
                 
             # Record all information
             observations.append(observation)
@@ -78,6 +86,9 @@ class SerialVecEnv(VecEnv):
     def reset(self):
         # Reset all the environment and return all the initial observations
         observations = [env.reset() for env in self.list_env]
+        
+        # reset all stop flags, useful for non-rolling version
+        self.stops = [False]*self.num_env
         
         return observations
     
