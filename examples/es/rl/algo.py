@@ -12,6 +12,7 @@ from lagom.envs import make_gym_env
 from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
+from lagom.envs.vec_env import ParallelVecEnv
 from lagom.runner import TrajectoryRunner
 
 from lagom.core.policies import CategoricalPolicy
@@ -29,6 +30,7 @@ from lagom import BaseAlgorithm
 from lagom import pickle_dump
 
 from policy import Network
+from policy import LSTM
 from policy import Agent
 
 
@@ -42,17 +44,21 @@ class ESWorker(BaseESWorker):
         self.env = make_vec_env(vec_env_class=SerialVecEnv, 
                                 make_env=make_gym_env, 
                                 env_id=config['env.id'], 
-                                num_env=1, 
-                                init_seed=seed)
+                                num_env=config['train.N'], 
+                                init_seed=seed, 
+                                rolling=False)
         self.env_spec = EnvSpec(self.env)
         
         # Make agent
-        self.network = Network(config=config, env_spec=self.env_spec)
+        if config['network.recurrent']:
+            self.network = LSTM(config=config, env_spec=self.env_spec)
+        else:
+            self.network = Network(config=config, env_spec=self.env_spec)
         if self.env_spec.control_type == 'Discrete':
-            self.policy = CategoricalPolicy(config=config, network=self.network, env_spec=self.env_spec)
+            self.policy = CategoricalPolicy(config=config, network=self.network, env_spec=self.env_spec, device=None)
         elif self.env_spec.control_type == 'Continuous':
-            self.policy = GaussianPolicy(config=config, network=self.network, env_spec=self.env_spec)
-        self.agent = Agent(policy=self.policy, config=config)
+            self.policy = GaussianPolicy(config=config, network=self.network, env_spec=self.env_spec, device=None)
+        self.agent = Agent(config=config, policy=self.policy)
         
     def f(self, solution, seed, config):
         if self.agent is None:
@@ -63,15 +69,12 @@ class ESWorker(BaseESWorker):
         assert np.asarray(solution).size == self.network.num_params, msg
         self.agent.policy.network.from_vec(torch.from_numpy(solution).float())
         
-        # seed the environment
-        self.env.list_env[0].seed(seed)
-        
         # create runner
         runner = TrajectoryRunner(agent=self.agent, env=self.env, gamma=1.0)
         
         # take rollouts and calculate mean return (no discount)
         with torch.no_grad():
-            D = runner(N=config['train.N'], T=config['train.T'])
+            D = runner(T=config['train.T'])
         
         mean_return = np.mean([sum(trajectory.all_r) for trajectory in D])
         
