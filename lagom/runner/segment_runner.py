@@ -36,34 +36,36 @@ class SegmentRunner(BaseRunner):
         >>> from lagom.envs import make_envs, make_gym_env, EnvSpec
         >>> from lagom.envs.vec_env import SerialVecEnv
         >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=2, init_seed=0)
-        >>> env = SerialVecEnv(list_make_env=list_make_env)
+        >>> env = SerialVecEnv(list_make_env=list_make_env, rolling=True)
         >>> env_spec = EnvSpec(env)
-
-        >>> agent = RandomAgent(env_spec=env_spec)
+    
+        >>> agent = RandomAgent(config=None, env_spec=env_spec)
         >>> runner = SegmentRunner(agent=agent, env=env, gamma=1.0)
 
         >>> runner(T=3, reset=False)
         [Segment: 
-            Transition: (s=[-0.04002427  0.00464987 -0.01704236 -0.03673052], a=0, r=1.0, s_next=[-0.03993127 -0.1902236  -0.01777697  0.25052702], done=False)
-            Transition: (s=[-0.03993127 -0.1902236  -0.01777697  0.25052702], a=1, r=1.0, s_next=[-0.04373575  0.00514764 -0.01276643 -0.04770968], done=False)
-            Transition: (s=[-0.04373575  0.00514764 -0.01276643 -0.04770968], a=0, r=1.0, s_next=[-0.04363279 -0.18978895 -0.01372062  0.24091814], done=False),
+            Transition: (s=[-0.04002427  0.00464987 -0.01704236 -0.03673052], a=1, r=1.0, s_next=[-0.03993127  0.20001201 -0.01777697 -0.33474139], done=False)
+            Transition: (s=[-0.03993127  0.20001201 -0.01777697 -0.33474139], a=0, r=1.0, s_next=[-0.03593103  0.00514751 -0.0244718  -0.04771698], done=False)
+            Transition: (s=[-0.03593103  0.00514751 -0.0244718  -0.04771698], a=0, r=1.0, s_next=[-0.03582808 -0.18961514 -0.02542614  0.23714553], done=False),
          Segment: 
             Transition: (s=[ 0.00854682  0.00830137 -0.03052506  0.03439879], a=0, r=1.0, s_next=[ 0.00871284 -0.18636984 -0.02983709  0.31729661], done=False)
             Transition: (s=[ 0.00871284 -0.18636984 -0.02983709  0.31729661], a=0, r=1.0, s_next=[ 0.00498545 -0.38105439 -0.02349115  0.60042265], done=False)
-            Transition: (s=[ 0.00498545 -0.38105439 -0.02349115  0.60042265], a=1, r=1.0, s_next=[-0.00263564 -0.18561182 -0.0114827   0.30043392], done=False)]
-            
+            Transition: (s=[ 0.00498545 -0.38105439 -0.02349115  0.60042265], a=0, r=1.0, s_next=[-0.00263564 -0.57583997 -0.0114827   0.88561464], done=False)]
+    
         >>> runner(T=1, reset=False)
         [Segment: 
-            Transition: (s=[-0.04363279 -0.18978895 -0.01372062  0.24091814], a=1, r=1.0, s_next=[-0.04742857  0.00552629 -0.00890226 -0.05606087], done=False),
+            Transition: (s=[-0.03582808 -0.18961514 -0.02542614  0.23714553], a=0, r=1.0, s_next=[-0.03962039 -0.38436478 -0.02068323  0.52170109], done=False),
          Segment: 
-            Transition: (s=[-0.00263564 -0.18561182 -0.0114827   0.30043392], a=1, r=1.0, s_next=[-0.00634788  0.0096719  -0.00547402  0.00415181], done=False)]
+            Transition: (s=[-0.00263564 -0.57583997 -0.0114827   0.88561464], a=0, r=1.0, s_next=[-0.01415244 -0.77080416  0.00622959  1.17466581], done=False)]
         
     """
     def __init__(self, agent, env, gamma):
         super().__init__(agent=agent, env=env, gamma=gamma)
+        assert self.env.rolling, 'SegmentRunner must use rolling VecEnv'
         
-        # Buffer for current observation (continuous with next call)
+        # Buffer for current observation (continuous with next call) and done (for masking)
         self.obs_buffer = None
+        self.done_buffer = None
         
     def __call__(self, T, reset=False):
         r"""Run the agent in the vectorized environment (one or multiple environments) and collect 
@@ -90,11 +92,18 @@ class SegmentRunner(BaseRunner):
         # Reset the environment and returns initial state if reset=True or first time call
         if self.obs_buffer is None or reset:
             self.obs_buffer = self.env.reset()
+            self.done_buffer = [False]*self.env.num_env
+            # Inform agent to reset RNN states (if valid)
+            self.agent.update_info('reset_rnn_states', True)  # turn it off after reset
             
-        # Iterate over the number of time steps
-        for t in range(T):
+        for t in range(T):  # Iterate over the number of time steps
             # Action selection by the agent (handles batched data)
-            out_agent = self.agent.choose_action(self.obs_buffer)
+            if any(self.done_buffer):  # at least one episode renewed, so use masking
+                info = {'mask': self.done_buffer}
+            else:  # no termination happen previously, so do it normally
+                info = {}
+            
+            out_agent = self.agent.choose_action(self.obs_buffer, info=info)
             
             # Unpack action
             action = out_agent.pop('action')  # pop-out
@@ -109,8 +118,15 @@ class SegmentRunner(BaseRunner):
             
             # Execute the action in the environment
             obs_next, reward, done, info = self.env.step(raw_action)
+            # Update done buffer
+            self.done_buffer = done
             
-            # Iterate over all Segments to add data to transitions
+            # One more forward pass to get state value for V_s_next if required
+            if state_value is not None and any(done):  # require state value and at least one done=True
+                list_V_s_next = self.agent.choose_action(obs_next, 
+                                                         info={'rnn_state_no_update': True})['state_value']
+            
+            # Iterate over all Segments to add data of transitions
             for i, segment in enumerate(D):
                 # Create and record a Transition
                 # Retrieve the corresponding values for each Segment
@@ -123,6 +139,8 @@ class SegmentRunner(BaseRunner):
                 # Record state value if available
                 if state_value is not None:
                     transition.add_info('V_s', state_value[i])
+                    if done[i]:  # add terminal state value
+                        transition.add_info('V_s_next', list_V_s_next[i])
                 
                 # Record additional information from out_agent to transitions
                 # Note that 'action' and 'state_value' already poped out
@@ -139,16 +157,13 @@ class SegmentRunner(BaseRunner):
                     self.obs_buffer[k] = info[k]['init_observation']
                 else:  # non-terminal, continue with obs_next
                     self.obs_buffer[k] = obs_next[k]
-            
-        # If state value available, calculate state value for final observation
-        # Note that do NOT use self.obs_buffer, because it contains initial observation for new episode
-        # but we want to have state value for terminal states instead
+
+        # Calculate last state value: use `obs_next` not `obs_buffer`, because latter might contain initial observation
         if state_value is not None:
-            V_s_next = self.agent.choose_action(obs_next)['state_value']
-            # Add to final transition in each Segment
-            # Do not set zero for terminal state, useful for backprop to learn value function
-            # It will be handled in Trajectory or Segment method when calculating things like returns/TD errors
-            for i, segment in enumerate(D):
-                segment.transitions[-1].add_info('V_s_next', V_s_next[i])
+            list_V_s_next = self.agent.choose_action(obs_next, 
+                                                     info={'rnn_state_no_update': True})['state_value']
+            for i, segment in enumerate(D):  # check each segment
+                if 'V_s_next' not in segment.transitions[-1].info:  # missing last state value
+                    segment.transitions[-1].add_info('V_s_next', list_V_s_next[i])
 
         return D

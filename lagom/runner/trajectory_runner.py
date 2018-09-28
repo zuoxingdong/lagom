@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 
 from .transition import Transition
@@ -24,40 +26,40 @@ class TrajectoryRunner(BaseRunner):
     
     .. note::
         
-        For collecting batch of segments, one should use :class:`SegmentRunner` instead. 
+        For collecting batch of rolling segments, one should use :class:`SegmentRunner` instead. 
     
     Example::
     
         >>> from lagom.agents import RandomAgent
-        >>> from lagom.envs import make_envs, make_gym_env, EnvSpec
+        >>> from lagom.envs import make_gym_env, make_vec_env, EnvSpec
         >>> from lagom.envs.vec_env import SerialVecEnv
-        >>> list_make_env = make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=1, init_seed=0)
-        >>> env = SerialVecEnv(list_make_env=list_make_env)
+
+        >>> env = make_vec_env(vec_env_class=SerialVecEnv, make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0, rolling=False)
         >>> env_spec = EnvSpec(env)
+        >>> agent = RandomAgent(config=None, env_spec=env_spec)
+        >>> runner = TrajectoryRunner(agent=agent, env=env, gamma=0.99)
 
-        >>> agent = RandomAgent(env_spec=env_spec)
-        >>> runner = TrajectoryRunner(agent=agent, env=env, gamma=1.0)
-
-        >>> runner(N=2, T=3)
+        >>> runner(T=2)
         [Trajectory: 
-            Transition: (s=[-0.04002427  0.00464987 -0.01704236 -0.03673052], a=1, r=1.0, s_next=[-0.03993127  0.20001201 -0.01777697 -0.33474139], done=False)
-            Transition: (s=[-0.03993127  0.20001201 -0.01777697 -0.33474139], a=1, r=1.0, s_next=[-0.03593103  0.39538239 -0.0244718  -0.63297681], done=False)
-            Transition: (s=[-0.03593103  0.39538239 -0.0244718  -0.63297681], a=1, r=1.0, s_next=[-0.02802339  0.59083704 -0.03713133 -0.93326499], done=False),
+            Transition: (s=[ 0.01712847  0.01050531  0.00494782 -0.02698731], a=1, r=1.0, s_next=[ 0.01733857  0.20555595  0.00440808 -0.31810505], done=False)
+            Transition: (s=[ 0.01733857  0.20555595  0.00440808 -0.31810505], a=0, r=1.0, s_next=[ 0.02144969  0.0103715  -0.00195402 -0.02403524], done=False),
          Trajectory: 
-            Transition: (s=[-0.04892357  0.02011271  0.02775732 -0.04547827], a=1, r=1.0, s_next=[-0.04852131  0.21482587  0.02684775 -0.3292759 ], done=False)
-            Transition: (s=[-0.04852131  0.21482587  0.02684775 -0.3292759 ], a=0, r=1.0, s_next=[-0.0442248   0.01933221  0.02026223 -0.0282488 ], done=False)
-            Transition: (s=[-0.0442248   0.01933221  0.02026223 -0.0282488 ], a=1, r=1.0, s_next=[-0.04383815  0.21415782  0.01969726 -0.31447053], done=False)]        
+            Transition: (s=[ 0.01086211 -0.00049396 -0.04967628 -0.04839385], a=0, r=1.0, s_next=[ 0.01085223 -0.1948697  -0.05064416  0.22821125], done=False)
+            Transition: (s=[ 0.01085223 -0.1948697  -0.05064416  0.22821125], a=1, r=1.0, s_next=[ 0.00695484  0.00093803 -0.04607993 -0.08000678], done=False),
+         Trajectory: 
+            Transition: (s=[-0.00990306 -0.00393545 -0.02013421  0.01405226], a=1, r=1.0, s_next=[-0.00998177  0.19146938 -0.01985317 -0.28491463], done=False)
+            Transition: (s=[-0.00998177  0.19146938 -0.01985317 -0.28491463], a=1, r=1.0, s_next=[-0.00615238  0.38686877 -0.02555146 -0.58379241], done=False)]
 
     """
     def __init__(self, agent, env, gamma):
         super().__init__(agent=agent, env=env, gamma=gamma)
-        assert self.env.num_env == 1, f'expected a single environment, got {self.env.num_env}'
+        assert not self.env.rolling, 'TrajectoryRunner should not use rolling VecEnv'
         
-    def __call__(self, N, T):
-        r"""Run the agent in the environment and collect N trajectories each with maximally T time steps. 
+    def __call__(self, T):
+        r"""Run the agent in the vectorized environment (one or multiple environments) and collect
+        a number of trajectories each with maximally T time steps. 
         
         Args:
-            N (int): number of trajectories to collect. 
             T (int): maximally allowed time steps. 
             
         Returns
@@ -65,67 +67,76 @@ class TrajectoryRunner(BaseRunner):
         D : list
             a list of collected :class:`Trajectory`
         """ 
-        D = []
+        # Initialize all Trajectory for each environment
+        D = [Trajectory(gamma=self.gamma) for _ in range(self.env.num_env)]
         
-        for n in range(N):  # Iterate over the number of trajectories
-            # Create an trajectory object
-            trajectory = Trajectory(gamma=self.gamma)
+        # Reset all environments and returns all initial observations
+        obs = self.env.reset()
+        # Inform agent to reset RNN states (if valid): TrajectoryRunner always starts from initial observation
+        self.agent.update_info('reset_rnn_states', True)  # turn it off after reset
+        
+        for t in range(T):  # Iterate over the number of time steps
+            # Action selection by the agent (handles batched data)
+            out_agent = self.agent.choose_action(obs)
             
-            # Reset the environment and returns initial state
-            obs = self.env.reset()
+            # Unpack action
+            action = out_agent.pop('action')  # pop-out
+            # Get raw action if Tensor dtype for feeding the environment
+            if torch.is_tensor(action):
+                raw_action = list(action.detach().cpu().numpy())
+            else:  # Non Tensor action, e.g. from RandomAgent
+                raw_action = action
             
-            for t in range(T):  # Iterate over the number of time steps
-                # Action selection by the agent (handles batched data)
-                out_agent = self.agent.choose_action(obs)
-                
-                # Unpack action
-                action = out_agent.pop('action')  # pop-out
-                # Get raw action if Tensor dtype for feeding the environment
-                if torch.is_tensor(action):
-                    raw_action = list(action.detach().cpu().numpy())
-                else:  # Non Tensor action, e.g. from RandomAgent
-                    raw_action = action
-                
-                # Execute the agent in the environment
-                obs_next, reward, done, info = self.env.step(raw_action)
-                
-                # Create and record a Transition
-                # Take out first elements because of VecEnv with single environment (no batch dim in Transition)
-                # Note that action can be Tensor type (can be used for backprop)
-                transition = Transition(s=obs[0], 
-                                        a=action[0], 
-                                        r=reward[0], 
-                                        s_next=obs_next[0], 
-                                        done=done[0])
-                
-                # Handle state value if available
-                state_value = out_agent.pop('state_value', None)
-                if state_value is not None:
-                    transition.add_info('V_s', state_value[0])
-                    
-                # Record additional information from out_agent to transitions
-                # Note that 'action' and 'state_value' already poped out
-                [transition.add_info(key, val[0]) for key, val in out_agent.items()]
-                
-                # Add transition to Trajectory
-                trajectory.add_transition(transition)
-                
-                # Back up obs for next iteration to feed into agent
-                obs = obs_next
-                
-                # Terminate if episode finishes
-                if done[0]:
-                    break
-                    
-            # If state value available, calculate state value for final observation
-            if state_value is not None:
-                V_s_next = self.agent.choose_action(obs)['state_value']
-                # Add to final transition in the trajectory
-                # Do not set zero for terminal state, useful for backprop to learn value function
-                # It will be handled in Trajectory or Segment method when calculating things like returns/TD errors
-                trajectory.transitions[-1].add_info('V_s_next', V_s_next[0])
-                
-            # Append trajectory to data
-            D.append(trajectory)
+            # Unpack state value if available
+            state_value = out_agent.pop('state_value', None)
+            
+            # Execute the action in the environment
+            obs_next, reward, done, info = self.env.step(raw_action)
+            
+            # One more forward pass to get state value for V_s_next if required
+            if state_value is not None and any(done):  # require state value and at least one done=True
+                list_V_s_next = self.agent.choose_action(obs_next, 
+                                                         info={'rnn_state_no_update': True})['state_value']
+            
+            # Iterate over all Trajectory to add data of transitions
+            for i, trajectory in enumerate(D):
+                if done[i] is None:  # already stopped because an episode terminated before
+                    obs_next[i] = np.zeros([self.env.observation_space.flat_dim], dtype=np.float32)
+                else:  # non-terminating, store transition
+                    # Create and record a Transition
+                    # Retrieve the corresponding values for each Trajectory
+                    transition = Transition(s=obs[i], 
+                                            a=action[i], 
+                                            r=reward[i], 
+                                            s_next=obs_next[i], 
+                                            done=done[i])
 
+                    # Record state value if available
+                    if state_value is not None:
+                        transition.add_info('V_s', state_value[i])
+                        if done[i]:  # add terminal state value
+                            transition.add_info('V_s_next', list_V_s_next[i])
+                    
+                    # Record additional information from out_agent to transitions
+                    # Note that 'action' and 'state_value' already poped out
+                    [transition.add_info(key, val[i]) for key, val in out_agent.items()]
+
+                    # Add transition to Trajectory
+                    trajectory.add_transition(transition)
+                
+            # Back up obs for next iteration to feed into agent
+            obs = obs_next
+
+            # Terminate if all sub-environments finished before max allowed timesteps
+            if all([x is None or x for x in done]):
+                break
+        
+        # Calculate and record last state value for each trajectory
+        if state_value is not None:
+            list_V_s_next = self.agent.choose_action(obs_next, 
+                                                     info={'rnn_state_no_update': True})['state_value']
+            for i, trajectory in enumerate(D):  # check each trajectory
+                if 'V_s_next' not in trajectory.transitions[-1].info:  # missing last state value
+                    trajectory.transitions[-1].add_info('V_s_next', list_V_s_next[i])
+        
         return D
