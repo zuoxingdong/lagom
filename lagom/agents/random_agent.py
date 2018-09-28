@@ -10,7 +10,7 @@ class RandomAgent(BaseAgent):
         
         super().__init__(config, **kwargs)
         
-    def choose_action(self, obs):
+    def choose_action(self, obs, info={}):
         out = {}
         
         # Randomly sample an action from action space
@@ -23,7 +23,7 @@ class RandomAgent(BaseAgent):
         
         return out
         
-    def learn(self, D):
+    def learn(self, D, info={}):
         pass
     
     def save(self, f):
@@ -31,3 +31,9 @@ class RandomAgent(BaseAgent):
     
     def load(self, f):
         pass
+    
+    def __repr__(self):
+        string = super().__repr__()
+        string += f'\n\tEnvironment specification: {self.env_spec}'
+        
+        return string
