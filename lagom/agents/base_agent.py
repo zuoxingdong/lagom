@@ -1,4 +1,8 @@
-class BaseAgent(object):
+from abc import ABC
+from abc import abstractmethod
+
+
+class BaseAgent(ABC):
     r"""Base class for all agents. 
     
     The agent could select an action from a given observation and update itself by defining a certain learning
@@ -31,8 +35,21 @@ class BaseAgent(object):
         # Set keyword arguments
         for key, value in kwargs.items():
             self.__setattr__(key, value)
+            
+        # store some extra information
+        self.info = {}
         
-    def choose_action(self, obs):
+    def update_info(self, name, value):
+        r"""Update internal extra information for the agent. 
+        
+        Args:
+            name (str): name of the information
+            value (object): value of the information
+        """
+        self.info[name] = value
+        
+    @abstractmethod
+    def choose_action(self, obs, info={}):
         r"""Returns an (batched) action selected by the agent from received (batched) observation/
         
         .. note::
@@ -44,6 +61,7 @@ class BaseAgent(object):
         Args:
             obs (object): batched observation returned from the environment. First dimension is treated
                 as batch dimension. 
+            info (dict): a dictionary of additional information for action selection. 
             
         Returns
         -------
@@ -53,22 +71,25 @@ class BaseAgent(object):
             the runner classes for all kinds of agents. Note that everything should be batched even
             if for scalar loss, i.e. ``scalar_loss -> [scalar_loss]``
         """
-        raise NotImplementedError
+        pass
         
-    def learn(self, D):
+    @abstractmethod
+    def learn(self, D, info={}):
         r"""Defines learning mechanism to update the agent from a batched data. 
         
         Args:
             D (list): a list of batched data to train the agent e.g. in policy gradient, this can be 
                 a list of :class:`Trajectory` or :class:`Segment`
+            info (dict): a dictionary of additional information for defining the learning mechanism. 
             
         Returns
         -------
         out : dict
             a dictionary of learning output. This could contain the loss. 
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def save(self, f):
         r"""Save the current parameters of the agent. 
         
@@ -78,8 +99,9 @@ class BaseAgent(object):
         Args:
             f (str): name of the file
         """
-        raise NotImplementedError
+        pass
         
+    @abstractmethod
     def load(self, f):
         r"""Load the parameters of the agent from a file.
         
@@ -89,4 +111,10 @@ class BaseAgent(object):
         Args:
             f (str): name of the file
         """
-        raise NotImplementedError
+        pass
+
+    def __repr__(self):
+        r"""Returns a string representation of the agent. """
+        string = self.__class__.__name__
+        
+        return string
