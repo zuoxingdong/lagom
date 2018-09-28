@@ -24,7 +24,7 @@ def test_vec_env(vec_env_class):
     # unpack class
     v_id, vec_env_class = vec_env_class
     
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     assert isinstance(venv, VecEnv)
     assert v_id in [0, 1]
     if v_id == 0:
@@ -58,12 +58,12 @@ def test_vec_env(vec_env_class):
     assert env_spec.max_episode_reward == 475.0
     assert env_spec.reward_range == (-float('inf'), float('inf'))
 
-    #venv.close()
-    #assert venv.closed
+    venv.close()
+    assert venv.closed
 
 @pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
 def test_vec_standardize(vec_env_class):
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     venv = VecStandardize(venv, 
                           use_obs=True, 
                           use_reward=True, 
@@ -94,7 +94,7 @@ def test_vec_standardize(vec_env_class):
     del venv, obs, a
 
     # other settings: clipping
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     venv = VecStandardize(venv, 
                           use_obs=True, 
                           use_reward=True, 
@@ -122,7 +122,7 @@ def test_vec_standardize(vec_env_class):
     del venv, obs, a
 
     # other settings: turn off use_obs
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     venv = VecStandardize(venv, 
                           use_obs=False, 
                           use_reward=False, 
@@ -139,7 +139,7 @@ def test_vec_standardize(vec_env_class):
     del venv, obs, a
 
     # other settings: gamma
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     with pytest.raises(AssertionError):
         venv = VecStandardize(venv, 
                               use_obs=False, 
@@ -153,7 +153,7 @@ def test_vec_standardize(vec_env_class):
 
     # other settings: constant value 
 
-    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
     venv = VecStandardize(venv, 
                           use_obs=True, 
                           use_reward=True, 
@@ -171,9 +171,10 @@ def test_vec_standardize(vec_env_class):
     obs, rewards, _, _ = venv.step(a)
     assert rewards.min() <= 0.01
     
-def test_equivalence_vec_env():
-    venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
-    venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
+@pytest.mark.parametrize('rolling', [True, False])
+def test_equivalence_vec_env(rolling):
+    venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1, rolling)
+    venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1, rolling)
     assert venv1.observation_space == venv2.observation_space
     assert venv1.action_space == venv2.action_space
     assert venv1.num_env == venv2.num_env
@@ -186,3 +187,15 @@ def test_equivalence_vec_env():
     assert np.allclose(obs1, obs2)
     assert np.allclose(rewards1, rewards2)
     assert np.allclose(dones1, dones2)
+
+@pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
+def test_rolling(vec_env_class):
+    venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, rolling=False)
+    venv.reset()
+    for _ in range(100):
+        observations, rewards, dones, infos = venv.step([venv.action_space.sample()]*5)
+    assert all([len(x) == 5 for x in [observations, rewards, dones, infos]])
+    assert all([x == [None]*5 for x in [observations, rewards, dones, infos]])
+    venv.reset()
+    result = venv.step([venv.action_space.sample()]*5)
+    assert all([None not in result[i] for i in [1, 2, 3]])
