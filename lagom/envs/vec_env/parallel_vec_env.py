@@ -64,6 +64,8 @@ def worker(master_conn, worker_conn, make_env):
             worker_conn.send(env.reward_range)
         elif cmd == 'get_spaces':
             worker_conn.send([env.observation_space, env.action_space])
+        elif cmd == 'cozy':
+            worker_conn.send('roger')
             
 
 class ParallelVecEnv(VecEnv):
@@ -92,11 +94,12 @@ class ParallelVecEnv(VecEnv):
          array([0.00025361, 0.02915667, 0.01103413, 0.04977449])]
     
     """
-    def __init__(self, list_make_env):
+    def __init__(self, list_make_env, rolling=True):
         r"""Initialize the vectorized environment. 
         
         Args:
             list_make_env (list): a list of functions to generate environments.
+            rolling (bool): see docstring in :class:`VecEnv` for more details. 
         """
         # Create Pipe connections, each for one environment worker
         self.master_conns, self.worker_conns = zip(*[Pipe() for _ in range(len(list_make_env))])
@@ -119,7 +122,8 @@ class ParallelVecEnv(VecEnv):
         # Call parent constructor
         super().__init__(list_make_env=list_make_env, 
                          observation_space=observation_space, 
-                         action_space=action_space)
+                         action_space=action_space, 
+                         rolling=rolling)
         assert len(self.master_conns) == self.num_env
         
         # Some settings
@@ -129,7 +133,12 @@ class ParallelVecEnv(VecEnv):
         assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
         
         # Send 'step' and action to all environment workers
-        [master_conn.send(['step', action]) for master_conn, action in zip(self.master_conns, actions)]
+        for i, (master_conn, action) in enumerate(zip(self.master_conns, actions)):
+            if not self.rolling and self.stops[i]:  # non-rolling and this sub-environment already terminated
+                master_conn.send(['cozy', None])
+            else:  # rolling or non-terminated sub-environment
+                master_conn.send(['step', action])
+
         # Set waiting flag
         self.waiting = True
         
@@ -137,7 +146,17 @@ class ParallelVecEnv(VecEnv):
         # Receive results from all workers
         # Note that different worker finishes the job differently, but list comprehension
         # automatically preserve the order. This order is very important, otherwise it is a BUG !
-        results = [master_conn.recv() for master_conn in self.master_conns]
+        results = []
+        for i, master_conn in enumerate(self.master_conns):
+            result = master_conn.recv()
+            if result == 'roger':  # cozily stops
+                result = [None]*4
+            else:
+                if result[2] and not self.rolling:  # done=True and non-rolling
+                    result[-1].pop('init_observation')  # pop-out this from info as non-rolling
+                    self.stops[i] = True
+            results.append(result)
+        
         # Turn off waiting flag
         self.waiting = False
         # Unpack results
@@ -150,6 +169,9 @@ class ParallelVecEnv(VecEnv):
         [master_conn.send(['reset', None]) for master_conn in self.master_conns]
         # Receive a list of initial observations from reset() in all environment workers
         observations = [master_conn.recv() for master_conn in self.master_conns]
+        
+        # reset all stop flags, useful for non-rolling version
+        self.stops = [False]*self.num_env
         
         return observations
     
