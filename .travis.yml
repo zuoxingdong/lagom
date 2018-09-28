@@ -19,7 +19,7 @@ install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n CI -c python=3.7 cython numpy mock
+    - conda create -q -n CI python=3.7 cython numpy mock
     - source activate CI
     # Install required dependencies
     - pip install --upgrade pip
