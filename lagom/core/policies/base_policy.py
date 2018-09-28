@@ -103,6 +103,13 @@ class BasePolicy(ABC):
                                                               batch_size=self.env_spec.num_env)
         else:
             raise TypeError('the network must be BaseRNN type. ')
+            
+    def update_rnn_states(self, rnn_states):
+        r"""Update the current RNN states. """
+        if self.recurrent:
+            self.rnn_states = rnn_states
+        else:
+            raise TypeError('the network must be BaseRNN type. ')
         
     def __repr__(self):
         r"""Returns a string representation of the policy network. """
