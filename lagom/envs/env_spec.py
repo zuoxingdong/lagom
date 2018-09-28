@@ -66,9 +66,19 @@ class EnvSpec(object):
             return 'Continuous'
         else:
             raise TypeError(f'expected type as Discrete or Box, got {type(self.env.action_space)}.')
+            
+    @property
+    def num_env(self):
+        r"""Returns the number of sub-environments for vectorized environment. """
+        if isinstance(self.env, VecEnv):
+            return self.env.num_env
+        else:
+            raise TypeError('the environment must be VecEnv type')
 
     def __repr__(self):
         string = f'<{type(self).__name__}, {self.env}>\n'
+        if isinstance(self.env, VecEnv):
+            string += f'\tNumber of environments: {self.num_env}\n'
         string += f'\tObservation space: {self.observation_space}\n'
         string += f'\tAction space: {self.action_space}\n'
         string += f'\tControl type: {self.control_type}\n'
