@@ -89,13 +89,15 @@ pytest test -v
 ## Core
     - Tutorials
 ## More standard RL baselines
+    - IMPALA
     - TRPO/PPO
+    - NAF/GAE
     - ACKTR
     - DDPG
     - ACER
     - Q-Prop
-    - DQN: Rainbow
-    - ES: PEPG/NES
+    - DQN: DQN/Rainbow
+    - ES: NES
 ## More standard networks
     - Monte Carlo Dropout/Concrete Dropout
 ## Misc
@@ -104,7 +106,7 @@ pytest test -v
 
 # Reference
 
-This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [OpenAI rllab](https://github.com/rll/rllab), [OpenAI baselines](https://github.com/openai/baselines), [RLPyTorch](https://github.com/pytorch/ELF/tree/master/src_py/rlpytorch), [TensorForce](https://github.com/reinforceio/tensorforce) [Intel Coach](https://github.com/NervanaSystems/coach) and [Dopamine](https://github.com/google/dopamine)
+This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [garage](https://github.com/rlworkgroup/garage), [OpenAI baselines](https://github.com/openai/baselines), [Intel Coach](https://github.com/NervanaSystems/coach) and [Dopamine](https://github.com/google/dopamine)
 
 Please use this bibtex if you want to cite this repository in your publications:
 
