@@ -19,8 +19,11 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('cuda', False)  # ES for small net, do not use GPU
         
         configurator.fixed('env.id', 'Pendulum-v0')
+        
+        configurator.fixed('network.recurrent', False)
         configurator.fixed('network.hidden_size', [32])
-        configurator.fixed('es.popsize', 64)
+        
+        configurator.fixed('es.popsize', 128)
         configurator.fixed('es.mu0', 0.0)
         configurator.fixed('es.std0', 0.5)
         
@@ -35,7 +38,7 @@ class ExperimentMaster(BaseExperimentMaster):
         """
         configurator.fixed('train.num_iteration', 1000)
         configurator.fixed('train.N', 5)
-        configurator.fixed('train.T', 500)
+        configurator.fixed('train.T', 300)
         
         configurator.fixed('log.interval', 100)
         configurator.fixed('log.dir', 'logs')
