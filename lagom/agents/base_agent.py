@@ -23,20 +23,21 @@ class BaseAgent(ABC):
     - :meth:`load`
     
     """
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, device, **kwargs):
         r"""Initialize the agent. 
         
         Args:
             config (dict): a dictionary of configurations
+            device (Device): a PyTorch device
             **kwargs: keyword aguments used to specify the agent
         """
         self.config = config
+        self.device = device
         
-        # Set keyword arguments
         for key, value in kwargs.items():
             self.__setattr__(key, value)
             
-        # store some extra information
+        # extra information
         self.info = {}
         
     def update_info(self, name, value):
