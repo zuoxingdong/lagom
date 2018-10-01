@@ -20,10 +20,11 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('env.id', 'Pendulum-v0')
         
-        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.recurrent', True)
         configurator.fixed('network.hidden_size', [32])
         
-        configurator.fixed('es.popsize', 128)
+        configurator.fixed('es.algo', 'CMAES')
+        configurator.fixed('es.popsize', 16)
         configurator.fixed('es.mu0', 0.0)
         configurator.fixed('es.std0', 0.5)
         
@@ -36,7 +37,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.grid('es.mu0', [0.0, 0.3, 0.5])
         configurator.grid('es.std0', [0.1, 0.5, 1.0])
         """
-        configurator.fixed('train.num_iteration', 1000)
+        configurator.fixed('train.num_iteration', 3000)
         configurator.fixed('train.N', 5)
         configurator.fixed('train.T', 300)
         

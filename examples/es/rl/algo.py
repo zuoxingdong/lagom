@@ -95,9 +95,21 @@ class ESMaster(BaseESMaster):
         return num_params
     
     def make_es(self, config):
-        es = CMAES(mu0=[self.config['es.mu0']]*self._network_size(),
-                   std0=self.config['es.std0'], 
-                   popsize=self.config['es.popsize'])
+        if self.config['es.algo'] == 'CMAES':
+            es = CMAES(mu0=[self.config['es.mu0']]*self._network_size(),
+                       std0=self.config['es.std0'], 
+                       popsize=self.config['es.popsize'])
+        elif self.config['es.algo'] == 'OpenAIES':
+            es = OpenAIES(mu0=[self.config['es.mu0']]*self._network_size(), 
+                          std0=self.config['es.std0'], 
+                          popsize=self.config['es.popsize'], 
+                          std_decay=0.999,
+                          min_std=0.01, 
+                          lr=5e-2, 
+                          lr_decay=0.99, 
+                          min_lr=1e-3, 
+                          antithetic=True, 
+                          rank_transform=True)
         
         self.logger = Logger()
         

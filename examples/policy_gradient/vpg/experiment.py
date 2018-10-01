@@ -21,7 +21,8 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
-        configurator.fixed('network.hidden_sizes', [64, 64])
+        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.hidden_sizes', [32])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
@@ -37,7 +38,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
         configurator.fixed('agent.constant_std', None)  # constant std, set None to learn it
         configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
-        configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
+        configurator.fixed('agent.init_std', 1.0)  # initial std for state-independent std
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
         configurator.fixed('train.N', 1)  # number of trajectories per training iteration
@@ -45,7 +46,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.record_interval', 100)  # interval to record the logging
-        configurator.fixed('log.print_interval', 1000)  # interval to print the logging to screen
+        configurator.fixed('log.print_interval', 500)  # interval to print the logging to screen
         configurator.fixed('log.dir', 'logs')  # logging directory
         
         list_config = configurator.make_configs()

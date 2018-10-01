@@ -17,6 +17,7 @@ from lagom.envs import make_gym_env
 from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
+from lagom.envs.vec_env import ParallelVecEnv
 from lagom.envs.vec_env import VecStandardize
 
 from lagom.core.policies import CategoricalPolicy
@@ -29,32 +30,32 @@ from lagom.agents import A2CAgent
 
 from engine import Engine
 from policy import Network
+from policy import LSTM
 
 
 class Algorithm(BaseAlgorithm):
     def __call__(self, config, seed, device_str):
-        # Set random seeds
         set_global_seeds(seed)
-        # Create device
         device = torch.device(device_str)
-        # Use log dir for current job (run_experiment)
         logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
         
-        # Make environment (VecEnv) for training and evaluating
+        # Environment related
         env = make_vec_env(vec_env_class=SerialVecEnv, 
                            make_env=make_gym_env, 
                            env_id=config['env.id'], 
-                           num_env=config['train.N'],  # batch size for multiple environments
-                           init_seed=seed)
+                           num_env=config['train.N'],  # batched environment
+                           init_seed=seed, 
+                           rolling=True)
         eval_env = make_vec_env(vec_env_class=SerialVecEnv, 
                                 make_env=make_gym_env, 
                                 env_id=config['env.id'], 
-                                num_env=1, 
-                                init_seed=seed)
-        if config['env.standardize']:  # wrap with VecStandardize for running averages of observation and rewards
+                                num_env=config['eval.N'], 
+                                init_seed=seed, 
+                                rolling=False)
+        if config['env.standardize']:  # running averages of observation and reward
             env = VecStandardize(venv=env, 
                                  use_obs=True, 
-                                 use_reward=True, 
+                                 use_reward=False,  # A2C
                                  clip_obs=10., 
                                  clip_reward=10., 
                                  gamma=0.99, 
@@ -70,33 +71,40 @@ class Algorithm(BaseAlgorithm):
                                       constant_obs_std=env.obs_runningavg.sigma)
         env_spec = EnvSpec(env)
         
-        # Create policy
-        network = Network(config=config, env_spec=env_spec)
+        # Network and policy
+        if config['network.recurrent']:
+            network = LSTM(config=config, device=device, env_spec=env_spec)
+        else:
+            network = Network(config=config, device=device, env_spec=env_spec)
         if env_spec.control_type == 'Discrete':
-            policy = CategoricalPolicy(config=config, network=network, env_spec=env_spec, learn_V=True)
+            policy = CategoricalPolicy(config=config, 
+                                       network=network, 
+                                       env_spec=env_spec, 
+                                       device=device,
+                                       learn_V=True)
         elif env_spec.control_type == 'Continuous':
             policy = GaussianPolicy(config=config, 
                                     network=network, 
                                     env_spec=env_spec, 
+                                    device=device,
                                     learn_V=True,
                                     min_std=config['agent.min_std'], 
                                     std_style=config['agent.std_style'], 
                                     constant_std=config['agent.constant_std'],
                                     std_state_dependent=config['agent.std_state_dependent'],
                                     init_std=config['agent.init_std'])
-        network = network.to(device)
         
-        # Create optimizer and learning rate scheduler
+        # Optimizer and learning rate scheduler
         optimizer = optim.Adam(policy.network.parameters(), lr=config['algo.lr'])
         if config['algo.use_lr_scheduler']:
-            if 'train.iter' in config:  # iteration-based training
+            if 'train.iter' in config:  # iteration-based
                 max_epoch = config['train.iter']
-            elif 'train.timestep' in config:  # timestep-based training
-                max_epoch = config['train.timestep'] + 1  # +1 to avoid 0.0 lr in final iteration
-            lambda_f = lambda epoch: 1 - epoch/max_epoch  # decay learning rate for each training epoch
+            elif 'train.timestep' in config:  # timestep-based
+                max_epoch = config['train.timestep'] + 1  # avoid zero lr in final iteration
+            lambda_f = lambda epoch: 1 - epoch/max_epoch
             lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
         
-        # Create agent
+        # Agent
         kwargs = {'device': device}
         if config['algo.use_lr_scheduler']:
             kwargs['lr_scheduler'] = lr_scheduler
@@ -105,7 +113,7 @@ class Algorithm(BaseAlgorithm):
                          optimizer=optimizer, 
                          **kwargs)
         
-        # Create runner
+        # Runner
         runner = SegmentRunner(agent=agent, 
                                env=env, 
                                gamma=config['algo.gamma'])
@@ -113,7 +121,7 @@ class Algorithm(BaseAlgorithm):
                                        env=eval_env, 
                                        gamma=1.0)
         
-        # Create engine
+        # Engine
         engine = Engine(agent=agent, 
                         runner=runner, 
                         config=config, 
@@ -122,17 +130,15 @@ class Algorithm(BaseAlgorithm):
         # Training and evaluation
         train_logs = []
         eval_logs = []
-        
-        for i in count():  # incremental iteration
+        for i in count():
             if 'train.iter' in config and i >= config['train.iter']:  # enough iterations
                 break
             elif 'train.timestep' in config and agent.total_T >= config['train.timestep']:  # enough timesteps
                 break
             
-            # train and evaluation
             train_output = engine.train(n=i)
             
-            # logging
+            # Logging
             if i == 0 or (i+1) % config['log.record_interval'] == 0 or (i+1) % config['log.print_interval'] == 0:
                 train_log = engine.log_train(train_output)
                 
@@ -140,7 +146,7 @@ class Algorithm(BaseAlgorithm):
                     eval_output = engine.eval(n=i)
                 eval_log = engine.log_eval(eval_output)
                 
-                if i == 0 or (i+1) % config['log.record_interval'] == 0:  # record loggings
+                if i == 0 or (i+1) % config['log.record_interval'] == 0:
                     train_logs.append(train_log)
                     eval_logs.append(eval_log)
         
