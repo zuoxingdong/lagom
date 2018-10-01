@@ -1,0 +1,27 @@
+ID: 0
+cuda: true
+env.id: HalfCheetah-v2
+env.standardize: true
+network.hidden_sizes:
+- 64
+- 64
+algo.lr: 0.001
+algo.use_lr_scheduler: true
+algo.gamma: 0.99
+agent.standardize_Q: false
+agent.standardize_adv: true
+agent.max_grad_norm: 0.5
+agent.entropy_coef: 0.01
+agent.value_coef: 0.5
+agent.min_std: 1.0e-06
+agent.std_style: exp
+agent.constant_std: null
+agent.std_state_dependent: false
+agent.init_std: 0.5
+train.timestep: 1000000.0
+train.N: 16
+train.T: 5
+eval.N: 10
+log.record_interval: 100
+log.print_interval: 1000
+log.dir: logs
