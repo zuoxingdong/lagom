@@ -9,10 +9,8 @@ algo.lr: 0.001
 algo.use_lr_scheduler: true
 algo.gamma: 0.99
 agent.standardize_Q: true
-agent.standardize_adv: false
 agent.max_grad_norm: 0.5
 agent.entropy_coef: 0.01
-agent.value_coef: 0.5
 agent.min_std: 1.0e-06
 agent.std_style: exp
 agent.constant_std: null
