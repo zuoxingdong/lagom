@@ -28,7 +28,7 @@ class VPGAgent(BaseAgent):
             obs = torch.from_numpy(obs).float().to(self.device)
             
         if self.policy.recurrent and self.info['reset_rnn_states']:
-            self.policy.reset_rnn_states()
+            self.policy.reset_rnn_states(batch_size=obs.size(0))
             self.info['reset_rnn_states'] = False  # Done, turn off
             
         out_policy = self.policy(obs, 
