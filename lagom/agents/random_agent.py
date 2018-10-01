@@ -8,7 +8,7 @@ class RandomAgent(BaseAgent):
     def __init__(self, config, env_spec, **kwargs):
         self.env_spec = env_spec
         
-        super().__init__(config, **kwargs)
+        super().__init__(config=config, device=None, **kwargs)
         
     def choose_action(self, obs, info={}):
         out = {}
