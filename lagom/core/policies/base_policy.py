@@ -96,11 +96,13 @@ class BasePolicy(ABC):
         else:
             return False
     
-    def reset_rnn_states(self):
+    def reset_rnn_states(self, batch_size=None):
         r"""Reset the current RNN states. """
+        if batch_size is None:
+            batch_size = self.env_spec.num_env
+            
         if self.recurrent:
-            self.rnn_states = self.network.init_hidden_states(config=self.config, 
-                                                              batch_size=self.env_spec.num_env)
+            self.rnn_states = self.network.init_hidden_states(config=self.config, batch_size=batch_size)
         else:
             raise TypeError('the network must be BaseRNN type. ')
             
