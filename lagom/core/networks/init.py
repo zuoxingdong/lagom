@@ -32,15 +32,13 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         gain = weight_scale
         
     # Initialization
-    if isinstance(module, (nn.RNNBase, rnn.RNNCellBase)):  # RNN
+    if isinstance(module, (nn.RNNBase, rnn.RNNCellBase)):
         # Iterate over named parameters
         for name, param in module.named_parameters():
-            if 'weight' in name:  # Weight
+            if 'weight_' in name:
                 nn.init.orthogonal_(param, gain=gain)
-            elif 'bias' in name:  # Bias
+            elif 'bias_' in name:
                 nn.init.constant_(param, constant_bias)
     else:  # other modules with single .weight and .bias
-        # Weight
         nn.init.orthogonal_(module.weight, gain=gain)
-        # Bias
         nn.init.constant_(module.bias, constant_bias)
