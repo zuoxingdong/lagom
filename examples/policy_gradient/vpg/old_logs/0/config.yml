@@ -2,9 +2,9 @@ ID: 0
 cuda: true
 env.id: HalfCheetah-v2
 env.standardize: true
-network.recurrent: true
+network.recurrent: false
 network.hidden_sizes:
-- 8
+- 32
 algo.lr: 0.001
 algo.use_lr_scheduler: true
 algo.gamma: 0.99

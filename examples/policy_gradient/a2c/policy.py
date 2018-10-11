@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from lagom.core.networks import BaseNetwork
 from lagom.core.networks import BaseRNN
+from lagom.core.networks import LayerNormLSTMCell
 from lagom.core.networks import make_fc
 from lagom.core.networks import ortho_init
 
@@ -29,7 +30,8 @@ class Network(BaseNetwork):
 
 class LSTM(BaseRNN):
     def make_params(self, config):
-        self.rnn = nn.LSTMCell(input_size=self.env_spec.observation_space.flat_dim, 
+        # nn.LSTMCell
+        self.rnn = LayerNormLSTMCell(input_size=self.env_spec.observation_space.flat_dim, 
                                hidden_size=config['network.hidden_sizes'][0])  # TODO: support multi-layer
         self.last_feature_dim = config['network.hidden_sizes'][-1]
         

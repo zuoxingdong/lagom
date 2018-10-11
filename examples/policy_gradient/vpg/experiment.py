@@ -21,8 +21,8 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
-        configurator.fixed('network.recurrent', False)
-        configurator.fixed('network.hidden_sizes', [32])  # TODO: [64, 64]
+        configurator.fixed('network.recurrent', True)
+        configurator.fixed('network.hidden_sizes', [8])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
