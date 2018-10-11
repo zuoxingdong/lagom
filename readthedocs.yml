@@ -1,8 +1,6 @@
-# .readthedocs.yml
-
 build:
   image: latest
 
-# Use Python 3.6, specifically to support f-string. 
+# TODO: change to Python 3.7 once ReadtheDocs approves the PR
 python:
   version: 3.6
