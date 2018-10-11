@@ -9,7 +9,7 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(name='lagom',
-      version=__version__,
+      version=str(__version__),
       author='Xingdong Zuo',
       author_email='zuoxingdong@hotmail.com',
       description='lagom: A light PyTorch infrastructure to quickly prototype reinforcement learning algorithms.',
@@ -36,7 +36,6 @@ setup(name='lagom',
                         'pyyaml', 
                         'colored'],
       tests_require=['pytest'],
-      # Only Python 3+
       python_requires='>=3',
       # List all lagom packages (folder with __init__.py), useful to distribute a release
       packages=find_packages(), 
@@ -46,6 +45,4 @@ setup(name='lagom',
                    'Operating System :: OS Independent', 
                    'Natural Language :: English', 
                    'Topic :: Scientific/Engineering :: Artificial Intelligence']
-      
-      
 )
