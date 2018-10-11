@@ -91,6 +91,9 @@ Networks
     
 .. autoclass:: BaseRNN
     :members:
+    
+.. autoclass:: LayerNormLSTMCell
+    :members:
 
 Plotter
 ----------------------
