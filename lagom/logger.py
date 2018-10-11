@@ -1,18 +1,60 @@
-import logging
+from abc import ABC
+from abc import abstractmethod
 
 from collections import OrderedDict
 
-from operator import itemgetter  # get list elements with arbitrary indices
+from operator import itemgetter  # get list items with multiple indicies
 
-import pickle
+from .utils import pickle_dump
 
 
-class Logger(logging.Logger):
-    r"""Log the information of the experiment.
+class BaseLogger(ABC):
+    r"""Base class for all loggers.
     
-    It supports iterative logging and dumping. That is, when same key is logged more than once, 
-    the values for this key will be appended successively. During dumping, the user can also
-    choose to dump either the entire list of logged values or the values with specific index.
+    Any logger should subclass this class. 
+    
+    The subclass should implement at least the following:
+    
+    - :meth:`__call__`
+    - :meth:`dump`
+    - :meth:`save`
+    
+    """
+    @abstractmethod
+    def __call__(self, key, value):
+        r"""Log the information with given key and value. 
+        
+        .. note::
+        
+            The key should be semantic and each word is separated by ``_``. 
+        
+        Args:
+            key (str): key of the information
+            value (object): value to be logged
+        """
+        pass
+    
+    @abstractmethod
+    def dump(self):
+        r"""Dump the loggings to the screen."""
+        pass
+    
+    @abstractmethod
+    def save(self, f):
+        r"""Save loggings to a file. 
+        
+        Args:
+            f (str): file path
+        """
+        pass
+
+
+class Logger(BaseLogger):
+    r"""Log the information. 
+    
+    All logged information are stored in a dictionary. If a key is logged more than once, then the values
+    are augmented as a list. To dump information to the screen, it is possible to select to dump either
+    all logged information or specific items. 
     
     .. note::
     
@@ -21,20 +63,9 @@ class Logger(logging.Logger):
     
     .. warning::
     
-        It is highly discouraged to use hierarchical logging, e.g. list of dict of list of ndarray.
-        This is because pickling such complex large data structure is extremely slow. It is recommended
-        to use dictionary at topmost level
-    
-    Note that we do not support hierarchical logging, e.g. list of dict of list of dict of ndarray
-    this is because pickling is extremely slow for such a hierarhical data structure with mixture
-    of dict and ndarray. Thus, we keep dict always at the top, if hierarchical logging is really
-    needed, we recommand to present it in the key, the following example illustrate it:
-    
-    Suppose we want to train a goal-conditional policy in a maze with different goals iteratively,
-    and each goal is trained with several internal iterations, in such scenario, when we want to 
-    log policy loss, the hierarchical key can be combine into one string with ':' to separate each
-    level, for example we want to log the policy loss with goal number 34 and internal training iteration
-    20, the key can be 'goal_34:train:iter_20:policy_loss'. 
+        It is highly discouraged to use hierarchical structure, e.g. list of dict of list of ndarray.
+        Because pickling such complex and large data structure is extremely slow. It is recommended
+        to use dictionary at topmost level. 
     
     Example:
     
@@ -75,108 +106,54 @@ class Logger(logging.Logger):
         Training Loss: [0.12, 0.09]
     
     """
-    def __init__(self, name='logger'):
-        r"""Initialize the Logger. 
-        
-        Args:
-            name (str): name of the Logger
-        """
-        super().__init__(name)
-        
-        self.name = name
-        
-        # Create logging dictionary, we use OrderedDict to keep insert ordering of the keys
+    def __init__(self):
+        # TODO: wait for popularity of Python 3.7 which dict preserves the order, then drop OrderedDict()
         self.logs = OrderedDict()
         
-    def log(self, key, value):
-        r"""Log the information with given key and value. 
-        
-        .. note::
-        
-            By default, each key is associated with a list. The list is created when using the key for
-            the first time. All future loggings for this key will be appended to the list. 
-            
-        It is highly recommended to name the key string semantically and each word separated
-        by '-', then :meth:`dump` will automatically replace all '-' with a whitespace and capitalize
-        each word by ``str.title()``. 
-        
-        Args:
-            key (str): key of the information
-            value (object): value to be logged
-        """
-        if key not in self.logs:  # first time for this key, create a list
+    def __call__(self, key, value):
+        if key not in self.logs:
             self.logs[key] = []
-            
-        # Append the value
+        
         self.logs[key].append(value)
         
     def dump(self, keys=None, index=None, indent=0):
         r"""Dump the loggings to the screen.
         
         Args:
-            keys (list, optional): the list of selected keys to dump. If ``None``, then all keys will be used.
-                Default: ``None``
-            index (int/list, optional): the index in the list of each logged key to dump. If ``scalar``, then
-                dumps all keys with given index and it can also be -1 to indicate the last element in the list.
-                If ``list``, then dumps all keys with given indices. If ``None``, then dumps everything for all
-                given keys. Default: ``None``
-            indent (int, optional): the number of tab indentation before dumping the information. Default: 0
+            keys (list, optional): a list of selected keys. If ``None``, then use all keys. Default: ``None``
+            index (int/list, optional): the index of logged values. It has following use cases:
+                
+                - ``scalar``: a specific index. If ``-1``, then use last element.
+                - ``list``: a list of indicies. 
+                - ``None``: all indicies.
+                
+            indent (int, optional): the number of tab indentation. Default: ``0``
         """
-        # Make keys depends on the cases
-        if keys is None:  # dump all keys
+        if keys is None:
             keys = list(self.logs.keys())
-        assert isinstance(keys, list), f'expected list dtype, got {type(keys)}'
+        assert isinstance(keys, list), f'expected list, got {type(keys)}'
         
-        # Make all indicies consistent with keys
-        if index is None:  # dump everything in given keys
-            index = ['all']*len(keys)
-        elif isinstance(index, int):  # single index in given keys
-            index = [index]*len(keys)
-        elif isinstance(index, list):  # specific indices in given keys
-            index = [index]*len(keys)
+        if index is None:
+            index = 'all'
         
-        # Dump all logged information given the keys and index
-        for key, idx in zip(keys, index):
-            # Print given indentation
+        for key in keys:
             if indent > 0:
                 print('\t'*indent, end='')  # do not create a new line
             
-            # Get logged information based on index
-            if idx == 'all':
-                log_data = self.logs[key]
-            elif isinstance(idx, int):  # single index
-                log_data = self.logs[key][idx]
-            elif isinstance(idx, list):  # specific indices
-                log_data = list(itemgetter(*idx)(self.logs[key]))
+            if index == 'all':
+                value = self.logs[key]
+            elif isinstance(index, int):
+                value = self.logs[key][index]
+            elif isinstance(index, list):
+                value = list(itemgetter(*index)(self.logs[key]))
             
-            # Polish key string and make it visually beautiful
+            # Polish key string
             key = key.strip().replace('_', ' ').title()
             
-            # Print logged information
-            print(f'{key}: {log_data}')
+            print(f'{key}: {}')
 
-    def save(self, file):
-        r"""Save loggings to a file using pickling. 
-        
-        Args:
-            file (str): path to save the logged information. 
-        """
-        with open(file, 'wb') as f:
-            pickle.dump(obj=self.logs, file=f, protocol=pickle.HIGHEST_PROTOCOL)
-            
-    @staticmethod
-    def load(file):
-        r"""Load loggings from a file using pickling. 
-        
-        Returns
-        -------
-        logging : OrderedDict
-            Loaded logging dictionary
-        """
-        with open(file, 'rb') as f:
-            logging = pickle.load(f)
-            
-        return logging
+    def save(self, f):
+        pickle_dump(obj=self.logs, f=f, ext='.pkl')
         
     def clear(self):
         r"""Remove all loggings in the dictionary. """
