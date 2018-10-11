@@ -1,4 +1,4 @@
-ID: 0
+ID: 4
 cuda: true
 env.id: HalfCheetah-v2
 env.standardize: true
@@ -9,7 +9,7 @@ network.hidden_sizes:
 algo.lr: 0.001
 algo.use_lr_scheduler: true
 algo.gamma: 0.99
-agent.standardize_Q: true
+agent.standardize_Q: false
 agent.standardize_adv: true
 agent.max_grad_norm: 0.5
 agent.entropy_coef: 0.01

@@ -1,4 +1,4 @@
-ID: 0
+ID: 1
 cuda: true
 env.id: HalfCheetah-v2
 env.standardize: true
@@ -18,7 +18,7 @@ agent.min_std: 1.0e-06
 agent.std_style: exp
 agent.constant_std: null
 agent.std_state_dependent: false
-agent.init_std: 0.5
+agent.init_std: 1.0
 train.timestep: 1000000.0
 train.N: 16
 train.T: 5

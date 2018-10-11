@@ -63,9 +63,8 @@ class SegmentRunner(BaseRunner):
         super().__init__(agent=agent, env=env, gamma=gamma)
         assert self.env.rolling, 'SegmentRunner must use rolling VecEnv'
         
-        # Buffer for current observation (continuous with next call) and done (for masking)
-        self.obs_buffer = None
-        self.done_buffer = None
+        self.obs_buffer = None  # for next call
+        self.done_buffer = None  # masking
         
     def __call__(self, T, reset=False):
         r"""Run the agent in the vectorized environment (one or multiple environments) and collect 

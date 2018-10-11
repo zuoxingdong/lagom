@@ -130,18 +130,32 @@ class Algorithm(BaseAlgorithm):
         # Training and evaluation
         train_logs = []
         eval_logs = []
+        
+        if config['network.recurrent']:
+            rnn_states_buffer = agent.policy.rnn_states  # for SegmentRunner
+        
         for i in count():
             if 'train.iter' in config and i >= config['train.iter']:  # enough iterations
                 break
             elif 'train.timestep' in config and agent.total_T >= config['train.timestep']:  # enough timesteps
                 break
             
+            if config['network.recurrent']:
+                if isinstance(rnn_states_buffer, list):  # LSTM: [h, c]
+                    rnn_states_buffer = [buf.detach() for buf in rnn_states_buffer]
+                else:
+                    rnn_states_buffer = rnn_states_buffer.detach()
+                agent.policy.rnn_states = rnn_states_buffer
+                
             train_output = engine.train(n=i)
             
             # Logging
             if i == 0 or (i+1) % config['log.record_interval'] == 0 or (i+1) % config['log.print_interval'] == 0:
                 train_log = engine.log_train(train_output)
                 
+                if config['network.recurrent']:
+                    rnn_states_buffer = agent.policy.rnn_states  # for SegmentRunner
+                    
                 with torch.no_grad():  # disable grad, save memory
                     eval_output = engine.eval(n=i)
                 eval_log = engine.log_eval(eval_output)
