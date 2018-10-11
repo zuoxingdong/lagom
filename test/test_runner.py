@@ -35,8 +35,8 @@ from lagom.runner import SegmentRunner
 
 # CartPole-v1
 class Agent1(BaseAgent):
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config, device=None):
+        super().__init__(config, device)
         
         self.network = nn.Linear(4, 2)
     
@@ -67,8 +67,8 @@ class Agent1(BaseAgent):
     
 # Pendulum-v0
 class Agent2(BaseAgent):
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config, device=None):
+        super().__init__(config, device)
         
         self.network = nn.Linear(3, 1)
     
@@ -561,9 +561,9 @@ class TestRunner(object):
             if agent_name == 'random':
                 agent = RandomAgent(env_spec=env_spec, config=None)
             elif agent_name == 'agent1':
-                agent = Agent1(config=None)
+                agent = Agent1(config=None, device=None)
             elif agent_name == 'agent2':
-                agent = Agent2(config=None)
+                agent = Agent2(config=None, device=None)
             else:
                 raise ValueError('Wrong agent name')
 
@@ -658,7 +658,7 @@ class LSTM(BaseRNN):
 
 class RNNAgent(BaseAgent):
     def __init__(self, config, policy, **kwargs):
-        super().__init__(config, **kwargs)
+        super().__init__(config, device=None, **kwargs)
         
         self.policy = policy
         
