@@ -1,4 +1,4 @@
-https://download.pytorch.org/whl/nightly/cpu/torch_nightly-1.0.0.dev20180918-cp36-cp36m-linux_x86_64.whl
+https://download.pytorch.org/whl/nightly/cpu/torch_nightly-1.0.0.dev20181011-cp36-cp36m-linux_x86_64.whl
 sphinx-rtd-theme
 numpy
 scipy

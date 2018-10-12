@@ -44,6 +44,7 @@ def test_box():
     
     assert box1 == box2
     
+    
 def test_discrete():
     with pytest.raises(AssertionError):
         Discrete('no')
@@ -61,6 +62,7 @@ def test_discrete():
     assert sample in discrete
     assert discrete == Discrete(5)
 
+    
 def test_dict():
     with pytest.raises(AssertionError):
         Dict([Discrete(10), Box(-1, 1, np.float32, shape=(3,))])
@@ -89,6 +91,7 @@ def test_dict():
     assert np.allclose(sample['sensors']['velocity'], sample2['sensors']['velocity'])
     assert sample in space
     
+    
 def test_tuple():
     with pytest.raises(AssertionError):
         Tuple(Discrete(10))
@@ -114,6 +117,7 @@ def test_tuple():
     assert np.allclose(sample[2]['velocity'], sample2[2]['velocity'])
     sample in space
 
+    
 def test_convert_gym_space():
     # Discrete
     gym_space = gym.spaces.Discrete(n=5)
