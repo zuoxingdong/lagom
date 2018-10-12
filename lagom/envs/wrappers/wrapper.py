@@ -1,3 +1,6 @@
+from abc import ABC
+from abc import abstractmethod
+
 from lagom.envs import Env
 
 
@@ -65,7 +68,7 @@ class Wrapper(Env):
         return f'<{type(self).__name__}, {self.env}>'
     
 
-class ObservationWrapper(Wrapper):
+class ObservationWrapper(Wrapper, ABC):
     r"""Observation wrapper modifies the received observation after each call of :meth:`step` and :meth:`reset`. 
     
     It is the base class for all observation wrappers. 
@@ -90,6 +93,7 @@ class ObservationWrapper(Wrapper):
         
         return self.process_observation(observation)
     
+    @abstractmethod
     def process_observation(self, observation):
         r"""Process the observation. 
         
@@ -101,15 +105,16 @@ class ObservationWrapper(Wrapper):
         out : object
             processed observation
         """
-        raise NotImplementedError
+        pass
         
     @property
+    @abstractmethod
     def observation_space(self):
         r"""Adjusted observation space according to :meth:`process_observation`. """
-        raise NotImplementedError
+        pass
         
-        
-class ActionWrapper(Wrapper):
+
+class ActionWrapper(Wrapper, ABC):
     r"""Action wrapper modifies the action before calling :meth:`step`. 
     
     It is the base class for all action wrappers.
@@ -127,6 +132,7 @@ class ActionWrapper(Wrapper):
     def step(self, action):
         return self.env.step(self.process_action(action))
     
+    @abstractmethod
     def process_action(self, action):
         r"""Process the action. 
         
@@ -138,15 +144,16 @@ class ActionWrapper(Wrapper):
         out : object
             processed action
         """
-        raise NotImplementedError
+        pass
         
     @property
+    @abstractmethod
     def action_space(self):
         r"""Adjusted action space according to :meth:`process_action`. """
-        raise NotImplementedError
+        pass
         
         
-class RewardWrapper(Wrapper):
+class RewardWrapper(Wrapper, ABC):
     r"""Reward wrapper modifies the received reward after each function call of :meth:`step`. 
     
     It is the base class for all reward wrappers. 
@@ -166,6 +173,7 @@ class RewardWrapper(Wrapper):
         
         return observation, self.process_reward(reward), done, info
     
+    @abstractmethod
     def process_reward(self, reward):
         r"""Process the reward. 
         
@@ -177,4 +185,4 @@ class RewardWrapper(Wrapper):
         out : float
             processed reward
         """
-        raise NotImplementedError
+        pass

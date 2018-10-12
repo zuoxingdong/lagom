@@ -20,7 +20,7 @@ class EnvSpec(object):
         Args:
             env (Env/VecEnv): an environment object. 
         """
-        assert isinstance(env, (Env, VecEnv)), f'expected Env or VecEnv dtype, got {type(env)}'
+        assert isinstance(env, (Env, VecEnv)), f'expected Env or VecEnv, got {type(env)}'
         
         self.env = env
     
@@ -65,7 +65,7 @@ class EnvSpec(object):
         elif isinstance(self.env.action_space, Box):
             return 'Continuous'
         else:
-            raise TypeError(f'expected type as Discrete or Box, got {type(self.env.action_space)}.')
+            raise TypeError(f'expected Discrete or Box, got {type(self.env.action_space)}.')
             
     @property
     def num_env(self):
@@ -73,7 +73,7 @@ class EnvSpec(object):
         if isinstance(self.env, VecEnv):
             return self.env.num_env
         else:
-            raise TypeError('the environment must be VecEnv type')
+            raise TypeError('the environment must be VecEnv')
 
     def __repr__(self):
         string = f'<{type(self).__name__}, {self.env}>\n'
