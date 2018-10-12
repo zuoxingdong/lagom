@@ -204,17 +204,14 @@ class VecEnv(ABC):
             This will be automatically called when garbage collected or program exited. 
             
         """
-        if self.closed:  # already closed
+        if self.closed:
             return
         
-        # Close viewer if existed
         if self.viewer is not None:
             self.viewer.close()
         
-        # Close extra
         self.close_extras()
 
-        # Set closed flag
         self.closed = True
     
     @property

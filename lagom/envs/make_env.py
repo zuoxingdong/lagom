@@ -4,7 +4,7 @@ from gym.wrappers import Monitor
 from lagom import Seeder
 from .wrappers import GymWrapper
 
-from functools import partial  # very useful to make functions with different settings but without arguments
+from functools import partial  # argument-free functions
 
 
 def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
@@ -30,14 +30,10 @@ def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
     env : Env
         lagom-compatible environment
     """
-    # Create gym environment
     env = gym.make(env_id)
-    # Wrap the enviroment with Monitor if required
     if monitor:
         env = Monitor(env, monitor_dir)
-    # Wrap the environment to be lagom-compatible
     env = GymWrapper(env)
-    # Seed the environment
     env.seed(seed)
     
     return env
@@ -102,14 +98,12 @@ def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, rolling, *
     venv : VecEnv
         created vectorized environment
     """
-    # Create a list of make_env function
     list_make_env = make_envs(make_env=make_env, 
                               env_id=env_id, 
                               num_env=num_env, 
                               init_seed=init_seed, 
                               **kwargs)
     
-    # Create vectorized environment
     venv = vec_env_class(list_make_env=list_make_env, rolling=rolling)
     
     return venv

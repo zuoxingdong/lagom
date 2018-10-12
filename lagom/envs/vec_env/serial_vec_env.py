@@ -37,10 +37,8 @@ class SerialVecEnv(VecEnv):
             list_make_env (list): a list of functions to generate environments. 
             rolling (bool): see docstring in :class:`VecEnv` for more details. 
         """
-        # Create list of environments
         self.list_env = [make_env() for make_env in list_make_env]
         
-        # Call parent constructor
         super().__init__(list_make_env=list_make_env, 
                          observation_space=self.list_env[0].observation_space, 
                          action_space=self.list_env[0].action_space, 
@@ -53,13 +51,11 @@ class SerialVecEnv(VecEnv):
         self.actions = actions  # Record as current actions
         
     def step_wait(self):
-        # Result buffers
         observations = []
         rewards = []
         dones = []
         infos = []
         
-        # Execute the recorded actions for each environment
         for i, (env, action) in enumerate(zip(self.list_env, self.actions)):
             if not self.rolling and self.stops[i]:  # non-rolling and this sub-environment already terminated
                 observation, reward, done, info = [None]*4
@@ -74,8 +70,7 @@ class SerialVecEnv(VecEnv):
                     info['init_observation'] = init_observation
                 else:  # non-rolling, set stop flag
                     self.stops[i] = True
-                
-            # Record all information
+            
             observations.append(observation)
             rewards.append(reward)
             dones.append(done)
@@ -84,7 +79,6 @@ class SerialVecEnv(VecEnv):
         return observations, rewards, dones, infos
     
     def reset(self):
-        # Reset all the environment and return all the initial observations
         observations = [env.reset() for env in self.list_env]
         
         # reset all stop flags, useful for non-rolling version

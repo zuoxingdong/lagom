@@ -134,20 +134,17 @@ class VecStandardize(VecEnvWrapper):
             # Update with calculated discounted returns
             self.reward_runningavg(self.all_returns)
             # Standardize the reward
-            # mean = self.reward_runningavg.mu  # not useful
+            # Not subtract from mean, but only divided by std
             std = self.reward_runningavg.sigma
-            # Note that we do not subtract from mean, but only divided by std
             if not np.allclose(std, 0.0):  # only non-zero std
                 rewards = rewards/(std + self.eps)
-                
-            # Clipping
+            
             rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
             
             return rewards
         elif self.use_reward and self.constant_reward_std is not None:  # use given constant std
             rewards = rewards/(self.constant_reward_std + self.eps)
             
-            # Clipping
             rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
             
             return rewards
@@ -164,14 +161,12 @@ class VecStandardize(VecEnvWrapper):
             if not np.allclose(std, 0.0):  # only non-zero std
                 obs = (obs - mean)/(std + self.eps)
             
-            # Clipping
             obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
             
             return obs
         elif self.use_obs and self.constant_obs_mean is not None and self.constant_obs_std is not None:  # use given moment
             obs = (obs - self.constant_obs_mean)/(self.constant_obs_std + self.eps)
             
-            # Clipping
             obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
             
             return obs
@@ -190,7 +185,6 @@ class VecStandardize(VecEnvWrapper):
         out : dict
             a dictionary of running averages
         """
-        # Create a dictionary of running averages
         out = {'obs_avg': {'mu': self.obs_runningavg.mu, 
                            'sigma': self.obs_runningavg.sigma}, 
                'r_avg': {'sigma': self.reward_runningavg.sigma}}
@@ -207,8 +201,6 @@ class VecStandardize(VecEnvWrapper):
         Args:
             f (str): saving path
         """
-        # Get running average dictionary
         out = self.running_averages
         
-        # Pickle it
         pickle_dump(obj=out, f=f, ext='.pkl')
