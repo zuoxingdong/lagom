@@ -18,7 +18,7 @@ Spaces
 .. autoclass:: Box
     :members:
     
-.. autoclass:: Product
+.. autoclass:: Tuple
     :members:
     
 .. autoclass:: Dict
