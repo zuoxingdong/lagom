@@ -4,58 +4,57 @@ from .space import Space
 
 
 class Box(Space):
-    r"""A continuous space in R^n. Each dimension is bounded by low/high. """
-    def __init__(self, low, high, shape=None, dtype=None):
-        r"""Defines the lower and upper bound for this space. 
+    r"""A continuous space in :math:`R^n`. Each dimension is bounded by low/high. """
+    def __init__(self, low, high, dtype, shape=None):
+        r"""Define the lower and upper bound for this space. 
         
         There are two common use cases:
             
         * Identical bound for each dimension::
 
-            >>> Box(low=-1.0, high=1.0, shape=[3, 4], dtype=np.float32)
+            >>> Box(low=-1.0, high=2.0, dtype=np.float32, shape=[3, 4])
+            Box(3, 4)
             
-        * Independent bounds for each dimension::
+        * Independent bound for each dimension::
         
             >>> Box(low=np.array([-1.0, -2.0]), high=np.array([3.0, 4.0]), dtype=np.float32)
+            Box(2,)
         
         """
         assert dtype is not None, 'dtype must be explicitly provided. '
+        self.dtype = np.dtype(dtype)
         
-        # Create lower and upper bounds for each dimension depending on the use cases
-        if shape is None:  # Case 2
+        if shape is None:
             assert low.shape == high.shape
-            
-            shape = low.shape
+            self.shape = low.shape
             
             self.low = low
             self.high = high
-        else:  # Case 1
+        else:
             assert np.isscalar(low) and np.isscalar(high)
+            self.shape = tuple(shape)
             
-            self.low = np.full(shape, low)
-            self.high = np.full(shape, high)
-            
-        # Ensure dtype
-        self.low = self.low.astype(dtype)
-        self.high = self.high.astype(dtype)
-            
-        super().__init__(shape=shape, dtype=dtype)
+            self.low = np.full(self.shape, low)
+            self.high = np.full(self.shape, high)
+        
+        self.low = self.low.astype(self.dtype)
+        self.high = self.high.astype(self.dtype)
         
     def sample(self):
         return np.random.uniform(low=self.low, high=self.high, size=self.shape).astype(self.dtype)
     
-    def contains(self, x):
-        return x.shape == self.shape and np.all(x >= self.low) and np.all(x <= self.high)
-    
     @property
     def flat_dim(self):
-        return int(np.prod(self.shape))  # PyTorch Tensor dimension only accepts raw int type
+        return int(np.prod(self.shape))  # raw int for PyTorch compatibility
     
     def flatten(self, x):
         return np.asarray(x).flatten()
     
     def unflatten(self, x):
         return np.asarray(x).reshape(self.shape)
+    
+    def contains(self, x):
+        return x.shape == self.shape and np.all(x >= self.low) and np.all(x <= self.high)
     
     def __repr__(self):
         return f'Box{self.shape}'
