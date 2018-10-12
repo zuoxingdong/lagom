@@ -19,15 +19,12 @@ def worker(master_conn, worker_conn, make_env):
     # It does not affect the master connection in the main process
     master_conn.close()
     
-    # Create the environment
     env = make_env()
     
     # Loop until receiving close command from master
     while True:
-        # Receive master command
         cmd, data = worker_conn.recv()
         
-        # Do the work according to the command
         if cmd == 'step':
             observation, reward, done, info = env.step(data)
             
@@ -36,25 +33,17 @@ def worker(master_conn, worker_conn, make_env):
             if done:
                 init_observation = env.reset()
                 info['init_observation'] = init_observation
-                
-            # Send information back to master
+            
             worker_conn.send([observation, reward, done, info])
         elif cmd == 'reset':
-            # Reset environment
             observation = env.reset()
-            # Send back initial observation
             worker_conn.send(observation)
         elif cmd == 'render':
-            # Render the environment
             img = env.render(mode='rgb_array')
-            # Send back rendered RGB image
             worker_conn.send(img)
         elif cmd == 'close':
-            # Close the environment
             env.close()
-            # Close the worker connection
             worker_conn.close()
-            # Break the while loop
             break
         elif cmd == 'T':
             worker_conn.send(env.T)
@@ -101,49 +90,43 @@ class ParallelVecEnv(VecEnv):
             list_make_env (list): a list of functions to generate environments.
             rolling (bool): see docstring in :class:`VecEnv` for more details. 
         """
-        # Create Pipe connections, each for one environment worker
+        # Create Process and Pipe connection for each environment worker
         self.master_conns, self.worker_conns = zip(*[Pipe() for _ in range(len(list_make_env))])
-        # Create processes, each for one environment worker
         self.list_process = [Process(target=worker, 
                                      args=[master_conn, worker_conn, CloudpickleWrapper(make_env)], 
                                      daemon=True)
                              for master_conn, worker_conn, make_env 
                              in zip(self.master_conns, self.worker_conns, list_make_env)]
-        # Start all the processes
+        
         [process.start() for process in self.list_process]
         
-        # Close worker connections as they are not used here, the Processes already fork them
+        # Worker connections not used here, Processes already fork them
         [worker_conn.close() for worker_conn in self.worker_conns]
         
         # Obtain observation and action spaces from first environment (all envs are the same for this)
         self.master_conns[0].send(['get_spaces', None])
         observation_space, action_space = self.master_conns[0].recv()
         
-        # Call parent constructor
         super().__init__(list_make_env=list_make_env, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          rolling=rolling)
         assert len(self.master_conns) == self.num_env
         
-        # Some settings
         self.waiting = False  # If True, then workers are still working
         
     def step_async(self, actions):
         assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
         
-        # Send 'step' and action to all environment workers
         for i, (master_conn, action) in enumerate(zip(self.master_conns, actions)):
             if not self.rolling and self.stops[i]:  # non-rolling and this sub-environment already terminated
                 master_conn.send(['cozy', None])
             else:  # rolling or non-terminated sub-environment
                 master_conn.send(['step', action])
 
-        # Set waiting flag
         self.waiting = True
         
     def step_wait(self):
-        # Receive results from all workers
         # Note that different worker finishes the job differently, but list comprehension
         # automatically preserve the order. This order is very important, otherwise it is a BUG !
         results = []
@@ -157,17 +140,14 @@ class ParallelVecEnv(VecEnv):
                     self.stops[i] = True
             results.append(result)
         
-        # Turn off waiting flag
         self.waiting = False
-        # Unpack results
+        
         observations, rewards, dones, infos = zip(*results)
         
         return list(observations), list(rewards), list(dones), list(infos)  # zip produces tuples
     
     def reset(self):
-        # Send 'reset' to all environment workers
         [master_conn.send(['reset', None]) for master_conn in self.master_conns]
-        # Receive a list of initial observations from reset() in all environment workers
         observations = [master_conn.recv() for master_conn in self.master_conns]
         
         # reset all stop flags, useful for non-rolling version
@@ -176,9 +156,7 @@ class ParallelVecEnv(VecEnv):
         return observations
     
     def get_images(self):
-        # Send 'render' to all environment workers
         [master_conn.send(['render', None]) for master_conn in self.master_conns]
-        # Receive a list of rendered images from render(mode='rgb_array') in all environment workers
         imgs = [master_conn.recv() for master_conn in self.master_conns]
         
         return imgs
@@ -190,42 +168,32 @@ class ParallelVecEnv(VecEnv):
         # Waiting to receive data from all the workers if they are still working
         if self.waiting:
             [master_conn.recv() for master_conn in self.master_conns]
-            
-        # Send 'close' to all environment workers
+        
         [master_conn.send(['close', None]) for master_conn in self.master_conns]
         
-        # Close all master connections
         [master_conn.close() for master_conn in self.master_conns]
         
-        # Join all the processes
         [process.join() for process in self.list_process]
         
-        # Update closed flag
         self.closed = True
 
     @property
     def T(self):
-        # Use first master connection to send command to retrieve the information
         self.master_conns[0].send(['T', None])
-        # Receive it from that worker
         out = self.master_conns[0].recv()
         
         return out
     
     @property
     def max_episode_reward(self):
-        # Use first master connection to send command to retrieve the information
         self.master_conns[0].send(['max_episode_reward', None])
-        # Receive it from that worker
         out = self.master_conns[0].recv()
         
         return out
         
     @property
     def reward_range(self):
-        # Use first master connection to send command to retrieve the information
         self.master_conns[0].send(['reward_range', None])
-        # Receive it from that worker
         out = self.master_conns[0].recv()
         
         return out

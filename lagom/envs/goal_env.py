@@ -1,9 +1,12 @@
+from abc import ABC
+from abc import abstractmethod
+
 from .env import Env
 from .spaces import Dict
 
 
-class GoalEnv(Env):
-    r"""A goal-based environment. 
+class GoalEnv(Env, ABC):
+    r"""Base class for goal-based environment. 
     
     The observation space is a dictionary space (i.e. :class:`Dict`) with at least the following keys:
     
@@ -26,8 +29,7 @@ class GoalEnv(Env):
     
     """
     def reset(self):
-        # Ensure the observation space is Dictionary space
-        assert isinstance(self.observation_space, Dict), f'expected Dict space, got {type(self.observation_space)}'
+        assert isinstance(self.observation_space, Dict), f'expected Dict, got {type(self.observation_space)}'
         # Get goal-based observation
         observation = super().reset()
         # Sanity check
@@ -36,6 +38,7 @@ class GoalEnv(Env):
         
         return observation
     
+    @abstractmethod
     def compute_reward(self, achieved_goal, desired_goal, info):
         r"""Compute the step reward depending on a desired goal and a goal that is currently achieved. 
         
@@ -65,4 +68,4 @@ class GoalEnv(Env):
         reward : float
             the reward based on currently achieved goal and desired goal.            
         """
-        raise NotImplementedError
+        pass
