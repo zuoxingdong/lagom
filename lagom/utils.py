@@ -53,17 +53,16 @@ class Seeder(object):
         [209652396, 398764591, 924231285, 1478610112, 441365315]
         
     """
-    
     def __init__(self, init_seed=0):
-        r"""
-        Args:
-            init_seed (int, optional): Initial seed for generating random seeds.
-        """
-        assert isinstance(init_seed, int) and init_seed >= 0, f'Seed expected to be non-negative integer, got {init_seed}'
+        r"""Initialize the seeder. 
         
-        # Create a numpy RandomState with given initial seed
-        # A RandomState is independent of np.random
+        Args:
+            init_seed (int, optional): Initial seed for generating random seeds. Default: ``0``.
+        """
+        assert isinstance(init_seed, int) and init_seed >= 0, f'expected non-negative integer, got {init_seed}'
+        
         self.rng = np.random.RandomState(seed=init_seed)
+        
         # Upper bound for sampling new random seeds
         self.max = np.iinfo(np.int32).max
         
@@ -73,8 +72,10 @@ class Seeder(object):
         Args:
             size (int or list): The size of random seeds to sample. 
             
-        Returns:
-            seeds (list): A list of sampled random seeds.
+        Returns
+        -------
+        seeds : list
+            a list of sampled random seeds.
         """
         seeds = self.rng.randint(low=0, high=self.max, size=size).tolist()
         
@@ -83,18 +84,7 @@ class Seeder(object):
 
 def pickle_load(f):
     r"""Read a pickled data from a file. 
-    
-    .. note::
-    
-        It uses cloudpickle instead of pickle to support lambda
-        function and multiprocessing. By default, the highest
-        protocol is used. 
-        
-    .. note::
-    
-        Except for pure array object, it is not recommended to use
-        ``np.load`` because it is often much slower. 
-        
+
     Args:
         f (str/Path): file path
     """
@@ -133,18 +123,7 @@ def pickle_dump(obj, f, ext='.pkl'):
 
 def yaml_load(f):
     r"""Read the data from a YAML file. 
-    
-    .. note::
-    
-        YAML is recommended to use for a small dictionary and it is super
-        human-readable. e.g. configuration settings. For saving experiment
-        metrics, it is better to use :func:`pickle_load` and :func:`pickle_dump`.
-        
-    .. note::
-    
-        Except for pure array object, it is not recommended to use
-        ``np.save`` because it is often much slower. 
-    
+
     Args:
         f (str/Path): file path
     """
@@ -162,7 +141,7 @@ def yaml_dump(obj, f, ext='.yml'):
     
         YAML is recommended to use for a small dictionary and it is super
         human-readable. e.g. configuration settings. For saving experiment
-        metrics, it is better to use :func:`pickle_load` and :func:`pickle_dump`.
+        metrics, it is better to use :func:`pickle_dump`.
         
     .. note::
     
@@ -185,7 +164,6 @@ def yaml_dump(obj, f, ext='.yml'):
     if isinstance(f, Path):
         f = f.as_posix()
     
-    # Create representer to preserve the order of dict
     # TODO: remove it when PyYAML supports it officially. 
     tag = 'tag:yaml.org,2002:map'
     representer = lambda dumper, data: dumper.represent_mapping(tag, list(data.items()))
@@ -200,8 +178,7 @@ def color_str(string, color, attribute=None):
     
     Example::
     
-        with timed():
-            <body function>
+        >>> print(color_str('lagom', 'green', attribute='bold'))
     
     See `colored`_ documentation for more details. 
     
