@@ -39,8 +39,8 @@ jobs:  # Build-Test-Deplot (BTD) process
                     source activate CI
                     # Install required dependencies
                     pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+                    pip install -q -r requirements.txt
+                    pip install -q torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
                     # Install current project
                     pip install -e .
             
