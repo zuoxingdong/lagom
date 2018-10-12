@@ -9,6 +9,9 @@ BaseAlgorithm
 
 Logger
 ----------------------------
+.. autoclass:: BaseLogger
+    :members:
+
 .. autoclass:: Logger
     :members:
 
@@ -19,13 +22,13 @@ Utils
 .. autoclass:: Seeder
     :members:
     
-.. autofunction:: pickle_load
-
 .. autofunction:: pickle_dump
 
-.. autofunction:: yaml_load
+.. autofunction:: pickle_load
 
 .. autofunction:: yaml_dump
+
+.. autofunction:: yaml_load
 
 .. autofunction:: color_str
 

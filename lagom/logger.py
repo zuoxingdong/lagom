@@ -63,47 +63,51 @@ class Logger(BaseLogger):
     
     .. warning::
     
-        It is highly discouraged to use hierarchical structure, e.g. list of dict of list of ndarray.
-        Because pickling such complex and large data structure is extremely slow. It is recommended
-        to use dictionary at topmost level. 
+        It is discouraged to use hierarchical structure, e.g. list of dict of list of ndarray.
+        Because pickling such complex and large data structure is extremely slow. Put dictionary
+        only at the topmost level. 
     
     Example:
     
     * Default::
     
-        >>> logger = Logger(name='logger')
-        >>> logger.log('iteration', 1)
-        >>> logger.log('training_loss', 0.12)
-        >>> logger.log('iteration', 2)
-        >>> logger.log('training_loss', 0.11)
-        >>> logger.log('iteration', 3)
-        >>> logger.log('training_loss', 0.09)
+        >>> logger = Logger()
+        >>> logger('iteration', 1)
+        >>> logger('train_loss', 0.12)
+        >>> logger('iteration', 2)
+        >>> logger('train_loss', 0.11)
+        >>> logger('iteration', 3)
+        >>> logger('train_loss', 0.09)
+        
+        >>> logger
+        OrderedDict([('iteration', [1, 2, 3]), ('train_loss', [0.12, 0.11, 0.09])])
+        
         >>> logger.dump()
         Iteration: [1, 2, 3]
-        Training Loss: [0.12, 0.11, 0.09]
+        Train Loss: [0.12, 0.11, 0.09]
         
     * With indentation::
     
-        >>> logger.dump(keys=None, index=None, indent=1)
+        >>> logger.dump(indent=1)
             Iteration: [1, 2, 3]
-            Training Loss: [0.12, 0.11, 0.09]
+            Train Loss: [0.12, 0.11, 0.09]
         
-    * With specified keys::
+    * With specific keys::
     
-        >>> logger.dump(keys=['iteration'], index=None, indent=0)
+        >>> logger.dump(keys=['iteration'])
         Iteration: [1, 2, 3]
         
-    * With specified single index::
+    * With specific index::
     
-        >>> logger.dump(keys=None, index=0, indent=0)
+        >>> logger.dump(index=0)
         Iteration: 1
-        Training Loss: 0.12
+        Train Loss: 0.12
         
-    * With specified list of indices::
+    * With specific list of indices::
     
-        >>> logger.dump(keys=None, index=[0, 2], indent=0)
+        >>> logger.dump(index=[0, 2])
         Iteration: [1, 3]
-        Training Loss: [0.12, 0.09]
+        Train Loss: [0.12, 0.09]
     
     """
     def __init__(self):
@@ -150,7 +154,7 @@ class Logger(BaseLogger):
             # Polish key string
             key = key.strip().replace('_', ' ').title()
             
-            print(f'{key}: {}')
+            print(f'{key}: {value}')
 
     def save(self, f):
         pickle_dump(obj=self.logs, f=f, ext='.pkl')
