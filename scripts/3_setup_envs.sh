@@ -13,6 +13,7 @@ set -e
 export CONDA=$HOME/anaconda3/bin/conda
 
 # Set up .vimrc for tab as 4 spaces
+echo "# Appended for Vim"
 echo "set tabstop=4" >> ~/.vimrc
 echo "set shiftwidth=4" >> ~/.vimrc
 echo "set expandtab" >> ~/.vimrc
