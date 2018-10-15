@@ -64,7 +64,6 @@ class InterpCurve(BaseTransform):
         assert not np.isscalar(x), 'does not support scalar value !'
         assert not np.isscalar(y), 'does not support scalar value !'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         y = self.to_numpy(y, np.float32)
         assert x.ndim in [1, 2], 'only one or two dimensional data'

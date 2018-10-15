@@ -5,7 +5,7 @@ import numpy as np
 
 from functools import partial
 
-from lagom.core.transform import InterpCurve
+from lagom.transform import InterpCurve
 
 from .base_plot import BasePlot
 
@@ -13,23 +13,13 @@ from .base_plot import BasePlot
 class CurvePlot(BasePlot):
     r"""Compare different curves in one plot. 
     
-    In machine learning research, it is extremely useful
-    e.g. compare training losses with different baselines. 
+    For example, an agent's performance for different random runs can be plotted as a curve with uncertainty bands. 
+    
+    If batch size of the data is one, then a single curve is plotted.
     
     .. note::
     
-        The uncertainty (error bands) is supported, a standard use case
-        is that each baseline run several times by using different random seeds. 
-    
-    Either with or without uncertainty, it depends on what kind of data added
-    to the plotter via `add(name, data)`. If the data is one-dimentional, it will
-    be treated as a single curve. If the data is two-dimensional, it will be plotted
-    with uncertainty. 
-    
-    To generate a modern high quality research plot, we use Seaborn.lineplot with 
-    Pandas.DataFrame data structure. 
-    
-    For more advanced use cases, one could inherit this class and overide :meth:`__call__`. 
+        For a modern quality of the plot, we use ``Seaborn`` and ``Pandas.DataFrame``. 
     
     Example::
     
@@ -67,11 +57,9 @@ class CurvePlot(BasePlot):
             data (list/ndarray): curve data. If multiple curves (list) provided, then it will plot uncertainty bands. 
             xvalues (list, optional): values for horizontal axis. If None, then it set to be integers. 
         """
-        # Convert data to ndarray
-        data = np.array(data)
-        # Get number of data points
+        data = np.asarray(data)
         N = data.shape[-1]  # handle both single/multiple curve data, since last dimension always be data size
-        # Set xvalues
+        
         if xvalues is None:
             xvalues = np.arange(1, N+1)
         else:
@@ -90,11 +78,9 @@ class CurvePlot(BasePlot):
             else:  # passed the check, batch with same xvalues, but we want one xvalues only
                 xvalues = xvalues[0]  # take first one, because rest of them are identical
         
-        # Make data
         D = {'data': data, 'xvalues': xvalues}
         
-        # Call parent add to save data
-        super().add(name=name, data=D)
+        super().add(name, D)
     
     def __call__(self, 
                  colors=None, 
@@ -130,7 +116,7 @@ class CurvePlot(BasePlot):
         ax : Axes
             a matplotlib Axes representing the generated plot.
         """
-        # Use seaborn to make figure looks modern
+        # Modern style
         sns.set()
         
         # Seaborn auto-coloring

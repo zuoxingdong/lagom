@@ -53,20 +53,17 @@ class Normalize(BaseTransform):
         """
         assert not np.isscalar(x), 'does not support scalar value !'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
-        # Get min/max
-        if minimal is None:  # compute the min
+        if minimal is None:
             # keepdims=True very important ! otherwise wrong value
             minimal = x.min(0, keepdims=True)  # over first dimension e.g. batch dim
-        if maximal is None:  # compute the max
+        if maximal is None:
             # keepdims=True very important ! otherwise wrong value
             maximal = x.max(0, keepdims=True)  # over first dimension e.g. batch dim
         minimal = np.asarray(minimal).astype(x.dtype)
         maximal = np.asarray(maximal).astype(x.dtype)
         
-        # Normalize to [0, 1]
         out = (x - minimal)/(maximal - minimal + self.eps)
         
         return out

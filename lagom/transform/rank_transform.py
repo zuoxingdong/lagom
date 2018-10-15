@@ -39,16 +39,13 @@ class RankTransform(BaseTransform):
         """
         assert not np.isscalar(x), 'does not support scalar value !'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
         assert x.ndim == 1, 'must be one dimensional, i.e. a vector of scalar values'
         
-        # Compute ranks
         ranks = np.empty(len(x), dtype=int)
         ranks[x.argsort()] = np.arange(len(x))
         
-        # Centering the ranks
         if centered:
             ranks = ranks/(ranks.size - 1) - 0.5
         
