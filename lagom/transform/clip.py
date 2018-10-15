@@ -26,10 +26,8 @@ class Clip(BaseTransform):
         out : ndarray
             clipped data
         """
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
-        # Clip the data
         out = np.clip(x, a_min, a_max).astype(x.dtype)
         
         return out

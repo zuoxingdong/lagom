@@ -51,7 +51,6 @@ class GridImage(BasePlot):
         if not isinstance(x, (list, np.ndarray)):
             raise TypeError(f'list or ndarray expected, got {type(x)}')
 
-        # Enforce to ndarray
         x = np.array(x)
         assert x.ndim <= 4 or x.ndim >= 2, f'either 2, 3, or 4 dimensions expected, got {x.ndim}'
 
