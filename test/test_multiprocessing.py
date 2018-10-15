@@ -2,11 +2,8 @@ import numpy as np
 
 import pytest
 
-from lagom import Seeder
-
-from lagom.core.multiprocessing import BaseWorker
-from lagom.core.multiprocessing import BaseMaster
-from lagom.core.multiprocessing import BaseIterativeMaster
+from lagom.multiprocessing import MPMaster
+from lagom.multiprocessing import MPWorker
 
 
 def naive_primality(integer):
@@ -22,73 +19,59 @@ def naive_primality(integer):
     return prime
     
     
-class NaivePrimalityWorker(BaseWorker):
+class Worker(MPWorker):
     def prepare(self):
         self.prepared = 'ok'
     
-    def work(self, master_cmd):
+    def work(self, task):
         assert self.prepared == 'ok'
         
-        task_id, task, seed = master_cmd
+        task_id, task, use_chunk = task
         
-        result = []
-        for integer in task:
-            result.append(naive_primality(integer=integer))
+        if use_chunk:
+            result = [naive_primality(subtask) for subtask in task]
+        else:
+            result = naive_primality(task)
         
         return task_id, result
     
     
-class NaivePrimalityMaster(BaseMaster):
+class Master(MPMaster):
     def make_tasks(self):
-        tasks = np.array_split(range(128*10), 128)
+        primes = [14779693, 13956343, 20620837, 55449649]
+        non_primes = [55449709, 20621087, 15608607]
+        tasks = [primes[0], primes[1], non_primes[0], primes[2], non_primes[1], non_primes[2], primes[3]]
         
         return tasks
     
-    def _process_workers_result(self, tasks, workers_result):
-        for task, worker_result in zip(tasks, workers_result):
-            task_id, result = worker_result
-            for integer, prime in zip(task, result):
-                assert prime == naive_primality(integer)
+    def process_results(self, results):
+        assert results == [True, True, False, True, False, False, True]
+        print('pass')
 
 
-class NaivePrimalityIterativeMaster(BaseIterativeMaster):
-    def make_tasks(self, iteration):
-        tasks = np.array_split(range(128*10), self.num_worker)
-        
-        return tasks
+def test_mp_master_worker():
+    def check(master):
+        assert all([not p.is_alive() for p in master.list_process])
+        assert all([conn.closed for conn in master.master_conns])
+        assert all([conn.closed for conn in master.worker_conns])
     
-    def _process_workers_result(self, tasks, workers_result):
-        for task, worker_result in zip(tasks, workers_result):
-            task_id, result = worker_result
-            for integer, prime in zip(task, result):
-                assert prime == naive_primality(integer)
+    master = Master(Worker, 9)
+    assert master.num_worker == 9
+    master()
+    assert master.num_worker == 7
+    check(master)
+    del master
     
-
-class TestMultiprocessing(object):
-    def test_seeder(self):
-        seeder = Seeder(init_seed=0)
-        
-        assert seeder.rng.get_state()[1][0] == 0
-        assert np.random.get_state()[1][20] != seeder.rng.get_state()[1][20]
-        
-        assert len(seeder(size=1)) == 1
-        
-        assert len(seeder(size=20)) == 20
-        
-        assert np.array(seeder(size=[2, 3, 4])).shape == (2, 3, 4)
-        
-    def test_master_worker(self):
-        prime_test = NaivePrimalityMaster(worker_class=NaivePrimalityWorker, 
-                                          num_worker=128, 
-                                          init_seed=0, 
-                                          daemonic_worker=None)
-        prime_test()
-        
-    def test_iterative_master_worker(self):
-        prime_test = NaivePrimalityIterativeMaster(num_iteration=3, 
-                                                   worker_class=NaivePrimalityWorker, 
-                                                   num_worker=128, 
-                                                   init_seed=0, 
-                                                   daemonic_worker=None)
-
-        prime_test()
+    master = Master(Worker, 5)
+    assert master.num_worker == 5
+    master()
+    assert master.num_worker == 5
+    check(master)
+    del master
+    
+    master = Master(Worker, 3)
+    assert master.num_worker == 3
+    master()
+    assert master.num_worker == 3
+    check(master)
+    del master
