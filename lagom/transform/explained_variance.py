@@ -54,7 +54,6 @@ class ExplainedVariance(BaseTransform):
         assert not np.isscalar(y_true), 'does not support scalar value !'
         assert not np.isscalar(y_pred), 'does not support scalar value !'
 
-        # Convert input to ndarray
         y_true = self.to_numpy(y_true, np.float32)
         y_pred = self.to_numpy(y_pred, np.float32)
        

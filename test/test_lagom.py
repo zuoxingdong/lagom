@@ -36,6 +36,9 @@ class TestLagom(object):
     def test_seeder(self):
         seeder = Seeder(init_seed=0)
         
+        assert seeder.rng.get_state()[1][0] == 0
+        assert np.random.get_state()[1][20] != seeder.rng.get_state()[1][20]
+        
         # Single list of seeds
         seeds = seeder(size=1)
         assert len(seeds) == 1

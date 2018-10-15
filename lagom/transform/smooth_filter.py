@@ -46,12 +46,10 @@ class SmoothFilter(BaseTransform):
         assert 'window_length' in kwargs, 'kwargs must contain window_length'
         assert 'polyorder' in kwargs, 'kwargs must contain polyorder'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
         assert x.ndim == 1, 'only a single vector of scalar values is supported'
         
-        # Smooth the curve
         out = savgol_filter(x, **kwargs)
         out = out.astype(np.float32)
         

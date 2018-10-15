@@ -42,17 +42,14 @@ class Centralize(BaseTransform):
         """
         assert not np.isscalar(x), 'does not support scalar value !'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
-        # Get mean
-        if mean is None:  # compute the mean
+        if mean is None:
             # keepdims=True very important ! otherwise wrong value
             mean = x.mean(0, keepdims=True)  # over first dimension e.g. batch dim
-        else:  # use provided mean
+        else:
             mean = np.asarray(mean).astype(x.dtype)
             
-        # Centralize the data
         out = x - mean
         
         return out

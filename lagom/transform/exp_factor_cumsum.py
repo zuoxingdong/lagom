@@ -72,7 +72,7 @@ class ExpFactorCumSum(BaseTransform):
             calculated data
         """
         assert not np.isscalar(x), 'not allowed to use scalar value !'
-        if isinstance(x, np.ndarray):  # convert to list
+        if isinstance(x, np.ndarray):
             x = x.tolist()
         assert isinstance(x, list), f'expected list, got {type(x)}'
         

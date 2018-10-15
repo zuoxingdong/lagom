@@ -1,18 +1,23 @@
+from abc import ABC
+from abc import abstractmethod
+
 import numpy as np
 
 
-class BaseTransform(object):
+class BaseTransform(ABC):
     r"""Base class for all transformations e.g. clipping, normalize, centralize, standardize etc. 
     
     .. note::
     
-        All numpy processed data should be of dtype, np.int32 or np.float32, for PyTorch compatibility. 
+        All transformation should be handled with numpy as much as possible and return results as list. 
+        For PyTorch compatibility, integer dtype should be ``np.int32`` and float should be ``np.float32``.
     
     The subclass should implement at least the following:
     
     - :meth:`__call__`
     
     """
+    @abstractmethod
     def __call__(self, x):
         r"""Transform the input data. 
         
@@ -24,23 +29,21 @@ class BaseTransform(object):
         out : object
             the processed data
         """
-        raise NotImplementedError
+        pass
         
     def to_numpy(self, x, dtype):
         r"""Converts the input data to numpy dtype with PyTorch compatibility. 
         
         Args:
             x (object): input data
-            dtype (dtype): data type with PyTorch compatibility, e.g. np.int32, np.float32
+            dtype (dtype): PyTorch compatible dtype, e.g. ``np.int32``, ``np.float32``.
             
         Returns
         -------
         out : ndarray
             converted data with numpy dtype
         """
-        # Make array type
         x = np.asarray(x)
-        # Convert dtype
         x = x.astype(dtype)
         
         return x

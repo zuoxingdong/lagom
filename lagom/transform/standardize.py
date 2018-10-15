@@ -57,20 +57,17 @@ class Standardize(BaseTransform):
         """
         assert not np.isscalar(x), 'does not support scalar value !'
         
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
-        # Get mean/std
-        if mean is None:  # compute the mean
+        if mean is None:
             # keepdims=True very important ! otherwise wrong value
             mean = x.mean(0, keepdims=True)  # over first dimension e.g. batch dim
-        if std is None:  # cmopute the std
+        if std is None:
             # keepdims=True very important ! otherwise wrong value
             std = x.std(0, keepdims=True)  # over first dimension e.g. batch dim
         mean = np.asarray(mean).astype(x.dtype)
         std = np.asarray(std).astype(x.dtype)
         
-        # Standardize to unit Gaussian
         out = (x - mean)/(std + self.eps)
         
         return out
