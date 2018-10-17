@@ -48,5 +48,5 @@ class RankTransform(BaseTransform):
         
         if centered:
             ranks = ranks/(ranks.size - 1) - 0.5
-        
+            
         return ranks

@@ -13,19 +13,13 @@ class Normalize(BaseTransform):
     .. math::
         \hat{x}_i = \frac{x_i - x_{\text{min}}}{x_{\text{max}} - x_{\text{min}}}, \forall i\in \{ 1, \dots, N \}
     
-    .. warning::
-    
-        The min and max are calculated over the first dimension. This allows to deal with batched data with
-        shape ``[N, ...]`` where ``N`` is the batch size. However, be careful when you want to normalize
-        a multidimensional array with min/max over all elements. This is not supported. 
-    
     Example::
     
         >>> normalize = Normalize()
-        >>> normalize([1, 2, 3, 4])
+        >>> normalize([1, 2, 3, 4], 0)
         array([0.        , 0.33333334, 0.6666667 , 1.        ], dtype=float32)
         
-        >>> normalize([[1, 5], [4, 2]])
+        >>> normalize([[1, 5], [4, 2]], 0)
         array([[0., 1.],
                [1., 0.]], dtype=float32)
     
@@ -38,11 +32,12 @@ class Normalize(BaseTransform):
         """
         self.eps = eps
     
-    def __call__(self, x, minimal=None, maximal=None):
+    def __call__(self, x, dim, minimal=None, maximal=None):
         r"""Normalize the input data. 
         
         Args:
             x (object): input data. 
+            dim (int): the dimension to normalize
             minimal (ndarray): If not ``None``, then use this specific min to normalize the input. 
             maximal (ndarray): If not ``None``, then use this specific max to normalize the input. 
             
@@ -56,13 +51,14 @@ class Normalize(BaseTransform):
         x = self.to_numpy(x, np.float32)
         
         if minimal is None:
-            # keepdims=True very important ! otherwise wrong value
-            minimal = x.min(0, keepdims=True)  # over first dimension e.g. batch dim
+            minimal = x.min(dim, keepdims=True)
+        else:
+            minimal = self.to_numpy(minimal, np.float32)
+            
         if maximal is None:
-            # keepdims=True very important ! otherwise wrong value
-            maximal = x.max(0, keepdims=True)  # over first dimension e.g. batch dim
-        minimal = np.asarray(minimal).astype(x.dtype)
-        maximal = np.asarray(maximal).astype(x.dtype)
+            maximal = x.max(dim, keepdims=True)
+        else:
+            maximal = self.to_numpy(maximal, np.float32)
         
         out = (x - minimal)/(maximal - minimal + self.eps)
         

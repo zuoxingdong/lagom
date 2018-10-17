@@ -2,7 +2,7 @@ import numpy as np
 
 from scipy.signal import savgol_filter
 
-from lagom.core.transform import BaseTransform
+from .base_transform import BaseTransform
 
 
 class SmoothFilter(BaseTransform):

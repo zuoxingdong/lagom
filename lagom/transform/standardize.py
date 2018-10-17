@@ -15,23 +15,21 @@ class Standardize(BaseTransform):
     .. math::
         \hat{x}_i = \frac{x_i - \mu}{\sigma}, \forall i\in \{ 1, \dots, N \}
     
-    .. warning::
-    
-        The mean and standard deviation are calculated over the first dimension. This allows to 
-        deal with batched data with shape ``[N, ...]`` where ``N`` is the batch size. However, be 
-        careful when you want to standardize a multidimensional array with mean/std over all elements. 
-        This is not supported.
-    
     Example::
     
         >>> standardize = Standardize()
-        >>> standardize([0, 5, 10])
+        >>> standardize([0, 5, 10], 0)
         array([-1.2247449,  0.       ,  1.2247449], dtype=float32)
         
-        >>> standardize([[1, 2], [3, 2]])
-        array([[-0.9999999,  0.       ],
-               [ 0.9999999,  0.       ]], dtype=float32)
-        
+        >>> standardize([[1, 2], [4, 6], [3, 7]], 0)
+        array([[-1.3363061 , -1.3887302 ],
+               [ 1.0690447 ,  0.46291006],
+               [ 0.26726115,  0.9258201 ]], dtype=float32)
+               
+        >>> standardize([[1, 2], [4, 6], [3, 7]], 1)
+        array([[-0.99999976,  0.99999976],
+               [-0.9999999 ,  0.9999999 ],
+               [-1.        ,  1.        ]], dtype=float32)
     
     """
     def __init__(self, eps=np.finfo(np.float32).eps):
@@ -42,11 +40,12 @@ class Standardize(BaseTransform):
         """
         self.eps = eps
         
-    def __call__(self, x, mean=None, std=None):
+    def __call__(self, x, dim, mean=None, std=None):
         r"""Standardize the input data.
         
         Args:
             x (object): input data
+            dim (int): the dimension to standardize
             mean (ndarray): if not ``None``, then use this specific mean to standardize the input. 
             std (ndarray): if not ``None``, then use this specific std to standardize the input. 
         
@@ -60,13 +59,14 @@ class Standardize(BaseTransform):
         x = self.to_numpy(x, np.float32)
         
         if mean is None:
-            # keepdims=True very important ! otherwise wrong value
-            mean = x.mean(0, keepdims=True)  # over first dimension e.g. batch dim
+            mean = x.mean(dim, keepdims=True)
+        else:
+            mean = self.to_numpy(mean, np.float32)
+            
         if std is None:
-            # keepdims=True very important ! otherwise wrong value
-            std = x.std(0, keepdims=True)  # over first dimension e.g. batch dim
-        mean = np.asarray(mean).astype(x.dtype)
-        std = np.asarray(std).astype(x.dtype)
+            std = x.std(dim, keepdims=True)
+        else:
+            std = self.to_numpy(std, np.float32)
         
         out = (x - mean)/(std + self.eps)
         
