@@ -55,36 +55,31 @@ class RunningMeanStd(BaseTransform):
         Args:
             x (object): additional data to update the estimation of mean and standard deviation. 
         """
-        # Convert input to ndarray
         x = self.to_numpy(x, np.float32)
         
         # Store the original data shape, useful for returning mu and sigma with idential shape
         # Only for first time that data comes in, so assume all data flow with same shape
         if self.shape is None:
-            if x.ndim == 0 or x.ndim == 1:  # scalar or vector of scalars
+            if x.ndim == 0 or x.ndim == 1:
                 self.shape = ()
-            else:  # >=2 dimensions, first dimension is batch dimension
+            else:
                 self.shape = x.shape[1:]
         
-        # Make data as batch
-        if x.ndim == 0:  # scalar: to shape [1, 1]
+        if x.ndim == 0:
             x = x.reshape([1, 1])
         elif x.ndim == 1:  # single vector: to shape [N, 1]
             x = np.expand_dims(x, axis=1)
         assert x.ndim >= 2
         
-        # Compute batch mean and variance over first dimension
-        # Keep the original dimension
         batch_mean = x.mean(0, keepdims=True)
         batch_var = x.var(0, keepdims=True)
         batch_N = x.shape[0]
         
-        # Update mean and variance
-        if self.mean is None or self.var is None:  # Initialize mean and variance
+        if self.mean is None or self.var is None:
             new_mean = batch_mean
             new_var = batch_var
             new_N = batch_N
-        else:  # apply the formula
+        else:
             new_N = self.N + batch_N
             delta = batch_mean - self.mean
         
@@ -96,7 +91,6 @@ class RunningMeanStd(BaseTransform):
         
             new_var = M_X/(new_N)
         
-        # Update new values
         self.mean = new_mean
         self.var = new_var
         self.N = new_N

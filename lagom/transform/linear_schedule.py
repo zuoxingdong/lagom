@@ -52,9 +52,9 @@ class LinearSchedule(BaseTransform):
         """
         assert isinstance(x, int) and x >= 0, f'expected as a non-negative integer, got {x}'
         
-        if x == 0 or x < self.start:  # initial stage with fixed initial value
+        if x == 0 or x < self.start:
             return self.initial
-        elif x >= self.start + self.N:  # after scheduling with fixed final value
+        elif x >= self.start + self.N:
             return self.final
         else:  # scheduling over N steps
             delta = self.final - self.initial

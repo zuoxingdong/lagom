@@ -6,17 +6,17 @@ from .base_transform import BaseTransform
 
 
 class ExpFactorCumSum(BaseTransform):
-    r"""Calculate future accumulated sums with exponential factor for each element in a list. 
+    r"""Calculate future accumulated sums for each element in a list with an exponential factor. 
     
-    Given input :math:`[x_1, ..., x_n]` and factor :math:`\alpha\in [0, 1]`, then it returns
-    an array :math:`y` with same length and each element is calculated as following
+    Given input data :math:`[x_1, ..., x_n]` and exponential factor :math:`\alpha\in [0, 1]`, it returns
+    an array :math:`y` with the same length and each element is calculated as following
     
     .. math::
         y_i = x_i + \alpha*x_{i+1} + \alpha^2*x_{i+2} + \dots + \alpha^{n-i-1}*x_{n-1} + \alpha^{n-i}*x_{n}
         
     .. note::
     
-        We have provided two implementations, fast and slow. For fast implementation, we use
+        We provided a fast and a slow implementations. For fast implementation, it uses
         Python build-in function ``itertools.accumulate`` and the slow one is implementated
         by using for looping. According to the benchmarks, the amount of speedup with respect
         to the sequence length for the fast implementation over the slow one is shown as following:
@@ -35,8 +35,8 @@ class ExpFactorCumSum(BaseTransform):
     
     Example::
     
-        >>> f = ExpFactorCumSum(alpha=0.1)
-        >>> f([1, 2, 3, 4], _fast_code=True)
+        >>> f = ExpFactorCumSum(0.1)
+        >>> f([1, 2, 3, 4])
         [1.234, 2.34, 3.4, 4]
         
         >>> f([1, 2, 3, 4], mask=[1, 0, 1, 1], _fast_code=True)
@@ -44,7 +44,7 @@ class ExpFactorCumSum(BaseTransform):
 
     """
     def __init__(self, alpha):
-        r"""Initialize transoformation. 
+        r"""Initialize transformation. 
         
         Args:
             alpha (float): exponential factor between zero and one. 
@@ -60,7 +60,7 @@ class ExpFactorCumSum(BaseTransform):
         
         Args:
             x (list): input data
-            mask (list, optional): binary mask (zero or one) corresponds to each data item. 
+            mask (list, optional): binary mask (zero or one) corresponds to each element. 
                 Default: ``None``
             _fast_code (bool, optinal): if ``True``, then use fast implementation based 
                 on build-in function ``accumulate()``. Otherwise, use vanilla implementation.
@@ -71,47 +71,45 @@ class ExpFactorCumSum(BaseTransform):
         out : list
             calculated data
         """
-        assert not np.isscalar(x), 'not allowed to use scalar value !'
+        assert not np.isscalar(x), 'does not support scalar value !'
         if isinstance(x, np.ndarray):
             x = x.tolist()
         assert isinstance(x, list), f'expected list, got {type(x)}'
         
-        # make default mask
         if mask is None:
             mask = [1.0]*len(x)
-        else:  # sanity check for non-boolean and must be binaries
-            msg = 'mask should use binary values as zero or one. Not bool, because it is prone to bug '
-            msg += 'e.g. gym done=True, but we want to use mask value zero instead to compute returns. '
+        else:
+            msg = 'binary mask should be 0 or 1, not boolean. Otherwise, it is prone to bugs because'
+            msg += 'when done=True, we want to use 0 to mask out. '
             assert np.asarray(mask).dtype != 'bool', msg
         
             msg = 'The mask must be binary, i.e. either 0 or 1. '
-            assert np.array_equal(mask, np.array(mask).astype(bool))
-        assert len(x) == len(mask), f'mask must be same length with data, {len(mask)} != {len(x)}'
+            assert np.array_equal(mask, np.array(mask).astype(bool)), msg
+        assert len(x) == len(mask), f'mask must be same length with input data, {len(mask)} != {len(x)}'
         
-        # choose fast or slow implementation
         if _fast_code:
             return self._fast(x, mask)
-        else:  # use slow vanilla implementation
+        else:
             return self._slow(x, mask)
 
     def _slow(self, x, masks):
         cumsum = 0.0
         out = []
 
-        # iterate over items reversely
+        # reverse order
         for value, mask in zip(x[::-1], masks[::-1]):
             cumsum = value + self.alpha*cumsum*mask  # recursive update
-            out.insert(0, cumsum)  # insert to the front
+            out.insert(0, cumsum)
 
         return out
     
     def _fast(self, x, masks):
-        # zip the input value and masks with reverse ordering
+        # reverse ordering
         D = list(zip(x[::-1], masks[::-1]))
         # replace first element with its x value, drop out the mask item
         # because accumulating sum, the mask in the last is not useful to compute total value
         D[0] = D[0][0]
-        # compute it by using accumulate()
+        
         out = accumulate(D, lambda total, element: element[0] + self.alpha*total*element[1])
         out = list(out)[::-1]
         

@@ -23,18 +23,18 @@ class ExplainedVariance(BaseTransform):
    
     .. note::
     
-        It calls the function from ``scikit-learn`` which handles exceptions better e.g. zero devision
+        It calls the function from ``scikit-learn`` which handles exceptions better e.g. zero division..
         
     Example::
     
-        >>> explained_variance = ExplainedVariance()
-        >>> explained_variance(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8])
+        >>> f = ExplainedVariance()
+        >>> f(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8])
         0.9571734666824341
         
-        >>> explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]])
+        >>> f(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]])
         0.9838709533214569
         
-        >>> explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]])
+        >>> f(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]])
         0.6704022586345673
    
     """
@@ -57,6 +57,6 @@ class ExplainedVariance(BaseTransform):
         y_true = self.to_numpy(y_true, np.float32)
         y_pred = self.to_numpy(y_pred, np.float32)
        
-        ev = explained_variance_score(y_true=y_true, y_pred=y_pred, **kwargs)
+        ev = explained_variance_score(y_true=y_true, y_pred=y_pred, **kwargs).astype(np.float32)
        
         return ev

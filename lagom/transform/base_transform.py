@@ -5,12 +5,14 @@ import numpy as np
 
 
 class BaseTransform(ABC):
-    r"""Base class for all transformations e.g. clipping, normalize, centralize, standardize etc. 
+    r"""Base class for all transformations. 
+    
+    Transformation basically processes the input data. Examples are clipping, standardization, smoothing etc. 
     
     .. note::
     
-        All transformation should be handled with numpy as much as possible and return results as list. 
-        For PyTorch compatibility, integer dtype should be ``np.int32`` and float should be ``np.float32``.
+        The internal computation should be handled with numpy or standard libraries for efficiency and easy maintenance. 
+        For PyTorch compatibility, data type should be ``np.int32`` and ``np.float32`` for integers and floats.
     
     The subclass should implement at least the following:
     
@@ -27,12 +29,12 @@ class BaseTransform(ABC):
         Returns
         -------
         out : object
-            the processed data
+            transformed input data
         """
         pass
         
     def to_numpy(self, x, dtype):
-        r"""Converts the input data to numpy dtype with PyTorch compatibility. 
+        r"""Converts the input data to numpy dtype for PyTorch compatibility. 
         
         Args:
             x (object): input data
@@ -41,7 +43,7 @@ class BaseTransform(ABC):
         Returns
         -------
         out : ndarray
-            converted data with numpy dtype
+            converted input data.
         """
         x = np.asarray(x)
         x = x.astype(dtype)
