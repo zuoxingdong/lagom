@@ -1,3 +1,5 @@
+import numpy as np
+
 import pyglet
 
 try:

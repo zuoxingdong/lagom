@@ -3,6 +3,8 @@ from contextlib import contextmanager
 from time import time
 from datetime import timedelta
 
+from .colorize import color_str
+
 
 @contextmanager
 def timed(color='green', attribute='bold'):
