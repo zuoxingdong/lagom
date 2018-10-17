@@ -9,7 +9,7 @@ class InterpCurve(BaseTransform):
     
     .. note::
     
-        This is very useful for plotting a set of curves with uncertainty bands where each curve
+        This is useful for plotting a set of curves with uncertainty bands where each curve
         has data points at different :math:`x` values. To generate such plot, we need the set of :math:`y` 
         values with consistent :math:`x` values. 
         
@@ -70,18 +70,15 @@ class InterpCurve(BaseTransform):
         assert y.ndim in [1, 2], 'only one or two dimensional data'
         assert x.ndim == y.ndim, 'x and y should have identical dimensionality'
         
-        # wrap 1-d data as a batch
         if x.ndim == 1:
             x = np.expand_dims(x, 0)
         if y.ndim == 1:
             y = np.expand_dims(y, 0)
             
-        # Get global min and max for x values in the batched data
         min_x = x.min()
         max_x = x.max()
         
-        # Generate new query x values between global min and max
-        new_x = np.linspace(min_x, max_x, num=num_point)
+        new_x = np.linspace(min_x, max_x, num=num_point).astype(np.float32)
         
         # Generate new y values from each interpolated line given the shared query x values
         new_y = np.asarray([np.interp(new_x, curve_x, curve_y) for curve_x, curve_y in zip(x, y)])

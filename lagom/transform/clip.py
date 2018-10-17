@@ -9,8 +9,14 @@ class Clip(BaseTransform):
     Example::
     
         >>> clip = Clip()
-        >>> clip(x=[1, 2, 3, 4, 5], a_min=2.5, a_max=3.5)
-        array([2.5, 2.5, 3. , 3.5, 3.5], dtype=float32)
+        >>> clip(2.3, 0.5, 1.5)
+        1.5
+        
+        >>> clip([1, 2, 3], 1.5, 2.5)
+        array([1.5, 2. , 2.5], dtype=float32)
+        
+        >>> clip([1, 2, 3], [0, 1, 3.5], [0.5, 2, 9])
+        array([0.5, 2. , 3.5], dtype=float32)
     
     """
     def __call__(self, x, a_min, a_max):
@@ -28,6 +34,6 @@ class Clip(BaseTransform):
         """
         x = self.to_numpy(x, np.float32)
         
-        out = np.clip(x, a_min, a_max).astype(x.dtype)
+        out = np.clip(x, a_min, a_max).astype(np.float32)
         
         return out

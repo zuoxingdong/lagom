@@ -11,29 +11,29 @@ class Centralize(BaseTransform):
     .. math::
         \hat{x}_i = x_i - \frac{1}{N}\sum_{j=1}^{N} x_j, \forall i\in \{ 1, \dots, N \}
     
-    .. warning::
-    
-        The mean is calculated over the first dimension. This allows to deal with batched data with
-        shape ``[N, ...]`` where ``N`` is the batch size. However, be careful when you want to centralize
-        a multidimensional array with mean over all elements. This is not supported. 
-    
     Example::
     
         >>> centralize = Centralize()
-        >>> centralize([1, 2, 3, 4])
+        >>> centralize([1, 2, 3, 4], 0)
         array([-1.5, -0.5,  0.5,  1.5], dtype=float32)
         
-        >>> centralize([[1, 3], [2, 11]])
-        array([[-0.5, -4. ],
-               [ 0.5,  4. ]], dtype=float32)
+        >>> centralize([[1, 3], [2, 4], [3, 5]], 0)
+        array([[-1., -1.],
+               [ 0.,  0.],
+               [ 1.,  1.]], dtype=float32)
+               
+        >>> mean = [0.1, 0.2, 0.3]
+        >>> centralize([1, 2, 3], 0, mean=mean)
+        array([0.9, 1.8, 2.7], dtype=float32)
    
     """
-    def __call__(self, x, mean=None):
+    def __call__(self, x, dim, mean=None):
         r"""Centralize the input data. 
         
         Args:
             x (object): input data
-            mean (ndarray): If not ``None``, then use this specific mean to centralize the input. 
+            dim (int): the dimension to centralize
+            mean (ndarray): if not ``None``, then use this mean to centralize the input. 
             
         Returns
         -------
@@ -45,10 +45,9 @@ class Centralize(BaseTransform):
         x = self.to_numpy(x, np.float32)
         
         if mean is None:
-            # keepdims=True very important ! otherwise wrong value
-            mean = x.mean(0, keepdims=True)  # over first dimension e.g. batch dim
+            mean = x.mean(dim, keepdims=True)
         else:
-            mean = np.asarray(mean).astype(x.dtype)
+            mean = self.to_numpy(mean, np.float32)
             
         out = x - mean
         

@@ -6,35 +6,35 @@ lagom.transform: Transformations
 
 .. autoclass:: BaseTransform
     :members:
-    
-.. autoclass:: Centralize
-    :members:
 
 .. autoclass:: Clip
     :members: 
+
+.. autoclass:: Centralize
+    :members:
+
+.. autoclass:: Normalize
+    :members:
+    
+.. autoclass:: Standardize
+    :members:
+
+.. autoclass:: RankTransform
+    :members:
     
 .. autoclass:: ExpFactorCumSum
     :members:    
     
 .. autoclass:: ExplainedVariance
     :members:
-    
-.. autoclass:: InterpCurve
-    :members:
-
-.. autoclass:: Normalize
-    :members:
-    
-.. autoclass:: RankTransform
-    :members:
 
 .. autoclass:: RunningMeanStd
     :members:
     
-.. autoclass:: SmoothFilter
+.. autoclass:: InterpCurve
     :members:
-
-.. autoclass:: Standardize
+    
+.. autoclass:: SmoothFilter
     :members:
     
 .. autoclass:: LinearSchedule
