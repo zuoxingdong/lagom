@@ -2,7 +2,7 @@ import numpy as np
 
 from PIL import Image
 
-from lagom.core.plotter import BasePlot
+from .base_plot import BasePlot
 
 
 class GridImage(BasePlot):
