@@ -8,7 +8,7 @@ from lagom.es import BaseESWorker
 
 from lagom.es import rastrigin
 from lagom.es import sphere
-from laogm.es import holder_table
+from lagom.es import holder_table
 from lagom.es import styblinski_tang
 
 

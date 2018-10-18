@@ -1,12 +1,13 @@
+from .module import Module
+
 from .base_network import BaseNetwork
 
-from .base_vae import BaseVAE
-from .base_mdn import BaseMDN
 from .base_rnn import BaseRNN
-
 from .ln_rnn import LayerNormLSTMCell
 
 from .init import ortho_init
+
+from .lr_scheduler import linear_lr_scheduler
 
 from .make_blocks import make_fc
 from .make_blocks import make_cnn

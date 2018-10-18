@@ -38,8 +38,8 @@ class Worker(MPWorker):
     
 class Master(MPMaster):
     def make_tasks(self):
-        primes = [14779693, 13956343, 20620837, 55449649]
-        non_primes = [55449709, 20621087, 15608607]
+        primes = [6563, 7639, 3061, 2543]
+        non_primes = [5853, 7179, 6957]
         tasks = [primes[0], primes[1], non_primes[0], primes[2], non_primes[1], non_primes[2], primes[3]]
         
         return tasks

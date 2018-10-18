@@ -20,7 +20,6 @@ class BaseEngine(ABC):
         self.runner = runner
         self.config = config
         
-        # Set keyword arguments
         for key, value in kwargs.items():
             self.__setattr__(key, value)
         

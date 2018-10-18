@@ -27,17 +27,14 @@ def make_fc(input_dim, hidden_sizes):
     fc : nn.ModuleList
         A ModuleList of fully connected layers.     
     """
-    assert isinstance(hidden_sizes, list), f'expected as list, got {type(hidden_sizes)}'
+    assert isinstance(hidden_sizes, list), f'expected list, got {type(hidden_sizes)}'
     
-    # Augment the input dimension to the front of hidden sizes
     hidden_sizes = [input_dim] + hidden_sizes
     
-    # Iteratively create fully connected layers
     fc = []
     for in_features, out_features in zip(hidden_sizes[:-1], hidden_sizes[1:]):
         fc.append(nn.Linear(in_features=in_features, out_features=out_features))
-        
-    # Make as a ModuleList
+    
     fc = nn.ModuleList(fc)
     
     return fc
@@ -73,15 +70,12 @@ def make_cnn(input_channel, channels, kernels, strides, paddings):
     """
     N = len(channels)
     
-    # Sanity checks
     for item in [channels, kernels, strides, paddings]:
         assert isinstance(item, list), f'expected as list, got {type(item)}'
         assert len(item) == N, f'expected length {N}, got {len(item)}'
     
-    # Augment the input channel to the front of channels
     channels = [input_channel] + channels
     
-    # Iteratively create convolutional layers
     cnn = []
     for i in range(N):
         cnn.append(nn.Conv2d(in_channels=channels[i], 
@@ -92,7 +86,6 @@ def make_cnn(input_channel, channels, kernels, strides, paddings):
                              dilation=1, 
                              groups=1))
     
-    # Make as a ModuleList
     cnn = nn.ModuleList(cnn)
     
     return cnn
@@ -134,15 +127,12 @@ def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, out
     """
     N = len(channels)
     
-    # Sanity checks
     for item in [channels, kernels, strides, paddings, output_paddings]:
         assert isinstance(item, list), f'expected as list, got {type(item)}'
         assert len(item) == N, f'expected length {N}, got {len(item)}'
     
-    # Augment the input channel to the front of channels
     channels = [input_channel] + channels
     
-    # Iteratively create transposed convolutional layers
     transposed_cnn = []
     for i in range(N):
         transposed_cnn.append(nn.ConvTranspose2d(in_channels=channels[i], 
@@ -154,7 +144,6 @@ def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, out
                                                  dilation=1, 
                                                  groups=1))
     
-    # Make as a ModuleList
     transposed_cnn = nn.ModuleList(transposed_cnn)
     
     return transposed_cnn
@@ -199,15 +188,12 @@ def make_rnncell(cell_type, input_dim, hidden_sizes):
     else:
         raise ValueError(f'expected RNNCell/LSTMCell/GRUCell, got {cell_type}')
     
-    # Augment the input dimension to the front of hidden sizes
     hidden_sizes = [input_dim] + hidden_sizes
     
-    # Iteratively create recurrent cell layers
     rnncell = []
     for input_size, hidden_size in zip(hidden_sizes[:-1], hidden_sizes[1:]):
         rnncell.append(cell_f(input_size=input_size, hidden_size=hidden_size))
-        
-    # Make as ModuleList
+    
     rnncell = nn.ModuleList(rnncell)
     
     return rnncell

@@ -6,374 +6,105 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.distributions import Categorical
+from torch.distributions import Normal
+from torch.distributions import Independent
+
 from lagom.envs import make_gym_env
-from lagom.envs import make_envs
-from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
+from lagom.envs import make_vec_env
 from lagom.envs.vec_env import SerialVecEnv
 
-from lagom.core.networks import BaseNetwork
-from lagom.core.networks import BaseRNN
-from lagom.core.networks import make_fc
-from lagom.core.networks import ortho_init
-
-from lagom.core.policies import CategoricalPolicy
-from lagom.core.policies import GaussianPolicy
+from lagom.policies import RandomPolicy
+from lagom.policies import CategoricalHead
+from lagom.policies import DiagGaussianHead
+from lagom.policies import constraint_action
 
 
-class Network(BaseNetwork):
-    def make_params(self, config):
-        self.layers = make_fc(input_dim=self.env_spec.observation_space.flat_dim, hidden_sizes=[16])
-        
-        self.last_feature_dim = 16
-        
-    def init_params(self, config):
-        for layer in self.layers:
-            ortho_init(layer, nonlinearity='relu')
-    
-    def forward(self, x):
-        for layer in self.layers:
-            x = F.relu(layer(x))
-            
-        return x
-    
-    
-class LSTM(BaseRNN):
-    def make_params(self, config):
-        self.rnn = nn.LSTMCell(input_size=self.env_spec.observation_space.flat_dim, 
-                               hidden_size=config['network.rnn_size'])
+def test_random_policy():
+    env = make_gym_env('Pendulum-v0', 0)
+    env_spec = EnvSpec(env)
+    policy = RandomPolicy(None, env_spec)
+    out = policy(env.reset())
+    assert isinstance(out, dict)
+    assert 'action' in out and out['action'].shape == (1,)
 
-        self.last_feature_dim = config['network.rnn_size']
-
-    def init_params(self, config):
-        ortho_init(self.rnn, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
-
-    def init_hidden_states(self, config, batch_size, **kwargs):
-        h = torch.zeros(batch_size, config['network.rnn_size'])
-        h = h.to(self.device)
-        c = torch.zeros_like(h)
-
-        return [h, c]
-
-    def rnn_forward(self, x, hidden_states, mask=None, **kwargs):
-        # mask out hidden states if required
-        if mask is not None:
-            h, c = hidden_states
-            mask = mask.to(self.device)
-            
-            h = h*mask
-            c = c*mask
-            hidden_states = [h, c]
-
-        h, c = self.rnn(x, hidden_states)
-
-        out = {'output': h, 'hidden_states': [h, c]}
-
-        return out
+    venv = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v0', 3, 0, False)
+    env_spec = EnvSpec(venv)
+    policy = RandomPolicy(None, env_spec)
+    out = policy(env.reset())
+    assert isinstance(out, dict)
+    assert 'action' in out and len(out['action']) == 3 and isinstance(out['action'][0], int)
 
 
-class TestCategoricalPolicy(object):
-    def make_env_spec(self):
-        list_make_env = make_envs(make_env=make_gym_env, 
-                                  env_id='CartPole-v1', 
-                                  num_env=3, 
-                                  init_seed=0)
-        venv = SerialVecEnv(list_make_env=list_make_env, rolling=True)
-        env_spec = EnvSpec(venv)
-        
-        return env_spec
-    
-    @pytest.mark.parametrize('network_type', ['FC', 'LSTM'])
-    def test_categorical_policy(self, network_type):
-        env_spec = self.make_env_spec()
-        device = torch.device('cpu')
-        if network_type == 'FC':
-            config = {}
-            network = Network(config=config, env_spec=env_spec, device=device)
-        elif network_type == 'LSTM':
-            config = {'network.rnn_size': 16}
-            network = LSTM(config=config, env_spec=env_spec, device=device)
-        
-        
-        tmp = CategoricalPolicy(config=config, network=network, env_spec=env_spec, device=device)
-        assert not hasattr(tmp.network, 'value_head')
-        
-        policy = CategoricalPolicy(config=config, network=network, env_spec=env_spec, device=device, learn_V=True)
-        
-        assert hasattr(policy, 'config')
-        assert hasattr(policy, 'network')
-        assert hasattr(policy, 'env_spec')
-        assert hasattr(policy, 'observation_space')
-        assert hasattr(policy, 'action_space')
-        assert hasattr(policy, 'device')
-        assert hasattr(policy, 'recurrent')
-        if network_type == 'FC':
-            assert not policy.recurrent
-        elif network_type == 'LSTM':
-            assert policy.recurrent
-            rnn_states = policy.rnn_states
-            assert isinstance(rnn_states, list) and len(rnn_states) == 2
-            h0, c0 = rnn_states
-            assert list(h0.shape) == [3, 16] and list(c0.shape) == list(h0.shape)
-            assert np.allclose(h0.detach().numpy(), 0.0)
-            assert np.allclose(c0.detach().numpy(), 0.0)
-            
-            h1 = torch.ones_like(h0) + 3
-            c1 = torch.ones_like(c0) + 4
-            new_states = [h1, c1]
-            policy.update_rnn_states(new_states)
-            rnn_states = policy.rnn_states
-            h, c = rnn_states
-            assert list(h.shape) == [3, 16] and list(c.shape) == [3, 16]
-            assert np.allclose(h.detach().numpy(), 4.0)
-            assert np.allclose(c.detach().numpy(), 5.0)
-            
-        if network_type == 'FC':
-            assert hasattr(policy.network, 'layers')
-            assert len(policy.network.layers) == 1
-        elif network_type == 'LSTM':
-            assert hasattr(policy.network, 'rnn')
-        assert hasattr(policy.network, 'action_head')
-        assert hasattr(policy.network, 'value_head')
-        assert hasattr(policy.network, 'device')
-        assert policy.network.action_head.weight.abs().min().item() <= 0.01  # 0.01 scale for action head
-        assert np.allclose(policy.network.action_head.bias.detach().numpy(), 0.0)
-        assert policy.network.value_head.weight.abs().max().item() >= 0.1  # roughly +- 0.3 - 0.5
-        assert np.allclose(policy.network.value_head.bias.detach().numpy(), 0.0)
-        
-        obs = torch.from_numpy(np.array(env_spec.env.reset())).float()
-        out_policy = policy(obs, out_keys=['action', 'action_prob', 'action_logprob', 
-                                           'state_value', 'entropy', 'perplexity'], info={})
-        
-        if network_type == 'LSTM':
-            new_rnn_states = policy.rnn_states
-            assert isinstance(new_rnn_states, list) and len(new_rnn_states) == 2
-            h_new, c_new = new_rnn_states
-            assert list(h_new.shape) == [3, 16] and list(c_new.shape) == list(h_new.shape)
-            assert not np.allclose(h_new.detach().numpy(), 0.0)
-            assert not np.allclose(c_new.detach().numpy(), 0.0)
-            
-            mask = [False, True, False]
-            out_policy=  policy(obs, 
-                                out_keys=['action', 'action_prob', 'action_logprob', 
-                                          'state_value', 'entropy', 'perplexity'], 
-                                info={'mask': mask})
-            c = policy.rnn_states[1]
-            assert c[0].max().item() >= 1.0 and c[2].max().item() >= 1.0
-            assert c[1].max().item() <= 0.1
-        
-        assert isinstance(out_policy, dict)
-        assert 'action' in out_policy
-        assert list(out_policy['action'].shape) == [3]
-        assert 'action_prob' in out_policy
-        assert list(out_policy['action_prob'].shape) == [3, 2]
-        assert 'action_logprob' in out_policy
-        assert list(out_policy['action_logprob'].shape) == [3]
-        assert 'state_value' in out_policy
-        assert list(out_policy['state_value'].shape) == [3]
-        assert 'entropy' in out_policy
-        assert list(out_policy['entropy'].shape) == [3]
-        assert 'perplexity' in out_policy
-        assert list(out_policy['perplexity'].shape) == [3]
-        
-        
-class TestGaussianPolicy(object):
-    def make_env_spec(self):
-        list_make_env = make_envs(make_env=make_gym_env, 
-                                  env_id='Pendulum-v0', 
-                                  num_env=3, 
-                                  init_seed=0)
-        venv = SerialVecEnv(list_make_env=list_make_env, rolling=True)
-        env_spec = EnvSpec(venv)
-        
-        return env_spec
-    
-    @pytest.mark.parametrize('network_type', ['FC', 'LSTM'])
-    def test_gaussian_policy(self, network_type):
-        env_spec = self.make_env_spec()
-        device = torch.device('cpu')
-        def _create_net(env_spec, device):
-            if network_type == 'FC':
-                config = {}
-                network = Network(config=config, env_spec=env_spec, device=device)
-                assert network.num_params == 64
-            elif network_type == 'LSTM':
-                config = {'network.rnn_size': 16}
-                network = LSTM(config=config, env_spec=env_spec, device=device)
-                
-            return network
-        
-        if network_type == 'FC':
-            config = {}
-        elif network_type == 'LSTM':
-            config = {'network.rnn_size': 16}
-        
-        network = _create_net(env_spec, device)
-        
-        high = np.unique(env_spec.action_space.high).item()
-        low = np.unique(env_spec.action_space.low).item()
-        
-        def _check_policy(policy):
-            assert hasattr(policy, 'config')
-            assert hasattr(policy, 'network')
-            assert hasattr(policy, 'env_spec')
-            assert hasattr(policy, 'observation_space')
-            assert hasattr(policy, 'action_space')
-            assert hasattr(policy, 'device')
-            assert hasattr(policy, 'recurrent')
-            if network_type == 'FC':
-                assert not policy.recurrent
-            elif network_type == 'LSTM':
-                assert policy.recurrent
-                rnn_states = policy.rnn_states
-                assert isinstance(rnn_states, list) and len(rnn_states) == 2
-                h0, c0 = rnn_states
-                assert list(h0.shape) == [3, 16] and list(c0.shape) == list(h0.shape)
-                assert np.allclose(h0.detach().numpy(), 0.0)
-                assert np.allclose(c0.detach().numpy(), 0.0)
+def test_diag_gaussian_head():
+    with pytest.raises(AssertionError):
+        env = make_gym_env('CartPole-v1', 0)
+        env_spec = EnvSpec(env)
+        DiagGaussianHead(None, None, 30, env_spec)
 
-                h1 = torch.ones_like(h0) + 3
-                c1 = torch.ones_like(c0) + 4
-                new_states = [h1, c1]
-                policy.update_rnn_states(new_states)
-                rnn_states = policy.rnn_states
-                h, c = rnn_states
-                assert list(h.shape) == [3, 16] and list(c.shape) == [3, 16]
-                assert np.allclose(h.detach().numpy(), 4.0)
-                assert np.allclose(c.detach().numpy(), 5.0)
+    env = make_gym_env('Pendulum-v0', 0)
+    env_spec = EnvSpec(env)
+    head = DiagGaussianHead(None, None, 30, env_spec)
+    assert head.feature_dim == 30
+    assert isinstance(head.mean_head, nn.Linear)
+    assert isinstance(head.logvar_head, nn.Parameter)
+    assert head.mean_head.in_features == 30 and head.mean_head.out_features == 1
+    assert list(head.logvar_head.shape) == [1]
+    dist = head(torch.randn(3, 30))
+    assert isinstance(dist, Independent) and isinstance(dist.base_dist, Normal)
+    assert list(dist.batch_shape) == [3]
+    action = dist.sample()
+    assert list(action.shape) == [3, 1]
+
+    head = DiagGaussianHead(None, None, 30 , env_spec, std_style='softplus')
+    dist = head(torch.randn(3, 30))
+    action = dist.sample()
+    assert list(action.shape) == [3, 1]
+    assert torch.eq(head.logvar_head, torch.tensor(0.0))
+
+    head = DiagGaussianHead(None, None, 30, env_spec, std_state_dependent=True)
+    dist = head(torch.randn(3, 30))
+    action = dist.sample()
+    assert list(action.shape) == [3, 1]
+
+    head = DiagGaussianHead(None, None, 30, env_spec, constant_std=0.3)
+    dist = head(torch.randn(3, 30))
+    action = dist.sample()
+    assert list(action.shape) == [3, 1]
+    assert not head.logvar_head.requires_grad
+    assert torch.eq(head.logvar_head, torch.tensor([-2.40794560865]))
 
 
-            assert hasattr(policy, 'min_std')
-            assert hasattr(policy, 'std_style')
-            assert hasattr(policy, 'constant_std')
-            assert hasattr(policy, 'std_state_dependent')
-            assert hasattr(policy, 'init_std')
-            
-            if network_type == 'FC':
-                assert hasattr(policy.network, 'layers')
-                assert len(policy.network.layers) == 1
-            elif network_type == 'LSTM':
-                assert hasattr(policy.network, 'rnn')
-            assert hasattr(policy.network, 'mean_head')
-            assert hasattr(policy.network, 'logvar_head')
-            assert hasattr(policy.network, 'value_head')
-            assert hasattr(policy.network, 'device')
-            
-            assert policy.network.mean_head.weight.numel() + policy.network.mean_head.bias.numel() == 17
-            assert policy.network.mean_head.weight.abs().min().item() <= 0.01  # 0.01 scale for action head
-            assert np.allclose(policy.network.mean_head.bias.detach().numpy(), 0.0)
-            assert policy.network.value_head.weight.numel() + policy.network.value_head.bias.numel() == 16+1
-            assert policy.network.value_head.weight.abs().max().item() >= 0.1  # roughly +- 0.3 - 0.5
-            assert np.allclose(policy.network.value_head.bias.detach().numpy(), 0.0)
+def test_categorical_head():
+    with pytest.raises(AssertionError):
+        env = make_gym_env('Pendulum-v0', 0)
+        env_spec = EnvSpec(env)
+        CategoricalHead(None, None, 30, env_spec)
 
-            obs = torch.from_numpy(np.array(env_spec.env.reset())).float()
-            out_policy = policy(obs, 
-                                out_keys=['action', 'action_logprob', 'state_value', 'entropy', 'perplexity'], 
-                                info={})
-            
-            if network_type == 'LSTM':
-                new_rnn_states = policy.rnn_states
-                assert isinstance(new_rnn_states, list) and len(new_rnn_states) == 2
-                h_new, c_new = new_rnn_states
-                assert list(h_new.shape) == [3, 16] and list(c_new.shape) == [3, 16]
-                assert not np.allclose(h_new.detach().numpy(), 0.0)
-                assert not np.allclose(c_new.detach().numpy(), 0.0)
-                
-                mask = [False, True, False]
-                out_policy = policy(obs, 
-                                    out_keys=['action', 'action_logprob', 'state_value', 'entropy', 'perplexity'], 
-                                    info={'mask': mask})
-                c = policy.rnn_states[1]
-                assert c[0].max().item() >= 1.0 and c[2].max().item() >= 1.0
-                assert c[1].max().item() <= 0.5
-                
-            assert isinstance(out_policy, dict)
-            assert 'action' in out_policy
-            assert list(out_policy['action'].shape) == [3, 1]
-            assert torch.all(out_policy['action'] <= high)
-            assert torch.all(out_policy['action'] >= low)
-            assert 'action_logprob' in out_policy
-            assert list(out_policy['action_logprob'].shape) == [3]
-            assert 'state_value' in out_policy
-            assert list(out_policy['state_value'].shape) == [3]
-            assert 'entropy' in out_policy
-            assert list(out_policy['entropy'].shape) == [3]
-            assert 'perplexity' in out_policy
-            assert list(out_policy['perplexity'].shape) == [3]
-        
-        # test default without learn_V
-        tmp = GaussianPolicy(config=config, network=network, env_spec=env_spec, device=device)
-        assert not hasattr(tmp.network, 'value_head')
-        
-        # min_std
-        network = _create_net(env_spec, device)
-        policy = GaussianPolicy(config=config, 
-                                network=network, 
-                                env_spec=env_spec, 
-                                device=device,
-                                learn_V=True,
-                                min_std=1e-06, 
-                                std_style='exp', 
-                                constant_std=None, 
-                                std_state_dependent=True, 
-                                init_std=None)
-        _check_policy(policy)
-        if network_type == 'FC':
-            assert policy.network.num_params - 98 == 17
-        assert isinstance(policy.network.logvar_head, nn.Linear)
-        assert isinstance(policy.network.value_head, nn.Linear)
-        
-        # std_style
-        network = _create_net(env_spec, device)
-        policy = GaussianPolicy(config=config, 
-                                network=network, 
-                                env_spec=env_spec, 
-                                device=device,
-                                learn_V=True,
-                                min_std=1e-06, 
-                                std_style='softplus', 
-                                constant_std=None, 
-                                std_state_dependent=True, 
-                                init_std=None)
-        _check_policy(policy)
-        if network_type == 'FC':
-            assert policy.network.num_params - 98 == 17
-        assert isinstance(policy.network.logvar_head, nn.Linear)
-        assert isinstance(policy.network.value_head, nn.Linear)
-        
-        # constant_std
-        network = _create_net(env_spec, device)
-        policy = GaussianPolicy(config=config, 
-                                network=network, 
-                                env_spec=env_spec, 
-                                device=device,
-                                learn_V=True,
-                                min_std=1e-06, 
-                                std_style='exp', 
-                                constant_std=0.1, 
-                                std_state_dependent=False, 
-                                init_std=None)
-        _check_policy(policy)
-        if network_type == 'FC':
-            assert policy.network.num_params - 98 == 0
-        assert torch.is_tensor(policy.network.logvar_head)
-        assert policy.network.logvar_head.allclose(torch.tensor(-4.6052))
-        
-        # std_state_dependent and init_std
-        network = _create_net(env_spec, device)
-        policy = GaussianPolicy(config=config, 
-                                network=network, 
-                                env_spec=env_spec, 
-                                device=device,
-                                learn_V=True,
-                                min_std=1e-06, 
-                                std_style='exp', 
-                                constant_std=None, 
-                                std_state_dependent=False, 
-                                init_std=0.5)
-        _check_policy(policy)
-        if network_type == 'FC':
-            assert policy.network.num_params - 98 == 1
-            assert policy.network.logvar_head.allclose(torch.tensor(-1.3863))
-        assert isinstance(policy.network.logvar_head, nn.Parameter)
-        assert policy.network.logvar_head.requires_grad == True
+    env = make_gym_env('CartPole-v1', 0)
+    env_spec = EnvSpec(env)
+    head = CategoricalHead(None, None, 30, env_spec)
+    assert head.feature_dim == 30
+    assert isinstance(head.action_head, nn.Linear)
+    assert head.action_head.in_features == 30 and head.action_head.out_features == 2
+    dist = head(torch.randn(3, 30))
+    assert isinstance(dist, Categorical)
+    assert list(dist.batch_shape) == [3]
+    assert list(dist.probs.shape) == [3, 2]
+    action = dist.sample()
+    assert action.shape == (3,)
+
+
+def test_constraint_action():
+    env = make_gym_env('Pendulum-v0', 0)
+    env_spec = EnvSpec(env)
+
+    action = torch.tensor([1.5])
+    assert torch.eq(constraint_action(env_spec, action), torch.tensor([1.5]))
+
+    action = torch.tensor([3.0])
+    assert torch.eq(constraint_action(env_spec, action), torch.tensor([2.0]))
+
+    action = torch.tensor([-10.0])
+    assert torch.eq(constraint_action(env_spec, action), torch.tensor([-2.0]))

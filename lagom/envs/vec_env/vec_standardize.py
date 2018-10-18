@@ -1,8 +1,8 @@
 import numpy as np
 
-from lagom import pickle_dump
+from lagom.utils import pickle_dump
 
-from lagom.core.transform import RunningMeanStd
+from lagom.transform import RunningMeanStd
 
 from .vec_env import VecEnvWrapper
 
