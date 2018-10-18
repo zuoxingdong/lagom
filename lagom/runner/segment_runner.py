@@ -1,7 +1,7 @@
 import torch
 
-from lagom.runner import Transition
-from lagom.runner import Segment
+from lagom.history import Transition
+from lagom.history import Segment
 
 from .base_runner import BaseRunner
 

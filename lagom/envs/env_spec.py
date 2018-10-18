@@ -68,6 +68,13 @@ class EnvSpec(object):
             raise TypeError(f'expected Discrete or Box, got {type(self.env.action_space)}.')
             
     @property
+    def is_vec_env(self):
+        if isinstance(self.env, VecEnv):
+            return True
+        else:
+            return False
+            
+    @property
     def num_env(self):
         r"""Returns the number of sub-environments for vectorized environment. """
         if isinstance(self.env, VecEnv):
@@ -84,6 +91,7 @@ class EnvSpec(object):
         string += f'\tControl type: {self.control_type}\n'
         string += f'\tT: {self.T}\n'
         string += f'\tMax episode reward: {self.max_episode_reward}\n'
-        string += f'\tReward range: {self.reward_range}'
+        string += f'\tReward range: {self.reward_range}\n'
+        string += f'\tIs VecEnv: {self.is_vec_env}'
         
         return string

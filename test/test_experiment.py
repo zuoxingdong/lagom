@@ -15,43 +15,6 @@ from lagom.experiment import run_experiment
 from lagom import BaseAlgorithm
 
 
-class SimpleAlgorithm(BaseAlgorithm):
-    def __call__(self, config, seed, device_str):
-        return config['ID'], seed, f'ID: {config["ID"]}, seed: {seed}, device_str: {device_str}, Finished the work !'
-
-    
-class ExperimentWorker(BaseExperimentWorker):
-    def make_algo(self):
-        algo = SimpleAlgorithm(name='Simple algorithm')
-        
-        return algo
-    
-    
-class ExperimentMaster(BaseExperimentMaster):
-    def process_algo_result(self, config, seed, result):
-        check_id, check_seed, msg = result
-        assert isinstance(msg, str)
-        assert check_id == config['ID']
-        assert check_seed == seed
-        
-        print(msg)
-        
-    def make_configs(self):
-        configurator = Configurator('grid')
-        
-        configurator.fixed('log.dir', 'some path')
-        configurator.grid('network.lr', [0.1, 0.01, 0.05])
-        configurator.grid('network.layers', [16, 32])
-        configurator.grid('env.id', ['CartPole-v1', 'Ant-v2', 'HalfCheetah-v2'])
-        
-        configs = configurator.make_configs()
-
-        return configs
-    
-    def make_seeds(self):
-        return [123, 345, 567, 789, 901]
-    
-    
 def test_configurator():
     # Construction invalidity check
     with pytest.raises(AssertionError):
@@ -165,27 +128,55 @@ def test_configurator():
     config_dataframe = Configurator.dataframe_subset(config_dataframe, 'network.layers', [1, 2])
     config_dataframe = Configurator.dataframe_groupview(config_dataframe, ['network.layers', 'log.dir'])
     config_dataframe
+
+
+class SimpleAlgorithm(BaseAlgorithm):
+    def __call__(self, config, seed, device):
+        return config['ID'], seed, f'ID: {config["ID"]}, seed: {seed}, device: {device}, Finished the work !'
+
+    
+class ExperimentWorker(BaseExperimentWorker):
+    def make_algo(self):
+        algo = SimpleAlgorithm()
+        
+        return algo
+    
+    def prepare(self):
+        pass
+    
+    
+class ExperimentMaster(BaseExperimentMaster):
+    def process_results(self, results):
+        assert isinstance(results, list) and len(results) == 3*2*3*5
+        
+    def make_configs(self):
+        configurator = Configurator('grid')
+        
+        configurator.fixed('log.dir', 'some path')
+        configurator.grid('network.lr', [0.1, 0.01, 0.05])
+        configurator.grid('network.layers', [16, 32])
+        configurator.grid('env.id', ['CartPole-v1', 'Ant-v2', 'HalfCheetah-v2'])
+        
+        configs = configurator.make_configs()
+
+        return configs
+    
+    def make_seeds(self):
+        return [123, 345, 567, 789, 901]
     
     
 def test_experiment():
-    experiment = ExperimentMaster(worker_class=ExperimentWorker, 
-                                  max_num_worker=4, 
-                                  daemonic_worker=None)
+    experiment = ExperimentMaster(worker_class=ExperimentWorker, num_worker=4)
 
-    assert len(experiment.configs) == 18
-    assert len(experiment.seeds) == 5
+    assert len(experiment.configs) == 3*2*3
     assert experiment.num_worker == 4
-    assert experiment.num_iteration == 23
     
     experiment()
     
-def test_run_experiment():
-    run_experiment(worker_class=ExperimentWorker, 
-                   master_class=ExperimentMaster, 
-                   max_num_worker=None, 
-                   daemonic_worker=None)
     
-    # Sanity check of logging directories
+def test_run_experiment():
+    run_experiment(worker_class=ExperimentWorker, master_class=ExperimentMaster, num_worker=10)
+    
     p = Path('./some path')
     assert p.exists()
     assert (p / 'configs.pkl').exists()

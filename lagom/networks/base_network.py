@@ -1,12 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
 
-import torch
-import torch.nn as nn
-from torch.nn.utils import vector_to_parameters, parameters_to_vector
+from .module import Module
 
 
-class BaseNetwork(nn.Module, ABC):
+class BaseNetwork(Module, ABC):
     r"""Base class for all neural networks. 
     
     Any neural network should subclass this class. 
@@ -15,6 +13,7 @@ class BaseNetwork(nn.Module, ABC):
     
     - :meth:`make_params`
     - :meth:`init_params`
+    - :meth:`reset`
     - :meth:`forward`
     
     Example::
@@ -53,22 +52,17 @@ class BaseNetwork(nn.Module, ABC):
             device (device): a PyTorch device for this network. 
             **kwargs: keyword arguments to specify the network. 
         """
-        super().__init__()
+        super(Module, self).__init__(**kwargs)
         
         self.config = config
         self.device = device
         
-        # Set all keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
-    
-        # Create all trainable parameters/layers
         self.make_params(self.config)
         
-        # Initialize all created parameters/layers
         self.init_params(self.config)
         
-        # Put all created parameters on the given device
+        self.reset(self.config)
+        
         self.to(self.device)
         
     @abstractmethod
@@ -95,50 +89,15 @@ class BaseNetwork(nn.Module, ABC):
             config (dict): a dictionary of configurations. 
         """
         pass
-        
-    @property
-    def num_params(self):
-        r"""Returns the total number of trainable parameters in the neural network."""
-        return sum(param.numel() for param in self.parameters() if param.requires_grad)
     
-    def save(self, f):
-        r"""Save the network parameters to a file. 
+    @abstractmethod
+    def reset(self, config, **kwargs):
+        r"""Reset the network.
         
-        It complies with the `recommended approach for saving a model in PyTorch documentation`_. 
-        
-        .. note::
-            It uses the highest pickle protocol to serialize the network parameters. 
+        For example, this can be used for resetting the hidden state for recurrent neural networks. 
         
         Args:
-            f (str): file path. 
-            
-        .. _recommended approach for saving a model in PyTorch documentation:
-            https://pytorch.org/docs/master/notes/serialization.html#best-practices
+            config (dict): a dictionary of configurations. 
+            **kwargs: keyword arguments to specify reset function. 
         """
-        import pickle
-        torch.save(self.state_dict(), f, pickle.HIGHEST_PROTOCOL)
-        
-    def load(self, f):
-        r"""Load the network parameters from a file. 
-        
-        It complies with the `recommended approach for saving a model in PyTorch documentation`_. 
-        
-        Args:
-            f (str): file path. 
-            
-        .. _recommended approach for saving a model in PyTorch documentation:
-            https://pytorch.org/docs/master/notes/serialization.html#best-practices
-        """
-        self.load_state_dict(torch.load(f))
-        
-    def to_vec(self):
-        r"""Returns the network parameters as a single flattened vector. """
-        return parameters_to_vector(parameters=self.parameters())
-    
-    def from_vec(self, x):
-        r"""Set the network parameters from a single flattened vector.
-        
-        Args:
-            x (Tensor): A single flattened vector of the network parameters with consistent size.
-        """
-        vector_to_parameters(vec=x, parameters=self.parameters())
+        pass

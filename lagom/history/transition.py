@@ -24,11 +24,10 @@ class Transition(object):
         """
         self.s = s
         self.a = a
-        self.r = float(r)  # ensure it is float for PyTorch compatibility. Often r from gym environment as scalar value. 
+        self.r = float(r)  # PyTorch compatibility
         self.s_next = s_next
         self.done = done
         
-        # Additional information
         self.info = {}
         
     def add_info(self, name, value):
@@ -50,23 +49,13 @@ class Transition(object):
         """    
         self.info[name] = value
         
-    @property
-    def V_s(self):
-        r"""Return the state value for the current state, i.e. :attr:`s`"""
-        return self.info['V_s']
-    
-    @property
-    def V_s_next(self):
-        r"""Return the state value for the next state, i.e. :attr:`s_next` 
+    def get_info(self, name):
+        r"""Returns the information given the name. 
         
-        .. note::
-        
-            Often it returns as Tensor dtype, it can be useful for backprop to train
-            value function. However, be cautious of handling the raw value e.g. calculate
-            bootstrapped returns, then zero value should be replaced when the next state 
-            is terminal state. 
+        Args:
+            name (str): name of the information
         """
-        return self.info['V_s_next']
+        return self.info[name]
     
     def __repr__(self):
-        return f'Transition: (s={self.s}, a={self.a}, r={self.r}, s_next={self.s_next}, done={self.done})'
+        return f'Transition: (s={self.s}, a={self.a}, r={self.r}, s_next={self.s_next}, done={self.done}, info={self.info})'

@@ -1,12 +1,17 @@
+from abc import ABC
+from abc import abstractmethod
+
 import torch
 
-from lagom.core.multiprocessing import BaseWorker
+from lagom.multiprocessing import MPWorker
+
+from .configurator import Configurator
 
 
-class BaseExperimentWorker(BaseWorker):
+class BaseExperimentWorker(MPWorker, ABC):
     r"""Base class for the worker of parallelized experiment. 
     
-    It executes the algorithm with the configuration and random seed which are distributed by the master. 
+    It executes the algorithm with a configuration, a random seed and PyTorch device distributed by the master. 
     
     .. note::
     
@@ -16,46 +21,52 @@ class BaseExperimentWorker(BaseWorker):
         by 6 workers. The GPU is chosen by the worker ID modulus total number of GPUs. In other words, the 
         workers iterate over all GPUs in rolling manner trying to use all GPUs exhaustively for maximal speedup. 
     
-    See :class:`BaseWorker` for more details about the workers.
+    See :class:`MPWorker` for more details about the workers.
     
     The subclass should implement at least the following:
 
+    - :meth:`prepare`
     - :meth:`make_algo`
     
     """
-    def prepare(self):
-        pass
-    
-    def work(self, master_cmd):
-        task_id, task, _worker_seed = master_cmd
-        # Do not use the worker seed
-        # Use seed packed inside task instead
+    def work(self, task):
+        task_id, task, use_chunk = task
         
-        # Unpack task
+        if use_chunk:
+            results = []
+            for one_task in task:
+                _, result = self.do_one_task(task_id, one_task)
+                results.append(result)
+                
+            return task_id, results
+        else:
+            return self.do_one_task(task_id, task)
+
+    def do_one_task(self, task_id, task):
         config, seed = task
-        
-        # Assign a GPU card for this task, rolling with total number of GPUs
-        # e.g. we have 30 tasks and 5 GPUs, then each GPU will be assigned with 6 tasks
-        if 'cuda' in config and config['cuda']:  # if using GPU
-            # Get total number of GPUs
-            num_gpu = torch.cuda.device_count()
-            # Compute which GPU to assign with rolling ID
-            device_id = task_id % num_gpu
-            # Assign the GPU device in PyTorch
-            torch.cuda.set_device(device_id)
-            # Create a device string
-            device_str = f'cuda:{device_id}'
-        else:  # not using CUDA, only CPU
-            device_str = 'cpu'
-        
-        # Instantiate an algorithm
+        device = self.make_device(config)
         algo = self.make_algo()
-        
-        # Run the algorithm with given configuration and seed, and device string
-        result = algo(config, seed, device_str=device_str)
-        
+
+        print(f'@ Seed for following configuration: {seed}')
+        Configurator.print_config(config)
+
+        result = algo(config, seed, device)
+
         return task_id, result
     
+    def make_device(self, config):
+        if 'cuda' in config and config['cuda']:
+            num_gpu = torch.cuda.device_count()
+            device_id = task_id % num_gpu
+            
+            torch.cuda.set_device(device_id)
+            device = torch.device(f'cuda:{device_id}')
+        else:
+            device = torch.device('cpu')
+            
+        return device
+    
+    @abstractmethod
     def make_algo(self):
         r"""Returns an instantiated object of an Algorithm class. 
         
@@ -64,4 +75,4 @@ class BaseExperimentWorker(BaseWorker):
         algo : BaseAlgorithm
             an instantiated object of an Algorithm class. 
         """
-        raise NotImplementedError
+        pass

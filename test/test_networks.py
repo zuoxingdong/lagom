@@ -6,14 +6,140 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from lagom.core.networks import BaseNetwork
-from lagom.core.networks import BaseRNN
-from lagom.core.networks import ortho_init
-from lagom.core.networks import make_fc
-from lagom.core.networks import make_cnn
-from lagom.core.networks import make_transposed_cnn
-from lagom.core.networks import make_rnncell
+from lagom.networks import BaseNetwork
+from lagom.networks import BaseRNN
+from lagom.networks import ortho_init
+from lagom.networks import make_fc
+from lagom.networks import make_cnn
+from lagom.networks import make_transposed_cnn
+from lagom.networks import make_rnncell
 
+
+class TestMakeBlocks(object):
+    def test_make_fc(self):
+        # Single layer
+        fc = make_fc(3, [4])
+        assert len(fc) == 1
+        
+        # Multiple layers
+        fc = make_fc(3, [4, 5, 6])
+        assert len(fc) == 3
+        
+        # Raise Exception
+        with pytest.raises(AssertionError):
+            make_fc(3, 4)
+            
+    def test_make_cnn(self):
+        # Single layer
+        cnn = make_cnn(input_channel=3, channels=[16], kernels=[4], strides=[2], paddings=[1])
+        assert len(cnn) == 1
+        
+        # Multiple layers
+        cnn = make_cnn(input_channel=3, channels=[16, 32, 64], kernels=[4, 3, 3], strides=[2, 1, 1], paddings=[2, 1, 0])
+        assert len(cnn) == 3
+        
+        # Raise Exception
+        with pytest.raises(AssertionError):
+            # Non-list
+            make_cnn(input_channel=3, channels=[16], kernels=4, strides=[2], paddings=[1])
+        with pytest.raises(AssertionError):
+            # Inconsistent length
+            make_cnn(input_channel=3, channels=[16], kernels=[4, 2], strides=[2], paddings=[1])
+            
+    def test_make_transposed_cnn(self):
+        # Single layer
+        transposed_cnn = make_transposed_cnn(input_channel=3, 
+                                             channels=[16], 
+                                             kernels=[4], 
+                                             strides=[2], 
+                                             paddings=[1], 
+                                             output_paddings=[1])
+        assert len(transposed_cnn) == 1
+        
+        # Multiple layers
+        transposed_cnn = make_transposed_cnn(input_channel=3, 
+                                     channels=[16, 32, 64], 
+                                     kernels=[4, 3, 3], 
+                                     strides=[2, 1, 1], 
+                                     paddings=[2, 1, 0],
+                                     output_paddings=[3, 1, 0])
+        assert len(transposed_cnn) == 3
+        
+        # Raise Exception
+        with pytest.raises(AssertionError):
+            # Non-list
+            make_transposed_cnn(input_channel=3, 
+                                channels=[16], 
+                                kernels=[4], 
+                                strides=2, 
+                                paddings=[1], 
+                                output_paddings=[1])
+        with pytest.raises(AssertionError):
+            # Inconsistent length
+            make_transposed_cnn(input_channel=3, 
+                                channels=[16], 
+                                kernels=[4], 
+                                strides=[2, 1], 
+                                paddings=[1], 
+                                output_paddings=[1])
+    
+    @pytest.mark.parametrize('cell_type', ['RNNCell', 'LSTMCell', 'GRUCell'])
+    def test_make_rnncell(self, cell_type):
+        # Single layer
+        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16])
+        assert isinstance(rnn, nn.ModuleList)
+        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
+        assert len(rnn) == 1
+        
+        # Multiple layers
+        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16, 32])
+        assert isinstance(rnn, nn.ModuleList)
+        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
+        assert len(rnn) == 2
+        
+        # Raise exceptions
+        with pytest.raises(ValueError):  # non-defined rnn cell type
+            make_rnncell('randomrnn', 3, [16])
+        with pytest.raises(AssertionError):  # non-list hidden sizes
+            make_rnncell(cell_type, 3, 16)
+
+
+class TestInit(object):
+    def test_ortho_init(self):
+        # Linear
+        a = nn.Linear(2, 3)
+        ortho_init(a, weight_scale=1000., constant_bias=10.)
+        assert a.weight.max().item() > 100.
+        assert np.allclose(a.bias.detach().numpy(), 10.)
+        ortho_init(a, nonlinearity='relu')
+        
+        # Conv2d
+        a = nn.Conv2d(2, 3, 3)
+        ortho_init(a, weight_scale=1000., constant_bias=10.)
+        assert a.weight.max().item() > 100.
+        assert np.allclose(a.bias.detach().numpy(), 10.)
+        ortho_init(a, nonlinearity='relu')
+        
+        # LSTM
+        a = nn.LSTM(2, 3, 2)
+        ortho_init(a, weight_scale=1000., constant_bias=10.)
+        assert a.weight_hh_l0.max().item() > 100.
+        assert a.weight_hh_l1.max().item() > 100.
+        assert a.weight_ih_l0.max().item() > 100.
+        assert a.weight_ih_l1.max().item() > 100.
+        assert np.allclose(a.bias_hh_l0.detach().numpy(), 10.)
+        assert np.allclose(a.bias_hh_l1.detach().numpy(), 10.)
+        assert np.allclose(a.bias_ih_l0.detach().numpy(), 10.)
+        assert np.allclose(a.bias_ih_l1.detach().numpy(), 10.)
+        
+        # LSTMCell
+        a = nn.LSTMCell(3, 2)
+        ortho_init(a, weight_scale=1000., constant_bias=10.)
+        assert a.weight_hh.max().item() > 100.
+        assert a.weight_ih.max().item() > 100.
+        assert np.allclose(a.bias_hh.detach().numpy(), 10.)
+        assert np.allclose(a.bias_ih.detach().numpy(), 10.)
+            
 
 class Network(BaseNetwork):
     def make_params(self, config):
@@ -35,12 +161,13 @@ class Network(BaseNetwork):
         
         return x
     
+    def reset(self, config, **kwargs):
+        pass
+    
     
 class LSTM(BaseRNN):
     def make_params(self, config):
         self.rnn = nn.LSTMCell(input_size=10, hidden_size=20)
-        
-        self.last_feature_dim = 20
         
     def init_params(self, config):
         ortho_init(self.rnn, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
@@ -64,6 +191,9 @@ class LSTM(BaseRNN):
         out = {'output': h, 'hidden_states': [h, c]}
         
         return out
+    
+    def reset(self, config, **kwargs):
+        pass
     
     
 class TestBaseNetwork(object):
@@ -178,127 +308,7 @@ class TestBaseRNN(object):
         assert np.allclose(net.to_vec().detach().numpy(), 1.0)
 
 
-class TestInit(object):
-    def test_ortho_init(self):
-        # Linear
-        a = nn.Linear(2, 3)
-        ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight.max().item() > 100.
-        assert np.allclose(a.bias.detach().numpy(), 10.)
-        ortho_init(a, nonlinearity='relu')
-        
-        # Conv2d
-        a = nn.Conv2d(2, 3, 3)
-        ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight.max().item() > 100.
-        assert np.allclose(a.bias.detach().numpy(), 10.)
-        ortho_init(a, nonlinearity='relu')
-        
-        # LSTM
-        a = nn.LSTM(2, 3, 2)
-        ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight_hh_l0.max().item() > 100.
-        assert a.weight_hh_l1.max().item() > 100.
-        assert a.weight_ih_l0.max().item() > 100.
-        assert a.weight_ih_l1.max().item() > 100.
-        assert np.allclose(a.bias_hh_l0.detach().numpy(), 10.)
-        assert np.allclose(a.bias_hh_l1.detach().numpy(), 10.)
-        assert np.allclose(a.bias_ih_l0.detach().numpy(), 10.)
-        assert np.allclose(a.bias_ih_l1.detach().numpy(), 10.)
-        
-        # LSTMCell
-        a = nn.LSTMCell(3, 2)
-        ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight_hh.max().item() > 100.
-        assert a.weight_ih.max().item() > 100.
-        assert np.allclose(a.bias_hh.detach().numpy(), 10.)
-        assert np.allclose(a.bias_ih.detach().numpy(), 10.)
+
 
         
-class TestMakeBlocks(object):
-    def test_make_fc(self):
-        # Single layer
-        fc = make_fc(3, [4])
-        assert len(fc) == 1
-        
-        # Multiple layers
-        fc = make_fc(3, [4, 5, 6])
-        assert len(fc) == 3
-        
-        # Raise Exception
-        with pytest.raises(AssertionError):
-            make_fc(3, 4)
-            
-    def test_make_cnn(self):
-        # Single layer
-        cnn = make_cnn(input_channel=3, channels=[16], kernels=[4], strides=[2], paddings=[1])
-        assert len(cnn) == 1
-        
-        # Multiple layers
-        cnn = make_cnn(input_channel=3, channels=[16, 32, 64], kernels=[4, 3, 3], strides=[2, 1, 1], paddings=[2, 1, 0])
-        assert len(cnn) == 3
-        
-        # Raise Exception
-        with pytest.raises(AssertionError):
-            # Non-list
-            make_cnn(input_channel=3, channels=[16], kernels=4, strides=[2], paddings=[1])
-        with pytest.raises(AssertionError):
-            # Inconsistent length
-            make_cnn(input_channel=3, channels=[16], kernels=[4, 2], strides=[2], paddings=[1])
-            
-    def test_make_transposed_cnn(self):
-        # Single layer
-        transposed_cnn = make_transposed_cnn(input_channel=3, 
-                                             channels=[16], 
-                                             kernels=[4], 
-                                             strides=[2], 
-                                             paddings=[1], 
-                                             output_paddings=[1])
-        assert len(transposed_cnn) == 1
-        
-        # Multiple layers
-        transposed_cnn = make_transposed_cnn(input_channel=3, 
-                                     channels=[16, 32, 64], 
-                                     kernels=[4, 3, 3], 
-                                     strides=[2, 1, 1], 
-                                     paddings=[2, 1, 0],
-                                     output_paddings=[3, 1, 0])
-        assert len(transposed_cnn) == 3
-        
-        # Raise Exception
-        with pytest.raises(AssertionError):
-            # Non-list
-            make_transposed_cnn(input_channel=3, 
-                                channels=[16], 
-                                kernels=[4], 
-                                strides=2, 
-                                paddings=[1], 
-                                output_paddings=[1])
-        with pytest.raises(AssertionError):
-            # Inconsistent length
-            make_transposed_cnn(input_channel=3, 
-                                channels=[16], 
-                                kernels=[4], 
-                                strides=[2, 1], 
-                                paddings=[1], 
-                                output_paddings=[1])
-    
-    @pytest.mark.parametrize('cell_type', ['RNNCell', 'LSTMCell', 'GRUCell'])
-    def test_make_rnncell(self, cell_type):
-        # Single layer
-        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16])
-        assert isinstance(rnn, nn.ModuleList)
-        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
-        assert len(rnn) == 1
-        
-        # Multiple layers
-        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16, 32])
-        assert isinstance(rnn, nn.ModuleList)
-        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
-        assert len(rnn) == 2
-        
-        # Raise exceptions
-        with pytest.raises(ValueError):  # non-defined rnn cell type
-            make_rnncell('randomrnn', 3, [16])
-        with pytest.raises(AssertionError):  # non-list hidden sizes
-            make_rnncell(cell_type, 3, 16)
+
