@@ -1,12 +1,13 @@
 from abc import ABC
 from abc import abstractmethod
 
-from lagom.core.networks import BaseRNN
+from lagom.networks import Module
+from lagom.networks import BaseRNN
 
 from lagom.envs.vec_env import VecEnv
 
 
-class BasePolicy(ABC):
+class BasePolicy(Module, ABC):
     r"""Base class for all policies.
     
     Any policy should subclass this class.
@@ -21,28 +22,54 @@ class BasePolicy(ABC):
         policies should deal with VecEnv (batched data).
     
     """
-    def __init__(self, config, network, env_spec, device, **kwargs):
+    def __init__(self, config, env_spec, device, **kwargs):
         r"""Initialize the policy. 
         
         Args:
             config (dict): A dictionary of configurations. 
-            network (BaseNetwork): a neural network as function approximator in the policy. 
             env_spec (EnvSpec): environment specification. 
             device (device): a PyTorch device for this policy. 
             **kwargs: keyword arguments to specify the policy. 
         """
+        super(Module, self).__init__(**kwargs)
+        
         self.config = config
-        self.network = network
         self._env_spec = env_spec
         self.device = device
         
         msg = f'expected type VecEnv, got {type(self.env_spec.env)}'
         assert isinstance(self.env_spec.env, VecEnv), msg
         
-        # Set all keyword arguments
-        for key, val in kwargs.items():
-            self.__setattr__(key, val)
+        self.make_networks(self.config)
+    
+    @abstractmethod
+    def make_networks(self, config):
+        r"""Create all network modules for the policy.
         
+        For example, this allows to easily create separate value network or probabilistic action head. 
+        
+        .. note::
+        
+            All created networks must be assigned as a class attributes to be automatically
+            tracked. e.g. ``self.fc = nn.Linear(3, 2)``. 
+        
+        Args:
+            config (dict): a dictionary of configurations. 
+        """
+        pass
+    
+    @abstractmethod
+    def reset(self, config, **kwargs):
+        r"""Reset the policy.
+        
+        For example, this can be used for resetting the hidden state for recurrent neural networks. 
+        
+        Args:
+            config (dict): a dictionary of configurations. 
+            **kwargs: keyword arguments to specify reset function. 
+        """
+        pass
+
     @abstractmethod
     def __call__(self, x, out_keys=['action'], info={}, **kwargs):
         r"""Define the computation of the policy given input data at every call. 
@@ -89,34 +116,15 @@ class BasePolicy(ABC):
         return self.env_spec.action_space
     
     @property
+    @abstractmethod
     def recurrent(self):
         r"""Returns whether the policy is recurrent. """
-        if isinstance(self.network, BaseRNN):
-            return True
-        else:
-            return False
-    
-    def reset_rnn_states(self, batch_size=None):
-        r"""Reset the current RNN states. """
-        if batch_size is None:
-            batch_size = self.env_spec.num_env
-            
-        if self.recurrent:
-            self.rnn_states = self.network.init_hidden_states(config=self.config, batch_size=batch_size)
-        else:
-            raise TypeError('the network must be BaseRNN type. ')
-            
-    def update_rnn_states(self, rnn_states):
-        r"""Update the current RNN states. """
-        if self.recurrent:
-            self.rnn_states = rnn_states
-        else:
-            raise TypeError('the network must be BaseRNN type. ')
+        pass
         
     def __repr__(self):
         r"""Returns a string representation of the policy network. """
         string = self.__class__.__name__
-        string += f'\n\tNetwork: {self.network.__repr__()}'
+        string += f'\n\tEnvSpec: {self.env_spec}'
         string += f'\n\tRecurrent: {self.recurrent}'
         
         return string

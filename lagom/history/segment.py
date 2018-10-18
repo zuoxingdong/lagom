@@ -59,6 +59,16 @@ class Segment(BaseHistory):
         store the rolling episodic transitions into several segments. 
         
         For history containing transitions from a single episode, it is recommended to use :class:`Trajectory` instead.
+        
+        
+    Internally, it maintains a list of :class:`Trajectory` objects for each sub-segment of 
+    episodic transitions. Each call of :meth:`add_transition` will add the transition to the 
+    last Trajectory, when an episode terminates, a new :class:`Trajectory` will be created 
+    and appended to the trajectory list. 
+    The :meth:`transitions` will iterate over all transitions for each Trajectory object. 
+    This might degrade the runtime speed but much easier to maintain the code and to add
+    new functionality simply in :class:`Trajectory`. This will also reduce the risk of bugs
+    because often the computations with segments alone are quite complicated. 
     
     Example::
     
@@ -120,28 +130,11 @@ class Segment(BaseHistory):
         [-79.0, -198.0, -257.0, -346.0]
         
     """
-    def __init__(self, gamma):
-        r"""Initialize the segment of transitions. 
-        
-        .. note::
-        
-            Internally, it maintains a list of :class:`Trajectory` objects for each sub-segment of 
-            episodic transitions. Each call of :meth:`add_transition` will add the transition to the 
-            last Trajectory, when an episode terminates, a new :class:`Trajectory` will be created 
-            and appended to the trajectory list. 
-            The :meth:`transitions` will iterate over all transitions for each Trajectory object. 
-            This might degrade the runtime speed but much easier to maintain the code and to add
-            new functionality simply in :class:`Trajectory`. This will also reduce the risk of bugs
-            because often the computations with segments alone are quite complicated. 
-        
-        Args:
-            gamme (float): discount factor. 
-        """
-        self.gamma = gamma
+    def __init__(self):
         self.info = {}
         
-        # Create trajectory buffer
-        self.trajectories = [Trajectory(gamma=self.gamma)]
+        # Trajectory buffer
+        self.trajectories = [Trajectory()]
         
     @property
     def transitions(self):
@@ -161,70 +154,26 @@ class Segment(BaseHistory):
     def add_transition(self, transition):
         # If last transition terminates the last trajectory, then create and append a new Trajectory object
         if self.trajectories[-1].T > 0 and self.trajectories[-1].transitions[-1].done:
-            self.trajectories.append(Trajectory(gamma=self.gamma))
-        # Override the method, add transition to the last sub-trajectory
+            self.trajectories.append(Trajectory())
+        # add transition to last trajectory
         self.trajectories[-1].add_transition(transition)
         
     @property
     def all_s(self):
         all_s, all_final = zip(*[trajectory.all_s for trajectory in self.trajectories])
         
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
         all_s = list(chain.from_iterable(all_s))
         
         return all_s, all_final
     
     @property
     def all_returns(self):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
         out = list(chain.from_iterable([trajectory.all_returns for trajectory in self.trajectories]))
         
         return out
 
-    @property
-    def all_discounted_returns(self):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_discounted_returns for trajectory in self.trajectories]
-        out = list(chain.from_iterable(out))
-        
-        return out
-    
-    @property
-    def all_bootstrapped_returns(self):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_bootstrapped_returns for trajectory in self.trajectories]
-        out = list(chain.from_iterable(out))
-        
-        return out
-    
-    @property
-    def all_bootstrapped_discounted_returns(self):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_bootstrapped_discounted_returns for trajectory in self.trajectories]
-        out = list(chain.from_iterable(out))
-        
-        return out
-    
-    @property
-    def all_V(self):
-        out, all_final = zip(*[trajectory.all_V for trajectory in self.trajectories])
-        
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = list(chain.from_iterable(out))
-        
-        return out, all_final
-    
-    @property
-    def all_TD(self):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_TD for trajectory in self.trajectories]
-        out = list(chain.from_iterable(out))
-        
-        return out
-
-    def all_GAE(self, gae_lambda):
-        # Use itertools.chain().from_iterable, similar reason with doc in `transitions(self)`
-        out = [trajectory.all_GAE(gae_lambda) for trajectory in self.trajectories]
+    def all_discounted_returns(self, gamma):
+        out = [trajectory.all_discounted_returns(gamma) for trajectory in self.trajectories]
         out = list(chain.from_iterable(out))
         
         return out

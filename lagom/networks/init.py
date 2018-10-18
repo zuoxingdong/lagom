@@ -25,15 +25,12 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         >>> ortho_init(a)
     
     """
-    # Get the gain (scaling factor)
-    if nonlinearity is not None:  # based on nonlinearity
+    if nonlinearity is not None:
         gain = nn.init.calculate_gain(nonlinearity)
-    else:  # user provided
+    else:
         gain = weight_scale
         
-    # Initialization
     if isinstance(module, (nn.RNNBase, rnn.RNNCellBase)):
-        # Iterate over named parameters
         for name, param in module.named_parameters():
             if 'weight_' in name:
                 nn.init.orthogonal_(param, gain=gain)

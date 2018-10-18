@@ -1,7 +1,10 @@
+from abc import ABC
+from abc import abstractmethod
+
 from lagom.envs.vec_env import VecEnv
 
 
-class BaseRunner(object):
+class BaseRunner(ABC):
     r"""Base class for all runners.
     
     Any runner should subclass this class. 
@@ -17,20 +20,24 @@ class BaseRunner(object):
         And the collected data should use either :class:`Trajectory` or :class:`Segment`. 
         
     """
-    def __init__(self, agent, env, gamma):
+    def __init__(self, config, agent, env):
         r"""Initialize the runner. 
         
         Args:
+            config (dict): a dictionary of configurations. 
             agent (BaseAgent): agent
             env (VecEnv): VecEnv type of environment
-            gamma (float): discount factor
         """
-        assert isinstance(env, VecEnv), f'expected VecEnv, got {type(env)}'
-        
+        self.config = config
         self.agent = agent
         self.env = env
-        self.gamma = gamma
+        assert isinstance(env, VecEnv), f'expected VecEnv, got {type(env)}'
         
-    def __call__(self, N, T):
-        r"""Run the agent in the environment and collect all necessary interaction data as a batch. """
-        raise NotImplementedError
+    @abstractmethod
+    def __call__(self, T):
+        r"""Run the agent in the environment and collect all necessary interaction data as a batch. 
+        
+        Args:
+            T (int): number of time steps
+        """
+        pass

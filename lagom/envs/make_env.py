@@ -1,7 +1,7 @@
 import gym
 from gym.wrappers import Monitor
 
-from lagom import Seeder
+from lagom.utils import Seeder
 from .wrappers import GymWrapper
 
 from functools import partial  # argument-free functions

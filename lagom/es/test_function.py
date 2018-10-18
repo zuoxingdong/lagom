@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def rastrigin(self, x):
+def rastrigin(x):
     # Search domain: [-5.12, 5.12]
     A = 10
     y = A*len(x)
@@ -11,7 +11,7 @@ def rastrigin(self, x):
     return y
 
 
-def sphere(self, x):
+def sphere(x):
     # Search domain: [-1000, 1000]
     y = 0.0
     for x_part in x:
@@ -20,7 +20,7 @@ def sphere(self, x):
     return y
 
 
-def holder_table(self, x):
+def holder_table(x):
     # Search domain: [-10, 10]
     x, y = x
 
@@ -29,7 +29,7 @@ def holder_table(self, x):
     return y
 
 
-def styblinski_tang(self, x):
+def styblinski_tang(x):
     # Search domain: [-5, 5]
     y = 0.0
     for x_part in x:

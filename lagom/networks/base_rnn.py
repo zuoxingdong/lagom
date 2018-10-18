@@ -20,6 +20,7 @@ class BaseRNN(BaseNetwork, ABC):
     - :meth:`init_params`
     - :meth:`init_hidden_states`
     - :meth:`rnn_forward`
+    - :meth:`reset`
     
     Example::
     
@@ -86,6 +87,10 @@ class BaseRNN(BaseNetwork, ABC):
         out : dict
             a dictionary of forward pass output, possible keys ['output', 'hidden_states']
         """
+        pass
+    
+    @abstractmethod
+    def reset(self, config):
         pass
         
     def forward(self, x, hidden_states, mask=None, **kwargs):
