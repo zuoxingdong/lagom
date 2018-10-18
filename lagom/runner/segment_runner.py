@@ -59,8 +59,8 @@ class SegmentRunner(BaseRunner):
             Transition: (s=[-0.00263564 -0.57583997 -0.0114827   0.88561464], a=0, r=1.0, s_next=[-0.01415244 -0.77080416  0.00622959  1.17466581], done=False)]
         
     """
-    def __init__(self, agent, env, gamma):
-        super().__init__(agent=agent, env=env, gamma=gamma)
+    def __init__(self, config, agent, env):
+        super().__init__(config, agent, env)
         assert self.env.rolling, 'SegmentRunner must use rolling VecEnv'
         
         self.obs_buffer = None  # for next call
@@ -84,68 +84,44 @@ class SegmentRunner(BaseRunner):
         -------
         D : list
             a list of collected :class:`Segment`
-        """ 
-        # Initialize all Segment for each environment
-        D = [Segment(gamma=self.gamma) for _ in range(self.env.num_env)]
+        """
+        D = [Segment() for _ in range(self.env.num_env)]
         
-        # Reset the environment and returns initial state if reset=True or first time call
+        # Reset environment if reset=True or first time call
         if self.obs_buffer is None or reset:
             self.obs_buffer = self.env.reset()
             self.done_buffer = [False]*self.env.num_env
-            # Inform agent to reset RNN states (if valid)
-            self.agent.update_info('reset_rnn_states', True)  # turn it off after reset
             
-        for t in range(T):  # Iterate over the number of time steps
-            # Action selection by the agent (handles batched data)
-            if any(self.done_buffer):  # at least one episode renewed, so use masking
+            # reset agent: e.g. RNN states because initial observation
+            self.agent.reset(self.config)
+            
+        for t in range(T):
+            if any(self.done_buffer):
                 info = {'mask': self.done_buffer}
-            else:  # no termination happen previously, so do it normally
+            else:
                 info = {}
             
             out_agent = self.agent.choose_action(self.obs_buffer, info=info)
             
-            # Unpack action
-            action = out_agent.pop('action')  # pop-out
-            # Get raw action if Tensor dtype for feeding the environment
+            action = out_agent.pop('action')
             if torch.is_tensor(action):
                 raw_action = list(action.detach().cpu().numpy())
-            else:  # Non Tensor action, e.g. from RandomAgent
+            else:
                 raw_action = action
-                
-            # Unpack state value if available
-            state_value = out_agent.pop('state_value', None)
             
-            # Execute the action in the environment
             obs_next, reward, done, info = self.env.step(raw_action)
-            # Update done buffer
             self.done_buffer = done
             
-            # One more forward pass to get state value for V_s_next if required
-            if state_value is not None and any(done):  # require state value and at least one done=True
-                list_V_s_next = self.agent.choose_action(obs_next, 
-                                                         info={'rnn_state_no_update': True})['state_value']
-            
-            # Iterate over all Segments to add data of transitions
             for i, segment in enumerate(D):
-                # Create and record a Transition
-                # Retrieve the corresponding values for each Segment
                 transition = Transition(s=self.obs_buffer[i], 
                                         a=action[i], 
                                         r=reward[i], 
                                         s_next=obs_next[i], 
                                         done=done[i])
                 
-                # Record state value if available
-                if state_value is not None:
-                    transition.add_info('V_s', state_value[i])
-                    if done[i]:  # add terminal state value
-                        transition.add_info('V_s_next', list_V_s_next[i])
-                
-                # Record additional information from out_agent to transitions
-                # Note that 'action' and 'state_value' already poped out
+                # Record additional information
                 [transition.add_info(key, val[i]) for key, val in out_agent.items()]
             
-                # Add transition to Segment
                 segment.add_transition(transition)
             
             # Update self.obs_buffer as obs_next for next iteration to feed into agent
@@ -156,13 +132,5 @@ class SegmentRunner(BaseRunner):
                     self.obs_buffer[k] = info[k]['init_observation']
                 else:  # non-terminal, continue with obs_next
                     self.obs_buffer[k] = obs_next[k]
-
-        # Calculate last state value: use `obs_next` not `obs_buffer`, because latter might contain initial observation
-        if state_value is not None:
-            list_V_s_next = self.agent.choose_action(obs_next, 
-                                                     info={'rnn_state_no_update': True})['state_value']
-            for i, segment in enumerate(D):  # check each segment
-                if 'V_s_next' not in segment.transitions[-1].info:  # missing last state value
-                    segment.transitions[-1].add_info('V_s_next', list_V_s_next[i])
 
         return D

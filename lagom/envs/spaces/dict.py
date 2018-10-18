@@ -16,10 +16,8 @@ class Dict(Space):
     
         >>> from lagom.envs.spaces import Discrete, Box
         >>> space = Dict({'position': Discrete(2), 'velocity': Box(-1.0, 1.0, np.float32, shape=(1, 2))})
-space
         >>> space
         Dict('position: Discrete(2)', 'velocity: Box(1, 2)')
-        
         >>> space.sample()
         {'position': 0, 'velocity': array([[-0.91862124,  0.08054964]], dtype=float32)}
         
@@ -29,7 +27,6 @@ space
         >>> space = Dict({'sensors': sensor_space, 'score': Discrete(100)})
         >>> space
         Dict("sensors: Dict('position: Box(3,)', 'velocity: Box(3,)')", 'score: Discrete(100)')
-        
         >>> space.sample()
         {'sensors': {'position': array([-43.369488, -24.831665, -22.616478], dtype=float32),
           'velocity': array([0.9381505 , 0.35863736, 0.786181  ], dtype=float32)},
