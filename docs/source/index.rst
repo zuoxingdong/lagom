@@ -59,11 +59,20 @@ A graphical illustration is coming soon.
     lagom
     lagom.agents <agents>
     lagom.contrib <contrib>
-    lagom.core <core>
     lagom.engine <engine>
     lagom.envs <envs>
+    lagom.es <es>
     lagom.experiment <experiment>
+    lagom.history <history>
+    lagom.memory <memory>
+    lagom.multiprocessing <multiprocessing>
+    lagom.networks <networks>
+    lagom.policies <policies>
     lagom.runner <runner>
+    lagom.transform <transform>
+    lagom.value_functions <value_functions>
+    lagom.vis <vis>
+    lagom.utils <utils>
 
 Indices and tables
 ==================

@@ -4,10 +4,21 @@ lagom.networks: Networks
 .. automodule:: lagom.networks
 .. currentmodule:: lagom.networks
 
-.. autofunction:: ortho_init
+.. autoclass:: Module
+    :members:
 
 .. autoclass:: BaseNetwork
     :members:
+
+.. autoclass:: BaseRNN
+    :members:
+
+.. autoclass:: LayerNormLSTMCell
+    :members:
+
+.. autofunction:: ortho_init
+
+.. autofunction:: linear_lr_scheduler
     
 .. autofunction:: make_fc
 
@@ -16,15 +27,3 @@ lagom.networks: Networks
 .. autofunction:: make_transposed_cnn
 
 .. autofunction:: make_rnncell
-        
-.. autoclass:: BaseMDN
-    :members:
-    
-.. autoclass:: BaseVAE
-    :members:
-    
-.. autoclass:: BaseRNN
-    :members:
-    
-.. autoclass:: LayerNormLSTMCell
-    :members:
