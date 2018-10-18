@@ -10,6 +10,7 @@ class StateValueHead(BaseNetwork):
     
     Example:
     
+        >>> import torch
         >>> value_head = StateValueHead(None, None, 30)
         >>> value_head(torch.randn(3, 30))
         tensor([[ 0.2689],

@@ -13,6 +13,7 @@ class CategoricalHead(BaseNetwork):
     
     Example::
     
+        >>> import torch
         >>> from lagom.envs import make_gym_env, EnvSpec
         >>> env = make_gym_env('CartPole-v1', 0)
         >>> env_spec = EnvSpec(env)
@@ -29,11 +30,9 @@ class CategoricalHead(BaseNetwork):
         
         super().__init__(config, device, **kwargs)
         
-        
     def make_params(self, config):
         self.action_head = nn.Linear(in_features=self.feature_dim, 
                                      out_features=self.env_spec.action_space.flat_dim)
-        
         
     def init_params(self, config):
         # 0.01->uniformly distributed

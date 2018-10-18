@@ -44,7 +44,7 @@ class BaseExperimentWorker(MPWorker, ABC):
 
     def do_one_task(self, task_id, task):
         config, seed = task
-        device = self.make_device(config)
+        device = self.make_device(config, task_id)
         algo = self.make_algo()
 
         print(f'@ Seed for following configuration: {seed}')
@@ -54,7 +54,7 @@ class BaseExperimentWorker(MPWorker, ABC):
 
         return task_id, result
     
-    def make_device(self, config):
+    def make_device(self, config, task_id):
         if 'cuda' in config and config['cuda']:
             num_gpu = torch.cuda.device_count()
             device_id = task_id % num_gpu
