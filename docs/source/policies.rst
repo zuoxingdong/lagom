@@ -10,8 +10,10 @@ lagom.policies: Policies
 .. autoclass:: RandomPolicy
     :members:
     
-.. autoclass:: CategoricalPolicy
+.. autoclass:: CategoricalHead
     :members:
     
-.. autoclass:: GaussianPolicy
+.. autoclass:: DiagGaussianHead
     :members:
+    
+.. autofunction:: constraint_action

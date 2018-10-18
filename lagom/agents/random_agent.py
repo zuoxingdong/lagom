@@ -2,12 +2,7 @@ from .base_agent import BaseAgent
 
 
 class RandomAgent(BaseAgent):
-    r"""A random agent samples action uniformly from action space. 
-    
-    Example::
-    
-    
-    """
+    r"""A random agent samples action uniformly from action space. """
     def __init__(self, config, env_spec):
         super().__init__(config, env_spec, None)
         
