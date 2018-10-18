@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector

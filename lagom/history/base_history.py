@@ -118,7 +118,6 @@ class BaseHistory(ABC):
         """
         pass
         
-    
     def all_info(self, name):
         r"""Return the specified information from all transitions.
         
