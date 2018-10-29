@@ -1,4 +1,4 @@
-from .base_es import BaseES
+from lagom.es import BaseES
 
 
 class CMAES(BaseES):
