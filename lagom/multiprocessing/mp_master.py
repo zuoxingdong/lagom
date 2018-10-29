@@ -59,7 +59,7 @@ class MPMaster(BaseMaster, ABC):
         
         self.list_process = [Process(target=self.worker_class(),
                                      args=[master_conn, worker_conn], 
-                                     daemon=True)  # if main process crashes, we should not cause things to hang.
+                                     daemon=False)  # daemonic process not allow to have children
                              for master_conn, worker_conn in zip(self.master_conns, self.worker_conns)]
         
         [process.start() for process in self.list_process]

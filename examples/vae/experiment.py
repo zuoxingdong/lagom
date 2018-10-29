@@ -6,8 +6,12 @@ from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
+    def prepare(self):
+        pass
+        
+    
     def make_algo(self):
-        algo = Algorithm(name='VAE on MNIST')
+        algo = Algorithm()
         
         return algo
 
@@ -37,5 +41,5 @@ class ExperimentMaster(BaseExperimentMaster):
         
         return list_seed
     
-    def process_algo_result(self, config, seed, result):
-        assert result is None
+    def process_results(self, results):
+        assert all([result is None for result in results])
