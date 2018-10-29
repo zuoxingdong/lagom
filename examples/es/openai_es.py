@@ -3,10 +3,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 
-from .base_es import BaseES
+from lagom.es import BaseES
 
-from lagom.core.transform import Standardize
-from lagom.core.transform import RankTransform
+from lagom.transform import Standardize
+from lagom.transform import RankTransform
 
 
 class OpenAIES(BaseES):
@@ -58,7 +58,6 @@ class OpenAIES(BaseES):
         if self.rank_transform:
             self.rank_transformer = RankTransform()
         
-        # Some other settings
         self.num_params = self.mu0.size
         self.mu = torch.from_numpy(self.mu0).float()
         self.mu.requires_grad = True  # requires gradient for optimizer to update
@@ -97,7 +96,6 @@ class OpenAIES(BaseES):
             # Use centered ranks instead of raw values, combat with outliers. 
             function_values = self.rank_transformer(function_values, centered=True)
             
-        # Make some results
         # Sort function values and select the minimum, since we are minimizing the objective. 
         idx = np.argsort(function_values)[0]  # argsort is in ascending order
         self.best_param = solutions[idx]
@@ -114,18 +112,14 @@ class OpenAIES(BaseES):
         # Compute gradient from original paper
         # Enforce fitness as Gaussian distributed, here we use centered ranks
         standardize = Standardize()
-        F = standardize(function_values)
+        F = standardize(function_values, -1)
         # Compute gradient, F:[popsize], eps: [popsize, num_params]
         grad = (1/self.std)*np.mean(np.expand_dims(F, 1)*self.eps, axis=0)
         grad = torch.from_numpy(grad).float()
-        # Update the gradient to mu
         self.mu.grad = grad
-        # Decay learning rate with lr scheduler
         self.lr_scheduler.step()
-        # Take a gradient step
         self.optimizer.step()
         
-        # Adaptive std
         if self.std > self.min_std:
             self.std = self.std_decay*self.std
         
