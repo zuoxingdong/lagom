@@ -39,14 +39,6 @@ class Module(nn.Module):
         """
         vector_to_parameters(vec=x, parameters=self.parameters())
     
-    def train(self):
-        r"""Sets the module in training mode. """
-        super().train()
-        
-    def eval(self):
-        r"""Sets the module in evaluation mode"""
-        super().eval()
-    
     def save(self, f):
         r"""Save the network parameters to a file. 
         
