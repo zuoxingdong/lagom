@@ -49,13 +49,15 @@ class ESWorker(BaseESWorker):
                                       constant_reward_std=None)
         self.env_spec = EnvSpec(self.env)
         
-        self.agent = Agent(config, self.env_spec, None)
+        self.device = torch.device('cpu')
+            
+        self.agent = Agent(config, self.env_spec, self.device)
     
     def f(self, config, solution):
         if self.agent is None:
             self._prepare(config)
             
-        solution = torch.from_numpy(np.asarray(solution)).float()
+        solution = torch.from_numpy(np.asarray(solution)).float().to(self.device)
         assert solution.numel() == self.agent.num_params
         
         # Load solution params to agent
@@ -93,7 +95,7 @@ class ESMaster(BaseESMaster):
                           popsize=self.config['es.popsize'], 
                           std_decay=0.999,
                           min_std=0.01, 
-                          lr=5e-2, 
+                          lr=1e-1, 
                           lr_decay=0.99, 
                           min_lr=1e-3, 
                           antithetic=True, 
