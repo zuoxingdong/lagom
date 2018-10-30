@@ -1,106 +1,94 @@
 from pathlib import Path
 
 import numpy as np
-
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 from lagom import Logger
+from lagom.utils import pickle_dump
+from lagom.utils import set_global_seeds
+
+from lagom.es import BaseESMaster
+from lagom.es import BaseESWorker
+
+from lagom import BaseAlgorithm
 
 from lagom.envs import make_gym_env
 from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
-from lagom.envs.vec_env import ParallelVecEnv
+from lagom.envs.vec_env import VecStandardize
+
 from lagom.runner import TrajectoryRunner
 
-from lagom.core.policies import CategoricalPolicy
-from lagom.core.policies import GaussianPolicy
-
-from lagom.core.es import CMAES
-from lagom.core.es import OpenAIES
-
-from lagom.core.es import BaseESWorker
-from lagom.core.es import BaseESMaster
-
-from lagom import set_global_seeds
-from lagom import BaseAlgorithm
-
-from lagom import pickle_dump
-
-from policy import Network
-from policy import LSTM
-from policy import Agent
+from model import Agent
+from examples.es import CMAES
+from examples.es import OpenAIES
 
 
 class ESWorker(BaseESWorker):
     def prepare(self):
         self.agent = None
         
-    def init(self, seed, config):
-        # Make environment
-        # Remember to seed it in each working function !
+    def _prepare(self, config):
         self.env = make_vec_env(vec_env_class=SerialVecEnv, 
                                 make_env=make_gym_env, 
                                 env_id=config['env.id'], 
                                 num_env=config['train.N'], 
-                                init_seed=seed, 
+                                init_seed=0, 
                                 rolling=False)
+        if config['env.standardize']:
+            self.env = VecStandardize(self.env, 
+                                      use_obs=True, 
+                                      use_reward=False, 
+                                      clip_obs=10.0, 
+                                      clip_reward=10.0, 
+                                      gamma=0.99, 
+                                      eps=1e-08, 
+                                      constant_obs_mean=None, 
+                                      constant_obs_std=None, 
+                                      constant_reward_std=None)
         self.env_spec = EnvSpec(self.env)
         
-        # Make agent
-        if config['network.recurrent']:
-            self.network = LSTM(config=config, env_spec=self.env_spec)
-        else:
-            self.network = Network(config=config, env_spec=self.env_spec)
-        if self.env_spec.control_type == 'Discrete':
-            self.policy = CategoricalPolicy(config=config, network=self.network, env_spec=self.env_spec, device=None)
-        elif self.env_spec.control_type == 'Continuous':
-            self.policy = GaussianPolicy(config=config, network=self.network, env_spec=self.env_spec, device=None)
-        self.agent = Agent(config=config, policy=self.policy)
-        
-    def f(self, solution, seed, config):
+        self.agent = Agent(config, self.env_spec, None)
+    
+    def f(self, config, solution):
         if self.agent is None:
-            self.init(seed, config)
-
-        # load solution parameters to the agent internal network
-        msg = f'expected {self.network.num_params}, got {np.asarray(solution).size}'
-        assert np.asarray(solution).size == self.network.num_params, msg
-        self.agent.policy.network.from_vec(torch.from_numpy(solution).float())
+            self._prepare(config)
+            
+        solution = torch.from_numpy(np.asarray(solution)).float()
+        assert solution.numel() == self.agent.num_params
         
-        # create runner
-        runner = TrajectoryRunner(agent=self.agent, env=self.env, gamma=1.0)
+        # Load solution params to agent
+        self.agent.from_vec(solution)
         
-        # take rollouts and calculate mean return (no discount)
+        runner = TrajectoryRunner(config, self.agent, self.env)
         with torch.no_grad():
-            D = runner(T=config['train.T'])
-        
+            D = runner(self.env_spec.T)
         mean_return = np.mean([sum(trajectory.all_r) for trajectory in D])
         
-        # Negate return to be objective value, because ES does minimization
+        # ES does minimization, so use negative returns
         function_value = -mean_return
         
         return function_value
 
 
 class ESMaster(BaseESMaster):
-    def _network_size(self):
+    @property
+    def _num_params(self):
         worker = ESWorker()
-        tmp_agent = worker.init(seed=0, config=self.config)
-        num_params = worker.network.num_params
-        
-        del worker, tmp_agent
+        worker._prepare(self.config)
+        num_params = worker.agent.num_params
+        del worker
         
         return num_params
     
     def make_es(self, config):
         if self.config['es.algo'] == 'CMAES':
-            es = CMAES(mu0=[self.config['es.mu0']]*self._network_size(),
+            es = CMAES(mu0=[self.config['es.mu0']]*self._num_params,
                        std0=self.config['es.std0'], 
                        popsize=self.config['es.popsize'])
         elif self.config['es.algo'] == 'OpenAIES':
-            es = OpenAIES(mu0=[self.config['es.mu0']]*self._network_size(), 
+            es = OpenAIES(mu0=[self.config['es.mu0']]*self._num_params, 
                           std0=self.config['es.std0'], 
                           popsize=self.config['es.popsize'], 
                           std_decay=0.999,
@@ -115,39 +103,30 @@ class ESMaster(BaseESMaster):
         
         return es
         
-    def _process_es_result(self, result):
+    def process_es_result(self, result):
         best_f_val = result['best_f_val']
-        best_return = -best_f_val  # negate to get back reward
+        best_return = -best_f_val
         
-        # logging
-        self.logger.log('generation', self.generation)
-        self.logger.log('best_return', best_return)
+        self.logger('generation', self.generation + 1)
+        self.logger('best_return', best_return)
         
-        if self.generation == 0 or (self.generation+1) % self.config['log.interval'] == 0:
+        if self.generation == 0 or (self.generation+1) % self.config['log.print_interval'] == 0:
             print('-'*50)
             self.logger.dump(keys=None, index=-1, indent=0)
             print('-'*50)
             
         # Save the loggings and final parameters
-        if (self.generation+1) == self.num_iteration:
+        if (self.generation+1) == self.config['train.num_iteration']:
             pickle_dump(obj=self.logger.logs, f=self.logdir/'result', ext='.pkl')
             np.save(self.logdir/'trained_param', result['best_param'])
-
+            
 
 class Algorithm(BaseAlgorithm):
-    def __call__(self, config, seed, device_str):
-        # Set random seeds
+    def __call__(self, config, seed, device):
         set_global_seeds(seed)
-        # Use log dir for current job (run_experiment)
         logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
-        
-        # train
-        es = ESMaster(num_iteration=config['train.num_iteration'], 
-                      worker_class=ESWorker, 
-                      init_seed=seed, 
-                      daemonic_worker=None, 
-                      config=config, 
-                      logdir=logdir)
+
+        es = ESMaster(config, ESWorker, logdir=logdir)
         es()
         
         return None

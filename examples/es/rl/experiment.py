@@ -6,8 +6,11 @@ from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
+    def prepare(self):
+        pass
+        
     def make_algo(self):
-        algo = Algorithm(name='ES for RL')
+        algo = Algorithm()
         
         return algo
 
@@ -19,12 +22,13 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('cuda', False)  # ES for small net, do not use GPU
         
         configurator.fixed('env.id', 'Pendulum-v0')
+        configurator.fixed('env.standardize', False)  # whether to use VecStandardize
         
-        configurator.fixed('network.recurrent', True)
-        configurator.fixed('network.hidden_size', [32])
+        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.hidden_size', [64])
         
-        configurator.fixed('es.algo', 'CMAES')
-        configurator.fixed('es.popsize', 16)
+        configurator.fixed('es.algo', 'OpenAIES')
+        configurator.fixed('es.popsize', 32)
         configurator.fixed('es.mu0', 0.0)
         configurator.fixed('es.std0', 0.5)
         
@@ -37,11 +41,11 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.grid('es.mu0', [0.0, 0.3, 0.5])
         configurator.grid('es.std0', [0.1, 0.5, 1.0])
         """
-        configurator.fixed('train.num_iteration', 3000)
+        configurator.fixed('train.num_iteration', 1000)
         configurator.fixed('train.N', 5)
-        configurator.fixed('train.T', 300)
+        # we do not provide train.T because it internally uses env_spec.T
         
-        configurator.fixed('log.interval', 100)
+        configurator.fixed('log.print_interval', 100)
         configurator.fixed('log.dir', 'logs')
 
         list_config = configurator.make_configs()
@@ -53,5 +57,5 @@ class ExperimentMaster(BaseExperimentMaster):
         
         return list_seed
     
-    def process_algo_result(self, config, seed, result):
-        assert result is None
+    def process_results(self, results):
+        assert all([result is None for result in results])
