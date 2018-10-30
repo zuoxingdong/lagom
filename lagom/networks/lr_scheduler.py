@@ -18,5 +18,6 @@ def linear_lr_scheduler(optimizer, max_epoch, mode):
         
     lambda_f = lambda epoch: 1 - epoch/max_epoch
     lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_f)
+    lr_scheduler.mode = mode
     
     return lr_scheduler
