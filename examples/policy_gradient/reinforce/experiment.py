@@ -6,8 +6,11 @@ from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
+    def prepare(self):
+        pass
+        
     def make_algo(self):
-        algo = Algorithm(name='REINFORCE')
+        algo = Algorithm()
         
         return algo
 
@@ -18,17 +21,17 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('cuda', True)  # whether to use GPU
         
-        configurator.fixed('env.id', 'HalfCheetah-v2')
+        configurator.fixed('env.id', 'Pendulum-v0')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
-        configurator.fixed('network.recurrent', True)
+        configurator.fixed('network.recurrent', False)
         configurator.fixed('network.hidden_sizes', [32])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
         configurator.fixed('algo.gamma', 0.99)
         
-        configurator.fixed('agent.standardize_Q', True)  # whether to standardize discounted returns
+        configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
         configurator.fixed('agent.max_grad_norm', 0.5)  # grad clipping, set None to turn off
         configurator.fixed('agent.entropy_coef', 0.01)
         # only for continuous control
@@ -40,11 +43,11 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
         configurator.fixed('train.N', 1)  # number of trajectories per training iteration
-        configurator.fixed('train.T', 200)  # max allowed horizon
+        configurator.fixed('train.T', 100)  # max allowed horizon
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.record_interval', 100)  # interval to record the logging
-        configurator.fixed('log.print_interval', 500)  # interval to print the logging to screen
+        configurator.fixed('log.print_interval', 100)  # interval to print the logging to screen
         configurator.fixed('log.dir', 'logs')  # logging directory
         
         list_config = configurator.make_configs()
@@ -56,5 +59,5 @@ class ExperimentMaster(BaseExperimentMaster):
         
         return list_seed
     
-    def process_algo_result(self, config, seed, result):
-        assert result is None
+    def process_results(self, results):
+        assert all([result is None for result in results])

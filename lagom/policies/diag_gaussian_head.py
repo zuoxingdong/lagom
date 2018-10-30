@@ -102,7 +102,6 @@ class DiagGaussianHead(BaseNetwork):
                 self.logvar_head = nn.Parameter(torch.full(size=[self.env_spec.action_space.flat_dim], 
                                                            fill_value=torch.log(torch.tensor(self.init_std)**2), 
                                                            requires_grad=True))
-        self.logvar_head = self.logvar_head.to(self.device)
         
     def init_params(self, config):
         # 0.01->almost zeros initially
@@ -128,8 +127,9 @@ class DiagGaussianHead(BaseNetwork):
         elif self.std_style == 'softplus':
             std = F.softplus(logvar)
             
-        min_std = torch.full(std.size(), self.min_std).type_as(std).to(self.device)
-        std = torch.max(std, min_std)
+        ################################################################
+        #min_std = torch.full(std.size(), self.min_std).type_as(std).to(self.device)
+        #std = torch.max(std, min_std)
         
         action_dist = Independent(Normal(loc=mean, scale=std), 1)
         
