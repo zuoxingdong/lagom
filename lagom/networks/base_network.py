@@ -52,7 +52,7 @@ class BaseNetwork(Module, ABC):
             device (device): a PyTorch device for this network. 
             **kwargs: keyword arguments to specify the network. 
         """
-        super(Module, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         
         self.config = config
         self.device = device

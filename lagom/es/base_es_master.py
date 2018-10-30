@@ -18,17 +18,21 @@ class BaseESMaster(MPMaster, ABC):
     - :meth:`process_es_result`
     
     """
-    def __init__(self, config, worker_class):
+    def __init__(self, config, worker_class, **kwargs):
         self.config = config
+        self.num_generation = config['train.num_iteration']
         
         self.es = self.make_es(self.config)
         
         super().__init__(worker_class, self.es.popsize)
+        
+        for key, value in kwargs.items():
+            self.__setattr__(key, value)
     
     def __call__(self):
         self.make_workers()
         
-        for generation in range(self.config['es.num_generation']):
+        for generation in range(self.num_generation):
             self.generation = generation
             
             tasks = self.make_tasks()
