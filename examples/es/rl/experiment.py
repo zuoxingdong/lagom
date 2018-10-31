@@ -27,7 +27,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('network.recurrent', False)
         configurator.fixed('network.hidden_size', [32])
         
-        configurator.fixed('es.algo', 'OpenAIES')
+        configurator.fixed('es.algo', 'CMAES')
         configurator.fixed('es.popsize', 64)
         configurator.fixed('es.mu0', 0.0)
         configurator.fixed('es.std0', 0.5)

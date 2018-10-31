@@ -15,3 +15,5 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 # Results
 
 <img src='data/CartPole-v1.png' width='75%'>
+
+<img src='data/Pendulum-v0.png' width='75%'>
