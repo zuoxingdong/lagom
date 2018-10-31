@@ -82,7 +82,7 @@ def test_es():
     
     
 def test_es_master_worker():
-    es = ESMaster({'es.num_generation': 4}, ESWorker)
+    es = ESMaster({'train.num_iteration': 4}, ESWorker)
     es()
 
 

@@ -75,7 +75,7 @@ def make_envs(make_env, env_id, num_env, init_seed, **kwargs):
     return list_make_env
 
 
-def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, rolling, **kwargs):
+def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, **kwargs):
     r"""Create a vectorized environment (i.e. :class:`VecEnv`). 
     
     Example::
@@ -90,7 +90,6 @@ def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, rolling, *
         env_id (str): environment ID, e.g. 'Pendulum-v0', 'Ant-v2'
         num_env (int): number of environments to create. 
         init_seed (int): initial seed for :class:`Seeder` to sample random seeds. 
-        rolling (bool): see docstring in :class:`VecEnv` for more details. 
         **kwargs: keyword aguments used to specify other options. 
         
     Returns
@@ -104,6 +103,6 @@ def make_vec_env(vec_env_class, make_env, env_id, num_env, init_seed, rolling, *
                               init_seed=init_seed, 
                               **kwargs)
     
-    venv = vec_env_class(list_make_env=list_make_env, rolling=rolling)
+    venv = vec_env_class(list_make_env=list_make_env)
     
     return venv

@@ -35,14 +35,12 @@ class Algorithm(BaseAlgorithm):
                            make_env=make_gym_env, 
                            env_id=config['env.id'], 
                            num_env=config['train.N'],  # batched environment
-                           init_seed=seed, 
-                           rolling=False)
+                           init_seed=seed)
         eval_env = make_vec_env(vec_env_class=SerialVecEnv, 
                                 make_env=make_gym_env, 
                                 env_id=config['env.id'], 
                                 num_env=config['eval.N'], 
-                                init_seed=seed, 
-                                rolling=False)
+                                init_seed=seed)
         if config['env.standardize']:  # running averages of observation and reward
             env = VecStandardize(venv=env, 
                                  use_obs=True, 
@@ -51,15 +49,16 @@ class Algorithm(BaseAlgorithm):
                                  clip_reward=10., 
                                  gamma=0.99, 
                                  eps=1e-8)
-            eval_env = VecStandardize(venv=eval_env,  # remember to synchronize running averages during evaluation !!!
+            eval_env = VecStandardize(venv=eval_env,
                                       use_obs=True, 
                                       use_reward=False,  # do not process rewards, no training
                                       clip_obs=env.clip_obs, 
                                       clip_reward=env.clip_reward, 
                                       gamma=env.gamma, 
                                       eps=env.eps, 
-                                      constant_obs_mean=env.obs_runningavg.mu,  # use current running average as constant
+                                      constant_obs_mean=env.obs_runningavg.mu,
                                       constant_obs_std=env.obs_runningavg.sigma)
+
         env_spec = EnvSpec(env)
         
         agent = Agent(config, env_spec, device)

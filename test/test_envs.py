@@ -342,8 +342,8 @@ class TestEnvs(object):
         assert np.allclose(env.reset(), raw_env.reset())
 
     def test_make_vec_env(self):
-        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1, True)
-        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
+        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
         assert isinstance(venv1, VecEnv) and isinstance(venv1, SerialVecEnv)
         assert isinstance(venv2, VecEnv) and isinstance(venv2, ParallelVecEnv)
         assert venv1.num_env == venv2.num_env
@@ -379,7 +379,7 @@ class TestVecEnv(object):
         # unpack class
         v_id, vec_env_class = vec_env_class
 
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         assert isinstance(venv, VecEnv)
         assert v_id in [0, 1]
         if v_id == 0:
@@ -419,7 +419,7 @@ class TestVecEnv(object):
 
     @pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
     def test_vec_standardize(self, vec_env_class):
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         venv = VecStandardize(venv, 
                               use_obs=True, 
                               use_reward=True, 
@@ -450,7 +450,7 @@ class TestVecEnv(object):
         del venv, obs, a
 
         # other settings: clipping
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         venv = VecStandardize(venv, 
                               use_obs=True, 
                               use_reward=True, 
@@ -478,7 +478,7 @@ class TestVecEnv(object):
         del venv, obs, a
 
         # other settings: turn off use_obs
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         venv = VecStandardize(venv, 
                               use_obs=False, 
                               use_reward=False, 
@@ -495,7 +495,7 @@ class TestVecEnv(object):
         del venv, obs, a
 
         # other settings: gamma
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         with pytest.raises(AssertionError):
             venv = VecStandardize(venv, 
                                   use_obs=False, 
@@ -508,8 +508,7 @@ class TestVecEnv(object):
         del venv
 
         # other settings: constant value 
-
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, True)
+        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1)
         venv = VecStandardize(venv, 
                               use_obs=True, 
                               use_reward=True, 
@@ -527,10 +526,9 @@ class TestVecEnv(object):
         obs, rewards, _, _ = venv.step(a)
         assert rewards.min() <= 0.01
 
-    @pytest.mark.parametrize('rolling', [True, False])
-    def test_equivalence_vec_env(self, rolling):
-        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1, rolling)
-        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1, rolling)
+    def test_equivalence_vec_env(self):
+        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
+        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
         assert venv1.observation_space == venv2.observation_space
         assert venv1.action_space == venv2.action_space
         assert venv1.num_env == venv2.num_env
@@ -543,15 +541,3 @@ class TestVecEnv(object):
         assert np.allclose(obs1, obs2)
         assert np.allclose(rewards1, rewards2)
         assert np.allclose(dones1, dones2)
-
-    @pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
-    def test_rolling(self, vec_env_class):
-        venv = make_vec_env(vec_env_class, make_gym_env, 'CartPole-v1', 5, 1, rolling=False)
-        venv.reset()
-        for _ in range(100):
-            observations, rewards, dones, infos = venv.step([venv.action_space.sample()]*5)
-        assert all([len(x) == 5 for x in [observations, rewards, dones, infos]])
-        assert all([x == [None]*5 for x in [observations, rewards, dones, infos]])
-        venv.reset()
-        result = venv.step([venv.action_space.sample()]*5)
-        assert all([None not in result[i] for i in [1, 2, 3]])

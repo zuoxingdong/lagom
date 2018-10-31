@@ -63,8 +63,7 @@ class Trajectory(BaseHistory):
     
     """
     def add_transition(self, transition):
-        if len(self.transitions) > 0:
-            assert not self.transitions[-1].done, 'not allowed to add transition, because already contains done=True'
+        assert not self.complete, 'not allowed to add transition, because already contains done=True'
         super().add_transition(transition)
     
     @property
@@ -77,3 +76,10 @@ class Trajectory(BaseHistory):
     
     def all_discounted_returns(self, gamma):
         return ExpFactorCumSum(gamma)(self.all_r)
+    
+    @property
+    def complete(self):
+        if len(self.transitions) == 0:
+            return False
+        else:
+            return self.transitions[-1].done

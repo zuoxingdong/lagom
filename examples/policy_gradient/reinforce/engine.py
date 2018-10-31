@@ -64,13 +64,35 @@ class Engine(BaseEngine):
     def eval(self, n):
         self.agent.eval()
         
+        """
+        print('mean')
+        print(self.runner.env.obs_runningavg.mu)
+        print(self.eval_runner.env.constant_obs_mean)
+        print('std')
+        print(self.runner.env.obs_runningavg.sigma)
+        print(self.eval_runner.env.constant_obs_std)
+        """
+        
         # Synchronize running average of observations for evaluation
         if self.config['env.standardize']:
             self.eval_runner.env.constant_obs_mean = self.runner.env.obs_runningavg.mu
             self.eval_runner.env.constant_obs_std = self.runner.env.obs_runningavg.sigma
         
+
+        
+        """
+        print('mean')
+        print(self.runner.env.obs_runningavg.mu)
+        print(self.eval_runner.env.constant_obs_mean)
+        print('std')
+        print(self.runner.env.obs_runningavg.sigma)
+        print(self.eval_runner.env.constant_obs_std)
+        """
+        
         T = self.eval_runner.env.T
         D = self.eval_runner(T)
+        
+        
         
         eval_output = {}
         eval_output['D'] = D
