@@ -47,7 +47,7 @@ class RunningMeanStd(BaseTransform):
         self.mean = None
         self.var = None
         self.shape = None  # maintain the identical shape
-        self.N = 0
+        self.N = 1e-4 ################### 0
         
     def __call__(self, x):
         r"""Update the mean and variance given an additional data. 

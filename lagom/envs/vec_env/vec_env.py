@@ -38,7 +38,7 @@ class VecEnv(ABC):
     - :meth:`reward_range`
     
     """
-    def __init__(self, list_make_env, observation_space, action_space, rolling=True):
+    def __init__(self, list_make_env, observation_space, action_space):
         r"""Initialize the vectorized environment. 
         
         .. note::
@@ -50,10 +50,6 @@ class VecEnv(ABC):
             list_make_env (list): a list of functions each returns an instantiated enviroment. 
             observation_space (Space): observation space of the environment
             action_space (Space): action space of the environment
-            rolling (bool): if ``True``, then rolling the transitions for each episodic termination i.e.
-                automatically reset the environment and continue to use :meth:`step`. If ``False``, then
-                stops to use terminated sub-environment and calling of :meth:`step_wait` returns ``None`` 
-                until :meth:`reset` is called to reset all sub-environments. Default: ``True``
         """
         self.list_make_env = list_make_env
         self.num_env = len(self.list_make_env)
@@ -61,12 +57,9 @@ class VecEnv(ABC):
         self._observation_space = observation_space
         self._action_space = action_space
         
-        self.rolling = rolling
-        
         # Some settings
         self.closed = False
         self.viewer = None  # rendering
-        self.stops = [False]*self.num_env  # stop flag for each sub-environment, useful when ``rolling=False``
         
     @abstractmethod
     def step_async(self, actions):
@@ -291,8 +284,7 @@ class VecEnvWrapper(VecEnv):
         # Call VecEnv constructor to make some settings as direct attributes in this wrapper class
         super().__init__(list_make_env=venv.list_make_env, 
                          observation_space=venv.observation_space, 
-                         action_space=venv.action_space, 
-                         rolling=self.venv.rolling)
+                         action_space=venv.action_space)
         
     def step_async(self, actions):
         self.venv.step_async(actions)

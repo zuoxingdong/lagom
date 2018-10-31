@@ -110,7 +110,6 @@ class VecStandardize(VecEnvWrapper):
         self.all_returns = np.zeros(self.num_env).astype(np.float32)
     
     def step_wait(self):
-        # Call original step_wait to get results from all environments
         observations, rewards, dones, infos = self.venv.step_wait()
         
         # Set discounted return buffer as zero for those episodes which terminate
@@ -128,49 +127,43 @@ class VecStandardize(VecEnvWrapper):
         return self.venv.close()
     
     def process_reward(self, rewards):
-        if self.use_reward and self.constant_reward_std is None:  # using running average
-            # Compute discounted returns
+        if self.use_reward and self.constant_reward_std is None:
             self.all_returns = rewards + self.gamma*self.all_returns
-            # Update with calculated discounted returns
             self.reward_runningavg(self.all_returns)
-            # Standardize the reward
+            
             # Not subtract from mean, but only divided by std
             std = self.reward_runningavg.sigma
-            if not np.allclose(std, 0.0):  # only non-zero std
-                rewards = rewards/(std + self.eps)
-            
+            rewards = rewards/(std + self.eps)
             rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
             
             return rewards
-        elif self.use_reward and self.constant_reward_std is not None:  # use given constant std
+        elif self.use_reward and self.constant_reward_std is not None:
             rewards = rewards/(self.constant_reward_std + self.eps)
-            
             rewards = np.clip(rewards, a_min=-self.clip_reward, a_max=self.clip_reward)
             
             return rewards
-        else:  # return original rewards if use_reward is turned off
+        elif not self.use_reward:
             return rewards
         
     def process_obs(self, obs):
-        if self.use_obs and self.constant_obs_mean is None and self.constant_obs_std is None:  # use running average
-            # Update with new observation
+        obs = np.asarray(obs)
+        
+        if self.use_obs and self.constant_obs_mean is None and self.constant_obs_std is None:
             self.obs_runningavg(obs)
-            # Standardize the observation
-            mean = self.obs_runningavg.mu
-            std = self.obs_runningavg.sigma
-            if not np.allclose(std, 0.0):  # only non-zero std
-                obs = (obs - mean)/(std + self.eps)
-            
+            mean = np.expand_dims(self.obs_runningavg.mu, 0)  # add batch dim for safe broadcast
+            std = np.expand_dims(self.obs_runningavg.sigma, 0)
+            obs = (obs - mean)/(std + self.eps)
             obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
             
             return obs
-        elif self.use_obs and self.constant_obs_mean is not None and self.constant_obs_std is not None:  # use given moment
-            obs = (obs - self.constant_obs_mean)/(self.constant_obs_std + self.eps)
-            
+        elif self.use_obs and self.constant_obs_mean is not None and self.constant_obs_std is not None:
+            mean = np.expand_dims(self.constant_obs_mean, 0)  # add batch dim for safe broadcast
+            std = np.expand_dims(self.constant_obs_std, 0)
+            obs = (obs - mean)/(std + self.eps)
             obs = np.clip(obs, a_min=-self.clip_obs, a_max=self.clip_obs)
             
             return obs
-        else:  # return original observation if use_obs is turned off
+        elif not self.use_obs:
             return obs
         
     @property

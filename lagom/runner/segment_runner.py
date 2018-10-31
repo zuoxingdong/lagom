@@ -61,7 +61,6 @@ class SegmentRunner(BaseRunner):
     """
     def __init__(self, config, agent, env):
         super().__init__(config, agent, env)
-        assert self.env.rolling, 'SegmentRunner must use rolling VecEnv'
         
         self.obs_buffer = None  # for next call
         self.done_buffer = None  # masking

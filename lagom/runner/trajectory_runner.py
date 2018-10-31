@@ -32,7 +32,7 @@ class TrajectoryRunner(BaseRunner):
         >>> from lagom.envs import make_gym_env, make_vec_env, EnvSpec
         >>> from lagom.envs.vec_env import SerialVecEnv
 
-        >>> env = make_vec_env(vec_env_class=SerialVecEnv, make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0, rolling=False)
+        >>> env = make_vec_env(vec_env_class=SerialVecEnv, make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0)
         >>> env_spec = EnvSpec(env)
         >>> agent = RandomAgent(config=None, env_spec=env_spec)
         >>> runner = TrajectoryRunner(agent=agent, env=env, gamma=0.99)
@@ -48,11 +48,7 @@ class TrajectoryRunner(BaseRunner):
             Transition: (s=[-0.00990306 -0.00393545 -0.02013421  0.01405226], a=1, r=1.0, s_next=[-0.00998177  0.19146938 -0.01985317 -0.28491463], done=False)
             Transition: (s=[-0.00998177  0.19146938 -0.01985317 -0.28491463], a=1, r=1.0, s_next=[-0.00615238  0.38686877 -0.02555146 -0.58379241], done=False)]
 
-    """
-    def __init__(self, config, agent, env):
-        super().__init__(config, agent, env)
-        assert not self.env.rolling, 'TrajectoryRunner should not use rolling VecEnv'
-        
+    """    
     def __call__(self, T):
         r"""Run the agent in the vectorized environment (one or multiple environments) and collect
         a number of trajectories each with maximally T time steps. 
@@ -83,17 +79,13 @@ class TrajectoryRunner(BaseRunner):
             obs_next, reward, done, info = self.env.step(raw_action)
             
             for i, trajectory in enumerate(D):
-                if done[i] is None:  # non-rolling Env
-                    sampled_obs = self.env.observation_space.sample()
-                    sampled_obs.fill(0.0)
-                    obs_next[i] = sampled_obs
-                else:
+                if not trajectory.complete:
                     transition = Transition(s=obs[i], 
                                             a=action[i], 
                                             r=reward[i], 
                                             s_next=obs_next[i], 
                                             done=done[i])
-
+                
                     # Record additional information
                     [transition.add_info(key, val[i]) for key, val in out_agent.items()]
 
@@ -102,8 +94,8 @@ class TrajectoryRunner(BaseRunner):
             # Back up obs for next iteration to feed into agent
             obs = obs_next
 
-            # Terminate if all sub-environments finished before max allowed timesteps
-            if all([x is None or x for x in done]):
+            # Terminate if all trajectories are completed before max allowed timesteps
+            if all([trajectory.complete for trajectory in D]):
                 break
         
         return D
