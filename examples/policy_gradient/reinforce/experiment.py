@@ -43,7 +43,7 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
         configurator.fixed('train.N', 1)  # number of trajectories per training iteration
-        configurator.fixed('train.T', 100)  # max allowed horizon
+        configurator.fixed('train.T', 200)  # max allowed horizon
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.record_interval', 100)  # interval to record the logging
@@ -55,7 +55,7 @@ class ExperimentMaster(BaseExperimentMaster):
         return list_config
 
     def make_seeds(self):
-        list_seed = [209652396, 398764591, 924231285, 1478610112, 441365315]
+        list_seed = [1]#[209652396, 398764591, 924231285, 1478610112, 441365315]
         
         return list_seed
     

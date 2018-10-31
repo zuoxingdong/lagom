@@ -34,7 +34,7 @@ from lagom.runner import SegmentRunner
 
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
 def test_trajectory_runner(env_id):
-    env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0, False)
+    env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0)
     env_spec = EnvSpec(env)
 
     agent = RandomAgent(None, env_spec)
@@ -57,14 +57,10 @@ def test_trajectory_runner(env_id):
         if d.T < 1000:
             assert d.all_done[-1] == True
 
-    with pytest.raises(AssertionError):
-        env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0, True)
-        TrajectoryRunner(None, agent, env)
-        
         
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
 def test_segment_runner(env_id):
-    env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0, True)
+    env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0)
     env_spec = EnvSpec(env)
 
     agent = RandomAgent(None, env_spec)
@@ -85,7 +81,3 @@ def test_segment_runner(env_id):
     D = runner(T=1000)
     for d in D:
         assert d.T == 1000
-
-    with pytest.raises(AssertionError):
-        env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0, False)
-        SegmentRunner(None, agent, env)
