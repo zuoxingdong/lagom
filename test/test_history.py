@@ -8,6 +8,13 @@ from lagom.history import Transition
 from lagom.history import Trajectory
 from lagom.history import Segment
 
+from lagom.history.metrics import terminal_state_from_trajectory
+from lagom.history.metrics import terminal_state_from_segment
+from lagom.history.metrics import final_state_from_trajectory
+from lagom.history.metrics import final_state_from_segment
+from lagom.history.metrics import bootstrapped_returns_from_trajectory
+from lagom.history.metrics import bootstrapped_returns_from_segment
+
 
 def test_transition():
     transition = Transition(s=1.2, a=2.0, r=-1.0, s_next=1.5, done=True)
@@ -312,3 +319,140 @@ def test_segment():
     del transition3
     del transition4
     del all_info
+
+
+def test_terminal_state_from_trajectory():
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    
+    assert terminal_state_from_trajectory(t) == 4.0
+    
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, False))
+    
+    assert terminal_state_from_trajectory(t) is None
+    
+    with pytest.raises(AssertionError):
+        terminal_state_from_segment(t)
+
+def test_terminal_state_from_segment():
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, True))
+    assert terminal_state_from_segment(s) == [4.0, 7.0]
+
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, False))
+    assert terminal_state_from_segment(s) == [4.0]
+    
+    with pytest.raises(AssertionError):
+        terminal_state_from_trajectory(s)
+        
+        
+def test_final_state_from_trajectory():
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    
+    assert final_state_from_trajectory(t) == 4.0
+    
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, False))
+    
+    assert final_state_from_trajectory(t) == 4.0
+    
+    with pytest.raises(AssertionError):
+        final_state_from_segment(t)
+        
+        
+def test_final_state_from_segment():
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, True))
+    assert final_state_from_segment(s) == [4.0, 7.0]
+
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, False))
+    assert final_state_from_segment(s) == [4.0, 7.0]
+    
+    with pytest.raises(AssertionError):
+        final_state_from_trajectory(s)
+
+        
+def test_bootstrapped_returns_from_trajectory():
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    V_last = 100
+    
+    out =  bootstrapped_returns_from_trajectory(t, V_last, 1.0)
+    assert np.allclose(out, [0.6, 0.5, 0.3])
+    out =  bootstrapped_returns_from_trajectory(t, V_last, 0.1)
+    assert np.allclose(out, [0.123, 0.23, 0.3])
+    
+    t = Trajectory()
+    t.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    t.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    t.add_transition(Transition(3.0, 30, 0.3, 4.0, False))
+    V_last = 100
+    
+    out = bootstrapped_returns_from_trajectory(t, V_last, 1.0)
+    assert np.allclose(out, [100.6, 100.5, 100.3])
+    out = bootstrapped_returns_from_trajectory(t, V_last, 0.1)
+    assert np.allclose(out, [0.223, 1.23, 10.3])
+    
+    with pytest.raises(AssertionError):
+        bootstrapped_returns_from_segment(t, V_last, 1.0)
+        
+        
+def test_bootstrapped_returns_from_segment():
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, True))
+    all_V_last = [50, 100]
+    
+    out = bootstrapped_returns_from_segment(s, all_V_last, 1.0)
+    assert np.allclose(out, [0.6, 0.5, 0.3, 1.1, 0.6])
+    out = bootstrapped_returns_from_segment(s, all_V_last, 0.1)
+    assert np.allclose(out, [0.123, 0.23, 0.3, 0.56, 0.6])
+
+    s = Segment()
+    s.add_transition(Transition(1.0, 10, 0.1, 2.0, False))
+    s.add_transition(Transition(2.0, 20, 0.2, 3.0, False))
+    s.add_transition(Transition(3.0, 30, 0.3, 4.0, True))
+    s.add_transition(Transition(5.0, 50, 0.5, 6.0, False))
+    s.add_transition(Transition(6.0, 60, 0.6, 7.0, False))
+    all_V_last = [50, 100]
+    
+    out = bootstrapped_returns_from_segment(s, all_V_last, 1.0)
+    assert np.allclose(out, [0.6, 0.5, 0.3, 101.1, 100.6])
+    out = bootstrapped_returns_from_segment(s, all_V_last, 0.1)
+    assert np.allclose(out, [0.123, 0.23, 0.3, 1.56, 10.6])
+    
+    with pytest.raises(AssertionError):
+        bootstrapped_returns_from_trajectory(s, all_V_last, 1.0)

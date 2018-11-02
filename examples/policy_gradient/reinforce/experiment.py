@@ -21,17 +21,17 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('cuda', True)  # whether to use GPU
         
-        configurator.fixed('env.id', 'Pendulum-v0')
+        configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
         configurator.fixed('network.recurrent', False)
-        configurator.fixed('network.hidden_sizes', [32])  # TODO: [64, 64]
+        configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
         configurator.fixed('algo.gamma', 0.99)
         
-        configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
+        configurator.fixed('agent.standardize_Q', True)  # whether to standardize discounted returns
         configurator.fixed('agent.max_grad_norm', 0.5)  # grad clipping, set None to turn off
         configurator.fixed('agent.entropy_coef', 0.01)
         # only for continuous control
@@ -55,7 +55,7 @@ class ExperimentMaster(BaseExperimentMaster):
         return list_config
 
     def make_seeds(self):
-        list_seed = [1]#[209652396, 398764591, 924231285, 1478610112, 441365315]
+        list_seed = [209652396, 398764591, 924231285, 1478610112, 441365315]
         
         return list_seed
     

@@ -6,8 +6,11 @@ from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
+    def prepare(self):
+        pass
+        
     def make_algo(self):
-        algo = Algorithm(name='A2C')
+        algo = Algorithm()
         
         return algo
 
@@ -16,16 +19,16 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         configurator = Configurator('grid')
         
-        configurator.fixed('cuda', False)  # whether to use GPU
+        configurator.fixed('cuda', True)  # whether to use GPU
         
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
-        configurator.fixed('network.recurrent', True)
-        configurator.fixed('network.hidden_sizes', [32])  # TODO: [64, 64]
+        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
-        configurator.fixed('algo.use_lr_scheduler', False)
+        configurator.fixed('algo.use_lr_scheduler', True)
         configurator.fixed('algo.gamma', 0.99)
         
         configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
@@ -38,15 +41,15 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
         configurator.fixed('agent.constant_std', None)  # constant std, set None to learn it
         configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
-        configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
+        configurator.fixed('agent.init_std', 1.0)  # initial std for state-independent std
         
-        configurator.fixed('train.timestep', 1e7)  # either 'train.iter' or 'train.timestep'
-        configurator.fixed('train.N', 10)  # number of segments per training iteration
+        configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
+        configurator.fixed('train.N', 1)  # number of segments per training iteration
         configurator.fixed('train.T', 5)  # fixed-length segment rolling
-        configurator.fixed('eval.N', 100)  # number of episodes to evaluate, do not specify T for complete episode
+        configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.record_interval', 100)  # interval to record the logging
-        configurator.fixed('log.print_interval', 500)  # interval to print the logging to screen
+        configurator.fixed('log.print_interval', 100)  # interval to print the logging to screen
         configurator.fixed('log.dir', 'logs')  # logging directory
         
         list_config = configurator.make_configs()
@@ -58,5 +61,5 @@ class ExperimentMaster(BaseExperimentMaster):
         
         return list_seed
     
-    def process_algo_result(self, config, seed, result):
-        assert result is None
+    def process_results(self, results):
+        assert all([result is None for result in results])

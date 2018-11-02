@@ -1,14 +1,15 @@
 ID: 0
 cuda: true
-env.id: Pendulum-v0
+env.id: HalfCheetah-v2
 env.standardize: true
 network.recurrent: false
 network.hidden_sizes:
-- 32
+- 64
+- 64
 algo.lr: 0.001
 algo.use_lr_scheduler: true
 algo.gamma: 0.99
-agent.standardize_Q: false
+agent.standardize_Q: true
 agent.max_grad_norm: 0.5
 agent.entropy_coef: 0.01
 agent.min_std: 1.0e-06
