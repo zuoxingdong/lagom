@@ -15,3 +15,20 @@ lagom.history: History
 
 .. autoclass:: Segment
     :members:
+
+Metrics
+----------------
+
+.. currentmodule:: lagom.history.metrics
+
+.. autofunction:: terminal_state_from_trajectory
+
+.. autofunction:: terminal_state_from_segment
+
+.. autofunction:: final_state_from_trajectory
+
+.. autofunction:: final_state_from_segment
+
+.. autofunction:: bootstrapped_returns_from_trajectory
+
+.. autofunction:: bootstrapped_returns_from_segment
