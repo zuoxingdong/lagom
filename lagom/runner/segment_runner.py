@@ -120,6 +120,7 @@ class SegmentRunner(BaseRunner):
                 
                 # Record additional information
                 [transition.add_info(key, val[i]) for key, val in out_agent.items()]
+                [transition.add_info(key, val) for key, val in info[i].items()]
             
                 segment.add_transition(transition)
             

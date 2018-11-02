@@ -21,6 +21,10 @@ from lagom.value_functions import StateValueHead
 
 from lagom.transform import Standardize
 
+from lagom.history.metrics import final_state_from_segment
+from lagom.history.metrics import terminal_state_from_segment
+from lagom.history.metrics import bootstrapped_returns_from_segment
+
 from lagom.agents import BaseAgent
 
 
@@ -88,10 +92,25 @@ class Policy(BasePolicy):
             out['perplexity'] = action_dist.perplexity()
         
         return out
-    
 
 class Agent(BaseAgent):
-    r"""Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function. """
+    r"""`Advantage Actor-Critic`_ (A2C). 
+    
+    The main difference of A2C is to use bootstrapping for estimating the advantage function and training value function. 
+    
+    .. _Advantage Actor-Critic:
+        https://arxiv.org/abs/1602.01783
+    
+    Like `OpenAI baselines` we use fixed-length segments of experiment to compute returns and advantages. 
+    
+    .. _OpenAI baselines:
+        https://blog.openai.com/baselines-acktr-a2c/
+    
+    .. note::
+    
+        Use :class:`SegmentRunner` to collect data, not :class:`TrajectoryRunner`
+    
+    """
     def make_modules(self, config):
         self.policy = Policy(config, self.env_spec, self.device)
         
@@ -108,7 +127,7 @@ class Agent(BaseAgent):
 
     def reset(self, config, **kwargs):
         pass
-
+            
     def choose_action(self, obs, info={}):
         obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         
@@ -122,30 +141,33 @@ class Agent(BaseAgent):
             out['action'] = constraint_action(self.env_spec, out['action'])
             
         return out
-
+        
     def learn(self, D, info={}):
         batch_policy_loss = []
         batch_entropy_loss = []
         batch_value_loss = []
         batch_total_loss = []
         
-        for trajectory in D:
-            logprobs = trajectory.all_info('action_logprob')
-            entropies = trajectory.all_info('entropy')
+        for segment in D:
+            logprobs = segment.all_info('action_logprob')
+            entropies = segment.all_info('entropy')
             
-            Qs = trajectory.all_discounted_returns(self.config['algo.gamma'])
+            final_states = final_state_from_segment(segment)
+            final_states = torch.tensor(final_states).float().to(self.device)
+            all_V_last = self.policy(final_states)['V'].cpu().detach().numpy()
+            Qs = bootstrapped_returns_from_segment(segment, all_V_last, self.config['algo.gamma'])
             # Standardize: encourage/discourage half of performed actions
             if self.config['agent.standardize_Q']:
                 Qs = Standardize()(Qs, -1).tolist()
-                
-            Vs = trajectory.all_info('V')
-            if trajectory.complete:
-                terminal_state = trajectory.transitions[-1].s_next
-                terminal_state = torch.tensor([terminal_state]).float().to(self.device)
-                V_terminal = self.policy(terminal_state)['V'].squeeze(0)
+            
+            Vs = segment.all_info('V')
+            terminal_states = terminal_state_from_segment(segment)
+            if len(terminal_states) > 0:
+                terminal_states = torch.tensor(terminal_states).float().to(self.device)
+                all_V_terminal = self.policy(terminal_states)['V']
             else:
-                V_terminal = None
-                
+                all_V_terminal = []
+            
             As = [Q - V.item() for Q, V in zip(Qs, Vs)]
             if self.config['agent.standardize_adv']:
                 As = Standardize()(As, -1).tolist()
@@ -157,22 +179,22 @@ class Agent(BaseAgent):
                 policy_loss.append(-logprob*A)
                 entropy_loss.append(-entropy)
                 value_loss.append(F.mse_loss(V, torch.tensor(Q).view_as(V).to(V.device)))
-            if V_terminal is not None:
+            for V_terminal in all_V_terminal:
                 value_loss.append(F.mse_loss(V_terminal, torch.tensor(0.0).view_as(V).to(V.device)))
             
             policy_loss = torch.stack(policy_loss).mean()
             entropy_loss = torch.stack(entropy_loss).mean()
             value_loss = torch.stack(value_loss).mean()
-            
+        
             entropy_coef = self.config['agent.entropy_coef']
             value_coef = self.config['agent.value_coef']
             total_loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
-            
+        
             batch_policy_loss.append(policy_loss)
             batch_entropy_loss.append(entropy_loss)
             batch_value_loss.append(value_loss)
             batch_total_loss.append(total_loss)
-            
+        
         policy_loss = torch.stack(batch_policy_loss).mean()
         entropy_loss = torch.stack(batch_entropy_loss).mean()
         value_loss = torch.stack(batch_value_loss).mean()
@@ -183,16 +205,16 @@ class Agent(BaseAgent):
         
         if self.config['agent.max_grad_norm'] is not None:
             clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-            
+        
         if self.lr_scheduler is not None:
             if self.lr_scheduler.mode == 'iteration-based':
                 self.lr_scheduler.step()
             elif self.lr_scheduler.mode == 'timestep-based':
                 self.lr_scheduler.step(self.total_T)
-
+        
         self.optimizer.step()
         
-        self.total_T += sum([trajectory.T for trajectory in D])
+        self.total_T += sum([segment.T for segment in D])
         
         out = {}
         out['loss'] = loss.item()

@@ -6,8 +6,11 @@ from algo import Algorithm
 
 
 class ExperimentWorker(BaseExperimentWorker):
+    def prepare(self):
+        pass
+        
     def make_algo(self):
-        algo = Algorithm(name='Vanilla Policy Gradient')
+        algo = Algorithm()
         
         return algo
 
@@ -21,8 +24,8 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         
-        configurator.fixed('network.recurrent', True)
-        configurator.fixed('network.hidden_sizes', [8])  # TODO: [64, 64]
+        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
         
         configurator.fixed('algo.lr', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
@@ -46,7 +49,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.record_interval', 100)  # interval to record the logging
-        configurator.fixed('log.print_interval', 500)  # interval to print the logging to screen
+        configurator.fixed('log.print_interval', 100)  # interval to print the logging to screen
         configurator.fixed('log.dir', 'logs')  # logging directory
         
         list_config = configurator.make_configs()
@@ -58,5 +61,5 @@ class ExperimentMaster(BaseExperimentMaster):
         
         return list_seed
     
-    def process_algo_result(self, config, seed, result):
-        assert result is None
+    def process_results(self, results):
+        assert all([result is None for result in results])

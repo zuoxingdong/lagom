@@ -58,7 +58,6 @@ class Algorithm(BaseAlgorithm):
                                       eps=env.eps, 
                                       constant_obs_mean=env.obs_runningavg.mu,
                                       constant_obs_std=env.obs_runningavg.sigma)
-
         env_spec = EnvSpec(env)
         
         agent = Agent(config, env_spec, device)
