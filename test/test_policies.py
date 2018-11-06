@@ -29,7 +29,7 @@ def test_random_policy():
     assert isinstance(out, dict)
     assert 'action' in out and out['action'].shape == (1,)
 
-    venv = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v0', 3, 0, False)
+    venv = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v0', 3, 0)
     env_spec = EnvSpec(venv)
     policy = RandomPolicy(None, env_spec)
     out = policy(env.reset())
