@@ -48,9 +48,9 @@ def test_diag_gaussian_head():
     head = DiagGaussianHead(None, None, 30, env_spec)
     assert head.feature_dim == 30
     assert isinstance(head.mean_head, nn.Linear)
-    assert isinstance(head.logvar_head, nn.Parameter)
+    assert isinstance(head.logstd_head, nn.Parameter)
     assert head.mean_head.in_features == 30 and head.mean_head.out_features == 1
-    assert list(head.logvar_head.shape) == [1]
+    assert list(head.logstd_head.shape) == [1]
     dist = head(torch.randn(3, 30))
     assert isinstance(dist, Independent) and isinstance(dist.base_dist, Normal)
     assert list(dist.batch_shape) == [3]
@@ -61,7 +61,7 @@ def test_diag_gaussian_head():
     dist = head(torch.randn(3, 30))
     action = dist.sample()
     assert list(action.shape) == [3, 1]
-    assert torch.eq(head.logvar_head, torch.tensor(0.0))
+    assert torch.eq(head.logstd_head, torch.tensor(0.0))
 
     head = DiagGaussianHead(None, None, 30, env_spec, std_state_dependent=True)
     dist = head(torch.randn(3, 30))
@@ -72,8 +72,8 @@ def test_diag_gaussian_head():
     dist = head(torch.randn(3, 30))
     action = dist.sample()
     assert list(action.shape) == [3, 1]
-    assert not head.logvar_head.requires_grad
-    assert torch.eq(head.logvar_head, torch.tensor([-2.40794560865]))
+    assert not head.logstd_head.requires_grad
+    assert torch.eq(head.logstd_head, torch.tensor([-1.2039728]))
 
 
 def test_categorical_head():

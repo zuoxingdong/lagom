@@ -116,8 +116,7 @@ class CurvePlot(BasePlot):
         ax : Axes
             a matplotlib Axes representing the generated plot.
         """
-        # Modern style
-        sns.set()
+        sns.set()  # modern style
         
         # Seaborn auto-coloring
         if colors is None:
@@ -129,76 +128,67 @@ class CurvePlot(BasePlot):
         else:  # create an Axes
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=[6, 4])
         
-        # Iterate all saved data
         for i, (name, D) in enumerate(self.data.items()):
-            # Unpack the data
             data = D['data']
+            data = self._make_data(data)
             xvalues = D['xvalues']
             
-            # Enforce ndarray data with two-dimensional
-            data = self._make_data(data)
-            # Retrieve the generated color
             color = colors[i]
             
-            # Compute the mean of the data
             mean = np.mean(data, axis=0)
             std = np.std(data, axis=0)
             
-            # Plot mean curve
             ax.plot(xvalues, 
                     mean, 
                     color=color, 
                     label=name)
-            # Plot all uncertainty bands
-            if scales is None or alphas is None:  # if nothing provided, one std uncertainty band by default
+            
+            if scales is None:
                 scales = [1.0]
+            if alphas is None:
                 alphas = [0.5]
+
             for scale, alpha in zip(scales, alphas):
                 ax.fill_between(xvalues, 
                                 mean - scale*std, 
                                 mean + scale*std, 
                                 facecolor=color, 
                                 alpha=alpha)
-                
-        # Make legend for each mean curve (data item)
+
         if 'legend_loc' in kwargs:
             ax.legend(loc=kwargs['legend_loc'])
         else:
             ax.legend()
         
-        # Make title if provided
         if 'title' in kwargs:
             ax.set_title(kwargs['title'])
         
-        # Make x-y label if provided
         if 'xlabel' in kwargs:
             ax.set_xlabel(kwargs['xlabel'])
         if 'ylabel' in kwargs:
             ax.set_ylabel(kwargs['ylabel'])
         
-        # Enforce min/max of axes if provided
         if 'xlim' in kwargs:
             ax.set_xlim(kwargs['xlim'])
         if 'ylim' in kwargs:
             ax.set_ylim(kwargs['ylim'])
-            
-        # Enforce log-scale of axes if provided
+
         if 'logx' in kwargs and kwargs['logx']:
             ax.set_xscale('log')
         if 'logy' in kwargs and kwargs['logy']:
             ax.set_yscale('log')
         
-        # Enforce axis having integer coordinates if provided
+        # Enforce integer axis
         if 'integer_x' in kwargs and kwargs['integer_x']:
             ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         if 'integer_y' in kwargs and kwargs['integer_y']:
             ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
             
-        # Enforce the maximum number of major ticks in horizontal axis
+        # Enforce maximum number of major ticks in horizontal axis
         if 'num_tick' in kwargs:
             ax.xaxis.set_major_locator(plt.MaxNLocator(kwargs['num_tick']))
             
-        # Format the major ticks in horizontal axis
+        # Format major ticks in horizontal axis
         if 'xscale_magnitude' in kwargs:
             format_function = partial(self.tick_formatter, scale_magnitude=kwargs['xscale_magnitude'])
             ax.xaxis.set_major_formatter(plt.FuncFormatter(format_function))
@@ -206,7 +196,6 @@ class CurvePlot(BasePlot):
         return ax
     
     def _make_data(self, x):
-        # Enforce the data being ndarray
         x = np.array(x)
         # Enforce 2-dim data
         if x.ndim == 1:
