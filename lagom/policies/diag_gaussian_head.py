@@ -1,6 +1,6 @@
 from lagom.networks import BaseNetwork
 
-import numpy as np
+import math
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,7 @@ from lagom.networks import ortho_init
 class DiagGaussianHead(BaseNetwork):
     r"""Defines a diagonal Gaussian neural network head for continuous action space. 
     
-    The network outputs the mean :math:`\mu` and log-variance :math:`\log\sigma^2` (optimize 
+    The network outputs the mean :math:`\mu` and logarithm of standard deviation :math:`\log\sigma` (optimize 
     in log-space i.e. negative, zero and positive. )
     
     There are several options for modelling the standard deviation:
@@ -25,10 +25,10 @@ class DiagGaussianHead(BaseNetwork):
         
     * :attr:`std_style` indicates the parameterization of the standard deviation. 
 
-        * For std_style='exp', the standard deviation is obtained by applying exponentiation on log-variance
-          i.e. :math:`\exp(0.5\log\sigma^2)`.
-        * For std_style='softplus', the standard deviation is obtained by applying softplus operation on
-          log-variance, i.e. :math:`f(x) = \log(1 + \exp(x))`.
+        * For std_style='exp', the standard deviation is obtained by applying exponentiation on log standard
+        deviation i.e. :math:`\exp(\log\sigma)`.
+        * For std_style='softplus', the standard deviation is modeled by softplus, i.e. :math:`\log(1 + \exp(x))`.
+        * For std_style='sigmoidal', the standard deviation is modeled by :math:`0.01 + 2\mathrm{sigmoid}(x)`.
             
     * :attr:`constant_std` indicates whether to use constant standard deviation or learning it instead.
       If a ``None`` is given, then the standard deviation will be learned. Note that a scalar value
@@ -36,7 +36,7 @@ class DiagGaussianHead(BaseNetwork):
         
     * :attr:`std_state_dependent` indicates whether to learn standard deviation with dependency on state.
     
-        * For std_state_dependent=``True``, the log-variance head is created and its forward pass takes
+        * For std_state_dependent=``True``, the log-std head is created and its forward pass takes
           last feature values as input. 
         * For std_state_dependent=``False``, the independent trainable nn.Parameter will be created. It
           does not need forward pass, but the backpropagation will calculate its gradients. 
@@ -71,13 +71,15 @@ class DiagGaussianHead(BaseNetwork):
         self.env_spec = env_spec
         assert self.env_spec.control_type == 'Continuous', 'expected as Continuous control type'
         
-        self.min_std = min_std
+        self.min_logstd = math.log(min_std)
+        assert std_style in ['exp', 'softplus', 'sigmoidal']
         self.std_style = std_style
-        self.constant_std = constant_std
+        if constant_std is None:
+            self.log_constant_std = None
+        else:
+            self.log_constant_std = math.log(constant_std)
         self.std_state_dependent = std_state_dependent
-        self.init_std = init_std
-        if self.constant_std is not None:
-            assert not self.std_state_dependent
+        self.log_init_std = math.log(init_std)
         
         super().__init__(config, device, **kwargs)
         
@@ -85,51 +87,46 @@ class DiagGaussianHead(BaseNetwork):
         self.mean_head = nn.Linear(in_features=self.feature_dim, 
                                    out_features=self.env_spec.action_space.flat_dim)
         
-        if self.constant_std is not None:
-            if np.isscalar(self.constant_std):
-                self.logvar_head = torch.full(size=[self.env_spec.action_space.flat_dim], 
-                                              fill_value=torch.log(torch.tensor(self.constant_std)**2),
-                                              requires_grad=False)
-            else:
-                self.logvar_head = torch.log(torch.from_numpy(np.array(self.constant_std)**2).float())
+        if self.log_constant_std is not None:
+            self.logstd_head = torch.full([self.env_spec.action_space.flat_dim], 
+                                          self.log_constant_std,
+                                          requires_grad=False)
         else:  # learn it
             if self.std_state_dependent:
-                self.logvar_head = nn.Linear(in_features=self.feature_dim, 
+                self.logstd_head = nn.Linear(in_features=self.feature_dim, 
                                              out_features=self.env_spec.action_space.flat_dim)
             else:
-                msg = f'expected init_std is given as scalar value, got {self.init_std}'
-                assert self.init_std is not None, msg
-                self.logvar_head = nn.Parameter(torch.full(size=[self.env_spec.action_space.flat_dim], 
-                                                           fill_value=torch.log(torch.tensor(self.init_std)**2), 
+                self.logstd_head = nn.Parameter(torch.full([self.env_spec.action_space.flat_dim], 
+                                                           self.log_init_std, 
                                                            requires_grad=True))
         
     def init_params(self, config):
         # 0.01->almost zeros initially
-        ortho_init(self.mean_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+        ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         
-        if isinstance(self.logvar_head, nn.Linear):
+        if isinstance(self.logstd_head, nn.Linear):
             # 0.01->almost 1.0 std
-            ortho_init(self.logvar_head, nonlinearity=None, weight_scale=0.01, constant_bias=0.0)
+            ortho_init(self.logstd_head, weight_scale=0.01, constant_bias=0.0)
         
-    def reset(self, cofnig, **kwargs):
+    def reset(self, config, **kwargs):
         pass
     
     def forward(self, x):
         mean = self.mean_head(x)
         
-        if isinstance(self.logvar_head, nn.Linear):
-            logvar = self.logvar_head(x)
+        if isinstance(self.logstd_head, nn.Linear):
+            logstd = self.logstd_head(x)
         else:
-            logvar = self.logvar_head.expand_as(mean)
+            logstd = self.logstd_head.expand_as(mean)
+        
+        logstd = logstd.clamp_min(self.min_logstd)
             
         if self.std_style == 'exp':
-            std = torch.exp(0.5*logvar)
+            std = torch.exp(logstd)
         elif self.std_style == 'softplus':
-            std = F.softplus(logvar)
-            
-        ################################################################
-        #min_std = torch.full(std.size(), self.min_std).type_as(std).to(self.device)
-        #std = torch.max(std, min_std)
+            std = F.softplus(logstd)
+        elif self.std_style == 'sigmoidal':
+            std = 0.01 + 2*torch.sigmoid(logstd)
         
         action_dist = Independent(Normal(loc=mean, scale=std), 1)
         
