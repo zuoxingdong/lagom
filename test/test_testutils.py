@@ -7,7 +7,7 @@ from lagom.envs.spaces import Box, Discrete
 
 
 def test_sanity_check_env():
-    env = SerialVecEnv(make_sanity_envs([2, 3]), rolling=True)
+    env = SerialVecEnv(make_sanity_envs([2, 3]))
     assert isinstance(env.observation_space, Box) and isinstance(env.action_space, Discrete)
     obs = env.reset()
     assert np.allclose(obs, [[0.01], [0.01]])
