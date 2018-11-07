@@ -70,8 +70,8 @@ def bootstrapped_returns_from_segment(segment, all_V_last, gamma=1.0):
         a list of (discounted) bootstrapped returns
     """
     assert isinstance(segment, Segment)
-    
     assert len(segment.trajectories) == len(all_V_last)
+    
     out = []
     for trajectory, V_last in zip(segment.trajectories, all_V_last):
         out += bootstrapped_returns_from_trajectory(trajectory, V_last, gamma)

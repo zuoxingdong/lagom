@@ -32,3 +32,21 @@ Metrics
 .. autofunction:: bootstrapped_returns_from_trajectory
 
 .. autofunction:: bootstrapped_returns_from_segment
+
+.. autofunction:: td0_target
+
+.. autofunction:: td0_target_from_trajectory
+
+.. autofunction:: td0_target_from_segment
+
+.. autofunction:: td0_error
+
+.. autofunction:: td0_error_from_trajectory
+
+.. autofunction:: td0_error_from_segment
+
+.. autofunction:: gae
+
+.. autofunction:: gae_from_trajectory
+
+.. autofunction:: gae_from_segment
