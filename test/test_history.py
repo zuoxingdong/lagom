@@ -14,6 +14,15 @@ from lagom.history.metrics import final_state_from_trajectory
 from lagom.history.metrics import final_state_from_segment
 from lagom.history.metrics import bootstrapped_returns_from_trajectory
 from lagom.history.metrics import bootstrapped_returns_from_segment
+from lagom.history.metrics import td0_target
+from lagom.history.metrics import td0_target_from_trajectory
+from lagom.history.metrics import td0_target_from_segment
+from lagom.history.metrics import td0_error
+from lagom.history.metrics import td0_error_from_trajectory
+from lagom.history.metrics import td0_error_from_segment
+from lagom.history.metrics import gae
+from lagom.history.metrics import gae_from_trajectory
+from lagom.history.metrics import gae_from_segment
 
 
 def test_transition():
@@ -456,3 +465,311 @@ def test_bootstrapped_returns_from_segment():
     
     with pytest.raises(AssertionError):
         bootstrapped_returns_from_trajectory(s, all_V_last, 1.0)
+
+
+def test_td0_target():
+    with pytest.raises(AssertionError):
+        td0_target((0.1, 0.2), (1, 2, 3), 0.1)
+    with pytest.raises(AssertionError):
+        td0_target([0.1, 0.2], [1, 2], 0.1)
+    with pytest.raises(AssertionError):
+        td0_target([0.1, 0.2], [1, 2, 3], -1)
+    with pytest.raises(AssertionError):
+        td0_target([0.1, 0.2], [1, 2, 3], 1.1)
+    
+    out = td0_target([0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4, 5], 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.7, 0.9])
+    
+    out = td0_target([0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4, 0], 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.7, 0.4])        
+
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_td0_target_from_trajectory(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    traj = Trajectory()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    traj.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    traj.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, False)
+    t3.add_info('V_s', make_x(3.0))
+    traj.add_transition(t3)
+    t4 = Transition(4.0, 40, 0.4, 5.0, False)
+    t4.add_info('V_s', make_x(4.0))
+    t4.add_info('V_s_next', make_x(5.0))
+    traj.add_transition(t4)
+
+    with pytest.raises(AssertionError):
+        td0_target_from_trajectory([1, 2], traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    with pytest.raises(AssertionError):
+        td0_target_from_trajectory(traj, traj.all_info('V_s')+[0], traj.transitions[-1].info['V_s_next'], 0.1)
+
+    assert not traj.complete
+    out = td0_target_from_trajectory(traj, traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.7, 0.9])
+
+    traj.transitions[-1].done = True
+    assert traj.complete
+    out = td0_target_from_trajectory(traj, traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.7, 0.4])
+
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_td0_target_from_segment(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    seg = Segment()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    seg.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    seg.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, True)
+    t3.add_info('V_s', make_x(3.0))
+    t3.add_info('V_s_next', make_x(4.0))
+    seg.add_transition(t3)
+    t4 = Transition(5.0, 50, 0.5, 6.0, False)
+    t4.add_info('V_s', make_x(1.0))
+    seg.add_transition(t4)
+    t5 = Transition(6.0, 60, 0.6, 7.0, True)
+    t5.add_info('V_s', make_x(2.0))
+    t5.add_info('V_s_next', make_x(3.0))
+    seg.add_transition(t5)
+    
+    all_Vs = [traj.all_info('V_s') for traj in seg.trajectories]
+    all_V_last = [traj.transitions[-1].info['V_s_next'] for traj in seg.trajectories]
+    
+    with pytest.raises(AssertionError):
+        td0_target_from_segment([1, 2], all_Vs, all_V_last, 0.1)
+    with pytest.raises(AssertionError):
+        td0_target_from_segment(seg, all_Vs+[0], all_V_last, 0.1)
+    with pytest.raises(AssertionError):
+        td0_target_from_segment(seg, all_Vs, all_V_last+[0], 0.1)
+
+    out = td0_target_from_segment(seg, all_Vs, all_V_last, 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.3, 0.7, 0.6])
+    
+    seg.transitions[-1].done = False
+    out = td0_target_from_segment(seg, all_Vs, all_V_last, 0.1)
+    assert np.allclose(out, [0.3, 0.5, 0.3, 0.7, 0.9])
+    
+    
+def test_td0_error():
+    with pytest.raises(AssertionError):
+        td0_error((0.1, 0.2), (1, 2, 3), 0.1)
+    with pytest.raises(AssertionError):
+        td0_error([0.1, 0.2], [1, 2], 0.1)
+    with pytest.raises(AssertionError):
+        td0_error([0.1, 0.2], [1, 2, 3], -1)
+    with pytest.raises(AssertionError):
+        td0_error([0.1, 0.2], [1, 2, 3], 1.1)
+        
+    out = td0_error([0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4, 5], 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.3, -3.1])
+    
+    out = td0_error([0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4, 0], 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.3, -3.6])
+
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_td0_error_from_trajectory(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    traj = Trajectory()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    traj.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    traj.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, False)
+    t3.add_info('V_s', make_x(3.0))
+    traj.add_transition(t3)
+    t4 = Transition(4.0, 40, 0.4, 5.0, False)
+    t4.add_info('V_s', make_x(4.0))
+    t4.add_info('V_s_next', make_x(5.0))
+    traj.add_transition(t4)
+
+    with pytest.raises(AssertionError):
+        td0_error_from_trajectory([1, 2], traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    with pytest.raises(AssertionError):
+        td0_error_from_trajectory(traj, traj.all_info('V_s')+[0], traj.transitions[-1].info['V_s_next'], 0.1)
+
+    assert not traj.complete
+    out = td0_error_from_trajectory(traj, traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.3, -3.1])
+
+    traj.transitions[-1].done = True
+    assert traj.complete
+    out = td0_error_from_trajectory(traj, traj.all_info('V_s'), traj.transitions[-1].info['V_s_next'], 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.3, -3.6])
+
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_td0_error_from_segment(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    seg = Segment()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    seg.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    seg.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, True)
+    t3.add_info('V_s', make_x(3.0))
+    t3.add_info('V_s_next', make_x(4.0))
+    seg.add_transition(t3)
+    t4 = Transition(5.0, 50, 0.5, 6.0, False)
+    t4.add_info('V_s', make_x(1.0))
+    seg.add_transition(t4)
+    t5 = Transition(6.0, 60, 0.6, 7.0, True)
+    t5.add_info('V_s', make_x(2.0))
+    t5.add_info('V_s_next', make_x(3.0))
+    seg.add_transition(t5)
+    
+    all_Vs = [traj.all_info('V_s') for traj in seg.trajectories]
+    all_V_last = [traj.transitions[-1].info['V_s_next'] for traj in seg.trajectories]
+    
+    with pytest.raises(AssertionError):
+        td0_error_from_segment([1, 2], all_Vs, all_V_last, 0.1)
+    with pytest.raises(AssertionError):
+        td0_error_from_segment(seg, all_Vs+[0], all_V_last, 0.1)
+    with pytest.raises(AssertionError):
+        td0_error_from_segment(seg, all_Vs, all_V_last+[0], 0.1)
+
+    out = td0_error_from_segment(seg, all_Vs, all_V_last, 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.7, -0.3, -1.4])
+    
+    seg.transitions[-1].done = False
+    out = td0_error_from_segment(seg, all_Vs, all_V_last, 0.1)
+    assert np.allclose(out, [-0.7, -1.5, -2.7, -0.3, -1.1])
+    
+    
+def test_gae():
+    with pytest.raises(AssertionError):
+        gae((1, 2, 3, 4, 5), 0.5, 0.2)
+    with pytest.raises(AssertionError):
+        gae([1, 2, 3, 4, 5], -1, -1)
+    with pytest.raises(AssertionError):
+        gae([1, 2, 3, 4, 5], 1.1, 1.1)
+    
+    gamma = 0.5
+    lam = 0.2
+    out = gae([1, 2, 3, 4, 5], gamma, lam)
+    assert np.allclose(out, [1.2345, 2.345, 3.45, 4.5, 5])
+    
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_gae_from_trajectory(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    traj = Trajectory()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    traj.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    traj.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, False)
+    t3.add_info('V_s', make_x(3.0))
+    traj.add_transition(t3)
+    t4 = Transition(4.0, 40, 0.4, 5.0, False)
+    t4.add_info('V_s', make_x(4.0))
+    t4.add_info('V_s_next', make_x(5.0))
+    traj.add_transition(t4)
+    assert not traj.complete
+    
+    gamma = 0.2
+    lam = 0.5
+    
+    Vs = traj.all_info('V_s')
+    V_last = traj.transitions[-1].info['V_s_next']
+    out = gae_from_trajectory(traj, Vs, V_last, gamma, lam)
+    assert np.allclose(out, [-0.6416, -1.416, -2.16, -2.6])
+    
+    traj.transitions[-1].done = True
+    assert traj.complete
+    Vs = traj.all_info('V_s')
+    V_last = traj.transitions[-1].info['V_s_next']
+    out = gae_from_trajectory(traj, Vs, V_last, gamma, lam)
+    assert np.allclose(out, [-0.6426, -1.426, -2.26, -3.6])
+
+    
+@pytest.mark.parametrize('mode', ['tensor', 'array', 'raw'])
+def test_gae_from_segment(mode):
+    def make_x(x):
+        if mode == 'tensor':
+            return torch.tensor(x)
+        elif mode == 'array':
+            return np.array(x)
+        elif mode == 'raw':
+            return x
+
+    seg = Segment()
+    t1 = Transition(1.0, 10, 0.1, 2.0, False)
+    t1.add_info('V_s', make_x(1.0))
+    seg.add_transition(t1)
+    t2 = Transition(2.0, 20, 0.2, 3.0, False)
+    t2.add_info('V_s', make_x(2.0))
+    seg.add_transition(t2)
+    t3 = Transition(3.0, 30, 0.3, 4.0, True)
+    t3.add_info('V_s', make_x(3.0))
+    t3.add_info('V_s_next', make_x(4.0))
+    seg.add_transition(t3)
+    t4 = Transition(5.0, 50, 0.5, 6.0, False)
+    t4.add_info('V_s', make_x(1.0))
+    seg.add_transition(t4)
+    t5 = Transition(6.0, 60, 0.6, 7.0, True)
+    t5.add_info('V_s', make_x(2.0))
+    t5.add_info('V_s_next', make_x(3.0))
+    seg.add_transition(t5)
+    
+    gamma = 0.2
+    lam = 0.5
+    
+    all_Vs = [traj.all_info('V_s') for traj in seg.trajectories]
+    all_V_last = [traj.transitions[-1].info['V_s_next'] for traj in seg.trajectories]
+    out = gae_from_segment(seg, all_Vs, all_V_last, gamma, lam)
+    assert np.allclose(out, [-0.647, -1.47, -2.7, -0.24, -1.4])
+    
+    seg.transitions[-1].done = False
+    all_Vs = [traj.all_info('V_s') for traj in seg.trajectories]
+    all_V_last = [traj.transitions[-1].info['V_s_next'] for traj in seg.trajectories]
+    out = gae_from_segment(seg, all_Vs, all_V_last, gamma, lam)
+    assert np.allclose(out, [-0.647, -1.47, -2.7, -0.18, -0.8])
