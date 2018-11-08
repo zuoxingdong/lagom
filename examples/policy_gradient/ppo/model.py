@@ -7,6 +7,8 @@ import torch.nn.functional as F
 
 from torch.nn.utils import clip_grad_norm_
 
+from torch.utils.data import DataLoader
+
 from lagom.networks import BaseNetwork
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
@@ -20,8 +22,11 @@ from lagom.policies import constraint_action
 from lagom.value_functions import StateValueHead
 
 from lagom.transform import Standardize
+from lagom.transform import ExplainedVariance
 
 from lagom.agents import BaseAgent
+
+from dataset import Dataset
 
 
 class MLP(BaseNetwork):
@@ -34,7 +39,7 @@ class MLP(BaseNetwork):
         
     def reset(self, config, **kwargs):
         pass
-        
+
     def forward(self, x):
         for layer in self.feature_layers:
             x = torch.tanh(layer(x))
@@ -89,15 +94,15 @@ class Policy(BasePolicy):
         
         return out
     
-
+    
 class Agent(BaseAgent):
-    r"""Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function. """
+    r"""Proximal policy optimization (PPO). """
     def make_modules(self, config):
         self.policy = Policy(config, self.env_spec, self.device)
         
     def prepare(self, config, **kwargs):
         self.total_T = 0
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=config['algo.lr'])
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=config['algo.lr'], eps=1e-5)
         if config['algo.use_lr_scheduler']:
             if 'train.iter' in config:
                 self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
@@ -112,7 +117,11 @@ class Agent(BaseAgent):
     def choose_action(self, obs, info={}):
         obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         
-        out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], info=info)
+        if self.training:
+            out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], info=info)
+        else:
+            with torch.no_grad():
+                out = self.policy(obs, out_keys=['action'], info=info)
             
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
@@ -122,88 +131,102 @@ class Agent(BaseAgent):
             out['action'] = constraint_action(self.env_spec, out['action'])
             
         return out
-
-    def learn(self, D, info={}):
-        batch_policy_loss = []
-        batch_entropy_loss = []
-        batch_value_loss = []
-        batch_total_loss = []
+    
+    def learn_one_update(self, data):
+        data = [d.to(self.device) for d in data]
+        states, old_logprobs, As, old_Vs, Qs = data
         
-        for trajectory in D:
-            logprobs = trajectory.all_info('action_logprob')
-            entropies = trajectory.all_info('entropy')
-            
-            Qs = trajectory.all_discounted_returns(self.config['algo.gamma'])
-            # Standardize: encourage/discourage half of performed actions
-            if self.config['agent.standardize_Q']:
-                Qs = Standardize()(Qs, -1).tolist()
-                
-            Vs = trajectory.all_info('V')
-            if trajectory.complete:
-                terminal_state = trajectory.transitions[-1].s_next
-                terminal_state = torch.tensor([terminal_state]).float().to(self.device)
-                V_terminal = self.policy(terminal_state)['V'].squeeze(0)
-            else:
-                V_terminal = None
-                
-            As = [Q - V.item() for Q, V in zip(Qs, Vs)]
-            if self.config['agent.standardize_adv']:
-                As = Standardize()(As, -1).tolist()
-            
-            policy_loss = []
-            entropy_loss = []
-            value_loss = []
-            for logprob, entropy, A, Q, V in zip(logprobs, entropies, As, Qs, Vs):
-                policy_loss.append(-logprob*A)
-                entropy_loss.append(-entropy)
-                value_loss.append(F.mse_loss(V, torch.tensor(Q).view_as(V).to(V.device)))
-            if V_terminal is not None:
-                value_loss.append(F.mse_loss(V_terminal, torch.tensor(0.0).view_as(V).to(V.device)))
-            
-            policy_loss = torch.stack(policy_loss).mean()
-            entropy_loss = torch.stack(entropy_loss).mean()
-            value_loss = torch.stack(value_loss).mean()
-            
-            entropy_coef = self.config['agent.entropy_coef']
-            value_coef = self.config['agent.value_coef']
-            total_loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
-            
-            batch_policy_loss.append(policy_loss)
-            batch_entropy_loss.append(entropy_loss)
-            batch_value_loss.append(value_loss)
-            batch_total_loss.append(total_loss)
-            
-        policy_loss = torch.stack(batch_policy_loss).mean()
-        entropy_loss = torch.stack(batch_entropy_loss).mean()
-        value_loss = torch.stack(batch_value_loss).mean()
-        loss = torch.stack(batch_total_loss).mean()
+        out = self.policy(states, out_keys=['action', 'action_logprob', 'V', 'entropy'])
+        logprobs = out['action_logprob']
+        Vs = out['V'].squeeze(1)
+        entropies = out['entropy']
+        
+        if self.config['agent.standardize_adv']:
+            As = (As - As.mean())/(As.std() + 1e-8)
+        ratio = torch.exp(logprobs - old_logprobs)
+        eps = self.config['agent.clip_range']
+        policy_loss = torch.max(-ratio*As, -torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*As)
+        policy_loss = policy_loss.mean()
+        
+        if self.config['agent.standardize_Q']:
+            Qs = (Qs - Qs.mean())/(Qs.std() + 1e-8)
+        clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
+        value_loss = torch.max(F.mse_loss(Vs, Qs, reduction='none'), F.mse_loss(clipped_Vs, Qs, reduction='none'))
+        value_loss = value_loss.mean()
+        
+        entropy_loss = -entropies
+        entropy_loss = entropy_loss.mean()
+        
+        entropy_coef = self.config['agent.entropy_coef']
+        value_coef = self.config['agent.value_coef']
+        loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
         
         self.optimizer.zero_grad()
         loss.backward()
         
         if self.config['agent.max_grad_norm'] is not None:
             clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-            
+        
+        self.optimizer.step()
+        
+        out = {}
+        out['loss'] = loss.item()
+        out['policy_loss'] = policy_loss.item()
+        out['value_loss'] = value_loss.item()
+        out['entropy_loss'] = entropy_loss.item()
+        ev = ExplainedVariance()(y_true=Qs.cpu().detach().numpy(), y_pred=Vs.cpu().detach().numpy())
+        out['explained_variance'] = ev
+        
+        return out
+        
+    def learn(self, D, info={}):
+        dataset = Dataset(self.config, D, self.policy)
+        if self.config['cuda']:
+            kwargs = {'num_workers': 1, 'pin_memory': True}
+        else:
+            kwargs = {}
+        dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True, **kwargs)
+        
         if self.lr_scheduler is not None:
             if self.lr_scheduler.mode == 'iteration-based':
                 self.lr_scheduler.step()
             elif self.lr_scheduler.mode == 'timestep-based':
                 self.lr_scheduler.step(self.total_T)
-
-        self.optimizer.step()
         
-        self.total_T += sum([trajectory.T for trajectory in D])
+        for epoch in range(self.config['train.num_epochs']):
+            loss = []
+            policy_loss = []
+            value_loss = []
+            entropy_loss = []
+            explained_variance = []
+            for data in dataloader:
+                out = self.learn_one_update(data)
+                
+                loss.append(out['loss'])
+                policy_loss.append(out['policy_loss'])
+                value_loss.append(out['value_loss'])
+                entropy_loss.append(out['entropy_loss'])
+                explained_variance.append(out['explained_variance'])
+        
+        loss = np.mean(loss)
+        policy_loss = np.mean(policy_loss)
+        value_loss = np.mean(value_loss)
+        entropy_loss = np.mean(entropy_loss)
+        explained_variance = np.mean(explained_variance)
+        
+        self.total_T += sum([segment.T for segment in D])
         
         out = {}
-        out['loss'] = loss.item()
-        out['policy_loss'] = policy_loss.item()
-        out['entropy_loss'] = entropy_loss.item()
-        out['value_loss'] = value_loss.item()
+        out['loss'] = loss
+        out['policy_loss'] = policy_loss
+        out['value_loss'] = value_loss
+        out['entropy_loss'] = entropy_loss
+        out['explained_variance'] = explained_variance
         if self.lr_scheduler is not None:
             out['current_lr'] = self.lr_scheduler.get_lr()
-
+            
         return out
-    
+        
     @property
     def recurrent(self):
         pass

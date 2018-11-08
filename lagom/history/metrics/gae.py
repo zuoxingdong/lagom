@@ -50,8 +50,6 @@ def gae_from_trajectory(trajectory, Vs, V_last, gamma, lam):
     """
     list_td0_error = td0_error_from_trajectory(trajectory, Vs, V_last, gamma)
     
-    print(list_td0_error)
-    
     out = gae(list_td0_error, gamma, lam)
     
     return out
