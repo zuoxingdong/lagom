@@ -1,18 +1,20 @@
 from .base_agent import BaseAgent
 
 
-class RandomAgent(BaseAgent):
-    r"""A random agent samples action uniformly from action space. """
-    def __init__(self, config, env_spec):
+class StickyAgent(BaseAgent):
+    r"""An agent takes a sticky action regardless of observations. """
+    def __init__(self, config, env_spec, sticky_action):
         super().__init__(config, env_spec, None)
+        
+        self.sticky_action = sticky_action
         
     def choose_action(self, obs, info={}):
         out = {}
         
         if self.env_spec.is_vec_env:
-            action = [self.action_space.sample() for _ in range(self.env_spec.num_env)]
+            action = [self.sticky_action]*self.env_spec.num_env
         else:
-            action = self.action_space.sample()
+            action = self.sticky_action
         
         out['action'] = action
         
