@@ -57,11 +57,11 @@ class SerialVecEnv(VecEnv):
         for i, (env, action) in enumerate(zip(self.list_env, self.actions)):
             observation, reward, done, info = env.step(action)
             
-            # If episode terminates, reset this environment and record initial observation in info
-            # because terminal observation is still useful, one might needs it to train value function
+            # If episode terminates, reset this environment and report initial observation for new episode
+            # the terminal observation is stored in the info
             if done:
-                init_observation = env.reset()
-                info['init_observation'] = init_observation
+                info['terminal_observation'] = observation
+                observation = env.reset()
             
             observations.append(observation)
             rewards.append(reward)

@@ -15,6 +15,9 @@ lagom.history: History
 
 .. autoclass:: Segment
     :members:
+    
+.. autoclass:: History
+    :members:
 
 Metrics
 ----------------

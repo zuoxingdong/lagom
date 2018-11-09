@@ -20,7 +20,7 @@ agent.init_std: 1.0
 train.timestep: 1000000.0
 train.N: 1
 train.T: 200
-eval.N: 10
+eval.N: 100
 log.record_interval: 100
 log.print_interval: 100
 log.dir: logs

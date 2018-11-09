@@ -145,8 +145,8 @@ class Agent(BaseAgent):
             As = (As - As.mean())/(As.std() + 1e-8)
         ratio = torch.exp(logprobs - old_logprobs)
         eps = self.config['agent.clip_range']
-        policy_loss = torch.max(-ratio*As, -torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*As)
-        policy_loss = policy_loss.mean()
+        policy_loss = torch.min(ratio*As, torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*As)
+        policy_loss = -policy_loss.mean()
         
         if self.config['agent.standardize_Q']:
             Qs = (Qs - Qs.mean())/(Qs.std() + 1e-8)

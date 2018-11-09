@@ -107,8 +107,12 @@ class Agent(BaseAgent):
     def choose_action(self, obs, info={}):
         obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         
-        out = self.policy(obs, out_keys=['action', 'action_logprob', 'entropy'], info=info)
-            
+        if self.training:
+            out = self.policy(obs, out_keys=['action', 'action_logprob', 'entropy'], info=info)
+        else:
+            with torch.no_grad():
+                out = self.policy(obs, out_keys=['action'], info=info)
+
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
             while True:
@@ -119,38 +123,26 @@ class Agent(BaseAgent):
         return out
 
     def learn(self, D, info={}):
-        batch_policy_loss = []
-        batch_entropy_loss = []
-        batch_total_loss = []
+        logprobs = [torch.stack(trajectory.all_info('action_logprob')) for trajectory in D]
+        logprobs = torch.stack(logprobs)
         
-        for trajectory in D:
-            logprobs = trajectory.all_info('action_logprob')
-            entropies = trajectory.all_info('entropy')
-            Qs = trajectory.all_discounted_returns(self.config['algo.gamma'])
+        entropies = [torch.stack(trajectory.all_info('entropy')) for trajectory in D]
+        entropies = torch.stack(entropies)
+        
+        Qs = [trajectory.all_discounted_returns(self.config['algo.gamma']) for trajectory in D]
+        Qs = torch.tensor(Qs).float().to(self.device)
+        if self.config['agent.standardize_Q']:
+            Qs = (Qs - Qs.mean(1))/(Qs.std(1) + 1e-8)
             
-            # Standardize: encourage/discourage half of performed actions
-            if self.config['agent.standardize_Q']:
-                Qs = Standardize()(Qs, -1).tolist()
+        assert all([len(x.shape) == 2 for x in [logprobs, entropies, Qs]])
             
-            policy_loss = []
-            entropy_loss = []
-            for logprob, entropy, Q in zip(logprobs, entropies, Qs):
-                policy_loss.append(-logprob*Q)
-                entropy_loss.append(-entropy)
-            
-            policy_loss = torch.stack(policy_loss).mean()
-            entropy_loss = torch.stack(entropy_loss).mean()
-            
-            entropy_coef = self.config['agent.entropy_coef']
-            total_loss = policy_loss + entropy_coef*entropy_loss
-            
-            batch_policy_loss.append(policy_loss)
-            batch_entropy_loss.append(entropy_loss)
-            batch_total_loss.append(total_loss)
-            
-        policy_loss = torch.stack(batch_policy_loss).mean()
-        entropy_loss = torch.stack(batch_entropy_loss).mean()
-        loss = torch.stack(batch_total_loss).mean()
+        policy_loss = -logprobs*Qs
+        policy_loss = policy_loss.mean()
+        entropy_loss = -entropies
+        entropy_loss = entropy_loss.mean()
+        
+        entropy_coef = self.config['agent.entropy_coef']
+        loss = policy_loss + entropy_coef*entropy_loss
         
         self.optimizer.zero_grad()
         loss.backward()
