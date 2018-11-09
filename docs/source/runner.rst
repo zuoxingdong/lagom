@@ -11,3 +11,6 @@ lagom.runner: Runner
 
 .. autoclass:: SegmentRunner
     :members:
+
+.. autoclass:: RollingRunner
+    :members:

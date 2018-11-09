@@ -14,6 +14,8 @@ agent.standardize_adv: false
 agent.max_grad_norm: 0.5
 agent.entropy_coef: 0.01
 agent.value_coef: 0.5
+agent.fit_terminal_value: true
+agent.V_terminals_coef: 0.1
 agent.min_std: 1.0e-06
 agent.std_style: exp
 agent.constant_std: null
@@ -22,7 +24,7 @@ agent.init_std: 1.0
 train.timestep: 1000000.0
 train.N: 1
 train.T: 200
-eval.N: 10
+eval.N: 100
 log.record_interval: 100
 log.print_interval: 100
 log.dir: logs
