@@ -4,9 +4,16 @@ import torch
 
 import pytest
 
+from lagom.envs import make_gym_env
+from lagom.envs import make_vec_env
+from lagom.envs.vec_env import SerialVecEnv
+from lagom.envs import EnvSpec
+
 from lagom.history import Transition
 from lagom.history import Trajectory
 from lagom.history import Segment
+
+from lagom.history import History
 
 from lagom.history.metrics import terminal_state_from_trajectory
 from lagom.history.metrics import terminal_state_from_segment
@@ -328,6 +335,57 @@ def test_segment():
     del transition3
     del transition4
     del all_info
+    
+    
+def test_history():
+    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
+    env_spec = EnvSpec(env)
+    history = History(env_spec, T=5)
+
+    assert history.env_spec is env_spec
+    assert history.N == 3
+    assert history.T == 5
+    assert history.observations.shape == (3, 5+1, 4)
+    assert history.rewards.shape == (3, 5)
+    assert history.dones.shape == (3, 5)
+    assert len(history.infos) == 5
+    assert len(history.extra_info) == 0
+
+    history.add_extra_info('roger', 20)
+    assert history.extra_info['roger'] == 20
+
+    history.add('one', 1)
+    assert history.one == 1
+    assert history.get('one') == 1
+    with pytest.raises(AssertionError):
+        history.add('one', 2)
+
+    history.add_t('oh', 3, -5)
+    assert hasattr(history, 'oh')
+    assert history.oh == [None, None, None, -5, None]
+    assert history.oh[3] == -5
+    assert history.get_t('oh', 3) == -5
+
+    init_obs = env.reset()
+    history.observations[:, 0, ...] = init_obs
+    obs, reward, done, info = env.step([0]*3)
+    history.observations[:, 1, ...] = obs
+    history.rewards[:, 0] = reward
+    history.dones[:, 0] = done
+    history.infos[0] = info
+
+    assert np.allclose(init_obs, history.observations[:, 0, ...])
+    assert np.allclose(obs, history.observations[:, 1, ...])
+    assert np.allclose(0.0, history.observations[:, 2:, ...])
+    assert np.allclose(reward, history.rewards[:, 0])
+    assert np.allclose(0.0, history.rewards[:, 1:])
+    assert np.allclose(done, history.dones[:, 0])
+    assert np.allclose(True, history.dones[:, 1:])
+    assert history.infos[0] == [{}, {}, {}]
+    assert history.infos[1:] == [None, None, None, None]
+
+    assert np.allclose(history.masks[:, 0], int(not False))
+    assert np.allclose(history.masks[:, 1:], int(not True))
 
 
 def test_terminal_state_from_trajectory():

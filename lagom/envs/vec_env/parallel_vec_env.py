@@ -26,11 +26,11 @@ def worker(master_conn, worker_conn, make_env):
         if cmd == 'step':
             observation, reward, done, info = env.step(data)
             
-            # If episode terminates, reset the environment and send back initial observation in info
-            # because terminal observation is still useful, one might needs it to train value function
+            # If episode terminates, reset this environment and report initial observation for new episode
+            # the terminal observation is stored in the info
             if done:
-                init_observation = env.reset()
-                info['init_observation'] = init_observation
+                info['terminal_observation'] = observation
+                observation = env.reset()
             
             worker_conn.send([observation, reward, done, info])
         elif cmd == 'reset':

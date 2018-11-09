@@ -1,4 +1,4 @@
-import gym
+from gym import spaces
 
 from .discrete import Discrete
 from .box import Box
@@ -17,13 +17,13 @@ def convert_gym_space(space):
     out : Space
         converted lagom-compatible space
     """
-    if isinstance(space, gym.spaces.Discrete):
+    if isinstance(space, spaces.Discrete):
         return Discrete(n=space.n)
-    elif isinstance(space, gym.spaces.Box):
+    elif isinstance(space, spaces.Box):
         return Box(low=space.low, high=space.high, dtype=space.dtype)
-    elif isinstance(space, gym.spaces.Dict):
+    elif isinstance(space, spaces.Dict):
         return Dict({k: convert_gym_space(s) for k, s in space.spaces.items()})
-    elif isinstance(space, gym.spaces.Tuple):
+    elif isinstance(space, spaces.Tuple):
         return Tuple([convert_gym_space(s) for s in space.spaces])
     else:
         raise TypeError(f'expected Discrete, Box, Dict or Tuple, got {type(space)}')
