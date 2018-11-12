@@ -18,6 +18,12 @@ lagom.history: History
     
 .. autoclass:: History
     :members:
+    
+.. autoclass:: BatchEpisode
+    :members:
+    
+.. autoclass:: BatchSegment
+    :members:
 
 Metrics
 ----------------
