@@ -1,6 +1,6 @@
 import numpy as np
 
-from itertools import accumulate
+from scipy.signal import lfilter
 
 from .base_transform import BaseTransform
 
@@ -51,7 +51,7 @@ class ExpFactorCumSum(BaseTransform):
         """
         self.alpha = alpha
         
-    def __call__(self, x, mask=None, _fast_code=True):
+    def __call__(self, x, mask=None):
         r"""Calculate future accumulated sums with exponential factor. 
         
         An optional binary mask could be used. 
@@ -72,45 +72,30 @@ class ExpFactorCumSum(BaseTransform):
             calculated data
         """
         assert not np.isscalar(x), 'does not support scalar value !'
-        if isinstance(x, np.ndarray):
-            x = x.tolist()
-        assert isinstance(x, list), f'expected list, got {type(x)}'
+        x = self.to_numpy(x, np.float32)
+        if x.ndim == 1:
+            x = np.expand_dims(x, 0)
+        assert x.ndim == 2
+        
+        if mask is not None:
+            assert np.asarray(mask).dtype != np.bool
+            assert np.array_equal(mask, np.array(mask).astype(bool))
+            
+            mask = self.to_numpy(mask, np.float32)
+            if mask.ndim == 1:
+                mask = np.expand_dims(mask, 0)
+            assert mask.ndim == 2
+            assert mask.shape == x.shape
         
         if mask is None:
-            mask = [1.0]*len(x)
+            return lfilter([1], [1, -self.alpha], x[:, ::-1], axis=1)[:, ::-1]
         else:
-            msg = 'binary mask should be 0 or 1, not boolean. Otherwise, it is prone to bugs because'
-            msg += 'when done=True, we want to use 0 to mask out. '
-            assert np.asarray(mask).dtype != 'bool', msg
-        
-            msg = 'The mask must be binary, i.e. either 0 or 1. '
-            assert np.array_equal(mask, np.array(mask).astype(bool)), msg
-        assert len(x) == len(mask), f'mask must be same length with input data, {len(mask)} != {len(x)}'
-        
-        if _fast_code:
-            return self._fast(x, mask)
-        else:
-            return self._slow(x, mask)
+            N, T = x.shape
+            out = np.zeros_like(x, dtype=np.float32)
+            cumsum = np.zeros(N, dtype=np.float32)
 
-    def _slow(self, x, masks):
-        cumsum = 0.0
-        out = []
+            for t in reversed(range(T)):
+                cumsum = x[:, t] + self.alpha*cumsum*mask[:, t]
+                out[:, t] = cumsum
 
-        # reverse order
-        for value, mask in zip(x[::-1], masks[::-1]):
-            cumsum = value + self.alpha*cumsum*mask  # recursive update
-            out.insert(0, cumsum)
-
-        return out
-    
-    def _fast(self, x, masks):
-        # reverse ordering
-        D = list(zip(x[::-1], masks[::-1]))
-        # replace first element with its x value, drop out the mask item
-        # because accumulating sum, the mask in the last is not useful to compute total value
-        D[0] = D[0][0]
-        
-        out = accumulate(D, lambda total, element: element[0] + self.alpha*total*element[1])
-        out = list(out)[::-1]
-        
-        return out
+            return out
