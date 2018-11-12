@@ -536,8 +536,9 @@ class TestVecEnv(object):
         obs2 = venv2.reset()
         assert np.allclose(obs1, obs2)
         a = [1]*5
-        obs1, rewards1, dones1, _ = venv1.step(a)
-        obs2, rewards2, dones2, _ = venv2.step(a)
-        assert np.allclose(obs1, obs2)
-        assert np.allclose(rewards1, rewards2)
-        assert np.allclose(dones1, dones2)
+        for _ in range(20):
+            obs1, rewards1, dones1, _ = venv1.step(a)
+            obs2, rewards2, dones2, _ = venv2.step(a)
+            assert np.allclose(obs1, obs2)
+            assert np.allclose(rewards1, rewards2)
+            assert np.allclose(dones1, dones2)

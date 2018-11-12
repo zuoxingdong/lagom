@@ -14,3 +14,10 @@ lagom.runner: Runner
 
 .. autoclass:: RollingRunner
     :members:
+    
+.. autoclass:: EpisodeRunner
+    :members:
+    
+.. autoclass:: RollingSegmentRunner
+    :members:
+
