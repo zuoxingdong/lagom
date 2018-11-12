@@ -8,39 +8,28 @@ from .base_transform import BaseTransform
 class ExpFactorCumSum(BaseTransform):
     r"""Calculate future accumulated sums for each element in a list with an exponential factor. 
     
-    Given input data :math:`[x_1, ..., x_n]` and exponential factor :math:`\alpha\in [0, 1]`, it returns
+    Given input data :math:`x_1, \dots, x_n` and exponential factor :math:`\alpha\in [0, 1]`, it returns
     an array :math:`y` with the same length and each element is calculated as following
     
     .. math::
-        y_i = x_i + \alpha*x_{i+1} + \alpha^2*x_{i+2} + \dots + \alpha^{n-i-1}*x_{n-1} + \alpha^{n-i}*x_{n}
-        
+        y_i = x_i + \alpha x_{i+1} + \alpha^2 x_{i+2} + \dots + \alpha^{n-i-1}x_{n-1} + \alpha^{n-i}x_{n}
+            
     .. note::
-    
-        We provided a fast and a slow implementations. For fast implementation, it uses
-        Python build-in function ``itertools.accumulate`` and the slow one is implementated
-        by using for looping. According to the benchmarks, the amount of speedup with respect
-        to the sequence length for the fast implementation over the slow one is shown as following:
-            
-            * Length 100: :math:`\approx 1%` faster
-            * Length 1000: :math:`\approx 33%` faster
-            * Length 2000: :math:`\approx 69%` faster
-            
-        Because this function is commonly used for calculating discounted returns for every time
-        step in an episode, and often an episode has length of a few hundreds only. There might
-        not be a significant speedup. 
-        
-    .. warning::
-    
-        Currently, the batched calculation is not supported !
+        To gain the optimal runtime speed, we use ``scipy.signal.lfilter`` for non-mask version.
+        And when we use binary masks, we use a vectorized implementation. 
     
     Example::
     
         >>> f = ExpFactorCumSum(0.1)
         >>> f([1, 2, 3, 4])
-        [1.234, 2.34, 3.4, 4]
+        array([[1.234, 2.34 , 3.4  , 4.   ]])
         
-        >>> f([1, 2, 3, 4], mask=[1, 0, 1, 1], _fast_code=True)
-        [1.2, 2.0, 3.4, 4]
+        >>> f([1, 2, 3, 4], mask=[1, 0, 1, 1])
+        array([[1.2, 2. , 3.4, 4. ]], dtype=float32)
+        
+        >>> f([[1, 2, 3, 4], [5, 6, 7, 8]], mask=[[1, 0, 1, 1], [1, 1, 0, 1]])
+        array([[1.2 , 2.  , 3.4 , 4.  ],
+               [5.67, 6.7 , 7.  , 8.  ]], dtype=float32)
 
     """
     def __init__(self, alpha):
@@ -68,7 +57,7 @@ class ExpFactorCumSum(BaseTransform):
 
         Returns
         -------
-        out : list
+        out : ndarray
             calculated data
         """
         assert not np.isscalar(x), 'does not support scalar value !'
