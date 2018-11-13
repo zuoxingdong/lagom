@@ -76,3 +76,8 @@ class BaseHistory(ABC):
     @property
     def N(self):
         return self.env_spec.num_env
+    
+    @property
+    @abstractmethod
+    def total_T(self):
+        pass

@@ -1,15 +1,15 @@
 import numpy as np
 import torch
 
-from lagom.history import Trajectory
-from lagom.history import Segment
+from lagom.history import BatchEpisode
+from lagom.history import BatchSegment
 
 from lagom.transform import ExpFactorCumSum
 
 
-def bootstrapped_returns_from_trajectory(trajectory, V_last, gamma=1.0):
-    r"""Return a list of (discounted) accumulated returns with bootstrapping for all 
-    time steps, from a trajectory. 
+def bootstrapped_returns_from_episode(batch_episode, last_Vs, gamma):
+    r"""Return (discounted) accumulated returns with bootstrapping for a 
+    batch of episodic transitions. 
     
     Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
@@ -18,37 +18,37 @@ def bootstrapped_returns_from_trajectory(trajectory, V_last, gamma=1.0):
         
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        trajectory (Trajectory): a trajectory
-        V_last (object): the value of the final state in the trajectory
+        batch_episode (BatchEpisode): a batch of episodic transitions. 
+        last_Vs (object): the value of the final states in the episode.
         gamma (float): discounted factor
         
     Returns
     -------
-    out : list
-        a list of (discounted) bootstrapped returns
+    out : ndarray
+        an array of (discounted) bootstrapped returns.
     """
-    assert isinstance(trajectory, Trajectory) 
+    assert isinstance(batch_episode, BatchEpisode)
     
-    if torch.is_tensor(V_last):
-        V_last = V_last.item()
-    if isinstance(V_last, np.ndarray):
-        V_last = V_last.item()
-        
-    if trajectory.complete:
-        V_last = 0.0
-        
-    out = ExpFactorCumSum(gamma)(trajectory.all_r + [V_last])
-    out = out[:-1]  # last one is just state value itself
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    last_Vs = last_Vs*np.logical_not(batch_episode.completes).astype(np.float32)
+    
+    f = ExpFactorCumSum(gamma)
+    out = np.concatenate([batch_episode.numpy_rewards, np.zeros((batch_episode.N, 1), dtype=np.float32)], axis=1)
+    out[range(batch_episode.N), batch_episode.Ts] = last_Vs
+    out = f(out)
+    out[range(batch_episode.N), batch_episode.Ts] = 0.0
+    out = out[:, :-1]
     
     return out
     
     
-def bootstrapped_returns_from_segment(segment, all_V_last, gamma=1.0):
-    r"""Return a list of (discounted) accumulated returns with bootstrapping for all 
-    time steps, from a segment. 
+def bootstrapped_returns_from_segment(batch_segment, last_Vs, gamma):
+    r"""Return (discounted) accumulated returns with bootstrapping for a 
+    batch of rolling segment. 
     
     Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
         
@@ -57,23 +57,28 @@ def bootstrapped_returns_from_segment(segment, all_V_last, gamma=1.0):
         
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        segment (Segment): a segment
-        all_V_last (object): the value of all final states for each trajectory in the segment. 
+        batch_segment (BatchSegment): a batch of rolling segments. 
+        last_Vs (object): the value of the final states in the episode.
         gamma (float): discounted factor
         
     Returns
     -------
-    out : list
-        a list of (discounted) bootstrapped returns
+    out : ndarray
+        an array of (discounted) bootstrapped returns.
     """
-    assert isinstance(segment, Segment)
-    assert len(segment.trajectories) == len(all_V_last)
+    assert isinstance(batch_segment, BatchSegment)
     
-    out = []
-    for trajectory, V_last in zip(segment.trajectories, all_V_last):
-        out += bootstrapped_returns_from_trajectory(trajectory, V_last, gamma)
-        
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    
+    f = ExpFactorCumSum(gamma)
+    mask = np.concatenate([batch_segment.numpy_masks, np.ones((batch_segment.N, 1), dtype=np.float32)], axis=1)
+    out = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
+    out[:, :-1] = batch_segment.numpy_rewards
+    out[:, -1] = last_Vs
+    out = f(out, mask=mask)[:, :-1]
+    
     return out

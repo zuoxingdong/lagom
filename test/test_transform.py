@@ -84,21 +84,23 @@ def test_expfactorcumsum():
     with pytest.raises(AssertionError):
         f(1.5)
 
-    assert np.allclose(f([1, 2, 3], _fast_code=True), [1.23, 2.3, 3])
-    assert np.allclose(f([1, 2, 3], _fast_code=False), [1.23, 2.3, 3])
+    assert np.allclose(f([1, 2, 3]), [1.23, 2.3, 3])
 
     x = [1, 2, 3, 4, 5, 6]
     dones = [False, False, True, False, False, False]
     mask = np.logical_not(dones).astype(int).tolist()
 
     assert np.allclose(f(x, mask=mask), [1.23, 2.3, 3, 4.56, 5.6, 6])
+    
+    assert np.allclose(f([[1, 2, 3, 4], [5, 6, 7, 8]]), 
+                       [[1.234, 2.34, 3.4, 4], [5.678, 6.78, 7.8, 8]])
+    assert np.allclose(f([[1, 2, 3, 4], [5, 6, 7, 8]], mask=[[1, 1, 0, 1], [1, 0, 1, 1]]), 
+                       [[1.23, 2.3, 3, 4], [5.6, 6, 7.8, 8]])
 
     with pytest.raises(AssertionError):
         f(x, mask=dones)
-
     with pytest.raises(AssertionError):
         f(x, mask=[1, 0, 1])
-
     with pytest.raises(AssertionError):
         f(x, mask=[1, 1, 0.5, 1, 1, 1])
 

@@ -1,12 +1,12 @@
 import numpy as np
 import torch
 
-from lagom.history import Trajectory
-from lagom.history import Segment
+from lagom.history import BatchEpisode
+from lagom.history import BatchSegment
 
 
-def td0_target(list_r, list_V, gamma):
-    r"""Calculate a list of TD(0) targets given a list of rewards, a list of state values and a discounted factor.
+def td0_target_from_episode(batch_episode, all_Vs, last_Vs, gamma):
+    r"""Calculate TD(0) targets of a batch of episodic transitions. 
     
     Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
     be a list of state values including a last state value. Let :math:`\gamma` be a discounted factor, 
@@ -14,98 +14,85 @@ def td0_target(list_r, list_V, gamma):
         
     .. math::
         r_t + \gamma V(s_t), \forall t = 1, 2, \dots, T
-    
-    Args:
-        list_r (list): a list of rewards. 
-        list_V (list): a list of state values including the last state value.
-        gamma (float): a discounted factor. 
-    
-    Returns
-    -------
-    list_td0_target : list
-        a list of TD(0) targets
-    """
-    assert isinstance(list_r, list) and isinstance(list_V, list)
-    assert len(list_V) == len(list_r) + 1
-    assert gamma >= 0.0 and gamma <= 1.0
-    
-    list_td0_target = [r + gamma*V for r, V in zip(list_r, list_V[1:])]
-    
-    return list_td0_target
-
-
-def td0_target_from_trajectory(trajectory, Vs, V_last, gamma):
-    r"""Return a list of TD(0) targets from a trajectory. 
-    
+        
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        trajectory (Trajectory): a trajectory
-        Vs (list): a list of state values for each time step excluding the final state. 
-        V_last (object): the value of the final state in the trajectory
-        gamma (float): discounted factor
-        
+        batch_episode (BatchEpisode): a batch of episodic transitions. 
+        all_Vs (object): the value of states in all transitions. 
+        last_Vs (object): the value of the final states in the episode.
+        gamma (float): discounted factor.
+    
     Returns
     -------
-    out : list
-        a list of TD(0) targets
+    out : object
+        TD(0) targets
     """
-    assert isinstance(trajectory, Trajectory)
-    assert isinstance(Vs, list) and len(Vs) == trajectory.T
+    assert isinstance(batch_episode, BatchEpisode)
     
-    def to_raw(x):
-        if torch.is_tensor(x):
-            return x.item()
-        elif isinstance(x, np.ndarray):
-            return x.item()
+    Vs = np.zeros((batch_episode.N, batch_episode.maxT+1), dtype=np.float32)
+    for t, V in enumerate(all_Vs):
+        if torch.is_tensor(V):
+            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
         else:
-            return x
-        
-    Vs = [to_raw(V) for V in Vs]
-    V_last = to_raw(V_last)
+            Vs[:, t] = V
+            
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs[range(batch_episode.N), batch_episode.Ts] = last_Vs
     
-    if trajectory.complete:
-        V_last = 0.0
-        
-    out = td0_target(trajectory.all_r, Vs + [V_last], gamma)
+    out = batch_episode.numpy_rewards + gamma*Vs[:, 1:]*batch_episode.numpy_masks
     
     return out
-
-
-def td0_target_from_segment(segment, all_Vs, all_V_last, gamma):
-    r"""Return a list of TD(0) targets from a segment. 
+        
     
+def td0_target_from_segment(batch_segment, all_Vs, last_Vs, gamma):
+    r"""Calculate TD(0) targets of a batch of rolling segments. 
+    
+    Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
+    be a list of state values including a last state value. Let :math:`\gamma` be a discounted factor, 
+    the TD(0) targets are calculated as follows
+        
+    .. math::
+        r_t + \gamma V(s_t), \forall t = 1, 2, \dots, T
+        
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        segment (Segment): a segment
-        all_Vs (list): a list of state values for each time step and each inner trajectory
-            excluding the final state. 
-        all_V_last (list): a list of final state values for each inner trajectory. 
-        gamma (float): discounted factor
-        
+        batch_segment (BatchSegment): a batch of rolling segments. 
+        all_Vs (object): the value of states in all transitions. 
+        last_Vs (object): the value of the final states in the episode.
+        gamma (float): discounted factor.
+    
     Returns
     -------
-    out : list
-        a list of TD(0) targets
+    out : object
+        TD(0) targets
     """
-    assert isinstance(segment, Segment)
-    assert isinstance(all_Vs, list) and len(all_Vs) == len(segment.trajectories)
-    assert len(all_V_last) == len(segment.trajectories)
+    assert isinstance(batch_segment, BatchSegment)
     
-    out = []
-    for trajectory, Vs, V_last in zip(segment.trajectories, all_Vs, all_V_last):
-        out += td0_target_from_trajectory(trajectory, Vs, V_last, gamma)
+    Vs = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
+    for t, V in enumerate(all_Vs):
+        if torch.is_tensor(V):
+            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
+        else:
+            Vs[:, t] = V
+            
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs[:, -1] = last_Vs
+    
+    out = batch_segment.numpy_rewards + gamma*Vs[:, 1:]*batch_segment.numpy_masks
     
     return out
-    
 
-def td0_error(list_r, list_V, gamma):
-    r"""Calculate a list of TD(0) errors given a list of rewards, a list of state values and a discounted factor.
+
+def td0_error_from_episode(batch_episode, all_Vs, last_Vs, gamma):
+    r"""Calculate TD(0) errors of a batch of episodic transitions. 
     
     Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
     be a list of state values including a last state value. Let :math:`\gamma` be a discounted factor, 
@@ -114,92 +101,82 @@ def td0_error(list_r, list_V, gamma):
     .. math::
         \delta_t = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
         
-    Args:
-        list_r (list): a list of rewards. 
-        list_V (list): a list of state values including the last state value.
-        gamma (float): a discounted factor. 
-    
-    Returns
-    -------
-    list_td0_error : list
-        a list of TD(0) errors
-    """
-    assert isinstance(list_r, list) and isinstance(list_V, list)
-    assert len(list_V) == len(list_r) + 1
-    assert gamma >= 0.0 and gamma <= 1.0
-    
-    list_td0_target = td0_target(list_r, list_V, gamma)
-    
-    list_td0_error = [td0_target - V for td0_target, V in zip(list_td0_target, list_V[:-1])]
-    
-    return list_td0_error
-
-
-def td0_error_from_trajectory(trajectory, Vs, V_last, gamma):
-    r"""Return a list of TD(0) errors from a trajectory. 
-    
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        trajectory (Trajectory): a trajectory
-        Vs (list): a list of state values for each time step excluding the final state. 
-        V_last (object): the value of the final state in the trajectory
-        gamma (float): discounted factor
-        
+        batch_episode (BatchEpisode): a batch of episodic transitions. 
+        all_Vs (object): the value of states in all transitions. 
+        last_Vs (object): the value of the final states in the episode.
+        gamma (float): discounted factor.
+    
     Returns
     -------
-    out : list
-        a list of TD(0) errors
+    out : object
+        TD(0) errors
     """
-    assert isinstance(trajectory, Trajectory)
-    assert isinstance(Vs, list) and len(Vs) == trajectory.T
-    
-    def to_raw(x):
-        if torch.is_tensor(x):
-            return x.item()
-        elif isinstance(x, np.ndarray):
-            return x.item()
+    assert isinstance(batch_episode, BatchEpisode)
+
+    Vs = np.zeros((batch_episode.N, batch_episode.maxT+1), dtype=np.float32)
+    for t, V in enumerate(all_Vs):
+        if torch.is_tensor(V):
+            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
         else:
-            return x
-        
-    Vs = [to_raw(V) for V in Vs]
-    V_last = to_raw(V_last)
-    
-    if trajectory.complete:
-        V_last = 0.0
-        
-    out = td0_error(trajectory.all_r, Vs + [V_last], gamma)
-    
+            Vs[:, t] = V
+
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs[range(batch_episode.N), batch_episode.Ts] = last_Vs
+            
+    out = batch_episode.numpy_rewards + gamma*Vs[:, 1:]*batch_episode.numpy_masks
+    for n, T in enumerate(batch_episode.Ts):
+        Vs[n, T:] = 0.0
+    out = out - Vs[:, :-1]
+
     return out
 
 
-def td0_error_from_segment(segment, all_Vs, all_V_last, gamma):
-    r"""Return a list of TD(0) errors from a segment. 
+def td0_error_from_segment(batch_segment, all_Vs, last_Vs, gamma):
+    r"""Calculate TD(0) errors of a batch of rolling segments. 
     
+    Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
+    be a list of state values including a last state value. Let :math:`\gamma` be a discounted factor, 
+    the TD(0) errors are calculated as follows
+    
+    .. math::
+        \delta_t = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
+        
     .. note::
 
-        The state value for terminal state is set as zero !
+        The state values for terminal states are masked out as zero !
     
     Args:
-        segment (Segment): a segment
-        all_Vs (list): a list of state values for each time step and each inner trajectory
-            excluding the final state. 
-        all_V_last (list): a list of final state values for each inner trajectory. 
-        gamma (float): discounted factor
-        
+        batch_segment (BatchSegment): a batch of rolling segments. 
+        all_Vs (object): the value of states in all transitions. 
+        last_Vs (object): the value of the final states in the episode.
+        gamma (float): discounted factor.
+    
     Returns
     -------
-    out : list
-        a list of TD(0) errors
+    out : object
+        TD(0) errors
     """
-    assert isinstance(segment, Segment)
-    assert isinstance(all_Vs, list) and len(all_Vs) == len(segment.trajectories)
-    assert len(all_V_last) == len(segment.trajectories)
+    assert isinstance(batch_segment, BatchSegment)
     
-    out = []
-    for trajectory, Vs, V_last in zip(segment.trajectories, all_Vs, all_V_last):
-        out += td0_error_from_trajectory(trajectory, Vs, V_last, gamma)
+    Vs = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
+    for t, V in enumerate(all_Vs):
+        if torch.is_tensor(V):
+            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
+        else:
+            Vs[:, t] = V
+            
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs[:, -1] = last_Vs
+    
+    print(Vs)
+    
+    out = batch_segment.numpy_rewards + gamma*Vs[:, 1:]*batch_segment.numpy_masks - Vs[:, :-1]
     
     return out
