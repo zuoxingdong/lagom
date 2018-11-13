@@ -128,11 +128,15 @@ class BatchEpisode(BaseHistory):
     
     @property
     def Ts(self):
-        return [len(d) for d in self.done]
+        return np.array([len(d) for d in self.done])
     
     @property
     def maxT(self):
-        return max(self.Ts)
+        return np.max(self.Ts)
+    
+    @property
+    def total_T(self):
+        return sum(self.Ts)
     
     def __repr__(self):
         string = f'{self.__class__.__name__}(N={self.N}, maxT={(self.maxT)})'

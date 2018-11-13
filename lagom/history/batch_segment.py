@@ -77,6 +77,10 @@ class BatchSegment(BaseHistory):
     def T(self):
         return self._T
     
+    @property
+    def total_T(self):
+        return self.N*self.T
+    
     def __repr__(self):
         string = f'{self.__class__.__name__}(N={self.N}, T={(self.T)})'
         return string

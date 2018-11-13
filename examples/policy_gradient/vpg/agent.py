@@ -19,9 +19,10 @@ from lagom.policies import constraint_action
 
 from lagom.value_functions import StateValueHead
 
-from lagom.history.metrics import terminal_state_from_trajectory
-
-from lagom.transform import Standardize
+from lagom.history.metrics import final_state_from_episode
+from lagom.history.metrics import terminal_state_from_episode
+from lagom.history.metrics import bootstrapped_returns_from_episode
+from lagom.history.metrics import gae_from_episode
 
 from lagom.agents import BaseAgent
 
@@ -93,7 +94,7 @@ class Policy(BasePolicy):
     
 
 class Agent(BaseAgent):
-    r"""Vanilla Policy Gradient (VPG) with value network (baseline), no bootstrapping to estimate value function. """
+    r"""Vanilla Policy Gradient (VPG) with value network (baseline) and GAE."""
     def make_modules(self, config):
         self.policy = Policy(config, self.env_spec, self.device)
         
@@ -130,32 +131,31 @@ class Agent(BaseAgent):
         return out
 
     def learn(self, D, info={}):
-        logprobs = [torch.stack(trajectory.all_info('action_logprob')) for trajectory in D]
-        logprobs = torch.stack(logprobs)
+        logprobs = torch.stack([info['action_logprob'] for info in D.batch_infos], 1).squeeze(-1)
+        entropies = torch.stack([info['entropy'] for info in D.batch_infos], 1).squeeze(-1)
         
-        entropies = [torch.stack(trajectory.all_info('entropy')) for trajectory in D]
-        entropies = torch.stack(entropies)
-        
-        Qs = [trajectory.all_discounted_returns(self.config['algo.gamma']) for trajectory in D]
-        Qs = torch.tensor(Qs).float().to(self.device)
+        last_states = torch.tensor(final_state_from_episode(D)).float().to(self.device)
+        with torch.no_grad():
+            last_Vs = self.policy(last_states, out_keys=['V'])['V']
+        Qs = bootstrapped_returns_from_episode(D, last_Vs, self.config['algo.gamma'])
+        Qs = torch.tensor(Qs.tolist()).float().to(self.device)
         if self.config['agent.standardize_Q']:
             Qs = (Qs - Qs.mean(1))/(Qs.std(1) + 1e-8)
-            
-        Vs = [torch.cat(trajectory.all_info('V')) for trajectory in D]
-        Vs = torch.stack(Vs)
         
-        As = Qs - Vs
-        As = As.detach()
+        all_Vs = [info['V'] for info in D.batch_infos]
+        Vs = torch.stack(all_Vs, 1).squeeze(-1)
+        As = gae_from_episode(D, all_Vs, last_Vs, self.config['algo.gamma'], self.config['algo.gae_lambda'])
+        As = torch.tensor(As.tolist()).float().to(self.device)
         if self.config['agent.standardize_adv']:
             As = (As - As.mean(1))/(As.std(1) + 1e-8)
         
-        assert all([len(x.shape) == 2 for x in [logprobs, entropies, Qs, Vs]])
+        assert all([len(x.shape) == 2 for x in [logprobs, entropies, Qs, Vs, As]])
         
         policy_loss = -logprobs*As
         policy_loss = policy_loss.mean()
         entropy_loss = -entropies
         entropy_loss = entropy_loss.mean()
-        value_loss = F.mse_loss(Vs, Qs, reduction='none')
+        value_loss = F.mse_loss(Vs, Qs, reduction='none')   #############TODO: mask out
         value_loss = value_loss.mean()
         
         entropy_coef = self.config['agent.entropy_coef']
@@ -163,16 +163,13 @@ class Agent(BaseAgent):
         loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
         
         if self.config['agent.fit_terminal_value']:
-            terminal_states = [terminal_state_from_trajectory(trajectory) for trajectory in D if trajectory.complete]
-            if len(terminal_states) > 0:
+            terminal_states = terminal_state_from_episode(D)
+            if terminal_states is not None:
                 terminal_states = torch.tensor(terminal_states).float().to(self.device)
-                V_terminals = self.policy(terminal_states)['V']
-            else:
-                V_terminals = torch.tensor(0.0).to(self.device)
-            
-            V_terminals_loss = F.mse_loss(V_terminals, torch.zeros_like(V_terminals))
-            V_terminals_coef = self.config['agent.V_terminals_coef']
-            loss += V_terminals_coef*V_terminals_loss
+                terminal_Vs = self.policy(terminal_states, out_keys=['V'])['V']
+                terminal_value_loss = F.mse_loss(terminal_Vs, torch.zeros_like(terminal_Vs))
+                terminal_value_loss_coef = self.config['agent.terminal_value_coef']
+                loss += terminal_value_loss_coef*terminal_value_loss
         
         self.optimizer.zero_grad()
         loss.backward()
@@ -188,7 +185,7 @@ class Agent(BaseAgent):
         
         self.optimizer.step()
         
-        self.total_T += sum([trajectory.T for trajectory in D])
+        self.total_T += D.total_T
         
         out = {}
         out['loss'] = loss.item()
