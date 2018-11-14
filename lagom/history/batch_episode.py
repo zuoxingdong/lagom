@@ -115,6 +115,14 @@ class BatchEpisode(BaseHistory):
         return [np.logical_not(d).astype(np.float32) for d in self.done]
     
     @property
+    def numpy_validity_masks(self):
+        out = np.full((self.N, self.maxT), True, dtype=np.bool)
+        for n, T in enumerate(self.Ts):
+            out[n, :T] = False
+        out = np.logical_not(out).astype(np.float32)
+        return out
+    
+    @property
     def infos(self):
         return self.info
     

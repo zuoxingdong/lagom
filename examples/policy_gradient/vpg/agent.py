@@ -19,6 +19,8 @@ from lagom.policies import constraint_action
 
 from lagom.value_functions import StateValueHead
 
+from lagom.transform import ExplainedVariance
+
 from lagom.history.metrics import final_state_from_episode
 from lagom.history.metrics import terminal_state_from_episode
 from lagom.history.metrics import bootstrapped_returns_from_episode
@@ -34,7 +36,7 @@ class MLP(BaseNetwork):
     def init_params(self, config):
         for layer in self.feature_layers:
             ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-        
+    
     def reset(self, config, **kwargs):
         pass
         
@@ -63,6 +65,28 @@ class Policy(BasePolicy):
                                                 std_state_dependent=config['agent.std_state_dependent'],
                                                 init_std=config['agent.init_std'])
         self.V_head = StateValueHead(config, self.device, feature_dim)
+    
+    def make_optimizer(self, config, **kwargs):
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])
+        if config['algo.use_lr_scheduler']:
+            if 'train.iter' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
+            elif 'train.timestep' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
+        else:
+            self.lr_scheduler = None
+            
+    def optimizer_step(self, config, **kwargs):
+        if self.config['agent.max_grad_norm'] is not None:
+            clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
+        
+        if self.lr_scheduler is not None:
+            if self.lr_scheduler.mode == 'iteration-based':
+                self.lr_scheduler.step()
+            elif self.lr_scheduler.mode == 'timestep-based':
+                self.lr_scheduler.step(kwargs['total_T'])
+        
+        self.optimizer.step()
     
     @property
     def recurrent(self):
@@ -100,14 +124,6 @@ class Agent(BaseAgent):
         
     def prepare(self, config, **kwargs):
         self.total_T = 0
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=config['algo.lr'])
-        if config['algo.use_lr_scheduler']:
-            if 'train.iter' in config:
-                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
-            elif 'train.timestep' in config:
-                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
-        else:
-            self.lr_scheduler = None
 
     def reset(self, config, **kwargs):
         pass
@@ -131,31 +147,35 @@ class Agent(BaseAgent):
         return out
 
     def learn(self, D, info={}):
+        # mask-out values when its environment already terminated for episodes
+        episode_validity_masks = torch.from_numpy(D.numpy_validity_masks).float().to(self.device)
         logprobs = torch.stack([info['action_logprob'] for info in D.batch_infos], 1).squeeze(-1)
+        logprobs = logprobs*episode_validity_masks
         entropies = torch.stack([info['entropy'] for info in D.batch_infos], 1).squeeze(-1)
+        entropies = entropies*episode_validity_masks
+        all_Vs = torch.stack([info['V'] for info in D.batch_infos], 1).squeeze(-1)
+        all_Vs = all_Vs*episode_validity_masks
         
-        last_states = torch.tensor(final_state_from_episode(D)).float().to(self.device)
+        last_states = torch.from_numpy(final_state_from_episode(D)).float().to(self.device)
         with torch.no_grad():
             last_Vs = self.policy(last_states, out_keys=['V'])['V']
         Qs = bootstrapped_returns_from_episode(D, last_Vs, self.config['algo.gamma'])
-        Qs = torch.tensor(Qs.tolist()).float().to(self.device)
+        Qs = torch.from_numpy(Qs.copy()).float().to(self.device)
         if self.config['agent.standardize_Q']:
-            Qs = (Qs - Qs.mean(1))/(Qs.std(1) + 1e-8)
+            Qs = (Qs - Qs.mean(1, keepdim=True))/(Qs.std(1, keepdim=True) + 1e-8)
         
-        all_Vs = [info['V'] for info in D.batch_infos]
-        Vs = torch.stack(all_Vs, 1).squeeze(-1)
         As = gae_from_episode(D, all_Vs, last_Vs, self.config['algo.gamma'], self.config['algo.gae_lambda'])
-        As = torch.tensor(As.tolist()).float().to(self.device)
+        As = torch.from_numpy(As.copy()).float().to(self.device)
         if self.config['agent.standardize_adv']:
-            As = (As - As.mean(1))/(As.std(1) + 1e-8)
+            As = (As - As.mean(1, keepdim=True))/(As.std(1, keepdim=True) + 1e-8)
         
-        assert all([len(x.shape) == 2 for x in [logprobs, entropies, Qs, Vs, As]])
+        assert all([x.ndimension() == 2 for x in [logprobs, entropies, all_Vs, Qs, As]])
         
         policy_loss = -logprobs*As
         policy_loss = policy_loss.mean()
         entropy_loss = -entropies
         entropy_loss = entropy_loss.mean()
-        value_loss = F.mse_loss(Vs, Qs, reduction='none')   #############TODO: mask out
+        value_loss = F.mse_loss(all_Vs, Qs, reduction='none')
         value_loss = value_loss.mean()
         
         entropy_coef = self.config['agent.entropy_coef']
@@ -165,25 +185,15 @@ class Agent(BaseAgent):
         if self.config['agent.fit_terminal_value']:
             terminal_states = terminal_state_from_episode(D)
             if terminal_states is not None:
-                terminal_states = torch.tensor(terminal_states).float().to(self.device)
+                terminal_states = torch.from_numpy(terminal_states).float().to(self.device)
                 terminal_Vs = self.policy(terminal_states, out_keys=['V'])['V']
                 terminal_value_loss = F.mse_loss(terminal_Vs, torch.zeros_like(terminal_Vs))
                 terminal_value_loss_coef = self.config['agent.terminal_value_coef']
                 loss += terminal_value_loss_coef*terminal_value_loss
         
-        self.optimizer.zero_grad()
+        self.policy.optimizer.zero_grad()
         loss.backward()
-        
-        if self.config['agent.max_grad_norm'] is not None:
-            clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-        
-        if self.lr_scheduler is not None:
-            if self.lr_scheduler.mode == 'iteration-based':
-                self.lr_scheduler.step()
-            elif self.lr_scheduler.mode == 'timestep-based':
-                self.lr_scheduler.step(self.total_T)
-        
-        self.optimizer.step()
+        self.policy.optimizer_step(self.config, total_T=self.total_T)
         
         self.total_T += D.total_T
         
@@ -192,8 +202,11 @@ class Agent(BaseAgent):
         out['policy_loss'] = policy_loss.item()
         out['entropy_loss'] = entropy_loss.item()
         out['value_loss'] = value_loss.item()
-        if self.lr_scheduler is not None:
-            out['current_lr'] = self.lr_scheduler.get_lr()
+        ev = ExplainedVariance()
+        ev = ev(y_true=Qs.detach().cpu().numpy().squeeze(), y_pred=all_Vs.detach().cpu().numpy().squeeze())
+        out['explained_variance'] = ev
+        if self.policy.lr_scheduler is not None:
+            out['current_lr'] = self.policy.lr_scheduler.get_lr()
 
         return out
     
