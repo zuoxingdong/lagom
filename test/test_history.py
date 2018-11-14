@@ -470,6 +470,8 @@ def test_td0_target_from_episode():
               torch.tensor([[6.1], [6.5], [7.0]]), torch.tensor([[7.1], [7.5], [8.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
 
+    all_Vs = torch.stack(all_Vs, 1)
+    
     out = td0_target_from_episode(D, all_Vs, last_Vs, 1.0)
     assert out.shape == (3, D.maxT)
     assert np.allclose(out[0], [2.1, 4.1, 3, 0, 0, 0, 0, 0])
@@ -503,6 +505,8 @@ def test_td0_target_from_segment():
               torch.tensor([[2.1], [2.5], [3.0]]), torch.tensor([[3.1], [3.5], [4.0]]), 
               torch.tensor([[4.1], [4.5], [5.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
+    
+    all_Vs = torch.stack(all_Vs, 1)
     
     out = td0_target_from_segment(D, all_Vs, last_Vs, 1.0)
     assert out.shape == (3, 5)
@@ -544,6 +548,8 @@ def test_td0_error_from_episode():
               torch.tensor([[6.1], [6.5], [7.0]]), torch.tensor([[7.1], [7.5], [8.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
     
+    all_Vs = torch.stack(all_Vs, 1)
+    
     out = td0_error_from_episode(D, all_Vs, last_Vs, 1.0)
     assert out.shape == (3, D.maxT)
     assert np.allclose(out[0], [2.0, 3, 0.9, 0, 0, 0, 0, 0])
@@ -577,6 +583,8 @@ def test_td0_error_from_segment():
               torch.tensor([[2.1], [2.5], [3.0]]), torch.tensor([[3.1], [3.5], [4.0]]), 
               torch.tensor([[4.1], [4.5], [5.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
+    
+    all_Vs = torch.stack(all_Vs, 1)
     
     out = td0_error_from_segment(D, all_Vs, last_Vs, 1.0)
     assert out.shape == (3, 5)
@@ -618,6 +626,8 @@ def test_gae_from_episode():
               torch.tensor([[6.1], [6.5], [7.0]]), torch.tensor([[7.1], [7.5], [8.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
     
+    all_Vs = torch.stack(all_Vs, 1)
+    
     out = gae_from_episode(D, all_Vs, last_Vs, 1.0, 0.5)
     assert out.shape == (3, D.maxT)
     assert np.allclose(out[0], [3.725, 3.45, 0.9, 0, 0, 0, 0, 0])
@@ -651,6 +661,8 @@ def test_gae_from_segment():
               torch.tensor([[2.1], [2.5], [3.0]]), torch.tensor([[3.1], [3.5], [4.0]]), 
               torch.tensor([[4.1], [4.5], [5.0]])]
     last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
+    
+    all_Vs = torch.stack(all_Vs, 1)
     
     out = gae_from_segment(D, all_Vs, last_Vs, 1.0, 0.5)
     assert out.shape == (3, 5)

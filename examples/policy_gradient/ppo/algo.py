@@ -17,10 +17,9 @@ from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
 from lagom.envs.vec_env import VecStandardize
 
-from lagom.runner import TrajectoryRunner
-from lagom.runner import SegmentRunner
+from lagom.runner import EpisodeRunner
 
-from model import Agent
+from agent import Agent
 from engine import Engine
 
 
@@ -29,16 +28,8 @@ class Algorithm(BaseAlgorithm):
         set_global_seeds(seed)
         logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
 
-        env = make_vec_env(vec_env_class=SerialVecEnv, 
-                           make_env=make_gym_env, 
-                           env_id=config['env.id'], 
-                           num_env=config['train.N'],  # batched environment
-                           init_seed=seed)
-        eval_env = make_vec_env(vec_env_class=SerialVecEnv, 
-                                make_env=make_gym_env, 
-                                env_id=config['env.id'], 
-                                num_env=config['eval.N'], 
-                                init_seed=seed)
+        env = make_vec_env(SerialVecEnv, make_gym_env, config['env.id'], config['train.N'], seed)
+        eval_env = make_vec_env(SerialVecEnv, make_gym_env, config['env.id'], config['eval.N'], seed)
         if config['env.standardize']:  # running averages of observation and reward
             env = VecStandardize(venv=env, 
                                  use_obs=True, 
@@ -60,8 +51,8 @@ class Algorithm(BaseAlgorithm):
         
         agent = Agent(config, env_spec, device)
         
-        runner = SegmentRunner(config, agent, env)
-        eval_runner = TrajectoryRunner(config, agent, eval_env)
+        runner = EpisodeRunner(config, agent, env)
+        eval_runner = EpisodeRunner(config, agent, eval_env)
         
         engine = Engine(agent, runner, config, eval_runner=eval_runner)
         

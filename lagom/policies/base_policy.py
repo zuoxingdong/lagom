@@ -12,10 +12,6 @@ class BasePolicy(Module, ABC):
     
     Any policy should subclass this class.
     
-    The subclass should implement at least the following:
-    
-    - :meth:`__call__`
-    
     .. note::
         
         For the consistency of different variants of policies and fast prototyping, we restrict that all
@@ -41,6 +37,8 @@ class BasePolicy(Module, ABC):
         assert isinstance(self.env_spec.env, VecEnv), msg
         
         self.make_networks(self.config)
+        
+        self.make_optimizer(self.config, **kwargs)
     
     @abstractmethod
     def make_networks(self, config):
@@ -55,6 +53,28 @@ class BasePolicy(Module, ABC):
         
         Args:
             config (dict): a dictionary of configurations. 
+        """
+        pass
+    
+    @abstractmethod
+    def make_optimizer(self, config, **kwargs):
+        r"""Create optimization related objects e.g. optimizer, learning rate scheduler.
+        
+        Args:
+            config (dict): a dictionary of configurations. 
+            **kwargs: keyword arguments for more specifications. 
+        """
+        pass
+    
+    @abstractmethod
+    def optimizer_step(self, config, **kwargs):
+        r"""Define one gradient step to the optimizer. 
+        
+        It is also posssible to include learning rate scheduling, gradient clipping etc.
+        
+        Args:
+            config (dict): a dictionary of configurations. 
+            **kwargs: keyword arguments for more specifications. 
         """
         pass
     

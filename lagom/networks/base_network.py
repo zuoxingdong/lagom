@@ -9,13 +9,6 @@ class BaseNetwork(Module, ABC):
     
     Any neural network should subclass this class. 
     
-    The subclass should implement at least the following:
-    
-    - :meth:`make_params`
-    - :meth:`init_params`
-    - :meth:`reset`
-    - :meth:`forward`
-    
     Example::
     
         import torch.nn as nn
@@ -89,6 +82,7 @@ class BaseNetwork(Module, ABC):
             config (dict): a dictionary of configurations. 
         """
         pass
+    
     
     @abstractmethod
     def reset(self, config, **kwargs):

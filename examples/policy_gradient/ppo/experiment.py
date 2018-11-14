@@ -1,6 +1,7 @@
 from lagom.experiment import Configurator
 from lagom.experiment import BaseExperimentWorker
 from lagom.experiment import BaseExperimentMaster
+from lagom.experiment import run_experiment
 
 from algo import Algorithm
 
@@ -30,14 +31,16 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('algo.lr', 3e-4)
         configurator.fixed('algo.use_lr_scheduler', True)
         configurator.fixed('algo.gamma', 0.99)
-        configurator.fixed('algo.gae_lam', 0.95)
+        configurator.fixed('algo.gae_lambda', 0.95)
         
         configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
         configurator.fixed('agent.standardize_adv', True)  # whether to standardize advantage estimates
         configurator.fixed('agent.max_grad_norm', 0.5)  # grad clipping, set None to turn off
-        configurator.fixed('agent.clip_range', 0.2)  # PPO epsilon of ratio clipping
         configurator.fixed('agent.entropy_coef', 0.0)
         configurator.fixed('agent.value_coef', 0.5)
+        configurator.fixed('agent.fit_terminal_value', True)
+        configurator.fixed('agent.terminal_value_coef', 0.1)
+        configurator.fixed('agent.clip_range', 0.2)  # PPO epsilon of ratio clipping
         # only for continuous control
         configurator.fixed('agent.min_std', 1e-6)  # min threshould for std, avoid numerical instability
         configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
@@ -46,11 +49,12 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.init_std', 1.0)  # initial std for state-independent std
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
-        configurator.fixed('train.N', 1)  # number of trajectories per training iteration
-        configurator.fixed('train.T', 2048)  # max allowed horizon
-        configurator.fixed('train.batch_size', 64)
-        configurator.fixed('train.num_epochs', 10)
-        configurator.fixed('eval.N', 100)  # number of episodes to evaluate, do not specify T for complete episode
+        configurator.fixed('train.N', 2)  # number of trajectories per training iteration
+        configurator.fixed('train.ratio_T', 1.0)  # percentage of max allowed horizon
+        configurator.fixed('eval.independent', True)
+        configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
+        configurator.fixed('train.batch_size', 500)
+        configurator.fixed('train.num_epochs', 4)
         
         configurator.fixed('log.record_interval', 1)  # interval to record the logging
         configurator.fixed('log.print_interval', 1)  # interval to print the logging to screen
@@ -61,9 +65,15 @@ class ExperimentMaster(BaseExperimentMaster):
         return list_config
 
     def make_seeds(self):
-        list_seed = [209652396, 398764591, 924231285, 1478610112, 441365315]
+        list_seed = [1770966829, 1500925526, 2054191100]
         
         return list_seed
     
     def process_results(self, results):
         assert all([result is None for result in results])
+
+        
+if __name__ == '__main__':
+    run_experiment(worker_class=ExperimentWorker, 
+                   master_class=ExperimentMaster, 
+                   num_worker=100)
