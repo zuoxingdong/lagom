@@ -1,4 +1,3 @@
-import torch
 from torch.utils import data
 
 from lagom.history.metrics import final_state_from_segment
@@ -6,56 +5,38 @@ from lagom.history.metrics import gae_from_segment
 
 
 class Dataset(data.Dataset):
-    def __init__(self, config, D, policy):
-        assert isinstance(D, list)
-        self.D = D
-        self.policy = policy
+    def __init__(self, env_spec, observations, actions, logprobs, entropies, all_Vs, Qs, As):
+        self.env_spec = env_spec
+        # eliminate the last observation, to have consistent shape with others
+        self.observations = observations[:, :-1, ...]
+        self.actions = actions
+        self.logprobs = logprobs.detach().cpu().numpy()
+        self.entropies = entropies.detach().cpu().numpy()
+        self.all_Vs = all_Vs.detach().cpu().numpy()
+        self.Qs = Qs.detach().cpu().numpy()
+        self.As = As.detach().cpu().numpy()
         
-        self.states = []
-        self.logprobs = []
-        self.As = []
-        self.Vs = []
-        self.Qs = []
+        N, T = self.logprobs.shape
+        self.total_N = N*T
         
-        for segment in D:
-            all_s, all_final = segment.all_s
-            self.states += all_s
-            
-            logprobs = segment.all_info('action_logprob')
-            logprobs = [logprob.detach() for logprob in logprobs]
-            self.logprobs += logprobs
-            
-            all_Vs = [traj.all_info('V') for traj in segment.trajectories]
-            final_states = final_state_from_segment(segment)
-            final_states = torch.tensor(final_states).float().to(policy.device)
-            all_V_last = self.policy(final_states)['V'].cpu().detach().numpy()
-            As = gae_from_segment(segment, all_Vs, all_V_last, config['algo.gamma'], config['algo.gae_lam'])
-            self.As += As
-            
-            Vs = segment.all_info('V')
-            Vs = [V.detach() for V in Vs]
-            self.Vs += Vs
-            
-            Qs = [A + V.item() for A, V in zip(As, Vs)]
-            self.Qs += Qs
+        # rolling batch [N, T, ...] to [N*T, ...]
+        obs_shape = self.env_spec.observation_space.shape
+        action_shape = self.env_spec.action_space.shape
+        self.observations = self.observations.reshape([self.total_N, *obs_shape])
+        self.actions = self.actions.reshape([self.total_N, *action_shape])
+        self.logprobs = self.logprobs.flatten()
+        self.entropies = self.entropies.flatten()
+        self.all_Vs = self.all_Vs.flatten()
+        self.Qs = self.Qs.flatten()
+        self.As = self.As.flatten()
         
-        self.N = len(self.states)
-        assert len(self.logprobs) == self.N
-        assert len(self.As) == self.N
-        assert len(self.Vs) == self.N
-        assert len(self.Qs) == self.N
-        
-        self.states = torch.tensor(self.states).float().detach()
-        self.logprobs = torch.stack(self.logprobs).cpu().detach()
-        self.As = torch.tensor(self.As).float().detach()
-        self.Vs = torch.cat(self.Vs).cpu().detach()
-        self.Qs = torch.tensor(self.Qs).float().detach()
-        
-        assert len(self.states.shape) == 2
-        assert all([len(x.shape) == 1 for x in [self.logprobs, self.As, self.Vs, self.Qs]])
+        assert self.observations.shape[0] == self.total_N
+        assert self.actions.shape[0] == self.total_N
+        assert all([item.shape == (self.total_N,) for item in [self.logprobs, self.entropies, 
+                                                               self.all_Vs, self.Qs, self.As]])
         
     def __len__(self):
-        return self.N
+        return self.total_N
         
     def __getitem__(self, i):
-        return self.states[i], self.logprobs[i], self.As[i], self.Vs[i], self.Qs[i]
+        return self.observations[i], self.actions[i], self.logprobs[i], self.entropies[i], self.all_Vs[i], self.Qs[i], self.As[i]

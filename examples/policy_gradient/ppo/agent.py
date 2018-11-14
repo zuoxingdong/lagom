@@ -21,8 +21,12 @@ from lagom.policies import constraint_action
 
 from lagom.value_functions import StateValueHead
 
-from lagom.transform import Standardize
 from lagom.transform import ExplainedVariance
+
+from lagom.history.metrics import final_state_from_episode
+from lagom.history.metrics import terminal_state_from_episode
+from lagom.history.metrics import bootstrapped_returns_from_episode
+from lagom.history.metrics import gae_from_episode
 
 from lagom.agents import BaseAgent
 
@@ -36,10 +40,10 @@ class MLP(BaseNetwork):
     def init_params(self, config):
         for layer in self.feature_layers:
             ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-        
+    
     def reset(self, config, **kwargs):
         pass
-
+        
     def forward(self, x):
         for layer in self.feature_layers:
             x = torch.tanh(layer(x))
@@ -66,6 +70,28 @@ class Policy(BasePolicy):
                                                 init_std=config['agent.init_std'])
         self.V_head = StateValueHead(config, self.device, feature_dim)
     
+    def make_optimizer(self, config, **kwargs):
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'], eps=1e-5)
+        if config['algo.use_lr_scheduler']:
+            if 'train.iter' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
+            elif 'train.timestep' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
+        else:
+            self.lr_scheduler = None
+            
+    def optimizer_step(self, config, **kwargs):
+        if self.config['agent.max_grad_norm'] is not None:
+            clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
+        
+        if self.lr_scheduler is not None:
+            if self.lr_scheduler.mode == 'iteration-based':
+                self.lr_scheduler.step()
+            elif self.lr_scheduler.mode == 'timestep-based':
+                self.lr_scheduler.step(kwargs['total_T'])
+        
+        self.optimizer.step()
+    
     @property
     def recurrent(self):
         return False
@@ -85,6 +111,8 @@ class Policy(BasePolicy):
         V = self.V_head(features)
         out['V'] = V
         
+        if 'action_dist' in out_keys:
+            out['action_dist'] = action_dist
         if 'action_logprob' in out_keys:
             out['action_logprob'] = action_dist.log_prob(action)
         if 'entropy' in out_keys:
@@ -102,14 +130,6 @@ class Agent(BaseAgent):
         
     def prepare(self, config, **kwargs):
         self.total_T = 0
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=config['algo.lr'], eps=1e-5)
-        if config['algo.use_lr_scheduler']:
-            if 'train.iter' in config:
-                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
-            elif 'train.timestep' in config:
-                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
-        else:
-            self.lr_scheduler = None
 
     def reset(self, config, **kwargs):
         pass
@@ -134,96 +154,102 @@ class Agent(BaseAgent):
     
     def learn_one_update(self, data):
         data = [d.to(self.device) for d in data]
-        states, old_logprobs, As, old_Vs, Qs = data
+        observations, old_actions, old_logprobs, old_entropies, old_all_Vs, old_Qs, old_As = data
         
-        out = self.policy(states, out_keys=['action', 'action_logprob', 'V', 'entropy'])
-        logprobs = out['action_logprob']
-        Vs = out['V'].squeeze(1)
-        entropies = out['entropy']
+        out = self.policy(observations, out_keys=['action_dist', 'V', 'entropy'])
+        action_dist = out['action_dist']
+        logprobs = action_dist.log_prob(old_actions).squeeze(-1)
+        entropies = out['entropy'].squeeze(-1)
+        all_Vs = out['V'].squeeze(-1)
         
-        if self.config['agent.standardize_adv']:
-            As = (As - As.mean())/(As.std() + 1e-8)
         ratio = torch.exp(logprobs - old_logprobs)
         eps = self.config['agent.clip_range']
-        policy_loss = torch.min(ratio*As, torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*As)
-        policy_loss = -policy_loss.mean()
-        
-        if self.config['agent.standardize_Q']:
-            Qs = (Qs - Qs.mean())/(Qs.std() + 1e-8)
-        clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
-        value_loss = torch.max(F.mse_loss(Vs, Qs, reduction='none'), F.mse_loss(clipped_Vs, Qs, reduction='none'))
-        value_loss = value_loss.mean()
-        
+        policy_loss = -torch.min(ratio*old_As, 
+                                 torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*old_As)
+        policy_loss = policy_loss.mean()
         entropy_loss = -entropies
         entropy_loss = entropy_loss.mean()
+        clipped_all_Vs = old_all_Vs + torch.clamp(all_Vs - old_all_Vs, -eps, eps)
+        value_loss = torch.max(F.mse_loss(all_Vs, old_Qs, reduction='none'), 
+                               F.mse_loss(clipped_all_Vs, old_Qs, reduction='none'))
+        value_loss = value_loss.mean()
         
         entropy_coef = self.config['agent.entropy_coef']
         value_coef = self.config['agent.value_coef']
         loss = policy_loss + value_coef*value_loss + entropy_coef*entropy_loss
         
-        self.optimizer.zero_grad()
+        self.policy.optimizer.zero_grad()
         loss.backward()
-        
-        if self.config['agent.max_grad_norm'] is not None:
-            clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-        
-        self.optimizer.step()
+        self.policy.optimizer_step(self.config, total_T=self.total_T)
         
         out = {}
         out['loss'] = loss.item()
         out['policy_loss'] = policy_loss.item()
-        out['value_loss'] = value_loss.item()
         out['entropy_loss'] = entropy_loss.item()
-        ev = ExplainedVariance()(y_true=Qs.cpu().detach().numpy(), y_pred=Vs.cpu().detach().numpy())
+        out['value_loss'] = value_loss.item()
+        ev = ExplainedVariance()
+        ev = ev(y_true=old_Qs.detach().cpu().numpy().squeeze(), y_pred=all_Vs.detach().cpu().numpy().squeeze())
         out['explained_variance'] = ev
-        
+
         return out
         
     def learn(self, D, info={}):
-        dataset = Dataset(self.config, D, self.policy)
+        # mask-out values when its environment already terminated for episodes
+        episode_validity_masks = torch.from_numpy(D.numpy_validity_masks).float().to(self.device)
+        logprobs = torch.stack([info['action_logprob'] for info in D.batch_infos], 1).squeeze(-1)
+        logprobs = logprobs*episode_validity_masks
+        entropies = torch.stack([info['entropy'] for info in D.batch_infos], 1).squeeze(-1)
+        entropies = entropies*episode_validity_masks
+        all_Vs = torch.stack([info['V'] for info in D.batch_infos], 1).squeeze(-1)
+        all_Vs = all_Vs*episode_validity_masks
+        
+        last_states = torch.from_numpy(final_state_from_episode(D)).float().to(self.device)
+        with torch.no_grad():
+            last_Vs = self.policy(last_states, out_keys=['V'])['V']
+        Qs = bootstrapped_returns_from_episode(D, last_Vs, self.config['algo.gamma'])
+        Qs = torch.from_numpy(Qs.copy()).float().to(self.device)
+        if self.config['agent.standardize_Q']:
+            Qs = (Qs - Qs.mean(1, keepdim=True))/(Qs.std(1, keepdim=True) + 1e-8)
+        
+        As = gae_from_episode(D, all_Vs, last_Vs, self.config['algo.gamma'], self.config['algo.gae_lambda'])
+        As = torch.from_numpy(As.copy()).float().to(self.device)
+        if self.config['agent.standardize_adv']:
+            As = (As - As.mean(1, keepdim=True))/(As.std(1, keepdim=True) + 1e-8)
+        
+        assert all([x.ndimension() == 2 for x in [logprobs, entropies, all_Vs, Qs, As]])
+        
+        dataset = Dataset(self.env_spec, D.numpy_observations, D.numpy_actions, logprobs, entropies, all_Vs, Qs, As)
         if self.config['cuda']:
             kwargs = {'num_workers': 1, 'pin_memory': True}
         else:
             kwargs = {}
         dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True, **kwargs)
         
-        if self.lr_scheduler is not None:
-            if self.lr_scheduler.mode == 'iteration-based':
-                self.lr_scheduler.step()
-            elif self.lr_scheduler.mode == 'timestep-based':
-                self.lr_scheduler.step(self.total_T)
-        
         for epoch in range(self.config['train.num_epochs']):
-            loss = []
-            policy_loss = []
-            value_loss = []
-            entropy_loss = []
-            explained_variance = []
-            for data in dataloader:
-                out = self.learn_one_update(data)
-                
-                loss.append(out['loss'])
-                policy_loss.append(out['policy_loss'])
-                value_loss.append(out['value_loss'])
-                entropy_loss.append(out['entropy_loss'])
-                explained_variance.append(out['explained_variance'])
-        
+            out = [self.learn_one_update(data) for data in dataloader]
+            
+            loss = [item['loss'] for item in out]
+            policy_loss = [item['policy_loss'] for item in out]
+            entropy_loss = [item['entropy_loss'] for item in out]
+            value_loss = [item['value_loss'] for item in out]
+            explained_variance = [item['explained_variance'] for item in out]
+            
         loss = np.mean(loss)
         policy_loss = np.mean(policy_loss)
-        value_loss = np.mean(value_loss)
         entropy_loss = np.mean(entropy_loss)
+        value_loss = np.mean(value_loss)
         explained_variance = np.mean(explained_variance)
         
-        self.total_T += sum([segment.T for segment in D])
+        self.total_T += D.total_T
         
         out = {}
         out['loss'] = loss
         out['policy_loss'] = policy_loss
-        out['value_loss'] = value_loss
         out['entropy_loss'] = entropy_loss
+        out['value_loss'] = value_loss
         out['explained_variance'] = explained_variance
-        if self.lr_scheduler is not None:
-            out['current_lr'] = self.lr_scheduler.get_lr()
+        if self.policy.lr_scheduler is not None:
+            out['current_lr'] = self.policy.lr_scheduler.get_lr()
             
         return out
         

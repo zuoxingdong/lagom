@@ -5,6 +5,25 @@ from lagom.history import BatchEpisode
 from lagom.history import BatchSegment
 
 
+def V_to_numpy(all_Vs, last_Vs):
+    assert torch.is_tensor(all_Vs) or isinstance(all_Vs, np.ndarray)
+    assert torch.is_tensor(last_Vs) or isinstance(last_Vs, np.ndarray)
+    
+    if torch.is_tensor(all_Vs):
+        Vs = all_Vs.detach().cpu().numpy()
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy()
+        
+    if Vs.ndim == 3:
+        Vs = Vs.squeeze(-1)
+    assert Vs.ndim == 2
+    if last_Vs.ndim == 2:
+        last_Vs = last_Vs.squeeze(-1)
+    assert last_Vs.ndim == 1
+    
+    return Vs, last_Vs
+    
+    
 def td0_target_from_episode(batch_episode, all_Vs, last_Vs, gamma):
     r"""Calculate TD(0) targets of a batch of episodic transitions. 
     
@@ -32,15 +51,12 @@ def td0_target_from_episode(batch_episode, all_Vs, last_Vs, gamma):
     """
     assert isinstance(batch_episode, BatchEpisode)
     
-    Vs = np.zeros((batch_episode.N, batch_episode.maxT+1), dtype=np.float32)
-    for t, V in enumerate(all_Vs):
-        if torch.is_tensor(V):
-            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
-        else:
-            Vs[:, t] = V
-            
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs, last_Vs = V_to_numpy(all_Vs, last_Vs)
+    # Mask out network output in the batch where its environment already terminated
+    # this is episode specific, no problem with rolling segment
+    Vs = Vs*batch_episode.numpy_validity_masks
+    
+    Vs = np.concatenate([Vs, np.zeros([batch_episode.N, 1])], axis=-1)
     Vs[range(batch_episode.N), batch_episode.Ts] = last_Vs
     
     out = batch_episode.numpy_rewards + gamma*Vs[:, 1:]*batch_episode.numpy_masks
@@ -75,15 +91,9 @@ def td0_target_from_segment(batch_segment, all_Vs, last_Vs, gamma):
     """
     assert isinstance(batch_segment, BatchSegment)
     
-    Vs = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
-    for t, V in enumerate(all_Vs):
-        if torch.is_tensor(V):
-            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
-        else:
-            Vs[:, t] = V
-            
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs, last_Vs = V_to_numpy(all_Vs, last_Vs)
+    
+    Vs = np.concatenate([Vs, np.zeros([batch_segment.N, 1])], axis=-1)
     Vs[:, -1] = last_Vs
     
     out = batch_segment.numpy_rewards + gamma*Vs[:, 1:]*batch_segment.numpy_masks
@@ -118,24 +128,20 @@ def td0_error_from_episode(batch_episode, all_Vs, last_Vs, gamma):
     """
     assert isinstance(batch_episode, BatchEpisode)
 
-    Vs = np.zeros((batch_episode.N, batch_episode.maxT+1), dtype=np.float32)
-    for t, V in enumerate(all_Vs):
-        if torch.is_tensor(V):
-            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
-        else:
-            Vs[:, t] = V
-
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs, last_Vs = V_to_numpy(all_Vs, last_Vs)
+    # Mask out network output in the batch where its environment already terminated
+    # this is episode specific, no problem with rolling segment
+    Vs = Vs*batch_episode.numpy_validity_masks
+    
+    Vs = np.concatenate([Vs, np.zeros([batch_episode.N, 1])], axis=-1)
     Vs[range(batch_episode.N), batch_episode.Ts] = last_Vs
-            
+    
     out = batch_episode.numpy_rewards + gamma*Vs[:, 1:]*batch_episode.numpy_masks
-    for n, T in enumerate(batch_episode.Ts):
-        Vs[n, T:] = 0.0
+    Vs[range(batch_episode.N), batch_episode.Ts] = 0.0  # clean-up last Vs, for correct subtraction
     out = out - Vs[:, :-1]
-
+    
     return out
-
+    
 
 def td0_error_from_segment(batch_segment, all_Vs, last_Vs, gamma):
     r"""Calculate TD(0) errors of a batch of rolling segments. 
@@ -164,19 +170,12 @@ def td0_error_from_segment(batch_segment, all_Vs, last_Vs, gamma):
     """
     assert isinstance(batch_segment, BatchSegment)
     
-    Vs = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
-    for t, V in enumerate(all_Vs):
-        if torch.is_tensor(V):
-            Vs[:, t] = V.detach().cpu().numpy().squeeze(-1)
-        else:
-            Vs[:, t] = V
-            
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
+    Vs, last_Vs = V_to_numpy(all_Vs, last_Vs)
+    
+    Vs = np.concatenate([Vs, np.zeros([batch_segment.N, 1])], axis=-1)
     Vs[:, -1] = last_Vs
     
-    print(Vs)
-    
-    out = batch_segment.numpy_rewards + gamma*Vs[:, 1:]*batch_segment.numpy_masks - Vs[:, :-1]
+    out = batch_segment.numpy_rewards + gamma*Vs[:, 1:]*batch_segment.numpy_masks
+    out = out - Vs[:, :-1]
     
     return out
