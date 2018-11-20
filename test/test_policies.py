@@ -18,7 +18,6 @@ from lagom.envs.vec_env import SerialVecEnv
 from lagom.policies import RandomPolicy
 from lagom.policies import CategoricalHead
 from lagom.policies import DiagGaussianHead
-from lagom.policies import constraint_action
 
 
 def test_random_policy():
@@ -51,6 +50,7 @@ def test_diag_gaussian_head():
     assert isinstance(head.logstd_head, nn.Parameter)
     assert head.mean_head.in_features == 30 and head.mean_head.out_features == 1
     assert list(head.logstd_head.shape) == [1]
+    assert torch.eq(head.logstd_head, torch.tensor(-0.510825624))
     dist = head(torch.randn(3, 30))
     assert isinstance(dist, Independent) and isinstance(dist.base_dist, Normal)
     assert list(dist.batch_shape) == [3]
@@ -61,7 +61,10 @@ def test_diag_gaussian_head():
     dist = head(torch.randn(3, 30))
     action = dist.sample()
     assert list(action.shape) == [3, 1]
-    assert torch.eq(head.logstd_head, torch.tensor(0.0))
+    assert torch.eq(head.logstd_head, torch.tensor(-0.19587036834631966))
+    
+    head = DiagGaussianHead(None, None, 30 , env_spec, std_style='sigmoidal')
+    assert torch.eq(head.logstd_head, torch.tensor(-0.871222446472449))
 
     head = DiagGaussianHead(None, None, 30, env_spec, std_state_dependent=True)
     dist = head(torch.randn(3, 30))
@@ -94,17 +97,3 @@ def test_categorical_head():
     assert list(dist.probs.shape) == [3, 2]
     action = dist.sample()
     assert action.shape == (3,)
-
-
-def test_constraint_action():
-    env = make_gym_env('Pendulum-v0', 0)
-    env_spec = EnvSpec(env)
-
-    action = torch.tensor([1.5])
-    assert torch.eq(constraint_action(env_spec, action), torch.tensor([1.5]))
-
-    action = torch.tensor([3.0])
-    assert torch.eq(constraint_action(env_spec, action), torch.tensor([2.0]))
-
-    action = torch.tensor([-10.0])
-    assert torch.eq(constraint_action(env_spec, action), torch.tensor([-2.0]))

@@ -15,5 +15,3 @@ lagom.policies: Policies
     
 .. autoclass:: DiagGaussianHead
     :members:
-    
-.. autofunction:: constraint_action

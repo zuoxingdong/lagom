@@ -19,6 +19,12 @@ class RandomPolicy(BasePolicy):
     def make_networks(self, config):
         pass
     
+    def make_optimizer(self, config, **kwargs):
+        pass
+    
+    def optimizer_step(self, config, **kwargs):
+        pass
+    
     def reset(self, config, **kwargs):
         pass
     
