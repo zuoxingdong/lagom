@@ -65,21 +65,24 @@ class DiagGaussianHead(BaseNetwork):
                  std_style='exp', 
                  constant_std=None,
                  std_state_dependent=False,
-                 init_std=1.0,
+                 init_std=0.6,
                  **kwargs):
         self.feature_dim = feature_dim
         self.env_spec = env_spec
         assert self.env_spec.control_type == 'Continuous', 'expected as Continuous control type'
         
-        self.min_logstd = math.log(min_std)
         assert std_style in ['exp', 'softplus', 'sigmoidal']
         self.std_style = std_style
+        
+        self.min_std = min_std
+        
         if constant_std is None:
-            self.log_constant_std = None
+            self.logit_constant_std = None
         else:
-            self.log_constant_std = math.log(constant_std)
+            self.logit_constant_std = self._compute_logit(constant_std, self.std_style)
         self.std_state_dependent = std_state_dependent
-        self.log_init_std = math.log(init_std)
+        
+        self.logit_init_std = self._compute_logit(init_std, self.std_style)
         
         super().__init__(config, device, **kwargs)
         
@@ -87,9 +90,9 @@ class DiagGaussianHead(BaseNetwork):
         self.mean_head = nn.Linear(in_features=self.feature_dim, 
                                    out_features=self.env_spec.action_space.flat_dim)
         
-        if self.log_constant_std is not None:
+        if self.logit_constant_std is not None:
             self.logstd_head = torch.full([self.env_spec.action_space.flat_dim], 
-                                          self.log_constant_std,
+                                          self.logit_constant_std,
                                           requires_grad=False)
         else:  # learn it
             if self.std_state_dependent:
@@ -97,7 +100,7 @@ class DiagGaussianHead(BaseNetwork):
                                              out_features=self.env_spec.action_space.flat_dim)
             else:
                 self.logstd_head = nn.Parameter(torch.full([self.env_spec.action_space.flat_dim], 
-                                                           self.log_init_std, 
+                                                           self.logit_init_std, 
                                                            requires_grad=True))
         
     def init_params(self, config):
@@ -105,7 +108,7 @@ class DiagGaussianHead(BaseNetwork):
         ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         
         if isinstance(self.logstd_head, nn.Linear):
-            # 0.01->almost 1.0 std
+            # 0.01->small std
             ortho_init(self.logstd_head, weight_scale=0.01, constant_bias=0.0)
         
     def reset(self, config, **kwargs):
@@ -118,8 +121,6 @@ class DiagGaussianHead(BaseNetwork):
             logstd = self.logstd_head(x)
         else:
             logstd = self.logstd_head.expand_as(mean)
-        
-        logstd = logstd.clamp_min(self.min_logstd)
             
         if self.std_style == 'exp':
             std = torch.exp(logstd)
@@ -127,7 +128,17 @@ class DiagGaussianHead(BaseNetwork):
             std = F.softplus(logstd)
         elif self.std_style == 'sigmoidal':
             std = 0.01 + 2*torch.sigmoid(logstd)
-        
+            
+        std = std.clamp_min(self.min_std)
+
         action_dist = Independent(Normal(loc=mean, scale=std), 1)
         
         return action_dist
+    
+    def _compute_logit(self, x, std_style):
+        if std_style == 'exp':
+            return math.log(x)
+        elif std_style == 'softplus':
+            return math.log(math.exp(x) - 1)
+        elif std_style == 'sigmoidal':
+            return -math.log(2/(x - 0.01) - 1)
