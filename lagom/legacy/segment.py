@@ -2,7 +2,7 @@ from itertools import chain
 
 from .trajectory import Trajectory
 
-from .base_history import BaseHistory
+from lagom.history import BaseHistory
 
 
 class Segment(BaseHistory):

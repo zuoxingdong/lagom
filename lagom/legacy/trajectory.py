@@ -4,7 +4,7 @@ import numpy as np
 
 from lagom.transform import ExpFactorCumSum
 
-from .base_history import BaseHistory
+from lagom.history import BaseHistory
 
 
 class Trajectory(BaseHistory):
