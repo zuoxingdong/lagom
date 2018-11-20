@@ -98,5 +98,10 @@ Vectorized Environment
 .. autoclass:: VecStandardize
     :members:
     
+.. autoclass:: VecClipAction
+    :members:
+    
 .. autoclass:: CloudpickleWrapper
     :members:
+    
+.. autofunction:: get_wrapper

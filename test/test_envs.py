@@ -31,6 +31,8 @@ from lagom.envs.vec_env import VecEnvWrapper
 from lagom.envs.vec_env import SerialVecEnv
 from lagom.envs.vec_env import ParallelVecEnv
 from lagom.envs.vec_env import VecStandardize
+from lagom.envs.vec_env import VecClipAction
+from lagom.envs.vec_env import get_wrapper
 
 
 class TestSpaces(object):
@@ -542,3 +544,37 @@ class TestVecEnv(object):
             assert np.allclose(obs1, obs2)
             assert np.allclose(rewards1, rewards2)
             assert np.allclose(dones1, dones2)
+
+            
+def test_vec_clip_action():
+    env = make_vec_env(SerialVecEnv, make_gym_env, 'MountainCarContinuous-v0', 2, 0)
+    clipped_env = VecClipAction(env)
+    
+    action = [[0.5], [1000]]
+    
+    env.reset()
+    _, rewards, _, _ = env.step(action)
+    
+    clipped_env.reset()
+    _, rewards_clipped, _, _ = clipped_env.step(action)
+    
+    assert rewards[0] == rewards_clipped[0]
+    assert abs(rewards[1]) > abs(rewards_clipped[1])
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+def test_get_wrapper(env_id):
+    env = make_vec_env(SerialVecEnv, make_gym_env, env_id, 3, 0)
+    env = VecStandardize(env)
+    env = VecClipAction(env)
+
+    out = get_wrapper(env, 'VecClipAction')
+    assert out.__class__.__name__ == 'VecClipAction'
+    del out
+
+    out = get_wrapper(env, 'VecStandardize')
+    assert out.__class__.__name__ == 'VecStandardize'
+    del out
+
+    out = get_wrapper(env, 'SerialVecEnv')
+    assert out.__class__.__name__ == 'SerialVecEnv'

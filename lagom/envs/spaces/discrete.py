@@ -22,6 +22,8 @@ class Discrete(Space):
         assert isinstance(n, int) and n >= 0
         self.n = n
         
+        self.shape = ()
+        
     def sample(self):
         return int(np.random.randint(self.n))  # raw int for PyTorch compatibility
     
