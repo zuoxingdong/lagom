@@ -41,11 +41,12 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.fit_terminal_value', True)
         configurator.fixed('agent.terminal_value_coef', 0.1)
         # only for continuous control
+        configurator.fixed('env.clip_action', True)  # clip sampled action within valid bound before step()
         configurator.fixed('agent.min_std', 1e-6)  # min threshould for std, avoid numerical instability
         configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
         configurator.fixed('agent.constant_std', None)  # constant std, set None to learn it
         configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
-        configurator.fixed('agent.init_std', 1.0)  # initial std for state-independent std
+        configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
         configurator.fixed('train.N', 1)  # number of trajectories per training iteration
