@@ -38,13 +38,7 @@ class Engine(BaseEngine):
         logger('train_iteration', n+1)  # starts from 1
         logger('num_seconds', round(num_sec, 1))
         
-        if 'current_lr' in out_agent:
-            logger('current_lr', out_agent['current_lr'])
-        logger('loss', out_agent['loss'])
-        logger('policy_loss', out_agent['policy_loss'])
-        logger('policy_entropy', -out_agent['entropy_loss'])
-        logger('value_loss', out_agent['value_loss'])
-        logger('explained_variance', out_agent['explained_variance'])
+        [logger(key, value) for key, value in out_agent.items()]
         
         batch_returns = D.numpy_rewards.sum(1)
         

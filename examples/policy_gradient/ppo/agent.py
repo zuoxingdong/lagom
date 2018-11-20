@@ -7,8 +7,6 @@ import torch.nn.functional as F
 
 from torch.nn.utils import clip_grad_norm_
 
-from torch.utils.data import DataLoader
-
 from lagom.networks import BaseNetwork
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
@@ -17,7 +15,6 @@ from lagom.networks import linear_lr_scheduler
 from lagom.policies import BasePolicy
 from lagom.policies import CategoricalHead
 from lagom.policies import DiagGaussianHead
-from lagom.policies import constraint_action
 
 from lagom.value_functions import StateValueHead
 
@@ -30,23 +27,27 @@ from lagom.history.metrics import gae_from_episode
 
 from lagom.agents import BaseAgent
 
+from torch.utils.data import DataLoader
 from dataset import Dataset
 
 
 class MLP(BaseNetwork):
     def make_params(self, config):
         self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
         
     def init_params(self, config):
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
+            #ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
+            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
     
     def reset(self, config, **kwargs):
         pass
         
     def forward(self, x):
-        for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = layer_norm(F.celu(layer(x)))
+            #x = torch.tanh(layer(x))
             
         return x
     
@@ -145,10 +146,7 @@ class Agent(BaseAgent):
             
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
-            while True:
-                print('NaN !')
-        if self.env_spec.control_type == 'Continuous':
-            out['action'] = constraint_action(self.env_spec, out['action'])
+            raise ValueError('NaN!')
             
         return out
     
@@ -182,6 +180,9 @@ class Agent(BaseAgent):
         loss.backward()
         self.policy.optimizer_step(self.config, total_T=self.total_T)
         
+        approx_kl = torch.mean(old_logprobs - logprobs)
+        clip_frac = ((ratio < 1.0 - eps) | (ratio > 1.0 + eps)).float().mean()
+        
         out = {}
         out['loss'] = loss.item()
         out['policy_loss'] = policy_loss.item()
@@ -190,6 +191,8 @@ class Agent(BaseAgent):
         ev = ExplainedVariance()
         ev = ev(y_true=old_Qs.detach().cpu().numpy().squeeze(), y_pred=all_Vs.detach().cpu().numpy().squeeze())
         out['explained_variance'] = ev
+        out['approx_kl'] = approx_kl.item()
+        out['clip_frac'] = clip_frac.item()
 
         return out
         
@@ -218,6 +221,7 @@ class Agent(BaseAgent):
         
         assert all([x.ndimension() == 2 for x in [logprobs, entropies, all_Vs, Qs, As]])
         
+        
         dataset = Dataset(self.env_spec, D.numpy_observations, D.numpy_actions, logprobs, entropies, all_Vs, Qs, As)
         if self.config['cuda']:
             kwargs = {'num_workers': 1, 'pin_memory': True}
@@ -228,29 +232,32 @@ class Agent(BaseAgent):
         for epoch in range(self.config['train.num_epochs']):
             out = [self.learn_one_update(data) for data in dataloader]
             
-            loss = [item['loss'] for item in out]
-            policy_loss = [item['policy_loss'] for item in out]
-            entropy_loss = [item['entropy_loss'] for item in out]
-            value_loss = [item['value_loss'] for item in out]
-            explained_variance = [item['explained_variance'] for item in out]
+            loss = np.mean([item['loss'] for item in out])
+            policy_loss = np.mean([item['policy_loss'] for item in out])
+            entropy_loss = np.mean([item['entropy_loss'] for item in out])
+            value_loss = np.mean([item['value_loss'] for item in out])
+            explained_variance = np.mean([item['explained_variance'] for item in out])
+            approx_kl = np.mean([item['approx_kl'] for item in out])
+            clip_frac = np.mean([item['clip_frac'] for item in out])
             
-        loss = np.mean(loss)
-        policy_loss = np.mean(policy_loss)
-        entropy_loss = np.mean(entropy_loss)
-        value_loss = np.mean(value_loss)
-        explained_variance = np.mean(explained_variance)
+            if approx_kl > self.config['agent.target_kl']:
+                break
         
         self.total_T += D.total_T
         
         out = {}
+        if self.policy.lr_scheduler is not None:
+            out['current_lr'] = self.policy.lr_scheduler.get_lr()
         out['loss'] = loss
         out['policy_loss'] = policy_loss
         out['entropy_loss'] = entropy_loss
+        out['policy_entropy'] = -entropy_loss
         out['value_loss'] = value_loss
         out['explained_variance'] = explained_variance
-        if self.policy.lr_scheduler is not None:
-            out['current_lr'] = self.policy.lr_scheduler.get_lr()
-            
+        out['approx_kl'] = approx_kl
+        out['clip_frac'] = clip_frac
+        out['finished_inner_epochs'] = f'{epoch+1}/{self.config["train.num_epochs"]}'
+        
         return out
         
     @property

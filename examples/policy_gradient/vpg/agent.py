@@ -15,7 +15,6 @@ from lagom.networks import linear_lr_scheduler
 from lagom.policies import BasePolicy
 from lagom.policies import CategoricalHead
 from lagom.policies import DiagGaussianHead
-from lagom.policies import constraint_action
 
 from lagom.value_functions import StateValueHead
 
@@ -67,7 +66,7 @@ class Policy(BasePolicy):
         self.V_head = StateValueHead(config, self.device, feature_dim)
     
     def make_optimizer(self, config, **kwargs):
-        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])#, eps=1e-5)
         if config['algo.use_lr_scheduler']:
             if 'train.iter' in config:
                 self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
@@ -107,6 +106,8 @@ class Policy(BasePolicy):
         V = self.V_head(features)
         out['V'] = V
         
+        if 'action_dist' in out_keys:
+            out['action_dist'] = action_dist
         if 'action_logprob' in out_keys:
             out['action_logprob'] = action_dist.log_prob(action)
         if 'entropy' in out_keys:
@@ -139,10 +140,7 @@ class Agent(BaseAgent):
             
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
-            while True:
-                print('NaN !')
-        if self.env_spec.control_type == 'Continuous':
-            out['action'] = constraint_action(self.env_spec, out['action'])
+            raise ValueError('NaN!')
             
         return out
 
@@ -198,6 +196,8 @@ class Agent(BaseAgent):
         self.total_T += D.total_T
         
         out = {}
+        if self.policy.lr_scheduler is not None:
+            out['current_lr'] = self.policy.lr_scheduler.get_lr()
         out['loss'] = loss.item()
         out['policy_loss'] = policy_loss.item()
         out['entropy_loss'] = entropy_loss.item()
@@ -205,9 +205,7 @@ class Agent(BaseAgent):
         ev = ExplainedVariance()
         ev = ev(y_true=Qs.detach().cpu().numpy().squeeze(), y_pred=all_Vs.detach().cpu().numpy().squeeze())
         out['explained_variance'] = ev
-        if self.policy.lr_scheduler is not None:
-            out['current_lr'] = self.policy.lr_scheduler.get_lr()
-
+        
         return out
     
     @property

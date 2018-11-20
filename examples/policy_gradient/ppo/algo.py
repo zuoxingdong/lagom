@@ -16,6 +16,7 @@ from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
 from lagom.envs.vec_env import VecStandardize
+from lagom.envs.vec_env import VecClipAction
 
 from lagom.runner import EpisodeRunner
 
@@ -30,6 +31,9 @@ class Algorithm(BaseAlgorithm):
 
         env = make_vec_env(SerialVecEnv, make_gym_env, config['env.id'], config['train.N'], seed)
         eval_env = make_vec_env(SerialVecEnv, make_gym_env, config['env.id'], config['eval.N'], seed)
+        if config['env.clip_action']:
+            env = VecClipAction(env)
+            eval_env = VecClipAction(eval_env)
         if config['env.standardize']:  # running averages of observation and reward
             env = VecStandardize(venv=env, 
                                  use_obs=True, 
