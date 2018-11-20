@@ -1,9 +1,9 @@
 import torch
 
-from lagom.history import Transition
-from lagom.history import Segment
+from .transition import Transition
+from .segment import Segment
 
-from .base_runner import BaseRunner
+from lagom.runner import BaseRunner
 
 
 class SegmentRunner(BaseRunner):

@@ -7,18 +7,6 @@ lagom.history: History
 .. autoclass:: BaseHistory
     :members:
     
-.. autoclass:: Transition
-    :members:
-    
-.. autoclass:: Trajectory
-    :members:
-
-.. autoclass:: Segment
-    :members:
-    
-.. autoclass:: History
-    :members:
-    
 .. autoclass:: BatchEpisode
     :members:
     
@@ -30,32 +18,30 @@ Metrics
 
 .. currentmodule:: lagom.history.metrics
 
-.. autofunction:: terminal_state_from_trajectory
+.. autofunction:: terminal_state_from_episode
 
 .. autofunction:: terminal_state_from_segment
 
-.. autofunction:: final_state_from_trajectory
+.. autofunction:: final_state_from_episode
 
 .. autofunction:: final_state_from_segment
 
-.. autofunction:: bootstrapped_returns_from_trajectory
+.. autofunction:: returns_from_episode
+
+.. autofunction:: returns_from_segment
+
+.. autofunction:: bootstrapped_returns_from_episode
 
 .. autofunction:: bootstrapped_returns_from_segment
 
-.. autofunction:: td0_target
-
-.. autofunction:: td0_target_from_trajectory
+.. autofunction:: td0_target_from_episode
 
 .. autofunction:: td0_target_from_segment
 
-.. autofunction:: td0_error
-
-.. autofunction:: td0_error_from_trajectory
+.. autofunction:: td0_error_from_episode
 
 .. autofunction:: td0_error_from_segment
 
-.. autofunction:: gae
-
-.. autofunction:: gae_from_trajectory
+.. autofunction:: gae_from_episode
 
 .. autofunction:: gae_from_segment

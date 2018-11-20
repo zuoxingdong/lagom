@@ -13,11 +13,6 @@ from lagom.envs.vec_env import ParallelVecEnv
 
 from lagom.envs import EnvSpec
 
-from lagom.history import Transition
-from lagom.history import Trajectory
-from lagom.history import Segment
-
-from lagom.history import History
 from lagom.history import BatchEpisode
 from lagom.history import BatchSegment
 

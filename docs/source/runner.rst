@@ -5,15 +5,6 @@ lagom.runner: Runner
 
 .. autoclass:: BaseRunner
     :members:
-
-.. autoclass:: TrajectoryRunner
-    :members:
-
-.. autoclass:: SegmentRunner
-    :members:
-
-.. autoclass:: RollingRunner
-    :members:
     
 .. autoclass:: EpisodeRunner
     :members:

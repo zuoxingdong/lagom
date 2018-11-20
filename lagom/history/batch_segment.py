@@ -9,15 +9,8 @@ class BatchSegment(BaseHistory):
         
         self._T = T
         
-        if self.env_spec.control_type == 'Discrete':
-            action_shape = ()
-            action_dtype = np.int32
-        elif self.env_spec.control_type == 'Continuous':
-            action_shape = self.env_spec.action_space.shape
-            action_dtype = np.float32
-        
         self.obs = np.zeros((self.N, self.T+1) + self.env_spec.observation_space.shape, dtype=np.float32)  # plus 1: initial observation
-        self.a = np.zeros((self.N, self.T) + action_shape, dtype=action_dtype)
+        self.a = np.zeros((self.N, self.T) + self.env_spec.action_space.shape, dtype=self.env_spec.action_space.dtype)
         self.r = np.zeros((self.N, self.T), dtype=np.float32)
         self.done = np.full((self.N, self.T), True, dtype=np.bool)
         self.info = [[] for _ in range(self.N)]
