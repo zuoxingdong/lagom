@@ -1,9 +1,9 @@
 import torch
 
-from lagom.history import Transition
-from lagom.history import Trajectory
+from .transition import Transition
+from .trajectory import Trajectory
 
-from .base_runner import BaseRunner
+from lagom.runner import BaseRunner
 
 
 class TrajectoryRunner(BaseRunner):
