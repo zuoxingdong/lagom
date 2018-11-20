@@ -83,7 +83,6 @@ class BaseNetwork(Module, ABC):
         """
         pass
     
-    
     @abstractmethod
     def reset(self, config, **kwargs):
         r"""Reset the network.

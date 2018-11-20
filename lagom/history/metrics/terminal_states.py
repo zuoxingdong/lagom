@@ -51,7 +51,7 @@ def terminal_state_from_segment(batch_segment):
     if np.allclose(batch_segment.numpy_dones, False):
         return None
     else:
-        indices = np.vstack(np.where(batch_segment.numpy_dones == True)).T
+        indices = np.vstack(np.where(batch_segment.numpy_dones)).T
         obs_shape = batch_segment.env_spec.observation_space.shape
         out = np.zeros((len(indices),) + obs_shape, dtype=np.float32)
         for i, (n, t) in enumerate(indices):
