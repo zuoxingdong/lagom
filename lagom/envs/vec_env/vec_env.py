@@ -214,11 +214,8 @@ class VecEnv(ABC):
         Useful for sequential wrappers applied, it can access information from the original 
         vectorized environment. 
         """
-        if isinstance(self, VecEnvWrapper):
-            return self.venv.unwrapped
-        else:
-            return self
-        
+        return self
+ 
     @property
     def observation_space(self):
         r"""Returns a :class:`Space` object to define the observation space. """
@@ -305,6 +302,10 @@ class VecEnvWrapper(VecEnv):
         pass
     
     @property
+    def unwrapped(self):
+        return self.venv.unwrapped
+    
+    @property
     def T(self):
         return self.venv.T
     
@@ -315,3 +316,6 @@ class VecEnvWrapper(VecEnv):
     @property
     def reward_range(self):
         return self.venv.reward_range
+    
+    def __repr__(self):
+        return f'<{self.__class__.__name__}, {self.venv}>'
