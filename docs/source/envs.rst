@@ -101,6 +101,9 @@ Vectorized Environment
 .. autoclass:: VecClipAction
     :members:
     
+.. autoclass:: VecMonitor
+    :members:
+    
 .. autoclass:: CloudpickleWrapper
     :members:
     
