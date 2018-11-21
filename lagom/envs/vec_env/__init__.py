@@ -6,8 +6,8 @@ from .parallel_vec_env import worker
 from .parallel_vec_env import ParallelVecEnv
 
 from .vec_standardize import VecStandardize
-
 from .vec_clip_action import VecClipAction
+from .vec_monitor import VecMonitor
 
 from .utils import CloudpickleWrapper
 

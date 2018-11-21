@@ -78,7 +78,7 @@ class EnvSpec(object):
     def num_env(self):
         r"""Returns the number of sub-environments for vectorized environment. """
         if isinstance(self.env, VecEnv):
-            return self.env.num_env
+            return self.env.N
         else:
             raise TypeError('the environment must be VecEnv')
 

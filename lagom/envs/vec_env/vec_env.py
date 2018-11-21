@@ -227,6 +227,11 @@ class VecEnv(ABC):
         return self._action_space
     
     @property
+    def N(self):
+        r"""Return the number of sub-environments. """
+        return self.num_env
+    
+    @property
     @abstractmethod
     def T(self):
         r"""Maximum horizon of the environment, if available. """
