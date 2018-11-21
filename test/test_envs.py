@@ -32,7 +32,12 @@ from lagom.envs.vec_env import SerialVecEnv
 from lagom.envs.vec_env import ParallelVecEnv
 from lagom.envs.vec_env import VecStandardize
 from lagom.envs.vec_env import VecClipAction
+from lagom.envs.vec_env import VecMonitor
 from lagom.envs.vec_env import get_wrapper
+
+from lagom.agents import RandomAgent
+from lagom.runner import EpisodeRunner
+from lagom.runner import RollingSegmentRunner
 
 
 class TestSpaces(object):
@@ -344,10 +349,10 @@ class TestEnvs(object):
         assert np.allclose(env.reset(), raw_env.reset())
 
     def test_make_vec_env(self):
-        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
-        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1)
-        assert isinstance(venv1, VecEnv) and isinstance(venv1, SerialVecEnv)
-        assert isinstance(venv2, VecEnv) and isinstance(venv2, ParallelVecEnv)
+        venv1 = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 5, 1, monitor=True)
+        venv2 = make_vec_env(ParallelVecEnv, make_gym_env, 'CartPole-v1', 5, 1, monitor=True)
+        assert isinstance(venv1, VecEnv) and isinstance(venv1.unwrapped, SerialVecEnv)
+        assert isinstance(venv2, VecEnv) and isinstance(venv2.unwrapped, ParallelVecEnv)
         assert venv1.num_env == venv2.num_env
         env_spec1 = EnvSpec(venv1)
         assert env_spec1.num_env == venv1.num_env
@@ -560,6 +565,28 @@ def test_vec_clip_action():
     
     assert rewards[0] == rewards_clipped[0]
     assert abs(rewards[1]) > abs(rewards_clipped[1])
+    
+    
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
+@pytest.mark.parametrize('num_env', [3, 10])
+@pytest.mark.parametrize('seed', [0, 5])
+@pytest.mark.parametrize('runner_class', [EpisodeRunner, RollingSegmentRunner])
+def test_vec_monitor(env_id, vec_env_class, num_env, seed, runner_class):
+    env = make_vec_env(vec_env_class, make_gym_env, env_id, num_env, seed)
+    env_spec = EnvSpec(env)
+    env = VecMonitor(env)
+    agent = RandomAgent(None, env_spec)
+    runner = runner_class(None, agent, env)
+    D = runner(1050)
+
+    for infos in D.infos:
+        for info in infos:
+            if 'terminal_observation' in info:
+                assert 'episode' in info
+                assert 'return' in info['episode'] and isinstance(info['episode']['return'], np.float32)
+                assert 'horizon' in info['episode'] and isinstance(info['episode']['horizon'], np.int32)
+                assert 'time' in info['episode'] and isinstance(info['episode']['time'], float)
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
