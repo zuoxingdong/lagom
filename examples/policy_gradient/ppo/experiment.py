@@ -24,11 +24,14 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
+        configurator.grid('env.time_aware_obs', [True, False])  # whether to append time step to observation
         
         configurator.fixed('network.recurrent', False)
         configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
+        configurator.grid('network.independent_V', [True, False])  # share or not for params of policy and value network
         
         configurator.fixed('algo.lr', 3e-4)
+        configurator.fixed('algo.lr_V', 1e-3)
         configurator.fixed('algo.use_lr_scheduler', True)
         configurator.fixed('algo.gamma', 0.99)
         configurator.fixed('algo.gae_lambda', 0.97)
@@ -48,19 +51,18 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
         configurator.fixed('agent.constant_std', None)  # constant std, set None to learn it
         configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
-        configurator.grid('agent.init_std', [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])  # initial std for state-independent std
+        configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
         
         configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
-        configurator.fixed('train.N', 4)  # number of trajectories per training iteration
-        configurator.fixed('train.ratio_T', 0.2)  # percentage of max allowed horizon
-        configurator.fixed('eval.independent', True)
+        configurator.fixed('train.N', 2)  # number of trajectories per training iteration
+        configurator.fixed('train.ratio_T', 1.0)  # percentage of max allowed horizon
+        configurator.fixed('eval.independent', False)
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
-        configurator.fixed('train.batch_size', 64)
+        configurator.fixed('train.batch_size', 256)
         configurator.fixed('train.num_epochs', 80)
         
-        configurator.fixed('log.record_interval', 10)  # interval to record the logging
-        configurator.fixed('log.print_interval', 10)  # interval to print the logging to screen
-        configurator.fixed('log.dir', 'logs.init_std')  # logging directory
+        configurator.fixed('log.interval', 10)  # logging interval
+        configurator.fixed('log.dir', 'logs.env.time_aware_obs')  # logging directory
         
         list_config = configurator.make_configs()
         
