@@ -26,11 +26,12 @@ agent.constant_std: null
 agent.std_state_dependent: false
 agent.init_std: 0.5
 train.timestep: 1000000.0
-train.N: 2
+train.N: 1
 train.ratio_T: 1.0
 eval.independent: true
 eval.N: 10
 train.batch_size: 64
 train.num_epochs: 80
-log.interval: 10
-log.dir: logs
+log.record_interval: 10
+log.print_interval: 10
+log.dir: logs.train.N

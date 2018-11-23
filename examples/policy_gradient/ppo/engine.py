@@ -1,10 +1,15 @@
 from time import time
+from itertools import chain
 
 import numpy as np
 import torch
 
 from lagom import Logger
 from lagom.utils import color_str
+
+from lagom.envs.vec_env import get_wrapper
+from lagom.envs.vec_env import VecStandardize
+from lagom.runner import EpisodeRunner
 
 from lagom.engine import BaseEngine
 
@@ -45,15 +50,41 @@ class Engine(BaseEngine):
         logger('num_trajectories', D.N)
         logger('num_timesteps', D.total_T)
         logger('accumulated_trained_timesteps', self.agent.total_T)
-        logger('average_return', batch_returns.mean())
+        logger('mean_return', batch_returns.mean())
         logger('std_return', batch_returns.std())
         logger('min_return', batch_returns.min())
         logger('max_return', batch_returns.max())
         
-        if n == 0 or (n+1) % self.config['log.print_interval'] == 0:
-            print('-'*50)
-            logger.dump(keys=None, index=None, indent=0)
-            print('-'*50)
+        monitor_env = get_wrapper(self.runner.env, 'VecMonitor')
+        infos = list(filter(lambda info: 'episode' in info, chain.from_iterable(D.infos)))
+        if len(infos) > 0:
+            online_returns = np.asarray([info['episode']['return'] for info in infos])
+            online_horizons = np.asarray([info['episode']['horizon'] for info in infos])
+            logger('online_N', len(infos))
+            logger('online_mean_return', online_returns.mean())
+            logger('online_std_return', online_returns.std())
+            logger('online_min_return', online_returns.min())
+            logger('online_max_return', online_returns.max())
+            logger('online_mean_horizon', online_horizons.mean())
+            logger('online_std_horizon', online_horizons.std())
+            logger('online_min_horizon', online_horizons.min())
+            logger('online_max_horizon', online_horizons.max())
+        running_returns = np.asarray(monitor_env.return_queue)
+        running_horizons = np.asarray(monitor_env.horizon_queue)
+        if running_returns.size > 0 and running_horizons.size > 0:
+            logger('running_queue', [len(monitor_env.return_queue), monitor_env.return_queue.maxlen])
+            logger('running_mean_return', running_returns.mean())
+            logger('running_std_return', running_returns.std())
+            logger('running_min_return', running_returns.min())
+            logger('running_max_return', running_returns.max())
+            logger('running_mean_horizon', running_horizons.mean())
+            logger('running_std_horizon', running_horizons.std())
+            logger('running_min_horizon', running_horizons.min())
+            logger('running_max_horizon', running_horizons.max())
+        
+        print('-'*50)
+        logger.dump(keys=None, index=None, indent=0)
+        print('-'*50)
 
         return logger.logs
         
@@ -62,13 +93,19 @@ class Engine(BaseEngine):
         
         start_time = time()
         
-        # Synchronize running average of observations for evaluation
         if self.config['env.standardize']:
-            self.eval_runner.env.constant_obs_mean = self.runner.env.obs_runningavg.mu
-            self.eval_runner.env.constant_obs_std = self.runner.env.obs_runningavg.sigma
-        
-        T = self.eval_runner.env.T
-        D = self.eval_runner(T)
+            eval_env = VecStandardize(venv=self.eval_env,
+                                      use_obs=True, 
+                                      use_reward=False,  # do not process rewards, no training
+                                      clip_obs=self.runner.env.clip_obs, 
+                                      clip_reward=self.runner.env.clip_reward, 
+                                      gamma=self.runner.env.gamma, 
+                                      eps=self.runner.env.eps, 
+                                      constant_obs_mean=self.runner.env.obs_runningavg.mu,
+                                      constant_obs_std=self.runner.env.obs_runningavg.sigma)
+        eval_runner = EpisodeRunner(self.config, self.agent, eval_env)
+        T = eval_env.T
+        D = eval_runner(T)
         
         eval_output = {}
         eval_output['D'] = D
@@ -92,17 +129,16 @@ class Engine(BaseEngine):
         logger('num_seconds', round(num_sec, 1))
         logger('num_trajectories', D.N)
         logger('max_allowed_horizon', T)
-        logger('average_horizon', D.Ts.mean())
+        logger('mean_horizon', D.Ts.mean())
         logger('total_timesteps', D.total_T)
         logger('accumulated_trained_timesteps', self.agent.total_T)
-        logger('average_return', batch_returns.mean())
+        logger('mean_return', batch_returns.mean())
         logger('std_return', batch_returns.std())
         logger('min_return', batch_returns.min())
         logger('max_return', batch_returns.max())
         
-        if n == 0 or (n+1) % self.config['log.print_interval'] == 0:
-            print(color_str('+'*50, 'yellow', 'bold'))
-            logger.dump(keys=None, index=None, indent=0)
-            print(color_str('+'*50, 'yellow', 'bold'))
+        print(color_str('+'*50, 'yellow', 'bold'))
+        logger.dump(keys=None, index=None, indent=0)
+        print(color_str('+'*50, 'yellow', 'bold'))
 
         return logger.logs

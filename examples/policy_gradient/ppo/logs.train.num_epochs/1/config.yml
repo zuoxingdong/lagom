@@ -1,4 +1,4 @@
-ID: 0
+ID: 1
 cuda: true
 env.id: HalfCheetah-v2
 env.standardize: true
@@ -28,9 +28,9 @@ agent.init_std: 0.5
 train.timestep: 1000000.0
 train.N: 2
 train.ratio_T: 1.0
-eval.independent: true
+eval.independent: false
 eval.N: 10
 train.batch_size: 64
-train.num_epochs: 80
+train.num_epochs: 30
 log.interval: 10
-log.dir: logs
+log.dir: logs.train.num_epochs
