@@ -9,3 +9,4 @@ from .flatten_observation import FlattenObservation
 from .flatten_dict import FlattenDictWrapper
 from .frame_stack import FrameStack
 from .reward_scale import RewardScale
+from .time_aware_observation import TimeAwareObservation
