@@ -9,7 +9,7 @@ from functools import partial  # argument-free functions
 from lagom.envs.vec_env import VecMonitor
 
 
-def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
+def make_gym_env(env_id, seed, monitor=False, monitor_dir=None, extra_wrapper=[]):
     r"""Create an OpenAI Gym environment, and wrap it into lagom-compatible :class:`Env`. 
     
     Example::
@@ -26,6 +26,7 @@ def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
         seed (int): random seed for the environment
         monitor (bool, optional): If ``True``, then wrap the enviroment with Monitor for video recording.  
         monitor_dir (str, optional): directory to save all data from Monitor. 
+        extra_wrapper (list): an ordered list of extra wrappers to wrap the environment. 
         
     Returns
     -------
@@ -37,6 +38,9 @@ def make_gym_env(env_id, seed, monitor=False, monitor_dir=None):
         env = Monitor(env, monitor_dir)
     env = GymWrapper(env)
     env.seed(seed)
+    
+    for wrapper in extra_wrapper:
+        env = wrapper(env)
     
     return env
     

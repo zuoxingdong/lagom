@@ -77,6 +77,9 @@ Wrappers
     
 .. autoclass:: RewardScale
     :members:
+    
+.. autoclass:: TimeAwareObservation
+    :members:
 
 Vectorized Environment
 --------------------------

@@ -21,6 +21,7 @@ from lagom.envs.wrappers import GymWrapper
 from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import RewardScale
+from lagom.envs.wrappers import TimeAwareObservation
 
 from lagom.envs import make_gym_env
 from lagom.envs import make_envs
@@ -283,6 +284,29 @@ class TestWrappers(object):
         observation, reward, done, info = env.step(env.action_space.sample())
         assert reward == 0.02
         
+    @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+    def test_time_aware_observation(self, env_id):
+        gym_env = gym.make(env_id)
+        env = GymWrapper(gym_env)
+        timed_env = TimeAwareObservation(env)
+        assert env.observation_space.shape[0] + 1 == timed_env.observation_space.shape[0]
+
+        obs = env.reset()
+        timed_obs = timed_env.reset()
+        assert obs.shape[0] + 1 == timed_obs.shape[0]
+        assert timed_obs[-1] == 0.0
+        assert timed_env.t == 0.0
+        timed_obs, _, _, _ = timed_env.step(timed_env.action_space.sample())
+        assert obs.shape[0] + 1 == timed_obs.shape[0]
+        assert timed_obs[-1] == 1.0
+        assert timed_env.t == 1.0
+        timed_obs, _, _, _ = timed_env.step(timed_env.action_space.sample())
+        assert timed_obs[-1] == 2.0
+        assert timed_env.t == 2.0
+        timed_obs = timed_env.reset()
+        assert timed_obs[-1] == 0.0
+        assert timed_env.t == 0.0
+
         
 class TestEnvs(object):
     def test_env_spec(self):
