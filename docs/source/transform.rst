@@ -7,18 +7,6 @@ lagom.transform: Transformations
 .. autoclass:: BaseTransform
     :members:
 
-.. autoclass:: Clip
-    :members: 
-
-.. autoclass:: Centralize
-    :members:
-
-.. autoclass:: Normalize
-    :members:
-    
-.. autoclass:: Standardize
-    :members:
-
 .. autoclass:: RankTransform
     :members:
     
