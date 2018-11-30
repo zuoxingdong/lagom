@@ -24,11 +24,11 @@ class ExperimentMaster(BaseExperimentMaster):
         
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
-        configurator.grid('env.time_aware_obs', [True, False])  # whether to append time step to observation
+        configurator.fixed('env.time_aware_obs', False)  # whether to append time step to observation
         
         configurator.fixed('network.recurrent', False)
         configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
-        configurator.grid('network.independent_V', [True, False])  # share or not for params of policy and value network
+        configurator.fixed('network.independent_V', False)  # share or not for params of policy and value network
         
         configurator.fixed('algo.lr', 3e-4)
         configurator.fixed('algo.lr_V', 1e-3)
@@ -62,7 +62,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('train.num_epochs', 80)
         
         configurator.fixed('log.interval', 10)  # logging interval
-        configurator.fixed('log.dir', 'logs.env.time_aware_obs')  # logging directory
+        configurator.fixed('log.dir', 'logs')  # logging directory
         
         list_config = configurator.make_configs()
         

@@ -116,7 +116,7 @@ class Policy(BasePolicy):
             self.V_head = StateValueHead(config, self.device, feature_dim)
     
     def make_optimizer(self, config, **kwargs):
-        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'], eps=1e-5)
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])###################################################################, eps=1e-5)
         if config['algo.use_lr_scheduler']:
             if 'train.iter' in config:
                 self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
@@ -282,7 +282,6 @@ class Agent(BaseAgent):
         
         assert all([x.ndimension() == 2 for x in [logprobs, entropies, all_Vs, Qs, As]])
         
-        
         dataset = Dataset(self.env_spec, D.numpy_observations, D.numpy_actions, logprobs, entropies, all_Vs, Qs, As)
         if self.config['cuda']:
             kwargs = {'num_workers': 1, 'pin_memory': True}
@@ -320,7 +319,7 @@ class Agent(BaseAgent):
         out['finished_inner_epochs'] = f'{epoch+1}/{self.config["train.num_epochs"]}'
         
         return out
-        
+
     @property
     def recurrent(self):
         pass
