@@ -7,7 +7,7 @@ This is an implementation of [PPO](https://arxiv.org/abs/1707.06347) algorithm.
 Run the following command to start parallelized training:
 
 ```bash
-python main.py
+python experiment.py
 ```
 
 One could modify [experiment.py](./experiment.py) to quickly set up different configurations. 
@@ -15,5 +15,3 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 # Results
 
 <img src='data/result.png' width='75%'>
-
-
