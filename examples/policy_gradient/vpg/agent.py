@@ -31,17 +31,63 @@ from lagom.agents import BaseAgent
 class MLP(BaseNetwork):
     def make_params(self, config):
         self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
         
     def init_params(self, config):
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-    
+            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
+
     def reset(self, config, **kwargs):
         pass
         
     def forward(self, x):
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = layer_norm(F.celu(layer(x)))
+            
+        return x
+    
+    
+class Critic(BaseNetwork):
+    def make_params(self, config):
+        self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
+        self.output_layer = StateValueHead(config, self.device, config['network.hidden_sizes'][-1])
+        
+    def init_params(self, config):
         for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
+            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
+            
+        self.make_optimizer(config)
+
+    def make_optimizer(self, config, **kwargs):
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr_V'])
+        if config['algo.use_lr_scheduler']:
+            if 'train.iter' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
+            elif 'train.timestep' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
+        else:
+            self.lr_scheduler = None
+            
+    def optimizer_step(self, config, **kwargs):
+        if config['agent.max_grad_norm'] is not None:
+            clip_grad_norm_(self.parameters(), config['agent.max_grad_norm'])
+        
+        if self.lr_scheduler is not None:
+            if self.lr_scheduler.mode == 'iteration-based':
+                self.lr_scheduler.step()
+            elif self.lr_scheduler.mode == 'timestep-based':
+                self.lr_scheduler.step(kwargs['total_T'])
+        
+        self.optimizer.step()
+            
+    def reset(self, config, **kwargs):
+        pass
+        
+    def forward(self, x):
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = layer_norm(F.celu(layer(x)))
+        x = self.output_layer(x)
             
         return x
     
@@ -63,10 +109,11 @@ class Policy(BasePolicy):
                                                 constant_std=config['agent.constant_std'],
                                                 std_state_dependent=config['agent.std_state_dependent'],
                                                 init_std=config['agent.init_std'])
-        self.V_head = StateValueHead(config, self.device, feature_dim)
+        if not config['network.independent_V']:
+            self.V_head = StateValueHead(config, self.device, feature_dim)
     
     def make_optimizer(self, config, **kwargs):
-        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])#, eps=1e-5)
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])
         if config['algo.use_lr_scheduler']:
             if 'train.iter' in config:
                 self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
@@ -76,8 +123,8 @@ class Policy(BasePolicy):
             self.lr_scheduler = None
             
     def optimizer_step(self, config, **kwargs):
-        if self.config['agent.max_grad_norm'] is not None:
-            clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
+        if config['agent.max_grad_norm'] is not None:
+            clip_grad_norm_(self.parameters(), config['agent.max_grad_norm'])
         
         if self.lr_scheduler is not None:
             if self.lr_scheduler.mode == 'iteration-based':
@@ -103,9 +150,9 @@ class Policy(BasePolicy):
         action = action_dist.sample().detach()  # TODO: detach is necessary or not ?
         out['action'] = action
         
-        V = self.V_head(features)
-        out['V'] = V
-        
+        if 'V' in out_keys:
+            V = self.V_head(features)
+            out['V'] = V
         if 'action_dist' in out_keys:
             out['action_dist'] = action_dist
         if 'action_logprob' in out_keys:
@@ -122,6 +169,8 @@ class Agent(BaseAgent):
     r"""Vanilla Policy Gradient (VPG) with value network (baseline) and GAE."""
     def make_modules(self, config):
         self.policy = Policy(config, self.env_spec, self.device)
+        if config['network.independent_V']:
+            self.critic = Critic(config, self.device, env_spec=self.env_spec)
         
     def prepare(self, config, **kwargs):
         self.total_T = 0
@@ -133,7 +182,11 @@ class Agent(BaseAgent):
         obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         
         if self.training:
-            out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], info=info)
+            if self.config['network.independent_V']:
+                out = self.policy(obs, out_keys=['action', 'action_logprob', 'entropy'], info=info)
+                out['V'] = self.critic(obs)
+            else:
+                out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], info=info)
         else:
             with torch.no_grad():
                 out = self.policy(obs, out_keys=['action'], info=info)
@@ -156,7 +209,10 @@ class Agent(BaseAgent):
         
         last_states = torch.from_numpy(final_state_from_episode(D)).float().to(self.device)
         with torch.no_grad():
-            last_Vs = self.policy(last_states, out_keys=['V'])['V']
+            if self.config['network.independent_V']:
+                last_Vs = self.critic(last_states)
+            else:
+                last_Vs = self.policy(last_states, out_keys=['V'])['V']
         Qs = bootstrapped_returns_from_episode(D, last_Vs, self.config['algo.gamma'])
         Qs = torch.from_numpy(Qs.copy()).float().to(self.device)
         if self.config['agent.standardize_Q']:
@@ -190,8 +246,12 @@ class Agent(BaseAgent):
                 loss += terminal_value_loss_coef*terminal_value_loss
         
         self.policy.optimizer.zero_grad()
+        if self.config['network.independent_V']:
+            self.critic.optimizer.zero_grad()
         loss.backward()
         self.policy.optimizer_step(self.config, total_T=self.total_T)
+        if self.config['network.independent_V']:
+            self.critic.optimizer_step(self.config, total_T=self.total_T)
         
         self.total_T += D.total_T
         
@@ -201,13 +261,14 @@ class Agent(BaseAgent):
         out['loss'] = loss.item()
         out['policy_loss'] = policy_loss.item()
         out['entropy_loss'] = entropy_loss.item()
+        out['policy_entropy'] = -entropy_loss.item()
         out['value_loss'] = value_loss.item()
         ev = ExplainedVariance()
         ev = ev(y_true=Qs.detach().cpu().numpy().squeeze(), y_pred=all_Vs.detach().cpu().numpy().squeeze())
         out['explained_variance'] = ev
         
         return out
-    
+
     @property
     def recurrent(self):
         pass
