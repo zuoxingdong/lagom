@@ -42,16 +42,7 @@ A graphical illustration is coming soon.
 .. toctree::
     :maxdepth: 1
     :caption: Tutorials
-    
-.. toctree::
-    :maxdepth: 1
-    :caption: Examples
-    
-    examples_vae
-    examples_mdn
-    examples_es
-    examples_pg
-    
+        
 .. toctree::
     :maxdepth: 1
     :caption: lagom API
