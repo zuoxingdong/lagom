@@ -1,0 +1,6 @@
+build:
+    image: latest
+
+python:
+    # TODO: upgrade to 3.7
+    version: 3.6
