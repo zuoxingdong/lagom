@@ -1,6 +1,7 @@
 from lagom.experiment import Configurator
 from lagom.experiment import BaseExperimentWorker
 from lagom.experiment import BaseExperimentMaster
+from lagom.experiment import run_experiment
 
 from algo import Algorithm
 
@@ -25,7 +26,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('env.standardize', False)  # whether to use VecStandardize
         
         configurator.fixed('network.recurrent', False)
-        configurator.fixed('network.hidden_size', [32])
+        configurator.fixed('network.hidden_sizes', [32])
         
         configurator.fixed('es.algo', 'CMAES')
         configurator.fixed('es.popsize', 64)
@@ -45,7 +46,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('train.N', 5)
         # we do not provide train.T because it internally uses env_spec.T
         
-        configurator.fixed('log.print_interval', 100)
+        configurator.fixed('log.interval', 10)
         configurator.fixed('log.dir', 'logs')
 
         list_config = configurator.make_configs()
@@ -53,9 +54,15 @@ class ExperimentMaster(BaseExperimentMaster):
         return list_config
     
     def make_seeds(self):
-        list_seed = [209652396, 398764591, 924231285, 1478610112, 441365315]
+        list_seed = [1770966829, 1500925526, 2054191100]
         
         return list_seed
     
     def process_results(self, results):
         assert all([result is None for result in results])
+
+        
+if __name__ == '__main__':
+    run_experiment(worker_class=ExperimentWorker, 
+                   master_class=ExperimentMaster, 
+                   num_worker=100)

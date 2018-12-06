@@ -5,7 +5,6 @@ import torch.optim as optim
 
 from lagom.es import BaseES
 
-from lagom.transform import Standardize
 from lagom.transform import RankTransform
 
 
@@ -111,8 +110,7 @@ class OpenAIES(BaseES):
             
         # Compute gradient from original paper
         # Enforce fitness as Gaussian distributed, here we use centered ranks
-        standardize = Standardize()
-        F = standardize(function_values, -1)
+        F = (function_values - function_values.mean(-1))/(function_values.std(-1) + 1e-8)
         # Compute gradient, F:[popsize], eps: [popsize, num_params]
         grad = (1/self.std)*np.mean(np.expand_dims(F, 1)*self.eps, axis=0)
         grad = torch.from_numpy(grad).float()

@@ -7,7 +7,7 @@ This is an implementation of [VPG](http://rll.berkeley.edu/deeprlcoursesp17/docs
 Run the following command to start parallelized training:
 
 ```bash
-python main.py
+python experiment.py
 ```
 
 One could modify [experiment.py](./experiment.py) to quickly set up different configurations. 

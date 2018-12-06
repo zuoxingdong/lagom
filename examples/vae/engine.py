@@ -10,7 +10,7 @@ from lagom.engine import BaseEngine
 
 class Engine(BaseEngine):
     def train(self, n=None):
-        self.agent.train()  # set to training mode
+        self.agent.train()
         
         logger = Logger()
         
@@ -26,7 +26,7 @@ class Engine(BaseEngine):
             
             logger('epoch', n)
             logger('iteration', i)
-            logger('train_loss', out['loss'].item())  # item() saves memory
+            logger('train_loss', out['loss'].item())
             logger('reconstruction_loss', out['re_loss'].item())
             logger('KL_loss', out['KL_loss'].item())
             
@@ -51,13 +51,13 @@ class Engine(BaseEngine):
             save_image(re_x.view(64, 1, 28, 28), f'{logdir}/sample_{epoch}.png')
 
     def eval(self, n=None):
-        self.agent.eval()  # set to evaluation mode
+        self.agent.eval()
         
         logger = Logger()
         
         for i, (data, label) in enumerate(self.agent.test_loader):
             data = data.to(self.agent.device)
-            with torch.no_grad():  # fast, disable grad
+            with torch.no_grad():
                 re_x, mu, logvar = self.agent(data)
                 out = self.agent.vae_loss(re_x=re_x, x=data, mu=mu, logvar=logvar, loss_type='BCE')
                 logger('eval_loss', out['loss'].item())
@@ -76,7 +76,7 @@ class Engine(BaseEngine):
         data = data.to(self.agent.device)
         n = min(data.size(0), 8)  # number of images
         D = data[:n]
-        with torch.no_grad():  # fast, disable grad
+        with torch.no_grad():
             re_x, _, _ = self.agent(D)
         compare_img = torch.cat([D.cpu(), re_x.cpu().view(-1, 1, 28, 28)])
         save_image(compare_img, f'{logdir}/reconstruction_{epoch}.png', nrow=n)
