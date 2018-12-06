@@ -26,7 +26,7 @@ class DiagGaussianHead(BaseNetwork):
     * :attr:`std_style` indicates the parameterization of the standard deviation. 
 
         * For std_style='exp', the standard deviation is obtained by applying exponentiation on log standard
-        deviation i.e. :math:`\exp(\log\sigma)`.
+          deviation i.e. :math:`\exp(\log\sigma)`.
         * For std_style='softplus', the standard deviation is modeled by softplus, i.e. :math:`\log(1 + \exp(x))`.
         * For std_style='sigmoidal', the standard deviation is modeled by :math:`0.01 + 2\mathrm{sigmoid}(x)`.
             
