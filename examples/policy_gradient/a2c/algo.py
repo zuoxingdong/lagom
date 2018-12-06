@@ -44,7 +44,7 @@ class Algorithm(BaseAlgorithm):
         if config['env.standardize']:  # running averages of observation and reward
             env = VecStandardize(venv=env, 
                                  use_obs=True, 
-                                 use_reward=True, 
+                                 use_reward=False,  # A2C specific 
                                  clip_obs=10., 
                                  clip_reward=10., 
                                  gamma=0.99, 
