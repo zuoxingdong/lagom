@@ -1,6 +1,7 @@
 from lagom.experiment import Configurator
 from lagom.experiment import BaseExperimentWorker
 from lagom.experiment import BaseExperimentMaster
+from lagom.experiment import run_experiment
 
 from algo import Algorithm
 
@@ -9,7 +10,6 @@ class ExperimentWorker(BaseExperimentWorker):
     def prepare(self):
         pass
         
-    
     def make_algo(self):
         algo = Algorithm()
         
@@ -43,3 +43,9 @@ class ExperimentMaster(BaseExperimentMaster):
     
     def process_results(self, results):
         assert all([result is None for result in results])
+
+
+if __name__ == '__main__':
+    run_experiment(worker_class=ExperimentWorker, 
+                   master_class=ExperimentMaster, 
+                   num_worker=100)

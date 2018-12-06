@@ -11,25 +11,25 @@ from lagom.networks import ortho_init
 from lagom.policies import BasePolicy
 from lagom.policies import CategoricalHead
 from lagom.policies import DiagGaussianHead
-from lagom.policies import constraint_action
 
 from lagom.agents import BaseAgent
 
 
 class MLP(BaseNetwork):
     def make_params(self, config):
-        self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_size'])
+        self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
         
     def init_params(self, config):
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-        
+            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
+
     def reset(self, config, **kwargs):
         pass
         
     def forward(self, x):
-        for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = layer_norm(F.celu(layer(x)))
             
         return x
     
@@ -37,7 +37,7 @@ class MLP(BaseNetwork):
 class Policy(BasePolicy):
     def make_networks(self, config):
         self.feature_network = MLP(config, self.device, env_spec=self.env_spec)
-        feature_dim = config['network.hidden_size'][-1]
+        feature_dim = config['network.hidden_sizes'][-1]
         
         if self.env_spec.control_type == 'Discrete':
             self.action_head = CategoricalHead(config, self.device, feature_dim, self.env_spec)
@@ -50,7 +50,13 @@ class Policy(BasePolicy):
                                                 std_style='exp', 
                                                 constant_std=None, 
                                                 std_state_dependent=False, 
-                                                init_std=1.0)
+                                                init_std=0.5)
+    
+    def make_optimizer(self, config, **kwargs):
+        pass
+    
+    def optimizer_step(self, config, **kwargs):
+        pass
     
     @property
     def recurrent(self):
@@ -65,9 +71,11 @@ class Policy(BasePolicy):
         features = self.feature_network(x)
         action_dist = self.action_head(features)
         
-        action = action_dist.sample()
+        action = action_dist.sample().detach()
         out['action'] = action
         
+        if 'action_dist' in out_keys:
+            out['action_dist'] = action_dist
         if 'action_logprob' in out_keys:
             out['action_logprob'] = action_dist.log_prob(action)
         if 'entropy' in out_keys:
@@ -83,7 +91,7 @@ class Agent(BaseAgent):
         self.policy = Policy(config, self.env_spec, self.device)
         
     def prepare(self, config, **kwargs):
-        pass
+        self.total_T = 0
 
     def reset(self, config, **kwargs):
         pass
@@ -96,11 +104,8 @@ class Agent(BaseAgent):
             
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
-            while True:
-                print('NaN !')
-        if self.env_spec.control_type == 'Continuous':
-            out['action'] = constraint_action(self.env_spec, out['action'])
-            
+            raise ValueError('NaN!')
+
         return out
 
     def learn(self, D, info={}):
