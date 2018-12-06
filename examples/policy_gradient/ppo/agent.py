@@ -116,7 +116,7 @@ class Policy(BasePolicy):
             self.V_head = StateValueHead(config, self.device, feature_dim)
     
     def make_optimizer(self, config, **kwargs):
-        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])###################################################################, eps=1e-5)
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr'])
         if config['algo.use_lr_scheduler']:
             if 'train.iter' in config:
                 self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')

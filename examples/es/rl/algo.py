@@ -17,8 +17,9 @@ from lagom.envs import make_vec_env
 from lagom.envs import EnvSpec
 from lagom.envs.vec_env import SerialVecEnv
 from lagom.envs.vec_env import VecStandardize
+from lagom.envs.vec_env import VecClipAction
 
-from lagom.runner import TrajectoryRunner
+from lagom.runner import EpisodeRunner
 
 from model import Agent
 from examples.es import CMAES
@@ -30,12 +31,8 @@ class ESWorker(BaseESWorker):
         self.agent = None
         
     def _prepare(self, config):
-        self.env = make_vec_env(vec_env_class=SerialVecEnv, 
-                                make_env=make_gym_env, 
-                                env_id=config['env.id'], 
-                                num_env=config['train.N'], 
-                                init_seed=0, 
-                                rolling=False)
+        self.env = make_vec_env(SerialVecEnv, make_gym_env, config['env.id'], config['train.N'], 0)
+        self.env = VecClipAction(self.env)
         if config['env.standardize']:
             self.env = VecStandardize(self.env, 
                                       use_obs=True, 
@@ -43,10 +40,7 @@ class ESWorker(BaseESWorker):
                                       clip_obs=10.0, 
                                       clip_reward=10.0, 
                                       gamma=0.99, 
-                                      eps=1e-08, 
-                                      constant_obs_mean=None, 
-                                      constant_obs_std=None, 
-                                      constant_reward_std=None)
+                                      eps=1e-08)
         self.env_spec = EnvSpec(self.env)
         
         self.device = torch.device('cpu')
@@ -63,10 +57,10 @@ class ESWorker(BaseESWorker):
         # Load solution params to agent
         self.agent.from_vec(solution)
         
-        runner = TrajectoryRunner(config, self.agent, self.env)
+        runner = EpisodeRunner(config, self.agent, self.env)
         with torch.no_grad():
             D = runner(self.env_spec.T)
-        mean_return = np.mean([sum(trajectory.all_r) for trajectory in D])
+        mean_return = D.numpy_rewards.sum(-1).mean()
         
         # ES does minimization, so use negative returns
         function_value = -mean_return
@@ -112,7 +106,7 @@ class ESMaster(BaseESMaster):
         self.logger('generation', self.generation + 1)
         self.logger('best_return', best_return)
         
-        if self.generation == 0 or (self.generation+1) % self.config['log.print_interval'] == 0:
+        if self.generation == 0 or (self.generation+1) % self.config['log.interval'] == 0:
             print('-'*50)
             self.logger.dump(keys=None, index=-1, indent=0)
             print('-'*50)

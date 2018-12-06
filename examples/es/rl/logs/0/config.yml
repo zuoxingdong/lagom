@@ -3,7 +3,7 @@ cuda: true
 env.id: Pendulum-v0
 env.standardize: false
 network.recurrent: false
-network.hidden_size:
+network.hidden_sizes:
 - 32
 es.algo: CMAES
 es.popsize: 64
@@ -11,5 +11,5 @@ es.mu0: 0.0
 es.std0: 0.5
 train.num_iteration: 5000
 train.N: 5
-log.print_interval: 100
+log.interval: 10
 log.dir: logs

@@ -7,7 +7,7 @@ This example implements Variational Auto-Encoders (VAE) from the paper [Stochast
 Run the following command to start parallelized training:
 
 ```bash
-python main.py
+python experiment.py
 ```
 
 One could modify [experiment.py](./experiment.py) to quickly set up different configurations. 
