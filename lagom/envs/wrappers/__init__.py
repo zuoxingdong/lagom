@@ -10,3 +10,5 @@ from .flatten_dict import FlattenDictWrapper
 from .frame_stack import FrameStack
 from .reward_scale import RewardScale
 from .time_aware_observation import TimeAwareObservation
+from .gray_scale_observation import GrayScaleObservation
+from .resize_observation import ResizeObservation
