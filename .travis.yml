@@ -11,30 +11,20 @@ bundler_args: --retry 10  # avoid time out
 
 # Install dependencies
 install:
-    # Build virtual environment with Miniconda
-    - sudo apt update  # update system list
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    # Useful for debugging any issues with conda
-    - conda info -a
-    - conda create -q -n CI python=3.7 cython numpy mock
-    - source activate CI
-    # Install required dependencies
-    - pip install --upgrade pip
-    - pip install -q -r requirements.txt
-    - pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+    - cd scripts
+    - bash 2_install_miniconda.sh
+    - . $HOME/miniconda3/etc/profile.d/conda.sh
+    - conda activate lagom
+    - bash 3_setup_envs.sh
+    - cd ..
+    - pip install -q mock
+    - pip install -q torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
     # Install current project
     - pip install -e .
-
-# Command to run tests
 script:
     # Activate conda environment
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - source activate CI
+    - . $HOME/miniconda3/etc/profile.d/conda.sh
+    - conda activate lagom
     # Run test files
     - pytest test/ -v
     # flake8 check for code style and quality
