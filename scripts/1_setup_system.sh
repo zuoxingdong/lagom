@@ -2,7 +2,7 @@
 
 ################################
 # Install system-wide packages #
-# Date: 2018-09-07  	       #
+# Date: 2018-12-09  	       #
 # Author: Xingdong Zuo         #
 ################################
 
@@ -19,6 +19,7 @@ lsb_release -a
 sudo apt update
 # Upgrade available packages
 sudo apt upgrade
+sudo apt dist-upgrade
 # Install some packages
 # zlib1g-dev: for compression e.g. gzip
 # libjpeg-dev: JPEG support
