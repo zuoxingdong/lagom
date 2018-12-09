@@ -80,6 +80,12 @@ Wrappers
     
 .. autoclass:: TimeAwareObservation
     :members:
+    
+.. autoclass:: GrayScaleObservation
+    :members:
+    
+.. autoclass:: ResizeObservation
+    :members:
 
 Vectorized Environment
 --------------------------

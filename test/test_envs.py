@@ -22,6 +22,8 @@ from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import RewardScale
 from lagom.envs.wrappers import TimeAwareObservation
+from lagom.envs.wrappers import GrayScaleObservation
+from lagom.envs.wrappers import ResizeObservation
 
 from lagom.envs import make_gym_env
 from lagom.envs import make_envs
@@ -306,6 +308,34 @@ class TestWrappers(object):
         timed_obs = timed_env.reset()
         assert timed_obs[-1] == 0.0
         assert timed_env.t == 0.0
+        
+    @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
+    def test_gray_scale_observation(self, env_id):
+        env = make_gym_env(env_id, 0)
+        new_env = GrayScaleObservation(env)
+        assert env.observation_space.shape[:2] == new_env.observation_space.shape[:2]
+        assert env.observation_space.shape[-1] == 3
+        assert new_env.observation_space.shape[-1] == 1
+
+        obs = env.reset()
+        assert obs.shape == env.observation_space.shape
+
+        obs = new_env.reset()
+        assert obs.shape == new_env.observation_space.shape
+
+    @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
+    def test_resize_observation(self, env_id):
+        env = make_gym_env(env_id, 0)
+        new_env = ResizeObservation(env, 16)
+        assert env.observation_space.shape[-1] == new_env.observation_space.shape[-1]
+        assert new_env.observation_space.shape[:2] == (16, 16)
+
+        obs = env.reset()
+        assert obs.shape == env.observation_space.shape
+
+        obs = new_env.reset()
+        assert obs.shape[:2] == (16, 16)
+        assert obs.shape == new_env.observation_space.shape
 
         
 class TestEnvs(object):
