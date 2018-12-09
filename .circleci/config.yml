@@ -28,9 +28,11 @@ jobs:  # Build-Test-Deplot (BTD) process
                 command: |
                     cd scripts
                     bash 2_install_miniconda.sh
-                    conda install -y mock
-                    bash 3_setup_envs.sh
+                    . $HOME/miniconda3/etc/profile.d/conda.sh
+                    conda activate lagom
+                    bash 3_setup_envs.sh 
                     cd ..
+                    pip install -q mock
                     pip install -q torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
                     # Install current project
                     pip install -e .
