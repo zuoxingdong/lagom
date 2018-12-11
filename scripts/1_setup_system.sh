@@ -10,7 +10,7 @@
 set -e
 
 # Show Ubuntu version
-sudo apt install -y lsb-release
+sudo apt install -q -y lsb-release
 echo '#######################################'
 echo '# Your current Ubuntu OS information: # '
 echo '#######################################'
@@ -42,4 +42,4 @@ sudo apt -y dist-upgrade
 # xvfb: Fake screen, useful for gym rendering on the server
 # htop: CPU monitoring
 # vim: Vim editor
-sudo apt install -y libopenmpi-dev cmake zlib1g-dev libboost-all-dev python3-dev libjpeg-dev ffmpeg python3-opengl python-pyglet libsdl2-dev swig libglew-dev libosmesa6-dev patchelf xorg-dev libxinerama1 libxcursor1 xvfb htop vim
+sudo apt install -q -y libopenmpi-dev cmake zlib1g-dev libboost-all-dev python3-dev libjpeg-dev ffmpeg python3-opengl python-pyglet libsdl2-dev swig libglew-dev libosmesa6-dev patchelf xorg-dev libxinerama1 libxcursor1 xvfb htop vim
