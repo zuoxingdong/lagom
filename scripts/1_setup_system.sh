@@ -21,6 +21,7 @@ sudo apt update
 sudo apt upgrade
 sudo apt dist-upgrade
 # Install some packages
+# libopenmpi-dev: support mpi4py
 # zlib1g-dev: for compression e.g. gzip
 # libjpeg-dev: JPEG support
 # xvfb: Fake screen, useful for gym rendering on the server
@@ -38,4 +39,4 @@ sudo apt dist-upgrade
 # libxcursor1: for X cursor
 # htop: CPU monitoring
 # vim: Vim editor
-sudo apt install zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python3-opengl libboost-all-dev libsdl2-dev swig libglew-dev libglu1-mesa libglu1-mesa-dev libgl1-mesa-dev libxinerama1 libxcursor1 htop vim
+sudo apt install libopenmpi-dev zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python3-opengl libboost-all-dev libsdl2-dev swig libglew-dev libglu1-mesa libglu1-mesa-dev libgl1-mesa-dev libxinerama1 libxcursor1 htop vim
