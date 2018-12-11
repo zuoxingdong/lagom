@@ -12,6 +12,7 @@ bundler_args: --retry 10  # avoid time out
 # Install dependencies
 install:
     - cd scripts
+    - bash 1_setup_system.sh
     - bash 2_install_miniconda.sh
     - . $HOME/miniconda3/etc/profile.d/conda.sh
     - conda activate lagom
