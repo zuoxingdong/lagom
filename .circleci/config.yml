@@ -27,6 +27,7 @@ jobs:  # Build-Test-Deplot (BTD) process
                 name: Install dependencies
                 command: |
                     cd scripts
+                    bash 1_setup_system.sh
                     bash 2_install_miniconda.sh
                     . $HOME/miniconda3/etc/profile.d/conda.sh
                     conda activate lagom
