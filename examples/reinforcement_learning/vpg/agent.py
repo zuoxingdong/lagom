@@ -8,7 +8,9 @@ import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm_
 
 from lagom.networks import BaseNetwork
+from lagom.networks import BaseRNN
 from lagom.networks import make_fc
+from lagom.networks import make_rnncell
 from lagom.networks import ortho_init
 from lagom.networks import linear_lr_scheduler
 
@@ -28,7 +30,7 @@ from lagom.history.metrics import gae_from_episode
 from lagom.agents import BaseAgent
 
 
-class MLP(BaseNetwork):
+class NN(BaseNetwork):
     def make_params(self, config):
         self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
@@ -37,6 +39,10 @@ class MLP(BaseNetwork):
         for layer in self.feature_layers:
             ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
 
+    @property
+    def recurrent(self):
+        return False
+            
     def reset(self, config, **kwargs):
         pass
         
@@ -47,18 +53,15 @@ class MLP(BaseNetwork):
         return x
     
     
-class Critic(BaseNetwork):
+class Critic(NN):
     def make_params(self, config):
-        self.feature_layers = make_fc(self.env_spec.observation_space.flat_dim, config['network.hidden_sizes'])
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['network.hidden_sizes']])
+        super().make_params(config)
         self.output_layer = StateValueHead(config, self.device, config['network.hidden_sizes'][-1])
         
     def init_params(self, config):
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
-            
+        super().init_params(config)
         self.make_optimizer(config)
-
+        
     def make_optimizer(self, config, **kwargs):
         self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr_V'])
         if config['algo.use_lr_scheduler']:
@@ -80,21 +83,117 @@ class Critic(BaseNetwork):
                 self.lr_scheduler.step(kwargs['total_T'])
         
         self.optimizer.step()
-            
-    def reset(self, config, **kwargs):
-        pass
         
-    def forward(self, x):
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.celu(layer(x)))
+    @property
+    def recurrent(self):
+        return super().recurrent
+    
+    def reset(self, config, **kwargs):
+        super().reset(config, **kwargs)
+        
+    def forward(self, x, **kwargs):
+        x = super().forward(x)
         x = self.output_layer(x)
             
-        return x
+        out = {'V': x}
+            
+        return out
+    
+    
+class RNN(BaseRNN):
+    def make_params(self, config):
+        self.rnn = nn.LSTM(self.env_spec.observation_space.flat_dim, 
+                           config['network.hidden_sizes'][-1], 
+                           num_layers=1)
+
+    def init_params(self, config):
+        ortho_init(self.rnn, weight_scale=1.0, constant_bias=0.0)
+
+    @property
+    def recurrent(self):
+        return True
+            
+    def reset(self, config, **kwargs):
+        self.h, self.c = self.init_hidden_states(config, config['train.N'], **kwargs)
+        
+    def init_hidden_states(self, config, batch_size, **kwargs):
+        h = torch.zeros(self.rnn.num_layers, batch_size, self.rnn.hidden_size).to(self.device)
+        c = torch.zeros_like(h)
+        
+        return h, c
+
+    def forward(self, x, hidden_states, mask=None, **kwargs):
+        # augment seq_len dimension 1 to input: [seq_len, batch_size, input_size]
+        x = x.unsqueeze(0)
+        
+        h, c = hidden_states
+        if mask is not None:
+            mask = mask.unsqueeze(0).unsqueeze(-1).to(self.device)
+            h *= mask
+            c *= mask
+        
+        output, (h, c) = self.rnn(x, (h, c))
+        output = output.squeeze(0)  # remove seq_len dim
+        
+        return output, (h, c)
+    
+    
+class RNNCritic(RNN):
+    def make_params(self, config):
+        super().make_params(config)
+        self.output_layer = StateValueHead(config, self.device, self.rnn.hidden_size)
+        
+    def init_params(self, config):
+        super().init_params(config)
+        self.make_optimizer(config)
+        
+    def make_optimizer(self, config, **kwargs):
+        self.optimizer = optim.Adam(self.parameters(), lr=config['algo.lr_V'])
+        if config['algo.use_lr_scheduler']:
+            if 'train.iter' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.iter'], 'iteration-based')
+            elif 'train.timestep' in config:
+                self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep']+1, 'timestep-based')
+        else:
+            self.lr_scheduler = None
+            
+    def optimizer_step(self, config, **kwargs):
+        if config['agent.max_grad_norm'] is not None:
+            clip_grad_norm_(self.parameters(), config['agent.max_grad_norm'])
+        
+        if self.lr_scheduler is not None:
+            if self.lr_scheduler.mode == 'iteration-based':
+                self.lr_scheduler.step()
+            elif self.lr_scheduler.mode == 'timestep-based':
+                self.lr_scheduler.step(kwargs['total_T'])
+        
+        self.optimizer.step()
+        
+    @property
+    def recurrent(self):
+        return super().recurrent
+    
+    def reset(self, config, **kwargs):
+        super().reset(config, **kwargs)
+        
+    def forward(self, x, **kwargs):
+        out = {}
+        
+        output, (h, c) = super().forward(x, (self.h, self.c), **kwargs)
+        self.h, self.c = h, c
+        
+        out['V'] = self.output_layer(output)
+        out['V_rnn_states'] = (h, c)
+        
+        return out
     
     
 class Policy(BasePolicy):
     def make_networks(self, config):
-        self.feature_network = MLP(config, self.device, env_spec=self.env_spec)
+        if config['network.recurrent']:
+            self.feature_network = RNN(config, self.device, env_spec=self.env_spec)
+        else:
+            self.feature_network = NN(config, self.device, env_spec=self.env_spec)
         feature_dim = config['network.hidden_sizes'][-1]
         
         if self.env_spec.control_type == 'Discrete':
@@ -136,15 +235,20 @@ class Policy(BasePolicy):
     
     @property
     def recurrent(self):
-        return False
+        return self.feature_network.recurrent
     
     def reset(self, config, **kwargs):
-        pass
+        self.feature_network.reset(config, **kwargs)
 
-    def __call__(self, x, out_keys=['action', 'V'], info={}, **kwargs):
+    def __call__(self, x, out_keys=['action', 'V'], **kwargs):
         out = {}
         
-        features = self.feature_network(x)
+        if self.feature_network.recurrent:
+            features, (h, c) = self.feature_network(x, (self.feature_network.h, self.feature_network.c), **kwargs)
+            self.feature_network.h, self.feature_network.c = h, c
+            out['rnn_states'] = (h, c)
+        else:
+            features = self.feature_network(x)
         action_dist = self.action_head(features)
         
         action = action_dist.sample().detach()  # TODO: detach is necessary or not ?
@@ -170,26 +274,32 @@ class Agent(BaseAgent):
     def make_modules(self, config):
         self.policy = Policy(config, self.env_spec, self.device)
         if config['network.independent_V']:
-            self.critic = Critic(config, self.device, env_spec=self.env_spec)
+            if config['network.recurrent']:
+                self.critic = RNNCritic(config, self.device, env_spec=self.env_spec)
+            else:
+                self.critic = Critic(config, self.device, env_spec=self.env_spec)
         
     def prepare(self, config, **kwargs):
         self.total_T = 0
 
     def reset(self, config, **kwargs):
-        pass
+        self.policy.reset(config, **kwargs)
+        if config['network.independent_V']:
+            self.critic.reset(config, **kwargs)
 
-    def choose_action(self, obs, info={}):
+    def choose_action(self, obs, **kwargs):
         obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         
         if self.training:
             if self.config['network.independent_V']:
-                out = self.policy(obs, out_keys=['action', 'action_logprob', 'entropy'], info=info)
-                out['V'] = self.critic(obs)
+                out = self.policy(obs, out_keys=['action', 'action_logprob', 'entropy'], **kwargs)
+                V_out = self.critic(obs, **kwargs)
+                out = {**out, **V_out}
             else:
-                out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], info=info)
+                out = self.policy(obs, out_keys=['action', 'action_logprob', 'V', 'entropy'], **kwargs)
         else:
             with torch.no_grad():
-                out = self.policy(obs, out_keys=['action'], info=info)
+                out = self.policy(obs, out_keys=['action'], **kwargs)
             
         # sanity check for NaN
         if torch.any(torch.isnan(out['action'])):
@@ -197,7 +307,7 @@ class Agent(BaseAgent):
             
         return out
 
-    def learn(self, D, info={}):
+    def learn(self, D, **kwargs):
         # mask-out values when its environment already terminated for episodes
         episode_validity_masks = torch.from_numpy(D.numpy_validity_masks).float().to(self.device)
         logprobs = torch.stack([info['action_logprob'] for info in D.batch_infos], 1).squeeze(-1)
@@ -210,7 +320,7 @@ class Agent(BaseAgent):
         last_states = torch.from_numpy(final_state_from_episode(D)).float().to(self.device)
         with torch.no_grad():
             if self.config['network.independent_V']:
-                last_Vs = self.critic(last_states)
+                last_Vs = self.critic(last_states)['V']
             else:
                 last_Vs = self.policy(last_states, out_keys=['V'])['V']
         Qs = bootstrapped_returns_from_episode(D, last_Vs, self.config['algo.gamma'])
@@ -271,4 +381,4 @@ class Agent(BaseAgent):
 
     @property
     def recurrent(self):
-        pass
+        return self.policy.recurrent

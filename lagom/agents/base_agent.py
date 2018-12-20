@@ -17,16 +17,6 @@ class BaseAgent(Module, ABC):
         All agents should by default handle batched data e.g. batched observation returned from :class:`VecEnv`
         and batched action for each sub-environment of a :class:`VecEnv`. 
     
-    The subclass should implement at least the following:
-    
-    - :meth:`make_modules`
-    - :meth:`reset`
-    - :meth:`choose_action`
-    - :meth:`learn`
-    - :meth:`recurrent`
-    - :meth:`save`
-    - :meth:`load`
-    
     """
     def __init__(self, config, env_spec, device, **kwargs):
         r"""Initialize the agent. 
@@ -107,7 +97,7 @@ class BaseAgent(Module, ABC):
         pass
         
     @abstractmethod
-    def choose_action(self, obs, info={}):
+    def choose_action(self, obs, **kwargs):
         r"""Returns an (batched) action selected by the agent from received (batched) observation/
         
         .. note::
@@ -119,7 +109,7 @@ class BaseAgent(Module, ABC):
         Args:
             obs (object): batched observation returned from the environment. First dimension is treated
                 as batch dimension. 
-            info (dict): a dictionary of additional information for action selection. 
+            **kwargs: keyword arguments to specify action selection.
             
         Returns
         -------
@@ -132,13 +122,13 @@ class BaseAgent(Module, ABC):
         pass
         
     @abstractmethod
-    def learn(self, D, info={}):
+    def learn(self, D, **kwargs):
         r"""Defines learning mechanism to update the agent from a batched data. 
         
         Args:
             D (list): a list of batched data to train the agent e.g. in policy gradient, this can be 
                 a list of :class:`Trajectory` or :class:`Segment`
-            info (dict): a dictionary of additional information for defining the learning mechanism. 
+            **kwargs: keyword arguments to specify learning mechanism
             
         Returns
         -------
