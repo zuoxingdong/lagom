@@ -1,5 +1,5 @@
 ID: 0
-cuda: true
+cuda: false
 env.id: HalfCheetah-v2
 env.standardize: true
 env.time_aware_obs: false

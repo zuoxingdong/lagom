@@ -9,6 +9,7 @@ from torch.nn.utils import clip_grad_norm_
 
 from lagom.networks import BaseNetwork
 from lagom.networks import BaseRNN
+from lagom.networks import LayerNormLSTM
 from lagom.networks import make_fc
 from lagom.networks import make_rnncell
 from lagom.networks import ortho_init
@@ -102,12 +103,13 @@ class Critic(NN):
     
 class RNN(BaseRNN):
     def make_params(self, config):
-        self.rnn = nn.LSTM(self.env_spec.observation_space.flat_dim, 
+        self.rnn = LayerNormLSTM(self.env_spec.observation_space.flat_dim, 
                            config['network.hidden_sizes'][-1], 
                            num_layers=1)
 
     def init_params(self, config):
-        ortho_init(self.rnn, weight_scale=1.0, constant_bias=0.0)
+        for ln_cell in self.rnn.ln_cells:
+            ortho_init(ln_cell, weight_scale=1.0, constant_bias=0.0)
 
     @property
     def recurrent(self):

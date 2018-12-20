@@ -3,7 +3,8 @@ from .module import Module
 from .base_network import BaseNetwork
 
 from .base_rnn import BaseRNN
-from .ln_rnn import LayerNormLSTMCell
+from .ln_rnncell import LayerNormLSTMCell
+from .ln_rnn import LayerNormLSTM
 
 from .init import ortho_init
 
