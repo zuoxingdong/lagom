@@ -1,5 +1,7 @@
 import torch.nn as nn
 
+from .ln_rnncell import LayerNormLSTMCell
+
 
 def make_fc(input_dim, hidden_sizes):
     r"""Returns a ModuleList of fully connected layers. 
@@ -167,7 +169,7 @@ def make_rnncell(cell_type, input_dim, hidden_sizes):
         )
     
     Args:
-        cell_type (str): RNNCell type e.g. ['RNNCell', 'LSTMCell', 'GRUCell']
+        cell_type (str): RNNCell type e.g. ['RNNCell', 'LSTMCell', 'GRUCell', 'LayerNormLSTMCell']
         input_dim (int): input dimension in the first recurrent layer. 
         hidden_sizes (list): a list of hidden sizes, each for one recurrent layer. 
     
@@ -185,8 +187,10 @@ def make_rnncell(cell_type, input_dim, hidden_sizes):
         cell_f = nn.LSTMCell
     elif cell_type == 'GRUCell':
         cell_f = nn.GRUCell
+    elif cell_type == 'LayerNormLSTMCell':
+        cell_f = LayerNormLSTMCell
     else:
-        raise ValueError(f'expected RNNCell/LSTMCell/GRUCell, got {cell_type}')
+        raise ValueError(f'expected RNNCell/LSTMCell/GRUCell/LayerNormLSTMCell, got {cell_type}')
     
     hidden_sizes = [input_dim] + hidden_sizes
     
