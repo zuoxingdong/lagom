@@ -20,7 +20,7 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         configurator = Configurator('grid')
         
-        configurator.fixed('cuda', True)  # whether to use GPU
+        configurator.fixed('cuda', False)# True)  # whether to use GPU
         
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
