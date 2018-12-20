@@ -7,21 +7,6 @@ from .base_network import BaseNetwork
 class BaseRNN(BaseNetwork, ABC):
     r"""Base class for all recurrent neural networks. 
     
-    .. note::
-    
-        It is better not to maintain hidden states within this class but always given
-        as an forward argument. Otherwise it is easily prone to bugs when evaluating the
-        agent using :class:`TrajectoryRunner` which breaks the internal track of hidden
-        states for training. 
-    
-    The subclass should implement at least the following:
-
-    - :meth:`make_params`
-    - :meth:`init_params`
-    - :meth:`init_hidden_states`
-    - :meth:`rnn_forward`
-    - :meth:`reset`
-    
     Example::
     
         class LSTM(BaseRNN):
@@ -73,7 +58,7 @@ class BaseRNN(BaseNetwork, ABC):
         pass
     
     @abstractmethod
-    def rnn_forward(self, x, hidden_states, mask=None, **kwargs):
+    def forward(self, x, hidden_states, mask=None, **kwargs):
         r"""Defines forward pass for recurrent neural networks. 
         
         Args:
@@ -84,18 +69,7 @@ class BaseRNN(BaseNetwork, ABC):
             
         Returns
         -------
-        out : dict
-            a dictionary of forward pass output, possible keys ['output', 'hidden_states']
+        out : tuple
+            a tuple of forward pass, (output, hidden_states)
         """
         pass
-    
-    @abstractmethod
-    def reset(self, config):
-        pass
-        
-    def forward(self, x, hidden_states, mask=None, **kwargs):
-        out = self.rnn_forward(x, hidden_states, mask, **kwargs)
-        assert isinstance(out, dict)
-        assert 'output' in out and 'hidden_states' in out
-        
-        return out

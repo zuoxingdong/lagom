@@ -28,7 +28,7 @@ class RandomPolicy(BasePolicy):
     def reset(self, config, **kwargs):
         pass
     
-    def __call__(self, x, out_keys=['action'], info={}, **kwargs):
+    def __call__(self, x, out_keys=['action'], **kwargs):
         out_policy = {}
         
         if self.env_spec.is_vec_env:

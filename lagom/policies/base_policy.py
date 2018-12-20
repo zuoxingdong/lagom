@@ -91,7 +91,7 @@ class BasePolicy(Module, ABC):
         pass
 
     @abstractmethod
-    def __call__(self, x, out_keys=['action'], info={}, **kwargs):
+    def __call__(self, x, out_keys=['action'], **kwargs):
         r"""Define the computation of the policy given input data at every call. 
         
         Should be overridden by all subclasses.
@@ -108,7 +108,6 @@ class BasePolicy(Module, ABC):
             x (object): input data to the policy. 
             out_keys (list, optional): a list of required metrics for the policy to output. 
                 Default: ``['action']``
-            info (dict): a dictionary of additional information useful for action selection e.g. mask RNN states
             **kwargs: keyword aguments used to specify the policy execution.
             
         Returns

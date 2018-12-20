@@ -3,7 +3,7 @@ cuda: true
 env.id: HalfCheetah-v2
 env.standardize: true
 env.time_aware_obs: false
-network.recurrent: false
+network.recurrent: true
 network.hidden_sizes:
 - 64
 - 64
