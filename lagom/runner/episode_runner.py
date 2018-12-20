@@ -19,12 +19,16 @@ class EpisodeRunner(BaseRunner):
         
         obs = self.env.reset()
         D.add_observation(obs)
-        # reset agent: e.g. RNN states because initial observation
-        self.agent.reset(self.config)
+        self.agent.reset(self.config)  # e.g. RNN initial states
+        done = None  # for RNN mask
         
         for t in range(T):
-            info = {}
-            out_agent = self.agent.choose_action(obs, info=info)
+            if self.agent.recurrent and done is not None and any(done):
+                kwargs = {'mask': torch.from_numpy(np.logical_not(done).astype(np.float32))}
+            else:
+                kwargs = {}
+            
+            out_agent = self.agent.choose_action(obs, **kwargs)
             
             action = out_agent.pop('action')
             if torch.is_tensor(action):

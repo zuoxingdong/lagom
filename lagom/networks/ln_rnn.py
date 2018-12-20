@@ -2,7 +2,6 @@ import torch.nn as nn
 
 
 class LayerNormLSTMCell(nn.RNNCellBase):
-
     def __init__(self, input_size, hidden_size, bias=True, ln_preact=True):
         super(LayerNormLSTMCell, self).__init__(input_size, hidden_size, bias, num_chunks=4)
         

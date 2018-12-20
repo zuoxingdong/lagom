@@ -6,7 +6,7 @@ class RandomAgent(BaseAgent):
     def __init__(self, config, env_spec):
         super().__init__(config, env_spec, None)
         
-    def choose_action(self, obs, info={}):
+    def choose_action(self, obs, **kwargs):
         out = {}
         
         if self.env_spec.is_vec_env:
@@ -27,7 +27,7 @@ class RandomAgent(BaseAgent):
     def reset(self, config, **kwargs):
         pass    
         
-    def learn(self, D, info={}):
+    def learn(self, D, **kwargs):
         pass
     
     @property

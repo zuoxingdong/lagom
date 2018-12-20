@@ -8,7 +8,7 @@ class StickyAgent(BaseAgent):
         
         self.sticky_action = sticky_action
         
-    def choose_action(self, obs, info={}):
+    def choose_action(self, obs, **kwargs):
         out = {}
         
         if self.env_spec.is_vec_env:
@@ -29,7 +29,7 @@ class StickyAgent(BaseAgent):
     def reset(self, config, **kwargs):
         pass    
         
-    def learn(self, D, info={}):
+    def learn(self, D, **kwargs):
         pass
     
     @property

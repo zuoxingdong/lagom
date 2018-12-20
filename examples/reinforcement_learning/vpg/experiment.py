@@ -26,7 +26,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         configurator.fixed('env.time_aware_obs', False)  # whether to append time step to observation
         
-        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.recurrent', True)
         configurator.fixed('network.hidden_sizes', [64, 64])  # TODO: [64, 64]
         configurator.fixed('network.independent_V', False)  # share or not for params of policy and value network
         
