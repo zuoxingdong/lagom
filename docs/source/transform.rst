@@ -19,6 +19,9 @@ lagom.transform: Transformations
 .. autoclass:: RunningMeanStd
     :members:
     
+.. autoclass:: RunningAverage
+    :members:
+    
 .. autoclass:: InterpCurve
     :members:
     
