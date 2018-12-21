@@ -25,10 +25,10 @@ class BaseRNN(BaseNetwork, ABC):
 
                 return [h, c]
 
-            def rnn_forward(self, x, hidden_states, mask=None, **kwargs):
+            def rnn_forward(self, x, hidden_states, **kwargs):
                 # mask out hidden states if required
-                if mask is not None:
-                    mask = mask.to(self.device)
+                if 'mask' in kwargs:
+                    mask = kwargs['mask'].to(self.device)
                     h, c = hidden_states
                     h = h*mask
                     c = c*mask
@@ -58,13 +58,12 @@ class BaseRNN(BaseNetwork, ABC):
         pass
     
     @abstractmethod
-    def forward(self, x, hidden_states, mask=None, **kwargs):
+    def forward(self, x, hidden_states, **kwargs):
         r"""Defines forward pass for recurrent neural networks. 
         
         Args:
             x (object): input data
             hidden_states (object): hidden states for current time step
-            mask (object, optinal): masking out hidden states. Default: ``None``
             **kwargs: keyword aguments used to specify forward pass. 
             
         Returns
