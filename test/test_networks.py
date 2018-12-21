@@ -178,9 +178,10 @@ class LSTM(BaseRNN):
         
         return [h, c]
         
-    def forward(self, x, hidden_states, mask=None, **kwargs):
+    def forward(self, x, hidden_states, **kwargs):
         # mask out hidden states if required
-        if mask is not None:
+        if 'mask' in kwargs:
+            mask = kwargs['mask']
             h, c = hidden_states
             h = h*mask
             c = c*mask

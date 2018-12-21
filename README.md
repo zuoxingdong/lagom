@@ -44,7 +44,7 @@ Run the following command to install [all required dependencies](./requirements.
 pip install -r requirements.txt
 ```
 
-Note that it is highly recommanded to use an Anaconda environment:
+Note that it is highly recommanded to use an Miniconda environment:
 
 ```bash
 conda create -n lagom python=3.7
@@ -91,13 +91,12 @@ pytest test -v
 ## More standard RL baselines
     - IMPALA
     - TRPO/PPO
-    - NAF/GAE
+    - NAF
     - ACKTR
     - DDPG
     - ACER
     - Q-Prop
     - DQN: DQN/Rainbow
-    - ES: NES
 ## More standard networks
     - Monte Carlo Dropout/Concrete Dropout
 ## Misc
@@ -106,7 +105,7 @@ pytest test -v
 
 # Reference
 
-This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [garage](https://github.com/rlworkgroup/garage), [OpenAI baselines](https://github.com/openai/baselines) and [Dopamine](https://github.com/google/dopamine)
+This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [OpenAI baselines](https://github.com/openai/baselines), [OpenAI Spinning Up](https://github.com/openai/spinningup) and [Dopamine](https://github.com/google/dopamine)
 
 Please use this bibtex if you want to cite this repository in your publications:
 

@@ -124,13 +124,13 @@ class RNN(BaseRNN):
         
         return h, c
 
-    def forward(self, x, hidden_states, mask=None, **kwargs):
+    def forward(self, x, hidden_states, **kwargs):
         # augment seq_len dimension 1 to input: [seq_len, batch_size, input_size]
         x = x.unsqueeze(0)
         
         h, c = hidden_states
-        if mask is not None:
-            mask = mask.unsqueeze(0).unsqueeze(-1).to(self.device)
+        if 'mask' in kwargs:
+            mask = kwargs['mask'].unsqueeze(0).unsqueeze(-1).to(self.device)
             h *= mask
             c *= mask
         
