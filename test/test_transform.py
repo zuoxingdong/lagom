@@ -8,6 +8,7 @@ from lagom.transform import InterpCurve
 from lagom.transform import LinearSchedule
 from lagom.transform import RankTransform
 from lagom.transform import RunningMeanStd
+from lagom.transform import RunningAverage
 from lagom.transform import SmoothFilter
 
 
@@ -177,7 +178,35 @@ def test_runningmeanstd():
     assert runningmeanstd.mu.shape == (3,)
     assert runningmeanstd.sigma.shape == (3,)
     assert np.allclose(runningmeanstd.mu, b.mean(0))
-    assert np.allclose(runningmeanstd.sigma, b.std(0))    
+    assert np.allclose(runningmeanstd.sigma, b.std(0))
+    
+    
+def test_running_average():
+    with pytest.raises(AssertionError):
+        RunningAverage(alpha=-1.0)
+    with pytest.raises(AssertionError):
+        RunningAverage(alpha=1.2)
+        
+    f = RunningAverage(alpha=0.1)
+    x = f(0.5)
+    assert np.allclose(x, 0.5)
+    x = f(1.5)
+    assert np.allclose(x, 1.4)
+    assert np.allclose(x, f.value)
+    
+    f = RunningAverage(alpha=0.1)
+    x = f(1.0)
+    assert np.allclose(x, 1.0)
+    x = f(2.0)
+    assert np.allclose(x, 1.9)
+    assert np.allclose(x, f.value)
+    
+    f = RunningAverage(alpha=0.1)
+    x = f([0.5, 1.0])
+    assert np.allclose(x, [0.5, 1.0])
+    x = f([1.5, 2.0])
+    assert np.allclose(x, [1.4, 1.9])
+    assert np.allclose(x, f.value)
 
 
 def test_smooth_filter():
