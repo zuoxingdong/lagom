@@ -6,4 +6,5 @@ from .interp_curve import InterpCurve
 from .linear_schedule import LinearSchedule
 from .rank_transform import RankTransform
 from .running_mean_std import RunningMeanStd
+from .running_average import RunningAverage
 from .smooth_filter import SmoothFilter
