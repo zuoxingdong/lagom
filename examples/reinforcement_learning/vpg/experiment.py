@@ -20,14 +20,14 @@ class ExperimentMaster(BaseExperimentMaster):
     def make_configs(self):
         configurator = Configurator('grid')
         
-        configurator.fixed('cuda', True)# True)  # whether to use GPU
+        configurator.fixed('cuda', True)  # whether to use GPU
         
         configurator.fixed('env.id', 'HalfCheetah-v2')
         configurator.fixed('env.standardize', True)  # whether to use VecStandardize
         configurator.fixed('env.time_aware_obs', False)  # whether to append time step to observation
         
-        configurator.fixed('network.recurrent', True)
-        configurator.fixed('network.hidden_sizes', [128])  # FF:[64, 64]/RNN:[128]
+        configurator.fixed('network.recurrent', False)
+        configurator.fixed('network.hidden_sizes', [64, 64])  # FF:[64, 64]/RNN:[128]
         configurator.fixed('network.independent_V', False)  # share or not for params of policy and value network
         
         configurator.fixed('algo.lr', 7e-4)
@@ -58,7 +58,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
         
         configurator.fixed('log.interval', 10)  # logging interval
-        configurator.fixed('log.dir', 'logs')  # logging directory
+        configurator.fixed('log.dir', 'logs/default')  # logging directory
         
         list_config = configurator.make_configs()
         

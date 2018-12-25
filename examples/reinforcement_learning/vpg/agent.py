@@ -38,7 +38,7 @@ class NN(BaseNetwork):
         
     def init_params(self, config):
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='leaky_relu', constant_bias=0.0)
+            nn.init.normal_(layer.weight, mean=0.0, std=np.sqrt(1/layer.out_features))
 
     @property
     def recurrent(self):
@@ -49,7 +49,7 @@ class NN(BaseNetwork):
         
     def forward(self, x):
         for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.celu(layer(x)))
+            x = F.selu(layer_norm(layer(x)))
             
         return x
     
