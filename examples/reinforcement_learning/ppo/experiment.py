@@ -62,7 +62,7 @@ class ExperimentMaster(BaseExperimentMaster):
         configurator.fixed('train.num_epochs', 80)
         
         configurator.fixed('log.interval', 10)  # logging interval
-        configurator.fixed('log.dir', 'logs')  # logging directory
+        configurator.fixed('log.dir', 'logs/default')  # logging directory
         
         list_config = configurator.make_configs()
         
