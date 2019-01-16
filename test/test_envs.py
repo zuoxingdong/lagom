@@ -18,9 +18,11 @@ from lagom.envs.spaces import convert_gym_space
 from lagom.envs.wrappers import Wrapper
 from lagom.envs.wrappers import ObservationWrapper
 from lagom.envs.wrappers import GymWrapper
+from lagom.envs.wrappers import ClipReward
 from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import RewardScale
+from lagom.envs.wrappers import ScaleImageObservation
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import GrayScaleObservation
 from lagom.envs.wrappers import ResizeObservation
@@ -28,6 +30,7 @@ from lagom.envs.wrappers import ResizeObservation
 from lagom.envs import make_gym_env
 from lagom.envs import make_envs
 from lagom.envs import make_vec_env
+from lagom.envs import make_atari_env
 
 from lagom.envs.vec_env import VecEnv
 from lagom.envs.vec_env import VecEnvWrapper
@@ -241,6 +244,18 @@ class TestWrappers(object):
         del gym_env
         del env
         
+    @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
+    def test_clip_reward(self, env_id):
+        env = gym.make(env_id)
+        env = GymWrapper(env)
+        env = ClipReward(env)
+        env.reset()
+        for _ in range(100):
+            obs, reward, done, info = env.step(env.action_space.sample())
+            assert reward >= -1.0 and reward <= 1.0
+            if done:
+                break
+        
     def test_flatten_observation(self):
         gym_env = gym.make('Pong-v0')
         env = GymWrapper(gym_env)
@@ -286,6 +301,17 @@ class TestWrappers(object):
         observation, reward, done, info = env.step(env.action_space.sample())
         assert reward == 0.02
         
+    def test_scale_image_observation(self):
+        env = gym.make('Pong-v0')
+        env = GymWrapper(env)
+        env = ScaleImageObservation(env)
+        assert np.allclose(env.observation_space.high, 1.0)
+        assert np.allclose(env.observation_space.low, 0.0)
+        obs = env.reset()
+        assert np.alltrue(obs <= 1.0) and np.alltrue(obs >= 0.0)
+        obs, _, _, _ = env.step(env.action_space.sample())
+        assert np.alltrue(obs <= 1.0) and np.alltrue(obs >= 0.0)
+        
     @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
     def test_time_aware_observation(self, env_id):
         gym_env = gym.make(env_id)
@@ -312,7 +338,7 @@ class TestWrappers(object):
     @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
     def test_gray_scale_observation(self, env_id):
         env = make_gym_env(env_id, 0)
-        new_env = GrayScaleObservation(env)
+        new_env = GrayScaleObservation(env, keep_dim=True)
         assert env.observation_space.shape[:2] == new_env.observation_space.shape[:2]
         assert env.observation_space.shape[-1] == 3
         assert new_env.observation_space.shape[-1] == 1
@@ -432,8 +458,24 @@ class TestEnvs(object):
         assert not venv2.closed
         venv2.close()
         assert venv2.closed
-
         
+    @pytest.mark.parametrize('env_id', ['Pong', 'Breakout', 'SpaceInvaders'])
+    def test_make_atari_env(self, env_id):
+        env = make_atari_env(env_id, 0)
+        assert env.observation_space.shape == (84, 84, 4)
+        assert np.allclose(env.observation_space.low, 0.0)
+        assert np.allclose(env.observation_space.high, 1.0)
+        obs = env.reset()
+        for _ in range(200):
+            obs, reward, done, info = env.step(env.action_space.sample())
+            assert obs.shape == (84, 84, 4)
+            assert obs.max() <= 1.0
+            assert obs.min() >= 0.0
+            assert reward >= -1.0 and reward <= 1.0
+            if done:
+                break
+
+
 class TestVecEnv(object):
     @pytest.mark.parametrize('vec_env_class', [(0, SerialVecEnv), (1, ParallelVecEnv)])
     def test_vec_env(self, vec_env_class):

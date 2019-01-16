@@ -46,6 +46,11 @@ Environment
 
 .. autofunction:: make_vec_env
 
+.. autoclass:: AtariPreprocessing
+    :members:
+    
+.. autofunction:: make_atari_env
+
 Wrappers
 --------------
 
@@ -66,6 +71,9 @@ Wrappers
 .. autoclass:: GymWrapper
     :members:
 
+.. autoclass:: ClipReward
+    :members:
+
 .. autoclass:: FlattenObservation
     :members:
 
@@ -76,6 +84,9 @@ Wrappers
     :members:
     
 .. autoclass:: RewardScale
+    :members:
+    
+.. autoclass:: ScaleImageObservation
     :members:
     
 .. autoclass:: TimeAwareObservation
