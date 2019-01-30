@@ -56,8 +56,11 @@ class BaseExperimentWorker(MPWorker, ABC):
     
     def make_device(self, config, task_id):
         if 'cuda' in config and config['cuda']:
-            num_gpu = torch.cuda.device_count()
-            device_id = task_id % num_gpu
+            if 'cuda_ids' in config:  # use specific GPUs
+                device_id = config['cuda_ids'][task_id % len(config['cuda_ids'])]
+            else:  # use all GPUs
+                num_gpu = torch.cuda.device_count()
+                device_id = task_id % num_gpu
             
             torch.cuda.set_device(device_id)
             device = torch.device(f'cuda:{device_id}')
