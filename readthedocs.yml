@@ -1,6 +1,22 @@
+version: 2
+
+formats: all
+
 build:
     image: latest
 
 python:
-    # TODO: upgrade to 3.7
-    version: 3.6
+    version: 3.7
+    install:
+        - requirements: docs/requirements.txt
+        - method: pip
+          path: .
+          extra_requirements: docs
+        - method: setuptools
+          path: .
+    system_packages: true
+
+sphinx:
+  builder: html
+  configuration: ./docs/source/conf.py
+  fail_on_warning: true
