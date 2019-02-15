@@ -9,8 +9,5 @@ BaseAlgorithm
 
 Logger
 ----------------------------
-.. autoclass:: BaseLogger
-    :members:
-
 .. autoclass:: Logger
     :members:
