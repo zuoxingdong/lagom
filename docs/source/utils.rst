@@ -20,3 +20,5 @@ lagom.utils: Utils
 .. autofunction:: color_str
 
 .. autofunction:: timed
+
+.. autofunction:: ask_yes_or_no
