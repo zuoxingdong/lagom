@@ -82,9 +82,7 @@ class Engine(BaseEngine):
             logger('running_min_horizon', running_horizons.min())
             logger('running_max_horizon', running_horizons.max())
         
-        print('-'*50)
-        logger.dump(keys=None, index=None, indent=0)
-        print('-'*50)
+        logger.dump(keys=None, index=None, indent=0, border='-'*50)
 
         return logger.logs
         
@@ -137,8 +135,6 @@ class Engine(BaseEngine):
         logger('min_return', batch_returns.min())
         logger('max_return', batch_returns.max())
         
-        print(color_str('+'*50, 'yellow', 'bold'))
-        logger.dump(keys=None, index=None, indent=0)
-        print(color_str('+'*50, 'yellow', 'bold'))
+        logger.dump(keys=None, index=None, indent=0, border=color_str('+'*50, 'yellow', 'bold'))
 
         return logger.logs

@@ -107,9 +107,7 @@ class ESMaster(BaseESMaster):
         self.logger('best_return', best_return)
         
         if self.generation == 0 or (self.generation+1) % self.config['log.interval'] == 0:
-            print('-'*50)
-            self.logger.dump(keys=None, index=-1, indent=0)
-            print('-'*50)
+            self.logger.dump(keys=None, index=-1, indent=0, border='-'*50)
             
         # Save the loggings and final parameters
         if (self.generation+1) == self.config['train.num_iteration']:

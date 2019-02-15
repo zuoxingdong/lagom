@@ -58,6 +58,7 @@ def test_logger():
     check(logger.logs)
 
     logger.dump()
+    logger.dump(border='-'*50)
     logger.dump(keys=['iteration'])
     logger.dump(keys=['iteration', 'train_loss'])
     logger.dump(index=0)
@@ -65,7 +66,7 @@ def test_logger():
     logger.dump(index=0)
     logger.dump(keys=['iteration', 'eval_loss'], index=1)
     logger.dump(keys=['iteration', 'learning_rate'], indent=1)
-    logger.dump(keys=['iteration', 'train_loss'], index=[0, 2], indent=1)
+    logger.dump(keys=['iteration', 'train_loss'], index=[0, 2], indent=1, border='#'*50)
 
     f = Path('./logger_file')
     logger.save(f)
