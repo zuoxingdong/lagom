@@ -1,60 +1,13 @@
-from abc import ABC
-from abc import abstractmethod
-
 from collections import OrderedDict
-
 from operator import itemgetter  # get list items with multiple indicies
 
 from .utils import pickle_dump
 
 
-class BaseLogger(ABC):
-    r"""Base class for all loggers.
+class Logger(object):
+    r"""Log the information in a dictionary. 
     
-    Any logger should subclass this class. 
-    
-    The subclass should implement at least the following:
-    
-    - :meth:`__call__`
-    - :meth:`dump`
-    - :meth:`save`
-    
-    """
-    @abstractmethod
-    def __call__(self, key, value):
-        r"""Log the information with given key and value. 
-        
-        .. note::
-        
-            The key should be semantic and each word is separated by ``_``. 
-        
-        Args:
-            key (str): key of the information
-            value (object): value to be logged
-        """
-        pass
-    
-    @abstractmethod
-    def dump(self):
-        r"""Dump the loggings to the screen."""
-        pass
-    
-    @abstractmethod
-    def save(self, f):
-        r"""Save loggings to a file. 
-        
-        Args:
-            f (str): file path
-        """
-        pass
-
-
-class Logger(BaseLogger):
-    r"""Log the information. 
-    
-    All logged information are stored in a dictionary. If a key is logged more than once, then the values
-    are augmented as a list. To dump information to the screen, it is possible to select to dump either
-    all logged information or specific items. 
+    If a key is logged more than once, then the new value will be appended to a list. 
     
     .. note::
     
@@ -63,9 +16,9 @@ class Logger(BaseLogger):
     
     .. warning::
     
-        It is discouraged to use hierarchical structure, e.g. list of dict of list of ndarray.
+        It is discouraged to store hierarchical structure, e.g. list of dict of list of ndarray.
         Because pickling such complex and large data structure is extremely slow. Put dictionary
-        only at the topmost level. 
+        only at the topmost level. Large numpy array should be saved separately. 
     
     Example:
     
@@ -115,12 +68,22 @@ class Logger(BaseLogger):
         self.logs = OrderedDict()
         
     def __call__(self, key, value):
+        r"""Log the information with given key and value. 
+        
+        .. note::
+        
+            The key should be semantic and each word is separated by ``_``. 
+        
+        Args:
+            key (str): key of the information
+            value (object): value to be logged
+        """
         if key not in self.logs:
             self.logs[key] = []
         
         self.logs[key].append(value)
         
-    def dump(self, keys=None, index=None, indent=0):
+    def dump(self, keys=None, index=None, indent=0, border=''):
         r"""Dump the loggings to the screen.
         
         Args:
@@ -132,6 +95,7 @@ class Logger(BaseLogger):
                 - ``None``: all indicies.
                 
             indent (int, optional): the number of tab indentation. Default: ``0``
+            border (str, optional): the string to print as header and footer
         """
         if keys is None:
             keys = list(self.logs.keys())
@@ -140,6 +104,7 @@ class Logger(BaseLogger):
         if index is None:
             index = 'all'
         
+        print(border)
         for key in keys:
             if indent > 0:
                 print('\t'*indent, end='')  # do not create a new line
@@ -155,8 +120,14 @@ class Logger(BaseLogger):
             key = key.strip().replace('_', ' ').title()
             
             print(f'{key}: {value}')
+        print(border)
 
     def save(self, f):
+        r"""Save loggings to a file. 
+        
+        Args:
+            f (str): file path
+        """
         pickle_dump(obj=self.logs, f=f, ext='.pkl')
         
     def clear(self):
