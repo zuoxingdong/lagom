@@ -31,9 +31,7 @@ class Engine(BaseEngine):
             logger('KL_loss', out['KL_loss'].item())
             
             if i == 0 or (i+1) % self.config['log.interval'] == 0:
-                print('-'*50)
-                logger.dump(keys=None, index=-1, indent=0)
-                print('-'*50)
+                logger.dump(keys=None, index=-1, indent=0, border='-'*50)
                 
         return logger.logs
 
