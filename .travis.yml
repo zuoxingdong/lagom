@@ -12,6 +12,8 @@ bundler_args: --retry 10  # avoid time out
 # Install dependencies
 install:
     - cd scripts
+    - sudo systemctl enable mysql  # this line and next fixes mysql error in TravisCI (tmp)
+    - sudo service mysql start
     - bash 1_setup_system.sh
     - bash 2_install_miniconda.sh
     - . $HOME/miniconda3/etc/profile.d/conda.sh
