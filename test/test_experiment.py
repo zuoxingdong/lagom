@@ -64,13 +64,9 @@ def test_configurator():
         configurator.log_uniform('four', 0.0001, 0.1)
 
     Configurator.print_config(configs[20])
-    config_dataframe = Configurator.to_dataframe(configs)
-    config_dataframe = Configurator.dataframe_subset(config_dataframe, 'network.lr', [0.01, 0.005])
-    config_dataframe = Configurator.dataframe_groupview(config_dataframe, ['env.id', 'network.lr'])
 
     del configurator
     del configs
-    del config_dataframe
 
     # Random search
     configurator = Configurator('random', num_sample=20)
@@ -124,10 +120,6 @@ def test_configurator():
     assert all([c['network.lr'] >= 1e-7 and c['network.lr'] <= 1e-1 for c in configs])
 
     Configurator.print_config(configs[11])
-    config_dataframe = Configurator.to_dataframe(configs)
-    config_dataframe = Configurator.dataframe_subset(config_dataframe, 'network.layers', [1, 2])
-    config_dataframe = Configurator.dataframe_groupview(config_dataframe, ['network.layers', 'log.dir'])
-    config_dataframe
 
 
 class SimpleAlgorithm(BaseAlgorithm):
