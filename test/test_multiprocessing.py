@@ -1,9 +1,7 @@
-import numpy as np
-
 import pytest
 
-from lagom.multiprocessing import MPMaster
-from lagom.multiprocessing import MPWorker
+from lagom.multiprocessing import ProcessMaster
+from lagom.multiprocessing import ProcessWorker
 
 
 def naive_primality(integer):
@@ -19,59 +17,29 @@ def naive_primality(integer):
     return prime
     
     
-class Worker(MPWorker):
-    def prepare(self):
-        self.prepared = 'ok'
-    
+class Worker(ProcessWorker):
     def work(self, task):
-        assert self.prepared == 'ok'
-        
-        task_id, task, use_chunk = task
-        
-        if use_chunk:
-            result = [naive_primality(subtask) for subtask in task]
-        else:
-            result = naive_primality(task)
-        
-        return task_id, result
+        return naive_primality(task)
     
     
-class Master(MPMaster):
+class Master(ProcessMaster):
     def make_tasks(self):
-        primes = [6563, 7639, 3061, 2543]
+        primes = [16127, 23251, 29611, 37199]
         non_primes = [5853, 7179, 6957]
         tasks = [primes[0], primes[1], non_primes[0], primes[2], non_primes[1], non_primes[2], primes[3]]
         
         return tasks
-    
-    def process_results(self, results):
-        assert results == [True, True, False, True, False, False, True]
-        print('pass')
 
 
-def test_mp_master_worker():
+@pytest.mark.parametrize('num_worker', [1, 2, 3, 5, 7, 10])
+def test_process_master_worker(num_worker):
     def check(master):
         assert all([not p.is_alive() for p in master.list_process])
         assert all([conn.closed for conn in master.master_conns])
         assert all([conn.closed for conn in master.worker_conns])
     
-    master = Master(Worker, 9)
-    assert master.num_worker == 9
-    master()
-    assert master.num_worker == 7
+    master = Master(Worker, num_worker)
+    assert master.num_worker == num_worker
+    results = master()
+    assert results == [True, True, False, True, False, False, True]
     check(master)
-    del master
-    
-    master = Master(Worker, 5)
-    assert master.num_worker == 5
-    master()
-    assert master.num_worker == 5
-    check(master)
-    del master
-    
-    master = Master(Worker, 3)
-    assert master.num_worker == 3
-    master()
-    assert master.num_worker == 3
-    check(master)
-    del master
