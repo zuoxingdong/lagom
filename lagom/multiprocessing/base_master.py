@@ -3,21 +3,12 @@ from abc import abstractmethod
 
 
 class BaseMaster(ABC):
-    r"""Base class for all masters which assign tasks to a set of parallelized workers. 
-    
-    The subclass should implement at least the following:
-    
-    - :meth:`__call__`
-    - :meth:`make_tasks`
-    - :meth:`make_workers`
-    - :meth:`assign_tasks`
-    - :meth:`process_results`
-    - :meth:`close`
-    
+    r"""Base class for the master in master-worker architecture which assigns tasks 
+    to a set of parallelized workers. 
     """ 
     @abstractmethod
     def __call__(self):
-        r"""Defines the entire master-worker parallelization pipeline. """
+        r"""Defines the master-worker parallelization pipeline. """
         pass
         
     @abstractmethod
@@ -38,7 +29,7 @@ class BaseMaster(ABC):
     
     @abstractmethod
     def assign_tasks(self, tasks):
-        r"""Assign a given list of tasks to the created workers and return the received results. 
+        r"""Assign a given list of tasks to the workers and return the received results. 
         
         Args:
             tasks (list): a list of tasks
@@ -47,15 +38,6 @@ class BaseMaster(ABC):
         -------
         results : object
             received results
-        """
-        pass
-    
-    @abstractmethod
-    def process_results(self, results):
-        r"""Process the results received from all the workers.
-        
-        Args:
-            results (object): received results
         """
         pass
     
