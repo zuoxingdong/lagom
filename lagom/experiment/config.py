@@ -50,11 +50,8 @@ class Config(object):
     
     Example::
     
-        config = Config({'log.dir': 'some path', 
-                         'network.lr': Grid([1e-3, 5e-3]), 
-                         'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
-                        num_sample=1, 
-                        keep_dict_order=False)
+        >>> config = Config({'log.dir': 'some path', 'network.lr': Grid([1e-3, 5e-3]), 'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, num_sample=1, keep_dict_order=False)
+        >>> import pandas as pd
         >>> print(pd.DataFrame(config.make_configs()))
                ID       env.id    log.dir  network.lr
             0   0  CartPole-v1  some path       0.001
