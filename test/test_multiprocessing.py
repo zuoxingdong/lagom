@@ -18,7 +18,7 @@ def naive_primality(integer):
     
     
 class Worker(ProcessWorker):
-    def work(self, task):
+    def work(self, task_id, task):
         return naive_primality(task)
     
     

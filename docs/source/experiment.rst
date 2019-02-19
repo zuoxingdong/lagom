@@ -7,19 +7,25 @@ lagom.experiment
 Config
 ----------------------------------
 
-.. autoclass:: Configurator
+.. autoclass:: Grid
+    :members:
+    
+.. autoclass:: Sample
+    :members:
+    
+.. autoclass:: Config
     :members:
     
 Experiment Master
 -----------------
 
-.. autoclass:: BaseExperimentMaster
+.. autoclass:: ExperimentMaster
     :members:
 
 Experiment Worker
 -----------------
 
-.. autoclass:: BaseExperimentWorker
+.. autoclass:: ExperimentWorker
     :members:
 
 Run experiment
