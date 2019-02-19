@@ -7,6 +7,9 @@ lagom.es: Evolution Strategies (ES)
 .. autoclass:: BaseES
     :members:
     
+.. autoclass:: CMAES
+    :members:
+    
 .. autoclass:: BaseESMaster
     :members:
     
