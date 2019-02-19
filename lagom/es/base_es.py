@@ -9,12 +9,6 @@ class BaseES(ABC):
     
         The optimization is treated as minimization. e.g. maximize rewards is equivalent to minimize negative rewards.
     
-    The subclass should implement at least the following:
-    
-    - :meth:`ask`
-    - :meth:`tell`
-    - :meth:`result`
-    
     """
     @abstractmethod
     def ask(self):
