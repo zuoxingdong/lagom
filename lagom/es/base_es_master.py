@@ -1,89 +1,51 @@
 from abc import ABC
 from abc import abstractmethod
 
-from lagom.multiprocessing import MPMaster
+from lagom.multiprocessing import ProcessMaster
+from lagom import Logger
 
 
-class BaseESMaster(MPMaster, ABC):
+class BaseESMaster(ProcessMaster, ABC):
     r"""Base class for the master of parallelized evolution strategies (ES). 
     
-    It internally defines an ES algorithm. 
     For each generation (iteration), it samples a set of solution candidates each assigned to
     an individual :class:`BaseESWorker`. After receiving the objective function values for all
     candidates, the master does an ES update. 
     
-    The subclass should implement at least the following:
-    
-    - :meth:`make_es`
-    - :meth:`process_es_result`
-    
     """
-    def __init__(self, config, worker_class, **kwargs):
+    def __init__(self, worker_class, es, config, **kwargs):
+        self.es = es
         self.config = config
-        self.num_generation = config['train.num_iteration']
-        
-        self.es = self.make_es(self.config)
-        
+        self.logger = Logger()
         super().__init__(worker_class, self.es.popsize)
         
         for key, value in kwargs.items():
             self.__setattr__(key, value)
     
-    def __call__(self):
+    def __call__(self, num_generation):
         self.make_workers()
         
-        for generation in range(self.num_generation):
-            self.generation = generation
-            
+        for generation in range(num_generation):
             tasks = self.make_tasks()
-            assert len(tasks) == self.num_worker
-            
-            results = self.assign_tasks(tasks)
-            self.process_results(tasks, results)
+            function_values = self.assign_tasks(tasks)
+            solutions = [solution for _, solution in tasks]
+            self.es.tell(solutions, function_values)
+            self.logging(self.logger, generation, solutions, function_values)
         
         self.close()
+        
+        return self.logger
     
-    @abstractmethod
-    def make_es(self, config):
-        r"""Create an ES algorithm. 
-        
-        Example::
-        
-            def make_es(self, config):
-                es = CMAES(mu0=[3]*100, 
-                           std0=0.5, 
-                           popsize=12)
-                return es
-        
-        Args:
-            config (dict): a dictionary of configurations. 
-        
-        Returns
-        -------
-        es : BaseES
-            an instantiated object of an ES class. 
-        """
-        pass
-
     def make_tasks(self):
         solutions = self.es.ask()
-        
         tasks = [[self.config, solution] for solution in solutions]
+        assert len(tasks) == self.num_worker
         
         return tasks
         
-    def process_results(self, tasks, results):
-        _, solutions = zip(*tasks)
-        function_values = results
-        
-        self.es.tell(solutions, function_values)
-        
-        result = self.es.result
-        self.process_es_result(result)
-            
     @abstractmethod
-    def process_es_result(self, result):
-        r"""Processes the results from one update of the ES. 
+    def logging(self, logger, generation, solutions, function_values):
+        r"""Logging for current ES generation. 
         
         Example::
         
@@ -92,6 +54,13 @@ class BaseESMaster(MPMaster, ABC):
                 print(f'Best function value at generation {self.generation+1}: {best_f_val}')
         
         Args:
-            result (object): a result returned from ``es.result``.         
+            logger (Logger): logger
+            generation (int): number of generations
+            solutions (list): list of candidate solutions
+            function_values (list): list of fitness values for each candidate solution
+            
+        Returns
+        -------
+        logger : Logger
         """
         pass

@@ -36,29 +36,31 @@ class ES(BaseES):
     
     
 class ESMaster(BaseESMaster):
-    def make_es(self, config):
-        es = ES()
+    def logging(self, logger, generation, solutions, function_values):
+        assert 'best_f' in self.es.result
+        if generation == 0:
+            assert self.es.result['best_f'] == 9
+        elif generation == 1:
+            assert self.es.result['best_f'] == 16
+        elif generation == 2:
+            assert self.es.result['best_f'] == 25
+        elif generation == 3:
+            assert self.es.result['best_f'] == 36
         
-        return es
-    
-    def process_es_result(self, result):
-        assert 'best_f' in result
-        if self.generation == 0:
-            assert result['best_f'] == 9
-        elif self.generation == 1:
-            assert result['best_f'] == 16
-        elif self.generation == 2:
-            assert result['best_f'] == 25
-        elif self.generation == 3:
-            assert result['best_f'] == 36
-
+        logger('generation', generation)
+        logger('best_f', self.es.result['best_f'])
+        
+        return logger
+        
 
 class ESWorker(BaseESWorker):
-    def prepare(self):
+    def __init__(self, master_conn, worker_conn):
         self.prepared = True
+        super().__init__(master_conn, worker_conn)
         
     def f(self, config, solution):
         assert self.prepared
+        assert config['train.num_iteration'] == 30
         
         return solution**2
 
@@ -82,8 +84,15 @@ def test_es():
     
     
 def test_es_master_worker():
-    es = ESMaster({'train.num_iteration': 4}, ESWorker)
-    es()
+    es = ES()
+    master = ESMaster(ESWorker, es, {'train.num_iteration': 30})
+    logger = master(4)
+    
+    assert isinstance(logger.logs, dict)
+    assert 'generation' in logger.logs
+    assert logger.logs['generation'] == [0, 1, 2, 3]
+    assert 'best_f' in logger.logs
+    assert logger.logs['best_f'] == [9, 16, 25, 36]
 
 
 def test_rastrigin():
