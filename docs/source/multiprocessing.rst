@@ -16,8 +16,8 @@ Base classes
 Use Python multiprocessing library
 ----------------------------------
 
-.. autoclass:: MPMaster
+.. autoclass:: ProcessMaster
     :members:
     
-.. autoclass:: MPWorker
+.. autoclass:: ProcessWorker
     :members:

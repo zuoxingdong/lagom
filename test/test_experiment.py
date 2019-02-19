@@ -1,186 +1,166 @@
 from pathlib import Path
 from shutil import rmtree
 
-import typing
-
 import numpy as np
 
 import pytest
 
-from lagom.experiment import Configurator
-from lagom.experiment import BaseExperimentWorker
-from lagom.experiment import BaseExperimentMaster
+from lagom.experiment import Grid
+from lagom.experiment import Sample
+from lagom.experiment import Config
+from lagom.experiment import ExperimentWorker
+from lagom.experiment import ExperimentMaster
 from lagom.experiment import run_experiment
 
-from lagom import BaseAlgorithm
 
-
-def test_configurator():
-    # Construction invalidity check
-    with pytest.raises(AssertionError):
-        Configurator(search_mode='n')
-    with pytest.raises(AssertionError):
-        Configurator(search_mode='random', num_sample=None)
-
-    # Create a configurator
-    # Grid search
-    configurator = Configurator(search_mode='grid')
-    assert len(configurator.items) == 0
-
-    with pytest.raises(AssertionError):
-        configurator.fixed('seeds', [1, 2, 3])
-
-    configurator.fixed('log.dir', 'some path')
-
-    assert len(configurator.items) == 1
-    assert isinstance(configurator.items['log.dir'], list)
-    assert configurator.items['log.dir'][0] == 'some path'
-    with pytest.raises(AssertionError):
-        configurator.fixed('log.dir', 'second')
-    with pytest.raises(AssertionError):
-        configurator.grid('log.T', 'must be list, not string')
-    configurator.grid('network.lr', [1e-2, 5e-3, 1e-4, 5e-4])
-    configurator.grid('network.layers', [1, 2, 3])
-    configurator.grid('env.id', ['CartPole-v1', 'Ant-v2'])
-
-    configs = configurator.make_configs()
-
-    assert len(configs) == 24
-    # order-preserving check
-    assert all([list(c.keys()) == ['ID', 'log.dir', 'network.lr', 'network.layers', 'env.id'] for c in configs])
-    assert all([c['log.dir'] == 'some path' for c in configs])
-    assert all([c['network.lr'] in [1e-2, 5e-3, 1e-4, 5e-4] for c in configs])
-    assert all([c['network.layers'] in [1, 2, 3] for c in configs])
-    assert all([c['env.id'] in ['CartPole-v1', 'Ant-v2'] for c in configs])
-
-    # Grid search does not allow methods for random search
-    with pytest.raises(AssertionError):
-        configurator.categorical('one', [1, 2])
-    with pytest.raises(AssertionError):
-        configurator.uniform('two', 1, 3)
-    with pytest.raises(AssertionError):
-        configurator.discrete_uniform('three', 5, 10)
-    with pytest.raises(AssertionError):
-        configurator.log_uniform('four', 0.0001, 0.1)
-
-    Configurator.print_config(configs[20])
-
-    del configurator
-    del configs
-
-    # Random search
-    configurator = Configurator('random', num_sample=20)
-    assert len(configurator.items) == 0
-
-    with pytest.raises(AssertionError):
-        configurator.fixed('seeds', [1, 2, 3])
-    with pytest.raises(AssertionError):
-        configurator.categorical('seeds', [1, 2])
-    with pytest.raises(AssertionError):
-        configurator.uniform('seeds', 1, 3)
-    with pytest.raises(AssertionError):
-        configurator.discrete_uniform('seeds', 5, 10)
-    with pytest.raises(AssertionError):
-        configurator.log_uniform('seeds', 0.0001, 0.1)
-
-    with pytest.raises(AssertionError):
-        configurator.grid('network.layers', [1, 2, 3])
-
-    configurator.fixed('log.dir', 'some path')
-    assert len(configurator.items) == 1
-    assert isinstance(configurator.items['log.dir'], typing.Generator)
-    assert next(configurator.items['log.dir']) == 'some path'
-    with pytest.raises(AssertionError):
-        configurator.fixed('log.dir', 'second')
-
-    configurator.categorical('network.layers', [1, 2, 3])
-    with pytest.raises(AssertionError):
-        configurator.categorical('network.layers2', 12)  # must be list
-    assert isinstance(configurator.items['network.layers'], typing.Generator)
-
-    configurator.uniform('entropy_coef', 0.1, 2.0)
-    configurator.discrete_uniform('train.N', 1, 100)
-    configurator.log_uniform('network.lr', 1e-7, 1e-1)
-    assert len(configurator.items) == 5
-
-    configs = configurator.make_configs()
-
-    assert len(configs[0]) == 1+5
-
-    assert len(configs) == 20
-    # order-preserving check
-    l = ['ID', 'log.dir', 'network.layers', 'entropy_coef', 'train.N', 'network.lr']
-    assert all([list(c.keys()) == l for c in configs])
-    assert all([c['log.dir'] == 'some path' for c in configs])
-    assert all([c['network.layers'] in [1, 2, 3] for c in configs])
-    assert all([c['entropy_coef'] >= 0.1 and c['entropy_coef'] <= 2.0 for c in configs])
-    assert all([isinstance(c['train.N'], int) for c in configs])
-    assert all([c['train.N'] >= 1 and c['train.N'] <= 100 for c in configs])
-    assert all([isinstance(c['network.lr'], float) for c in configs])
-    assert all([c['network.lr'] >= 1e-7 and c['network.lr'] <= 1e-1 for c in configs])
-
-    Configurator.print_config(configs[11])
-
-
-class SimpleAlgorithm(BaseAlgorithm):
-    def __call__(self, config, seed, device):
-        return config['ID'], seed, f'ID: {config["ID"]}, seed: {seed}, device: {device}, Finished the work !'
-
+@pytest.mark.parametrize('values', [[1, 2, 3], ['MLP', 'LSTM']])
+def test_grid(values):
+    grid = Grid(values)
+    assert isinstance(grid, list)
+    assert len(grid) == len(values)
+    assert all([grid[i] == value for i, value in enumerate(values)])
     
-class ExperimentWorker(BaseExperimentWorker):
-    def make_algo(self):
-        algo = SimpleAlgorithm()
+
+def test_sample():
+    sampler = Sample(lambda: 5)
+    assert all([sampler() == 5 for _ in range(10)])
+    del sampler
+    
+    sampler = Sample(lambda: np.random.uniform(3, 7))
+    for _ in range(100):
+        x = sampler()
+        assert x >=3 and x< 7
+
+
+@pytest.mark.parametrize('num_sample', [1, 5, 10])
+@pytest.mark.parametrize('keep_dict_order', [True, False])
+def test_config(num_sample, keep_dict_order):
+    with pytest.raises(AssertionError):
+        Config([1, 2, 3])
         
-        return algo
+    config = Config({'log.dir': 'some path',
+                     'network.type': 'MLP', 
+                     'network.hidden_size': [64, 64],
+                     'network.lr': Grid([1e-3, 1e-4]), 
+                     'env.id': 'HalfCheetah-v2', 
+                     'iter': Grid([10, 20, 30]),
+                     'alpha': Sample(lambda : np.random.uniform(3, 10))}, 
+                    num_sample=num_sample, 
+                    keep_dict_order=keep_dict_order)
+    list_config = config.make_configs()
     
-    def prepare(self):
-        pass
+    assert len(list_config) == 2*3*num_sample
+    for ID in range(2*3*num_sample):
+        assert list_config[ID]['ID'] == ID
+        
+    for x in list_config:
+        assert len(x.keys()) == len(config.items.keys()) + 1  # added one more 'ID'
+        for key in config.items.keys():
+            assert key in x
+        assert x['log.dir'] == 'some path'
+        assert x['network.type'] == 'MLP'
+        assert x['network.hidden_size'] == [64, 64]
+        assert x['network.lr'] in [1e-3, 1e-4]
+        assert x['env.id'] == 'HalfCheetah-v2'
+        assert x['iter'] in [10, 20, 30]
+        assert x['alpha'] >= 3 and x['alpha'] < 10
+        
+        if keep_dict_order:
+            assert list(x.keys()) == ['ID'] + list(config.items.keys())
+        else:
+            assert list(x.keys()) != ['ID'] + list(config.items.keys())
+            assert list(x.keys()) == ['ID', 'log.dir', 'network.type', 'network.hidden_size', 
+                                      'env.id', 'network.lr', 'iter', 'alpha']
     
-    
-class ExperimentMaster(BaseExperimentMaster):
-    def process_results(self, results):
-        assert isinstance(results, list) and len(results) == 3*2*3*5
+    # test for non-random sampling
+    config = Config({'log.dir': 'some path',
+                     'network.type': 'MLP', 
+                     'network.hidden_size': [64, 64],
+                     'network.lr': Grid([1e-3, 1e-4]), 
+                     'env.id': 'HalfCheetah-v2', 
+                     'iter': Grid([10, 20, 30]),
+                     'alpha': 0.1}, 
+                    num_sample=num_sample, 
+                    keep_dict_order=keep_dict_order)
+    list_config = config.make_configs()
+    assert len(list_config) == 2*3*1  # no matter how many num_sample, without repetition
+    for ID in range(2*3*1):
+        assert list_config[ID]['ID'] == ID
         
-    def make_configs(self):
-        configurator = Configurator('grid')
-        
-        configurator.fixed('log.dir', 'some path')
-        configurator.grid('network.lr', [0.1, 0.01, 0.05])
-        configurator.grid('network.layers', [16, 32])
-        configurator.grid('env.id', ['CartPole-v1', 'Ant-v2', 'HalfCheetah-v2'])
-        
-        configs = configurator.make_configs()
+    # test for all fixed
+    config = Config({'log.dir': 'some path',
+                     'network.type': 'MLP', 
+                     'network.hidden_size': [64, 64],
+                     'network.lr': 1e-3, 
+                     'env.id': 'HalfCheetah-v2', 
+                     'iter': 20,
+                     'alpha': 0.1}, 
+                    num_sample=num_sample, 
+                    keep_dict_order=keep_dict_order)
+    list_config = config.make_configs()
+    assert len(list_config) == 1  # no matter how many num_sample, without repetition
+    for ID in range(1):
+        assert list_config[ID]['ID'] == ID
 
-        return configs
-    
-    def make_seeds(self):
-        return [123, 345, 567, 789, 901]
-    
-    
-def test_experiment():
-    experiment = ExperimentMaster(worker_class=ExperimentWorker, num_worker=4)
 
-    assert len(experiment.configs) == 3*2*3
-    assert experiment.num_worker == 4
+def run(config, seed, device):
+        return config['ID'], seed
+
+
+@pytest.mark.parametrize('num_sample', [1, 5])
+@pytest.mark.parametrize('num_worker', [1, 3, 4, 7])
+def test_experiment(num_sample, num_worker):
+    config = Config({'log.dir': 'some path', 
+                     'network.lr': Grid([1e-3, 5e-3]), 
+                     'network.size': [32, 16],
+                     'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
+                    num_sample=num_sample, 
+                    keep_dict_order=True)
+    experiment = ExperimentMaster(ExperimentWorker, num_worker=num_worker, run=run, config=config, seeds=[1, 2, 3])
+    assert len(experiment.configs) == 4
+    assert experiment.num_worker == num_worker
     
-    experiment()
+    tasks = experiment.make_tasks()
+    assert len(tasks) == 4*3
+    for task in tasks:
+        assert isinstance(task[0], dict) and list(task[0].keys()) == ['ID'] + list(config.items.keys())
+        assert task[1] in [1, 2, 3]
+        assert task[2] is run
     
-    
-def test_run_experiment():
-    run_experiment(worker_class=ExperimentWorker, master_class=ExperimentMaster, num_worker=10)
+    results = experiment()
+    assert len(results) == 4*3
+    for i in range(0, 4*3, 3):
+        assert results[i][0] == i//3
+        assert results[i+1][0] == i//3
+        assert results[i+2][0] == i//3
+        
+        assert results[i][1] == 1
+        assert results[i+1][1] == 2
+        assert results[i+2][1] == 3
+
+
+@pytest.mark.parametrize('num_sample', [1, 5])
+@pytest.mark.parametrize('num_worker', [1, 3, 4, 7])
+def test_run_experiment(num_sample, num_worker):
+    config = Config({'log.dir': 'some path', 
+                     'network.lr': Grid([1e-3, 5e-3]), 
+                     'network.size': [32, 16],
+                     'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
+                    num_sample=num_sample, 
+                    keep_dict_order=True)
+    seeds = [1, 2, 3]
+    run_experiment(run, config, seeds, num_worker)
     
     p = Path('./some path')
     assert p.exists()
     assert (p / 'configs.pkl').exists()
     # Check all configuration folders with their IDs and subfolders for all random seeds
-    for i in range(18):
+    for i in range(4):
         config_p = p / str(i)
         assert config_p.exists()
-        for seed in [123, 345, 567, 789, 901]:
+        for seed in seeds:
             assert (config_p / str(seed)).exists
-
     # Clean the logging directory
     rmtree(p)
-    
     # Test remove
     assert not p.exists()
