@@ -23,5 +23,5 @@ class ProcessWorker(BaseWorker, ABC):
                 worker_conn.close()
                 break
             else:
-                result = [[task_id, self.work(task)] for task_id, task in job]
+                result = [[task_id, self.work(task_id, task)] for task_id, task in job]
                 worker_conn.send(result)

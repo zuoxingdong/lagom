@@ -6,11 +6,15 @@ from time import time
 from datetime import timedelta
 
 from lagom.utils import color_str
+from lagom.utils import pickle_dump
 from lagom.utils import yaml_dump
 from lagom.utils import ask_yes_or_no
 
+from .experiment_master import ExperimentMaster
+from .experiment_worker import ExperimentWorker
 
-def run_experiment(worker_class, master_class, num_worker):
+
+def run_experiment(run, config, seeds, num_worker):
     r"""A convenient function to launch a parallelized experiment (Master-Worker). 
     
     .. note::
@@ -45,13 +49,15 @@ def run_experiment(worker_class, master_class, num_worker):
                     - 567
     
     Args:
-        worker_class (BaseExperimentWorker): a worker class for the experiment.
-        master_class (BaseExperimentMaster): a master class for the experiment.
-        num_worker (int, optional): number of workers. 
+        run (function): an algorithm function to train on.
+        config (Config): a :class:`Config` object defining all configuration settings
+        seeds (list): a list of random seeds
+        num_worker (int): number of workers
+        
     """
     t = time()
     
-    experiment = master_class(worker_class=worker_class, num_worker=num_worker)
+    experiment = ExperimentMaster(ExperimentWorker, num_worker, run, config, seeds)
     
     log_path = Path(experiment.configs[0]['log.dir'])
     if not log_path.exists():
@@ -77,8 +83,10 @@ def run_experiment(worker_class, master_class, num_worker):
             p.mkdir(parents=True)
         yaml_dump(obj=config, f=log_path/f'{ID}'/'config', ext='.yml')
 
-    experiment.save_configs(log_path / 'configs')
+    pickle_dump(experiment.configs, log_path / 'configs', ext='.pkl')
             
     # Run experiment in parallel
-    experiment()
+    results = experiment()
     print(color_str(f'\nTotal time: {timedelta(seconds=round(time() - t))}', 'green', 'bold'))
+    
+    return results

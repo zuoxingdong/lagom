@@ -7,10 +7,11 @@ class BaseWorker(ABC):
     tasks from master and send back the result. 
     """ 
     @abstractmethod
-    def work(self, task):
+    def work(self, task_id, task):
         r"""Work on the given task and return the result. 
         
         Args:
+            task_id (int): the task ID.
             task (object): a given task. 
             
         Returns
