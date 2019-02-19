@@ -1,4 +1,5 @@
 from .base_es import BaseES
+from .cma_es import CMAES
 
 from .base_es_master import BaseESMaster
 from .base_es_worker import BaseESWorker

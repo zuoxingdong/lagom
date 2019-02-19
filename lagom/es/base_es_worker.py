@@ -1,10 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
 
-from lagom.multiprocessing import MPWorker
+from lagom.multiprocessing import ProcessWorker
 
 
-class BaseESWorker(MPWorker):
+class BaseESWorker(ProcessWorker):
     r"""Base class for the worker of parallelized evolution strategies (ES). 
     
     It defines an objective function to evaluate the given solution 
@@ -16,13 +16,11 @@ class BaseESWorker(MPWorker):
     - :meth:`f`
     
     """
-    def work(self, task):
-        task_id, task, use_chunk = task
+    def work(self, task_id, task):
         config, solution = task
-        
         function_value = self.f(config, solution)
         
-        return task_id, function_value
+        return function_value
     
     @abstractmethod
     def f(self, config, solution):

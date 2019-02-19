@@ -109,7 +109,7 @@ class TestInit(object):
         # Linear
         a = nn.Linear(2, 3)
         ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight.max().item() > 100.
+        assert a.weight.max().item() > 50.
         assert np.allclose(a.bias.detach().numpy(), 10.)
         ortho_init(a, nonlinearity='relu')
         
