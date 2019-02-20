@@ -14,3 +14,10 @@ from .make_blocks import make_fc
 from .make_blocks import make_cnn
 from .make_blocks import make_transposed_cnn
 from .make_blocks import make_rnncell
+
+from .state_value_head import StateValueHead
+
+from .base_policy import BasePolicy
+from .random_policy import RandomPolicy
+from .categorical_head import CategoricalHead
+from .diag_gaussian_head import DiagGaussianHead
