@@ -27,3 +27,23 @@ lagom.networks: Networks
 .. autofunction:: make_transposed_cnn
 
 .. autofunction:: make_rnncell
+
+Policies
+-----------------------------
+.. autoclass:: BasePolicy
+    :members:
+    
+.. autoclass:: RandomPolicy
+    :members:
+    
+.. autoclass:: CategoricalHead
+    :members:
+    
+.. autoclass:: DiagGaussianHead
+    :members:
+
+
+Value functions
+-----------------------------
+.. autoclass:: StateValueHead
+    :members:
