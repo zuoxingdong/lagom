@@ -1,8 +1,7 @@
-from lagom.networks import BaseNetwork
-
 import torch.nn as nn
 
-from lagom.networks import ortho_init
+from .base_network import BaseNetwork
+from .init import ortho_init
 
 
 class StateValueHead(BaseNetwork):
