@@ -1,32 +1,11 @@
 import pytest
 
-import torch
 import numpy as np
 
 from pathlib import Path
 
-from lagom import BaseAlgorithm
 from lagom import Logger
-
 from lagom.utils import pickle_load
-
-
-class ToyAlgorithm(BaseAlgorithm):
-    def __call__(self, config, seed, device):
-        return config, seed, device
-
-
-def test_base_algorithm():
-    algo = ToyAlgorithm()
-    assert isinstance(algo, BaseAlgorithm)
-        
-    config, seed, device = algo(config={'lr': 0.1}, seed=1, device=torch.device('cpu'))
-        
-    assert isinstance(config, dict) and len(config) == 1
-    assert 'lr' in config and config['lr'] == 0.1
-        
-    assert seed == 1
-    assert device.type == 'cpu'
 
     
 def test_logger():
