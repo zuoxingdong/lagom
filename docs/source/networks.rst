@@ -6,14 +6,11 @@ lagom.networks: Networks
 
 .. autoclass:: Module
     :members:
-
-.. autoclass:: BaseNetwork
-    :members:
-
-.. autoclass:: BaseRNN
-    :members:
-
+    
 .. autoclass:: LayerNormLSTMCell
+    :members:
+    
+.. autoclass:: LayerNormLSTM
     :members:
 
 .. autofunction:: ortho_init
@@ -28,22 +25,14 @@ lagom.networks: Networks
 
 .. autofunction:: make_rnncell
 
-Policies
------------------------------
-.. autoclass:: BasePolicy
-    :members:
-    
-.. autoclass:: RandomPolicy
-    :members:
-    
+RL components
+-----------------------------    
 .. autoclass:: CategoricalHead
     :members:
     
 .. autoclass:: DiagGaussianHead
     :members:
-
-
-Value functions
------------------------------
+    
 .. autoclass:: StateValueHead
     :members:
+

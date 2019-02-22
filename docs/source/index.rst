@@ -49,7 +49,6 @@ A graphical illustration is coming soon.
     
     lagom
     lagom.agents <agents>
-    lagom.contrib <contrib>
     lagom.envs <envs>
     lagom.es <es>
     lagom.experiment <experiment>
