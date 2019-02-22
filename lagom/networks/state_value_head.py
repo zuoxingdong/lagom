@@ -1,37 +1,33 @@
 import torch.nn as nn
 
-from .base_network import BaseNetwork
+from .module import Module
 from .init import ortho_init
 
 
-class StateValueHead(BaseNetwork):
-    r"""Defines a neural network head for state value function.
+class StateValueHead(Module):
+    r"""Defines a module for the state value function. 
     
     Example:
     
         >>> import torch
-        >>> value_head = StateValueHead(None, None, 30)
-        >>> value_head(torch.randn(3, 30))
-        tensor([[ 0.2689],
-        [ 0.7674],
-        [-0.7288]], grad_fn=<ThAddmmBackward>)
-        
-    """
-    def __init__(self, config, device, feature_dim, **kwargs):
-        self.feature_dim = feature_dim
-        
-        super().__init__(config, device, **kwargs)
-        
-    def make_params(self, config):
-        self.value_head = nn.Linear(in_features=self.feature_dim, out_features=1)
-        
-    def init_params(self, config):
-        ortho_init(self.value_head, nonlinearity=None, weight_scale=1.0, constant_bias=0.0)
-        
-    def reset(self, config, **kwargs):
-        pass
+        >>> value_head = StateValueHead(10, torch.device('cpu'))
+        >>> value_head(torch.randn(3, 10))
+        tensor([[1.9796],
+                [1.0219],
+                [0.6150]], grad_fn=<ThAddmmBackward>)
     
+    """
+    def __init__(self, feature_dim, device, **kwargs):
+        super().__init__(**kwargs)
+        
+        self.feature_dim = feature_dim
+        self.device = device
+        
+        self.value_head = nn.Linear(self.feature_dim, 1)
+        ortho_init(self.value_head, weight_scale=1.0, constant_bias=0.0)
+        
+        self.to(self.device)
+        
     def forward(self, x):
         state_value = self.value_head(x)
-        
         return state_value

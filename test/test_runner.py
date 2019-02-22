@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 from lagom.networks import ortho_init
-from lagom.networks import BaseRNN
 
 from .utils import make_sanity_envs
 
