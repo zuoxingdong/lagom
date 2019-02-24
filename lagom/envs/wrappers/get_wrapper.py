@@ -1,4 +1,6 @@
-from .vec_env import VecEnvWrapper
+from gym import Wrapper
+
+from lagom.envs import VecEnvWrapper
 
 
 def get_wrapper(env, name):
@@ -19,6 +21,8 @@ def get_wrapper(env, name):
     while True:
         if name == env.__class__.__name__:
             return env
+        elif isinstance(env, Wrapper):
+            env = env.env
         elif isinstance(env, VecEnvWrapper):
             env = env.venv
         else:

@@ -1,8 +1,7 @@
 import numpy as np
 
-from lagom.envs.spaces import Box
-
-from .wrapper import ObservationWrapper
+from gym.spaces import Box
+from gym import ObservationWrapper
 
 
 class FrameStack(ObservationWrapper):
@@ -20,8 +19,8 @@ class FrameStack(ObservationWrapper):
     
     .. note::
     
-        The observation space must be :class:`Box` type. If one uses :class:`Dict`
-        as observation space, it should apply :class:`FlattenDictWrapper` at first. 
+        The observation space must be `Box` type. If one uses `Dict`
+        as observation space, it should apply `FlattenDictWrapper` at first. 
     
     Example::
     
@@ -48,44 +47,33 @@ class FrameStack(ObservationWrapper):
                 [ 0.25146705, -0.03131252,  0.        ,  0.        ]],
                dtype=float32), 1.0, False, {})
     
-    """
-    def __init__(self, env, num_stack):
-        r"""Initialize the wrapper. 
-        
-        Args:
+    Args:
             env (Env): environment object
             num_stack (int): number of stacks
-        """
+    
+    """
+    def __init__(self, env, num_stack):
         super().__init__(env)
-        
+        assert isinstance(self.observation_space, Box), 'must be Box type'
         self.num_stack = num_stack
         
-        assert isinstance(self.env.observation_space, Box), 'must be Box type'
-        
         # Create a new observation space
-        low = np.repeat(self.env.observation_space.low[..., np.newaxis], self.num_stack, axis=-1)
-        high = np.repeat(self.env.observation_space.high[..., np.newaxis], self.num_stack, axis=-1)
-        dtype = self.env.observation_space.dtype
-        self._observation_space = Box(low=low, high=high, dtype=dtype)
+        low = np.repeat(self.observation_space.low[..., np.newaxis], self.num_stack, axis=-1)
+        high = np.repeat(self.observation_space.high[..., np.newaxis], self.num_stack, axis=-1)
+        dtype = self.observation_space.dtype
+        self.observation_space = Box(low=low, high=high, dtype=dtype)
         
         # Initialize the buffer for stacked observation
-        self.stack_buffer = np.zeros(self._observation_space.shape, dtype=dtype)
+        self.stack_buffer = np.zeros(self.observation_space.shape, dtype=dtype)
         
-    def reset(self):
-        # Clean up all stacked observation
+    def reset(self, **kwargs):
         self.stack_buffer.fill(0.0)
-        
-        # Call reset in original environment
-        return super().reset()
+        return super().reset(**kwargs)
 
-    def process_observation(self, observation):
+    def observation(self, observation):
         # Shift the oldest observation to the front
         self.stack_buffer = np.roll(self.stack_buffer, shift=1, axis=-1)
         # Replace the front as new observation
         self.stack_buffer[..., 0] = observation
         
         return self.stack_buffer
-        
-    @property
-    def observation_space(self):
-        return self._observation_space
