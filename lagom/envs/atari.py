@@ -1,10 +1,8 @@
 import numpy as np
 
 import gym
-from gym.wrappers import Monitor
+from gym import Wrapper
 
-from .wrappers import Wrapper
-from .wrappers import GymWrapper
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
 from .wrappers import ScaleImageObservation
@@ -50,8 +48,8 @@ class AtariPreprocessing(Wrapper):
         self.done_on_life_loss = done_on_life_loss
         
         # buffer of most recent two observations for max pooling
-        self.obs_buffer = [np.empty(self.env.observation_space.shape, dtype=np.uint8),
-                           np.empty(self.env.observation_space.shape, dtype=np.uint8)]
+        self.obs_buffer = [np.empty(self.observation_space.shape, dtype=np.uint8),
+                           np.empty(self.observation_space.shape, dtype=np.uint8)]
         
         self.ale = self._get_ale(self.env)
         self.lives = 0
@@ -89,15 +87,15 @@ class AtariPreprocessing(Wrapper):
             
         return self.obs_buffer[0], R, done, info
                 
-    def reset(self):
+    def reset(self, **kwargs):
         # NoopReset
-        self.env.reset()
+        self.env.reset(**kwargs)
         noops = self.env.unwrapped.np_random.randint(1, self.noop_max + 1)
         assert noops > 0
         for _ in range(noops):
             obs, _, done, _ = self.env.step(0)
             if done:
-                obs = self.env.reset()
+                obs = self.env.reset(**kwargs)
         
         # FireReset
         action_meanings = self.env.unwrapped.get_action_meanings()
@@ -114,32 +112,14 @@ class AtariPreprocessing(Wrapper):
         return self.obs_buffer[0]
 
 
-def make_atari_env(env_id, seed, monitor=False, monitor_dir=None):
-    r"""Create Atari environment with all necessary preprocessings. 
-    
-    Args:
-        env_id (str): Atari game name without version, e.g. Pong, Breakout
-        seed (int): random seed for the environment
-        monitor (bool, optional): If ``True``, then wrap the enviroment with Monitor for video recording.  
-        monitor_dir (str, optional): directory to save all data from Monitor. 
-        
-    Returns
-    -------
-    env : Env
-        lagom-compatible environment
-    """
-    env = gym.make(env_id + 'NoFrameskip-v4')
-    # remove gym TimeLimit wrapper (caps 100k frames), we want to cap 108k frames (30 min)
-    env = env.env
-    if monitor:
-        env = Monitor(env, monitor_dir)
-    env = GymWrapper(env)
+def wrap_atari(env):
+    assert 'NoFrameskip-v4' in env.spec.id
+    env = env.env  # remove gym TimeLimit wrapper (caps 100k frames), we want to cap 108k frames (30 min)
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)
     env = ScaleImageObservation(env)
-    env = ClipReward(env)
+    env = ClipReward(env, -1.0, 1.0)
     env = FrameStack(env, 4)
-    env.seed(seed)
     
     return env

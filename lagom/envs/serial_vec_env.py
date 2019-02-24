@@ -31,21 +31,15 @@ class SerialVecEnv(VecEnv):
     
     """
     def __init__(self, list_make_env):
-        r"""Initialize the vectorized environment. 
-        
-        Args:
-            list_make_env (list): a list of functions to generate environments. 
-        """
         self.list_env = [make_env() for make_env in list_make_env]
-        
         super().__init__(list_make_env=list_make_env, 
                          observation_space=self.list_env[0].observation_space, 
-                         action_space=self.list_env[0].action_space)
-        assert len(self.list_env) == self.num_env
+                         action_space=self.list_env[0].action_space, 
+                         reward_range=self.list_env[0].reward_range, 
+                         spec=self.list_env[0].spec)
         
     def step_async(self, actions):
         assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
-
         self.actions = actions  # Record as current actions
         
     def step_wait(self):
@@ -56,7 +50,6 @@ class SerialVecEnv(VecEnv):
         
         for i, (env, action) in enumerate(zip(self.list_env, self.actions)):
             observation, reward, done, info = env.step(action)
-            
             # If episode terminates, reset this environment and report initial observation for new episode
             # the terminal observation is stored in the info
             if done:
@@ -72,7 +65,6 @@ class SerialVecEnv(VecEnv):
     
     def reset(self):
         observations = [env.reset() for env in self.list_env]
-        
         return observations
     
     def get_images(self):
@@ -80,15 +72,3 @@ class SerialVecEnv(VecEnv):
     
     def close_extras(self):
         return [env.close() for env in self.list_env]
-    
-    @property
-    def T(self):
-        return self.list_env[0].T
-    
-    @property
-    def max_episode_reward(self):
-        return self.list_env[0].max_episode_reward
-    
-    @property
-    def reward_range(self):
-        return self.list_env[0].reward_range

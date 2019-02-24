@@ -1,7 +1,7 @@
 import numpy as np
 
-from .wrapper import ObservationWrapper
-from lagom.envs.spaces import Box
+from gym.spaces import Box
+from gym import ObservationWrapper
 
 
 class TimeAwareObservation(ObservationWrapper):
@@ -12,19 +12,19 @@ class TimeAwareObservation(ObservationWrapper):
         support pixel observation space yet. 
     
     """
-    def process_observation(self, observation):
+    def __init__(self, env):
+        super().__init__(env)
+        low = np.append(self.observation_space.low, 0.0)
+        high = np.append(self.observation_space.high, np.inf)
+        self.observation_space = Box(low, high, dtype=np.float32)
+        
+    def observation(self, observation):
         return np.append(observation, self.t)
         
     def step(self, action):
         self.t += 1
         return super().step(action)
         
-    def reset(self):
+    def reset(self, **kwargs):
         self.t = 0
-        return super().reset()
-        
-    @property
-    def observation_space(self):
-        low = np.append(self.env.observation_space.low, 0.0)
-        high = np.append(self.env.observation_space.high, np.inf)
-        return Box(low, high, np.float32)
+        return super().reset(**kwargs)

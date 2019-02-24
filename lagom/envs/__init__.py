@@ -1,11 +1,14 @@
-from .env import Env
-from .goal_env import GoalEnv
+from .space_utils import flatdim
+from .space_utils import flatten
+from .space_utils import unflatten
 
-from .env_spec import EnvSpec
+from .vec_env import VecEnv
+from .vec_env import VecEnvWrapper
 
-from .make_env import make_gym_env
-from .make_env import make_envs
-from .make_env import make_vec_env
+from .serial_vec_env import SerialVecEnv
+from .parallel_vec_env import ParallelVecEnv
 
-from .make_atari_env import AtariPreprocessing
-from .make_atari_env import make_atari_env
+from .atari import AtariPreprocessing
+from .atari import wrap_atari
+
+from .make_vec_env import make_vec_env
