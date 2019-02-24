@@ -3,7 +3,7 @@ from collections import deque
 
 import numpy as np
 
-from .vec_env import VecEnvWrapper
+from lagom.envs import VecEnvWrapper
 
 
 class VecMonitor(VecEnvWrapper):
@@ -12,8 +12,8 @@ class VecMonitor(VecEnvWrapper):
         super().__init__(venv)
         
         self.t0 = time()
-        self.episode_rewards = np.zeros(self.N, dtype=np.float32)
-        self.episode_horizons = np.zeros(self.N, dtype=np.int32)
+        self.episode_rewards = np.zeros(self.num_env, dtype=np.float32)
+        self.episode_horizons = np.zeros(self.num_env, dtype=np.int32)
         
         self.return_queue = deque(maxlen=deque_size)
         self.horizon_queue = deque(maxlen=deque_size)
@@ -43,6 +43,3 @@ class VecMonitor(VecEnvWrapper):
         self.episode_horizons.fill(0)
         
         return observations
-        
-    def close_extras(self):
-        return self.venv.close_extras()

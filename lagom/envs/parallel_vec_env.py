@@ -3,8 +3,10 @@ import numpy as np
 from multiprocessing import Process  # easier than threading
 from multiprocessing import Pipe  # faster than Queue
 
+from lagom.utils import CloudpickleWrapper
+
 from .vec_env import VecEnv
-from .utils import CloudpickleWrapper
+
 
 
 def worker(master_conn, worker_conn, make_env):
@@ -25,13 +27,11 @@ def worker(master_conn, worker_conn, make_env):
         
         if cmd == 'step':
             observation, reward, done, info = env.step(data)
-            
             # If episode terminates, reset this environment and report initial observation for new episode
             # the terminal observation is stored in the info
             if done:
                 info['terminal_observation'] = observation
                 observation = env.reset()
-            
             worker_conn.send([observation, reward, done, info])
         elif cmd == 'reset':
             observation = env.reset()
@@ -43,14 +43,8 @@ def worker(master_conn, worker_conn, make_env):
             env.close()
             worker_conn.close()
             break
-        elif cmd == 'T':
-            worker_conn.send(env.T)
-        elif cmd == 'max_episode_reward':
-            worker_conn.send(env.max_episode_reward)
-        elif cmd == 'reward_range':
-            worker_conn.send(env.reward_range)
-        elif cmd == 'get_spaces':
-            worker_conn.send([env.observation_space, env.action_space])
+        elif cmd == 'env_info':
+            worker_conn.send([env.observation_space, env.action_space, env.reward_range, env.spec])
 
 
 class ParallelVecEnv(VecEnv):
@@ -91,28 +85,23 @@ class ParallelVecEnv(VecEnv):
                                      daemon=True)
                              for master_conn, worker_conn, make_env 
                              in zip(self.master_conns, self.worker_conns, list_make_env)]
-        
         [process.start() for process in self.list_process]
-        
         [worker_conn.close() for worker_conn in self.worker_conns]
         
-        # Obtain observation and action spaces from first environment (all envs are the same for this)
-        self.master_conns[0].send(['get_spaces', None])
-        observation_space, action_space = self.master_conns[0].recv()
-        
+        self.master_conns[0].send(['env_info', None])
+        observation_space, action_space, reward_range, spec = self.master_conns[0].recv()
         super().__init__(list_make_env=list_make_env, 
                          observation_space=observation_space, 
-                         action_space=action_space)
-        assert len(self.master_conns) == self.num_env
+                         action_space=action_space, 
+                         reward_range=reward_range, 
+                         spec=spec)
         
         self.waiting = False  # If True, then workers are still working
         
     def step_async(self, actions):
         assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
-        
         for master_conn, action in zip(self.master_conns, actions):
             master_conn.send(['step', action])
-
         self.waiting = True
         
     def step_wait(self):
@@ -127,13 +116,11 @@ class ParallelVecEnv(VecEnv):
     def reset(self):
         [master_conn.send(['reset', None]) for master_conn in self.master_conns]
         observations = [master_conn.recv() for master_conn in self.master_conns]
-        
         return observations
     
     def get_images(self):
         [master_conn.send(['render', None]) for master_conn in self.master_conns]
         imgs = [master_conn.recv() for master_conn in self.master_conns]
-        
         return imgs
     
     def close_extras(self):
@@ -143,32 +130,7 @@ class ParallelVecEnv(VecEnv):
         # Waiting to receive data from all the workers if they are still working
         if self.waiting:
             [master_conn.recv() for master_conn in self.master_conns]
-        
         [master_conn.send(['close', None]) for master_conn in self.master_conns]
-        
         [master_conn.close() for master_conn in self.master_conns]
-        
         [process.join() for process in self.list_process]
-        
         self.closed = True
-
-    @property
-    def T(self):
-        self.master_conns[0].send(['T', None])
-        out = self.master_conns[0].recv()
-        
-        return out
-    
-    @property
-    def max_episode_reward(self):
-        self.master_conns[0].send(['max_episode_reward', None])
-        out = self.master_conns[0].recv()
-        
-        return out
-        
-    @property
-    def reward_range(self):
-        self.master_conns[0].send(['reward_range', None])
-        out = self.master_conns[0].recv()
-        
-        return out

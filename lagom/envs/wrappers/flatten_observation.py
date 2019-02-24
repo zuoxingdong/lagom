@@ -1,12 +1,15 @@
-from .wrapper import ObservationWrapper
+from gym import ObservationWrapper
+
+from lagom.envs import flatten
 
 
 class FlattenObservation(ObservationWrapper):
-    r"""Observation wrapper that always returns flattened observation. """
-    def process_observation(self, observation):
-        return self.env.observation_space.flatten(observation)
+    r"""Observation wrapper that flattens the observation. 
     
-    @property
-    def observation_space(self):
-        # Return original observation space, other functions e.g. unflatten maybe used
-        return self.env.observation_space
+    .. note:
+    
+        Keep the original observation space, because e.g. unflatten maybe used
+    
+    """
+    def observation(self, observation):
+        return flatten(self.observation_space, observation)

@@ -6,7 +6,7 @@ from abc import abstractmethod
 from lagom.vis import GridImage
 
 try:  # workaround on server without fake screen but still running other things well
-    from lagom.core.plotter import ImageViewer
+    from lagom.vis import ImageViewer
 except ImportError:
     import warnings
     warnings.warn('ImageViewer failed to import due to pyglet. ')
@@ -23,43 +23,30 @@ class VecEnv(ABC):
     
         All sub-environments should share the identical observation and action spaces.
         In other words, a vector of multiple different environments is not supported. 
-        
-    See docstring in :class:`Env` for more details about common APIs. 
     
-    The subclass should implement at least the following:
-
-    - :meth:`step_async`
-    - :meth:`step_wait`
-    - :meth:`reset`
-    - :meth:`get_images`
-    - :meth:`close_extras`
-    - :meth:`T`
-    - :meth:`max_episode_reward`
-    - :meth:`reward_range`
+    .. note::
+        
+        The random seeds for all environments should be handled within each make_env function. 
+        And it should not handled here in general, because of APIs for parallelized environments.
+    
+    Args:
+        list_make_env (list): a list of functions each returns an instantiated enviroment. 
+        observation_space (Space): observation space of the environment
+        action_space (Space): action space of the environment
     
     """
-    def __init__(self, list_make_env, observation_space, action_space):
-        r"""Initialize the vectorized environment. 
-        
-        .. note::
-        
-            The random seeds for all environments should be handled within each make_env function. 
-            And it should not handled here in general, because of APIs for parallelized environments.
-        
-        Args:
-            list_make_env (list): a list of functions each returns an instantiated enviroment. 
-            observation_space (Space): observation space of the environment
-            action_space (Space): action space of the environment
-        """
+    closed = False
+    viewer = None
+
+    metadata = {'render.modes': ['human', 'rgb_array']}
+    
+    def __init__(self, list_make_env, observation_space, action_space, reward_range, spec):
         self.list_make_env = list_make_env
         self.num_env = len(self.list_make_env)
-        
-        self._observation_space = observation_space
-        self._action_space = action_space
-        
-        # Some settings
-        self.closed = False
-        self.viewer = None  # rendering
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.reward_range = reward_range
+        self.spec = spec
         
     @abstractmethod
     def step_async(self, actions):
@@ -173,7 +160,6 @@ class VecEnv(ABC):
         """
         if self.viewer is None:  # create viewer is not existed
             self.viewer = ImageViewer(max_width=500)  # set a max width here
-            
         return self.viewer
     
     @abstractmethod
@@ -199,12 +185,9 @@ class VecEnv(ABC):
         """
         if self.closed:
             return
-        
         if self.viewer is not None:
             self.viewer.close()
-        
         self.close_extras()
-
         self.closed = True
     
     @property
@@ -215,49 +198,9 @@ class VecEnv(ABC):
         vectorized environment. 
         """
         return self
- 
-    @property
-    def observation_space(self):
-        r"""Returns a :class:`Space` object to define the observation space. """
-        return self._observation_space
-    
-    @property
-    def action_space(self):
-        r"""Returns a :class:`Space` object to define the action space. """
-        return self._action_space
-    
-    @property
-    def N(self):
-        r"""Return the number of sub-environments. """
-        return self.num_env
-    
-    @property
-    @abstractmethod
-    def T(self):
-        r"""Maximum horizon of the environment, if available. """
-        pass
-    
-    @property
-    @abstractmethod
-    def max_episode_reward(self):
-        r"""Maximum episodic rewards of the environment, if available. """
-        pass
-    
-    @property
-    @abstractmethod
-    def reward_range(self):
-        r"""Returns a tuple of min and max possible rewards. 
-        
-        .. note::
-        
-            By default, it could be infinite range i.e. ``(-float('inf'), float('inf'))``. 
-            One can also set a narrower range. 
-        
-        """
-        pass
     
     def __repr__(self):
-        return f'<{self.__class__.__name__}: {self.list_make_env[0].keywords["env_id"]}, n: {self.num_env}>'
+        return f'<{self.__class__.__name__}: {self.num_env}, {self.spec.id}>'
 
     
 class VecEnvWrapper(VecEnv):
@@ -270,57 +213,35 @@ class VecEnvWrapper(VecEnv):
     .. note::
     
         Don't forget to call ``super().__init__(venv)`` if the subclass overrides :meth:`__init__`.
-        
-    The subclass should implement at least the following:
-
-    - :meth:`step_wait`
-    - :meth:`reset`
-    - :meth:`close_extras`
     
     """
     def __init__(self, venv):
-        assert isinstance(venv, VecEnv), f'expected VecEnv type, got {type(venv)}'
-        
         self.venv = venv
-        
-        # Call VecEnv constructor to make some settings as direct attributes in this wrapper class
+        self.metadata = venv.metadata
         super().__init__(list_make_env=venv.list_make_env, 
                          observation_space=venv.observation_space, 
-                         action_space=venv.action_space)
+                         action_space=venv.action_space, 
+                         reward_range=venv.reward_range, 
+                         spec=venv.spec)
         
     def step_async(self, actions):
         self.venv.step_async(actions)
-        
-    @abstractmethod
-    def step_wait(self):
-        pass
     
-    @abstractmethod
+    def step_wait(self):
+        return self.venv.step_wait()
+    
     def reset(self):
-        pass
+        return self.venv.reset()
     
     def get_images(self):
-        self.venv.get_images()
+        return self.venv.get_images()
     
-    @abstractmethod
     def close_extras(self):
-        pass
+        return self.venv.close_extras()
     
     @property
     def unwrapped(self):
         return self.venv.unwrapped
-    
-    @property
-    def T(self):
-        return self.venv.T
-    
-    @property
-    def max_episode_reward(self):
-        return self.venv.max_episode_reward
-
-    @property
-    def reward_range(self):
-        return self.venv.reward_range
     
     def __repr__(self):
         return f'<{self.__class__.__name__}, {self.venv}>'
