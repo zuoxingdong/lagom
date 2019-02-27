@@ -42,7 +42,11 @@ class BatchHistory(object):
                 self.a[n][-1].append(actions[n])
                 self.r[n][-1].append(rewards[n])
                 self.done[n][-1].append(dones[n])
-                self.info[n][-1].append(infos[n])    
+                self.info[n][-1].append(infos[n])   
+    
+    @property
+    def N(self):
+        return self.n
     
     @property
     def num_traj(self):
@@ -50,7 +54,7 @@ class BatchHistory(object):
     
     @property
     def T(self):
-        return len(self.batch_info)
+        return max([sum(T) for T in self.Ts])
     
     @property
     def Ts(self):
@@ -58,10 +62,7 @@ class BatchHistory(object):
     
     @property
     def Ts_flat(self):
-        out = []
-        for T in self.Ts:
-            out += T
-        return out
+        return list(chain.from_iterable(self.Ts))
     
     @property
     def observations(self):
@@ -78,10 +79,12 @@ class BatchHistory(object):
     
     @property
     def batch_observations(self):
-        out = []
-        for s in self.s:
-            out.append(np.stack(list(chain.from_iterable(s))))
-        out = np.stack(out)
+        shape = self.env.observation_space.shape
+        dtype = self.env.observation_space.dtype
+        out = np.zeros((self.N, self.T) + shape, dtype=dtype)
+        for n, s in enumerate(self.s):
+            obs = list(chain.from_iterable(s))
+            out[n, :len(obs), ...] = obs
         return out
     
     @property
@@ -95,16 +98,28 @@ class BatchHistory(object):
                 if self.done[n][m][-1]:
                     out[counter, ...] = self.info[n][m][-1]['terminal_observation']
                 else:
-                    out[counter, ...] = self.s[n][m][-1]
+                    out[counter, ...] = self.info[n][m][-1]['last_observation']
                 counter += 1
         assert counter == sum(self.num_traj)
+        return out
+    
+    @property
+    def terminal_observations(self):
+        if not np.any(list(chain.from_iterable(self.done))):
+            return None
+        out = []
+        for n in range(self.n):
+            for m in range(len(self.info[n])):
+                if 'terminal_observation' in self.info[n][m][-1]:
+                    out.append(self.info[n][m][-1]['terminal_observation'])
+        out = np.stack(out)
         return out
         
     @property
     def actions(self):
         shape = self.env.action_space.shape
         dtype = self.env.action_space.dtype
-        out = np.zeros((sum(self.num_traj),) + shape, dtype=dtype)
+        out = np.zeros((sum(self.num_traj), max(self.Ts_flat)) + shape, dtype=dtype)
         counter = 0
         for a in self.a:
             for action in a:
@@ -112,13 +127,15 @@ class BatchHistory(object):
                 counter += 1
         assert counter == sum(self.num_traj)
         return out
-    
+        
     @property
     def batch_actions(self):
-        out = []
-        for a in self.a:
-            out.append(np.stack(list(chain.from_iterable(a))))
-        out = np.stack(out)
+        shape = self.env.action_space.shape
+        dtype = self.env.action_space.dtype
+        out = np.zeros((self.N, self.T) + shape, dtype=dtype)
+        for n, a in enumerate(self.a):
+            action = list(chain.from_iterable(a))
+            out[n, :len(action), ...] = action
         return out
         
     @property
@@ -134,10 +151,10 @@ class BatchHistory(object):
     
     @property
     def batch_rewards(self):
-        out = []
-        for r in self.r:
-            out.append(np.stack(list(chain.from_iterable(r))))
-        out = np.stack(out)
+        out = np.zeros((self.N, self.T), dtype=np.float32)
+        for n, r in enumerate(self.r):
+            reward = list(chain.from_iterable(r))
+            out[n, :len(reward)] = reward
         return out
     
     @property
@@ -153,10 +170,10 @@ class BatchHistory(object):
     
     @property
     def batch_dones(self):
-        out = []
-        for done in self.done:
-            out.append(np.stack(list(chain.from_iterable(done))))
-        out = np.stack(out)
+        out = np.full((self.N, self.T), True, dtype=np.bool)
+        for n, done in enumerate(self.done):
+            d = list(chain.from_iterable(done))
+            out[n, :len(d)] = d
         return out
     
     @property

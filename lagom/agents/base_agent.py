@@ -32,6 +32,7 @@ class BaseAgent(Module, ABC):
         self.device = device
         
         self.info = {}
+        self.is_recurrent = None
         
     @abstractmethod
     def choose_action(self, obs, **kwargs):

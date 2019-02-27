@@ -10,7 +10,7 @@ class RandomAgent(BaseAgent):
             action = [self.env.action_space.sample() for _ in range(self.env.num_env)]
         else:
             action = self.env.action_space.sample()
-        out = {'action': action}
+        out = {'raw_action': action}
         return out  
 
     def learn(self, D, **kwargs):
