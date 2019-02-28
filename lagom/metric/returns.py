@@ -1,22 +1,18 @@
-from lagom.history import BatchEpisode
-from lagom.history import BatchSegment
+import numpy as np
 
 from lagom.transform import ExpFactorCumSum
 
 
-def returns_from_episode(batch_episode, gamma):
-    assert isinstance(batch_episode, BatchEpisode)
-    
+def returns(rewards, gamma):
     f = ExpFactorCumSum(gamma)
-    out = f(batch_episode.numpy_rewards)
-    
-    return out
+    return f(rewards).tolist()[0]
 
 
-def returns_from_segment(batch_segment, gamma):
-    assert isinstance(batch_segment, BatchSegment)
-    
-    f = ExpFactorCumSum(gamma)
-    out = f(batch_segment.numpy_rewards, mask=batch_segment.numpy_masks)
-    
+def get_returns(D, gamma):
+    out = np.zeros((D.N, D.T), dtype=np.float32)
+    for n in range(D.N):
+        y = []
+        for r in D.r[n]:
+            y += returns(r, gamma)
+        out[n, :len(y)] = y
     return out

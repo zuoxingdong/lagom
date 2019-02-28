@@ -27,7 +27,7 @@ class EpisodeRunner(BaseRunner):
             if all(D.stops):
                 break
         for n, done in enumerate(dones):
-            if not done:
+            if not D.stops[n] and not done:
                 D.info[n][-1][-1]['last_observation'] = observations[n]
                 
         return D

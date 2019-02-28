@@ -1,13 +1,10 @@
 import numpy as np
 import torch
 
-from lagom.history import BatchEpisode
-from lagom.history import BatchSegment
-
 from lagom.transform import ExpFactorCumSum
 
 
-def bootstrapped_returns_from_episode(batch_episode, last_Vs, gamma):
+def bootstrapped_returns(rewards, last_V, done, gamma):
     r"""Return (discounted) accumulated returns with bootstrapping for a 
     batch of episodic transitions. 
     
@@ -19,66 +16,23 @@ def bootstrapped_returns_from_episode(batch_episode, last_Vs, gamma):
     .. note::
 
         The state values for terminal states are masked out as zero !
-    
-    Args:
-        batch_episode (BatchEpisode): a batch of episodic transitions. 
-        last_Vs (object): the value of the final states in the episode.
-        gamma (float): discounted factor
-        
-    Returns
-    -------
-    out : ndarray
-        an array of (discounted) bootstrapped returns.
-    """
-    assert isinstance(batch_episode, BatchEpisode)
-    
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
-    last_Vs = last_Vs*np.logical_not(batch_episode.completes).astype(np.float32)
-    
-    f = ExpFactorCumSum(gamma)
-    out = np.concatenate([batch_episode.numpy_rewards, np.zeros((batch_episode.N, 1), dtype=np.float32)], axis=1)
-    out[range(batch_episode.N), batch_episode.Ts] = last_Vs
-    out = f(out)
-    out[range(batch_episode.N), batch_episode.Ts] = 0.0
-    out = out[:, :-1]
-    
-    return out
-    
-    
-def bootstrapped_returns_from_segment(batch_segment, last_Vs, gamma):
-    r"""Return (discounted) accumulated returns with bootstrapping for a 
-    batch of rolling segment. 
-    
-    Formally, suppose we have all rewards :math:`(r_1, \dots, r_T)`, it computes
-        
-    .. math::
-        Q_t = r_t + \gamma r_{t+1} + \dots + \gamma^{T - t} r_T + \gamma^{T - t + 1} V(s_{T+1})
-        
-    .. note::
 
-        The state values for terminal states are masked out as zero !
-    
-    Args:
-        batch_segment (BatchSegment): a batch of rolling segments. 
-        last_Vs (object): the value of the final states in the episode.
-        gamma (float): discounted factor
-        
-    Returns
-    -------
-    out : ndarray
-        an array of (discounted) bootstrapped returns.
     """
-    assert isinstance(batch_segment, BatchSegment)
-    
-    if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1)
-    
     f = ExpFactorCumSum(gamma)
-    mask = np.concatenate([batch_segment.numpy_masks, np.ones((batch_segment.N, 1), dtype=np.float32)], axis=1)
-    out = np.zeros((batch_segment.N, batch_segment.T+1), dtype=np.float32)
-    out[:, :-1] = batch_segment.numpy_rewards
-    out[:, -1] = last_Vs
-    out = f(out, mask=mask)[:, :-1]
-    
+    if done:
+        out = f(rewards + [0.0])
+    else:
+        out = f(rewards + [last_V])
+    return out[0, :-1].tolist()
+
+
+def get_bootstrapped_returns(D, last_Vs, gamma):
+    if torch.is_tensor(last_Vs):
+        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1).tolist()
+    out = np.zeros((D.N, D.T), dtype=np.float32)
+    for n in range(D.N):
+        y = []
+        for m in range(len(D.r[n])):
+            y += bootstrapped_returns(D.r[n][m], last_Vs.pop(0), D.done[n][m][-1], gamma)
+        out[n, :len(y)] = y
     return out
