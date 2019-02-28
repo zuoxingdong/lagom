@@ -32,199 +32,59 @@ from lagom.history.metrics import gae_from_episode
 from lagom.history.metrics import gae_from_segment
 
 
+@pytest.mark.parametrize('num_env', [1, 3])
+@pytest.mark.parametrize('init_seed', [0, 10])
+@pytest.mark.parametrize('mode', ['serial', 'parallel'])
+@pytest.mark.parametrize('T', [1, 4, 6, 20])
+@pytest.mark.parametrize('runner_class', [EpisodeRunner, RollingSegmentRunner])
+def test_get_returns(num_env, init_seed, mode, T, runner_class)
+    gamma = 0.1
+    y1 = [0.1]
+    y2 = [0.1 + gamma*0.2, 0.2]
+    y3 = [0.1 + gamma*(0.2 + gamma*0.3), 
+          0.2 + gamma*0.3, 
+          0.3]
+    y4 = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*0.4)), 
+          0.2 + gamma*(0.3 + gamma*0.4), 
+          0.3 + gamma*0.4, 
+          0.4]
+    y5 = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*0.5))), 
+          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*0.5)), 
+          0.3 + gamma*(0.4 + gamma*0.5), 
+          0.4 + gamma*0.5, 
+          0.5]
+    y6 = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*0.6)))), 
+          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*0.6))), 
+          0.3 + gamma*(0.4 + gamma*(0.5 + gamma*0.6)), 
+          0.4 + gamma*(0.5 + gamma*0.6), 
+          0.5 + gamma*0.6, 
+          0.6]
+    ys = [None, y1, y2, y3, y4, y5, y6]
+
+    make_env = lambda: SanityEnv()
+    env = make_vec_env(make_env, num_env, init_seed, mode)
+    agent = RandomAgent(None, env, None)
+    runner = runner_class()
+    D = runner(agent, env, T)
+    Qs = get_returns(D, gamma)
+    for n in range(D.N):
+        out = []
+        for t in D.Ts[n]:
+            out += ys[t]
+        assert np.allclose(out, Qs[n, :len(out)])
 
 
 
-def test_final_state_from_episode():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-
-    with pytest.raises(AssertionError):
-        final_state_from_episode([1, 2, 3])
-
-    D = BatchEpisode(env_spec)
-    D.obs[0] = [0.1, 0.2, 1.3]
-    D.done[0] = [False, False, True]
-    D.info[0] = [{}, {}, {'terminal_observation': 0.3}]
-
-    D.obs[1] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    D.done[1] = [False]*9
-
-    D.obs[2] = [10, 15]
-    D.done[2] = [False, True]
-    D.info[2] = [{}, {'terminal_observation': 20}]
-
-    final_states = final_state_from_episode(D)
-    
-    assert final_states.shape == (3,) + env_spec.observation_space.shape
-    assert np.allclose(final_states[0], 0.3)
-    assert np.allclose(final_states[1], 9)
-    assert np.allclose(final_states[2], 20)
-    
-    with pytest.raises(AssertionError):
-        final_state_from_segment(D)
-                
-
-def test_final_state_from_segment():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-
-    with pytest.raises(AssertionError):
-        final_state_from_segment([1, 2, 3])
-
-    D = BatchSegment(env_spec, 4)
-    D.obs = np.random.randn(*D.obs.shape)
-    D.done.fill(False)
-
-    D.done[0, -1] = True
-    D.info[0] = [{}, {}, {}, {'terminal_observation': [0.1, 0.2, 0.3, 0.4]}]
-
-    D.done[1, 2] = True
-    D.info[1] = [{}, {}, {'terminal_observation': [1, 2, 3, 4]}, {}]
-
-    D.done[2, -1] = True
-    D.info[2] = [{}, {}, {}, {'terminal_observation': [10, 20, 30, 40]}]
 
 
-    final_states = final_state_from_segment(D)
-    assert final_states.shape == (3, ) + env_spec.observation_space.shape
-    assert np.allclose(final_states[0], [0.1, 0.2, 0.3, 0.4])
-    assert np.allclose(final_states[1], D.numpy_observations[1, -1, ...])
-    assert not np.allclose(final_states[1], [1, 2, 3, 4])
-    assert np.allclose(final_states[2], [10, 20, 30, 40])
-    
-    with pytest.raises(AssertionError):
-        final_state_from_episode(D)
-    
-    
-def test_terminal_state_from_episode():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-
-    with pytest.raises(AssertionError):
-        terminal_state_from_episode([1, 2, 3])
-
-    D = BatchEpisode(env_spec)
-    D.obs[0] = [0.1, 0.2, 1.3]
-    D.done[0] = [False, False, True]
-    D.info[0] = [{}, {}, {'terminal_observation': 0.3}]
-
-    D.obs[1] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    D.done[1] = [False]*9
-
-    D.obs[2] = [10, 15]
-    D.done[2] = [False, True]
-    D.info[2] = [{}, {'terminal_observation': 20}]
-
-    terminal_states = terminal_state_from_episode(D)
-    assert terminal_states.shape == (2,) + env_spec.observation_space.shape
-    assert np.allclose(terminal_states[0], 0.3)
-    assert np.allclose(terminal_states[1], 20)
-
-    D.done[0][-1] = False
-    D.done[2][-1] = False
-    assert terminal_state_from_episode(D) is None
-    
-    with pytest.raises(AssertionError):
-        terminal_state_from_segment(D)
-    
-    
-def test_terminal_state_from_segment():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-
-    with pytest.raises(AssertionError):
-        terminal_state_from_segment([1, 2, 3])
-
-    D = BatchSegment(env_spec, 4)
-    D.obs = np.random.randn(*D.obs.shape)
-    D.done.fill(False)
-
-    D.done[0, -1] = True
-    D.info[0] = [{}, {}, {}, {'terminal_observation': [0.1, 0.2, 0.3, 0.4]}]
-
-    D.done[1, 2] = True
-    D.info[1] = [{}, {}, {'terminal_observation': [1, 2, 3, 4]}, {}]
-
-    D.done[2, -1] = True
-    D.info[2] = [{}, {}, {}, {'terminal_observation': [10, 20, 30, 40]}]
-
-    terminal_states = terminal_state_from_segment(D)
-
-    assert terminal_states.shape == (3, 4)
-    assert np.allclose(terminal_states[0], [0.1, 0.2, 0.3, 0.4])
-    assert np.allclose(terminal_states[1], [1, 2, 3, 4])
-    assert np.allclose(terminal_states[2], [10, 20, 30, 40])
-
-    D.done[0, -1] = False
-    D.done[1, 2] = False
-    terminal_states = terminal_state_from_segment(D)
-    assert terminal_states.shape == (1, 4)
-    assert np.allclose(terminal_states[0], [10, 20, 30, 40])
-
-    D.done[2, -1] = False
-    assert terminal_state_from_segment(D) is None
-    
-    with pytest.raises(AssertionError):
-        terminal_state_from_episode(D)
 
 
-def test_returns_from_episode():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-    
-    D = BatchEpisode(env_spec)
-    D.r[0] = [1, 2, 3]
-    D.done[0] = [False, False, True]
-    D.r[1] = [1, 2, 3, 4, 5]
-    D.done[1] = [False, False, False, False, False]
-    D.r[2] = [1, 2, 3, 4, 5, 6, 7, 8]
-    D.done[2] = [False, False, False, False, False, False, False, True]
 
-    out = returns_from_episode(D, 1.0)
-    assert out.shape == (3, D.maxT)
-    assert np.allclose(out[0], [6, 5, 3, 0, 0, 0, 0, 0])
-    assert np.allclose(out[1], [15, 14, 12, 9, 5, 0, 0, 0])
-    assert np.allclose(out[2], [36, 35, 33, 30, 26, 21, 15, 8])
-    del out
-    
-    out = returns_from_episode(D, 0.1)
-    assert out.shape == (3, D.maxT)
-    assert np.allclose(out[0], [1.23, 2.3, 3, 0, 0, 0, 0, 0])
-    assert np.allclose(out[1], [1.2345, 2.345, 3.45, 4.5, 5, 0, 0, 0])
-    assert np.allclose(out[2], [1.2345678, 2.345678, 3.45678, 4.5678, 5.678, 6.78, 7.8, 8])
-    
-    with pytest.raises(AssertionError):
-        returns_from_segment(D, 0.1)
-    
-    
-def test_returns_from_segment():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
 
-    D = BatchSegment(env_spec, 5)
-    D.r[0] = [1, 2, 3, 4, 5]
-    D.done[0] = [False, False, False, False, False]
-    D.r[1] = [1, 2, 3, 4, 5]
-    D.done[1] = [False, False, True, False, False]
-    D.r[2] = [1, 2, 3, 4, 5]
-    D.done[2] = [True, False, False, False, True]
 
-    out = returns_from_segment(D, 1.0)
-    assert out.shape == (3, 5)
-    assert np.allclose(out[0], [15, 14, 12, 9, 5])
-    assert np.allclose(out[1], [6, 5, 3, 9, 5])
-    assert np.allclose(out[2], [1, 14, 12, 9, 5])
-    del out
-    
-    out = returns_from_segment(D, 0.1)
-    assert out.shape == (3, 5)
-    assert np.allclose(out[0], [1.2345, 2.345, 3.45, 4.5, 5])
-    assert np.allclose(out[1], [1.23, 2.3, 3, 4.5, 5])
-    assert np.allclose(out[2], [1, 2.345, 3.45, 4.5, 5])
-    
-    with pytest.raises(AssertionError):
-        returns_from_episode(D, 0.1)
+
+
+        
     
     
 def test_bootstrapped_returns_from_episode():
