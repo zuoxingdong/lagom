@@ -74,7 +74,96 @@ def test_get_returns(num_env, init_seed, mode, T, runner_class)
         assert np.allclose(out, Qs[n, :len(out)])
 
 
+@pytest.mark.parametrize('mode', ['serial', 'parallel'])
+@pytest.mark.parametrize('gamma', [0.1, 0.5])
+def test_get_bootstrapped_returns(mode, gamma):
+    np.random.seed(3)
 
+    make_env = lambda: SanityEnv()
+    env = make_vec_env(make_env, 3, 0, mode)
+    agent = RandomAgent(None, env, None)
+    runner = EpisodeRunner()
+    D = runner(agent, env, 5)
+    last_Vs = D.last_observations
+    Qs = get_bootstrapped_returns(D, last_Vs.tolist(), gamma)
+
+    assert D.done[0][0] == [False, False, False, False, False]
+    assert D.done[1][0] == [False, False, False, True]
+    assert D.done[2][0] == [False, False, False, False, True]
+
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[0])))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[0]))), 
+         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[0])), 
+         0.4 + gamma*(0.5 + gamma*last_Vs[0]), 
+         0.5 + gamma*last_Vs[0]]
+    assert np.allclose(y, Qs[0, :len(y)])
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_Vs[1]*0.0))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_Vs[1]*0.0)), 
+         0.3 + gamma*(0.4 + gamma*last_Vs[1]*0.0), 
+         0.4 + gamma*last_Vs[1]*0.0]
+    assert np.allclose(y, Qs[1, :len(y)])
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[2]*0.0)))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[2]*0.0))), 
+         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[2]*0.0)), 
+         0.4 + gamma*(0.5 + gamma*last_Vs[2]*0.0),
+         0.5 + gamma*last_Vs[2]*0.0]
+    assert np.allclose(y, Qs[2, :len(y)])
+
+    runner = EpisodeRunner()
+    D = runner(agent, env, 3)
+    last_Vs = D.last_observations
+    Qs = get_bootstrapped_returns(D, last_Vs.tolist(), gamma)
+
+    assert D.done[0][0] == [False, False, False]
+    assert D.done[1][0] == [False, False, False]
+    assert D.done[2][0] == [False, False, False]
+
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*last_Vs[1])), 
+         0.2 + gamma*(0.3 + gamma*last_Vs[1]), 
+         0.3 + gamma*last_Vs[1]]
+    assert np.allclose(y, Qs[0, :len(y)])
+    assert np.allclose(y, Qs[1, :len(y)])
+    assert np.allclose(y, Qs[2, :len(y)])
+
+    # rolling segment runner
+    runner = RollingSegmentRunner()
+    D = runner(agent, env, 8, reset=True)
+    last_Vs = D.last_observations
+    Qs = get_bootstrapped_returns(D, last_Vs.tolist(), gamma)
+
+    assert D.done[0][0] == [False, False, False, False, False, True]
+    assert D.done[0][1] == [False, False]
+    assert D.done[1][0] == [False, False, False, True]
+    assert D.done[1][1] == [False, False, False, True]
+    assert D.done[2][0] == [False, False, False, False, True]
+    assert D.done[2][1] == [False, False, False]
+
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*(0.6 + gamma*last_Vs[0]*0.0))))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*(0.6 + gamma*last_Vs[0]*0.0)))), 
+         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*(0.6 + gamma*last_Vs[0]*0.0))), 
+         0.4 + gamma*(0.5 + gamma*(0.6 + gamma*last_Vs[0]*0.0)), 
+         0.5 + gamma*(0.6 + gamma*last_Vs[0]*0.0), 
+         0.6 + gamma*last_Vs[0]*0.0]
+    assert np.allclose(y, Qs[0, :6])
+    y = [0.1 + gamma*(0.2 + gamma*last_Vs[1]), 
+         0.2 + gamma*last_Vs[1]]
+    assert np.allclose(y, Qs[0, 6:])
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_Vs[2]*0.0))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_Vs[2]*0.0)), 
+         0.3 + gamma*(0.4 + gamma*last_Vs[2]*0.0), 
+         0.4 + gamma*last_Vs[2]*0.0]
+    assert np.allclose(y, Qs[1, :4])
+    assert np.allclose(y, Qs[1, 4:])
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[4]*0.0)))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[4]*0.0))), 
+         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_Vs[4]*0.0)), 
+         0.4 + gamma*(0.5 + gamma*last_Vs[4]*0.0), 
+         0.5 + gamma*last_Vs[4]*0.0]
+    assert np.allclose(y, Qs[2, :5])
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*last_Vs[-1])), 
+         0.2 + gamma*(0.3 + gamma*last_Vs[-1]), 
+         0.3 + gamma*last_Vs[-1]]
+    assert np.allclose(y, Qs[2, 5:])
 
 
 
@@ -86,74 +175,7 @@ def test_get_returns(num_env, init_seed, mode, T, runner_class)
 
         
     
-    
-def test_bootstrapped_returns_from_episode():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-    
-    D = BatchEpisode(env_spec)
-    D.r[0] = [1, 2, 3]
-    D.done[0] = [False, False, True]
-    D.completed[0] = True
-
-    D.r[1] = [1, 2, 3, 4, 5]
-    D.done[1] = [False, False, False, False, False]
-    D.completed[1] = False
-
-    D.r[2] = [1, 2, 3, 4, 5, 6, 7, 8]
-    D.done[2] = [False, False, False, False, False, False, False, True]
-    D.completed[2] = True
-    
-    last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
-    
-    out = bootstrapped_returns_from_episode(D, last_Vs, 1.0)
-    assert out.shape == (3, D.maxT)
-    assert np.allclose(out[0], [6, 5, 3, 0, 0, 0, 0, 0])
-    assert np.allclose(out[1], [35, 34, 32, 29, 25, 0, 0, 0])
-    assert np.allclose(out[2], [36, 35, 33, 30, 26, 21, 15, 8])
-    del out
-    
-    
-    out = bootstrapped_returns_from_episode(D, last_Vs, 0.1)
-    assert out.shape == (3, D.maxT)
-    assert np.allclose(out[0], [1.23, 2.3, 3, 0, 0, 0, 0, 0])
-    assert np.allclose(out[1], [1.2347, 2.347, 3.47, 4.7, 7, 0, 0, 0])
-    assert np.allclose(out[2], [1.2345678, 2.345678, 3.45678, 4.5678, 5.678, 6.78, 7.8, 8])
-    
-    with pytest.raises(AssertionError):
-        bootstrapped_returns_from_segment(D, last_Vs, 0.1)
-
-    
-def test_bootstrapped_returns_from_segment():
-    env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
-    env_spec = EnvSpec(env)
-
-    D = BatchSegment(env_spec, 5)
-    D.r[0] = [1, 2, 3, 4, 5]
-    D.done[0] = [False, False, False, False, False]
-    D.r[1] = [1, 2, 3, 4, 5]
-    D.done[1] = [False, False, True, False, False]
-    D.r[2] = [1, 2, 3, 4, 5]
-    D.done[2] = [True, False, False, False, True]
-    
-    last_Vs = torch.tensor([10, 20, 30]).unsqueeze(1)
-    
-    out = bootstrapped_returns_from_segment(D, last_Vs, 1.0)
-    assert out.shape == (3, 5)
-    assert np.allclose(out[0], [25, 24, 22, 19, 15])
-    assert np.allclose(out[1], [6, 5, 3, 29, 25])
-    assert np.allclose(out[2], [1, 14, 12, 9, 5])
-    del out
-    
-    out = bootstrapped_returns_from_segment(D, last_Vs, 0.1)
-    assert out.shape == (3, 5)
-    assert np.allclose(out[0], [1.2346, 2.346, 3.46, 4.6, 6])
-    assert np.allclose(out[1], [1.23, 2.3, 3, 4.7, 7])
-    assert np.allclose(out[2], [1, 2.345, 3.45, 4.5, 5])
-    
-    with pytest.raises(AssertionError):
-        bootstrapped_returns_from_episode(D, last_Vs, 0.1)
-    
+   
     
 def test_td0_target_from_episode():
     env = make_vec_env(SerialVecEnv, make_gym_env, 'CartPole-v1', 3, 0)
