@@ -16,12 +16,12 @@ def test_random_agent(env_id, num_env):
     agent = RandomAgent(None, env, 'cpu')
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
-    assert out['action'] in env.action_space
+    assert out['raw_action'] in env.action_space
     del env, agent, out
     
     env = make_vec_env(make_env, num_env, 0)
     agent = RandomAgent(None, env, 'cpu')
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
-    assert len(out['action']) == num_env
-    assert all(action in env.action_space for action in out['action'])
+    assert len(out['raw_action']) == num_env
+    assert all(action in env.action_space for action in out['raw_action'])
