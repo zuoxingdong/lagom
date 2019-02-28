@@ -1,5 +1,14 @@
-from .returns import returns_from_episode
-from .returns import returns_from_segment
+from .returns import returns
+from .returns import get_returns
+
+
+
+
+
+
+
+
+
 
 from .bootstrapped_returns import bootstrapped_returns_from_episode
 from .bootstrapped_returns import bootstrapped_returns_from_segment
