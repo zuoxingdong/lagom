@@ -28,7 +28,8 @@ def bootstrapped_returns(rewards, last_V, done, gamma):
 
 def get_bootstrapped_returns(D, last_Vs, gamma):
     if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1).tolist()
+        assert last_Vs.ndimension() == 1
+        last_Vs = last_Vs.detach().cpu().numpy().tolist()
     out = np.zeros((D.N, D.T), dtype=np.float32)
     for n in range(D.N):
         y = []
