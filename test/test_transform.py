@@ -2,9 +2,14 @@ import numpy as np
 
 import pytest
 
+from lagom.transform import interp_curves
+
+
+
+
 from lagom.transform import ExpFactorCumSum
 from lagom.transform import ExplainedVariance
-from lagom.transform import InterpCurve
+
 from lagom.transform import LinearSchedule
 from lagom.transform import RankTransform
 from lagom.transform import RunningMeanStd
@@ -66,27 +71,25 @@ def test_explained_variance():
     check_dtype(ev)
     
 
-def test_interp_curve():
-    interp = InterpCurve()
-
+def test_interp_curves():
     # Make some inconsistent data
-    x1 = [1, 4, 5, 7, 9, 13, 20]
-    y1 = [0.1, 0.25, 0.22, 0.53, 0.37, 0.5, 0.55]
+    x1 = [4, 5, 7, 13, 20]
+    y1 = [0.25, 0.22, 0.53, 0.37, 0.55]
     x2 = [2, 4, 6, 7, 9, 11, 15]
     y2 = [0.03, 0.12, 0.4, 0.2, 0.18, 0.32, 0.39]
-
-    new_x, (new_y1, new_y2) = interp([x1, x2], [y1, y2], num_point=100)
-
-    check_dtype(new_x)
-    check_dtype(new_y1)
-    check_dtype(new_y2)
-    assert isinstance(new_x, np.ndarray)
-    assert isinstance(new_y1, np.ndarray) and isinstance(new_y2, np.ndarray)
-    assert new_x.shape == (100,)
-    assert new_y1.shape == (100,) and new_y2.shape == (100,)
-    assert new_x.min() == 1 and new_x[0] == 1
-    assert new_x.max() == 20 and new_x[-1] == 20
-    assert new_y1.max() <= 0.6 and new_y2.max() <= 0.6
+    new_x, new_y = interp_curves([x1, x2], [y1, y2], num_point=100)
+    
+    assert isinstance(new_x, list)
+    assert isinstance(new_y, list)
+    assert len(new_x[0]) == 100
+    assert len(new_y[0]) == 100
+    assert len(new_x[1]) == 100
+    assert len(new_y[1]) == 100
+    assert new_x[0] == new_x[1]
+    assert min(new_x[0]) == 2 and min(new_x[1]) == 2
+    assert max(new_x[0]) <= 20 and max(new_x[1]) <= 20
+    assert min(new_y[0]) > 0 and min(new_y[1]) > 0
+    assert max(new_y[0]) <= 0.6 and max(new_y[1]) <= 0.6
     
     
 def test_linear_schedule():
