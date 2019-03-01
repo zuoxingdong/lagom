@@ -1,79 +1,106 @@
-from lagom.experiment import Configurator
-from lagom.experiment import BaseExperimentWorker
-from lagom.experiment import BaseExperimentMaster
+from pathlib import Path
+from itertools import count
+
+import gym
+from gym.spaces import Box
+
+from lagom.utils import pickle_dump
+from lagom.utils import set_global_seeds
+
+from lagom.experiment import Config
+from lagom.experiment import Grid
+from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 
-from algo import Algorithm
+from lagom.envs import make_vec_env
+from lagom.envs.wrappers import TimeAwareObservation
+from lagom.envs.wrappers import ClipAction
+from lagom.envs.wrappers import VecMonitor
+from lagom.envs.wrappers import VecStandardizeObservation
+from lagom.envs.wrappers import VecStandardizeReward
+
+from lagom.runner import EpisodeRunner
+
+from agent import Agent
+from engine import Engine
 
 
-class ExperimentWorker(BaseExperimentWorker):
-    def prepare(self):
-        pass
-        
-    def make_algo(self):
-        algo = Algorithm()
-        
-        return algo
+config = Config(
+    {'cuda': True, 
+     'log.dir': 'logs/agent.std_range', 
+     'log.interval': 10, 
+     
+     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
+     'env.standardize': True,  # use VecStandardize
+     'env.time_aware_obs': False,  # append time step to observation
+     
+     'nn.recurrent': False,
+     'nn.sizes': [64, 64],  # FF:[64, 64]/RNN:[128]
+     'nn.independent_V': False,  # param-share of policy and value
+     
+     'agent.lr': 7e-4,
+     'agent.lr_V': 1e-3,
+     'agent.use_lr_scheduler': True,
+     'agent.min_lr': 1e-6,
+     'agent.gamma': 0.99,
+     'agent.gae_lambda': 0.97,
+     'agent.standardize_Q': False,  # standardize discounted returns
+     'agent.standardize_adv': True,  # standardize advantage estimates
+     'agent.max_grad_norm': 0.5,  # grad clipping by norm
+     'agent.entropy_coef': 0.01,
+     'agent.value_coef': 0.5,
+     'agent.fit_terminal_value': False,
+     'agent.terminal_value_coef': 0.1,
+     
+     # only for continuous control
+     'env.clip_action': True,  # clip action within valid bound before step()
+     'agent.std0': 0.5,  # initial std
+     'agent.std_style': 'sigmoidal',  # std parameterization
+     'agent.std_range': Grid([(0.01, 1.0), (0.01, 2.0), (0.1, 1.0), (0.1, 2.0)]),  # bounded std: (min, max)
+     'agent.beta': 1.0,  # beta-sigmoidal
+     
+     'train.timestep': 1e6,  # either 'train.iter' or 'train.timestep'
+     'train.N': 1,  # num envs/num of traj per iteration
+     'train.ratio_T': 1.0,  # percentage of max allowed horizon
+    })
 
 
-class ExperimentMaster(BaseExperimentMaster):
-    def make_configs(self):
-        configurator = Configurator('grid')
-        
-        configurator.fixed('cuda', True)  # whether to use GPU
-        
-        configurator.fixed('env.id', 'HalfCheetah-v2')
-        configurator.fixed('env.standardize', True)  # whether to use VecStandardize
-        configurator.fixed('env.time_aware_obs', False)  # whether to append time step to observation
-        
-        configurator.fixed('network.recurrent', False)
-        configurator.fixed('network.hidden_sizes', [64, 64])  # FF:[64, 64]/RNN:[128]
-        configurator.fixed('network.independent_V', False)  # share or not for params of policy and value network
-        
-        configurator.fixed('algo.lr', 7e-4)
-        configurator.fixed('algo.lr_V', 1e-3)
-        configurator.fixed('algo.use_lr_scheduler', True)
-        configurator.fixed('algo.gamma', 0.99)
-        configurator.fixed('algo.gae_lambda', 0.97)
-        
-        configurator.fixed('agent.standardize_Q', False)  # whether to standardize discounted returns
-        configurator.fixed('agent.standardize_adv', True)  # whether to standardize advantage estimates
-        configurator.fixed('agent.max_grad_norm', 0.5)  # grad clipping, set None to turn off
-        configurator.fixed('agent.entropy_coef', 0.01)
-        configurator.fixed('agent.value_coef', 0.5)
-        configurator.fixed('agent.fit_terminal_value', False)
-        configurator.fixed('agent.terminal_value_coef', 0.1)
-        # only for continuous control
-        configurator.fixed('env.clip_action', True)  # clip sampled action within valid bound before step()
-        configurator.fixed('agent.min_std', 1e-6)  # min threshould for std, avoid numerical instability
-        configurator.fixed('agent.std_style', 'exp')  # std parameterization, 'exp' or 'softplus'
-        configurator.fixed('agent.constant_std', None)  # constant std, set None to learn it
-        configurator.fixed('agent.std_state_dependent', False)  # whether to learn std with state dependency
-        configurator.fixed('agent.init_std', 0.5)  # initial std for state-independent std
-        
-        configurator.fixed('train.timestep', 1e6)  # either 'train.iter' or 'train.timestep'
-        configurator.fixed('train.N', 1)  # number of trajectories per training iteration
-        configurator.fixed('train.ratio_T', 1.0)  # percentage of max allowed horizon
-        configurator.fixed('eval.independent', False)
-        configurator.fixed('eval.N', 10)  # number of episodes to evaluate, do not specify T for complete episode
-        
-        configurator.fixed('log.interval', 10)  # logging interval
-        configurator.fixed('log.dir', 'logs/default')  # logging directory
-        
-        list_config = configurator.make_configs()
-        
-        return list_config
-
-    def make_seeds(self):
-        list_seed = [1770966829, 1500925526, 2054191100]
-        
-        return list_seed
+def run(config, seed, device):
+    set_global_seeds(seed)
+    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
-    def process_results(self, results):
-        assert all([result is None for result in results])
+    def make_env():
+        env = gym.make(config['env.id'])
+        if config['env.time_aware_obs']:
+            env = TimeAwareObservation(env)
+        if config['env.clip_action'] and isinstance(env.action_space, Box):
+            env = ClipAction(env)
+        return env
+    env = make_vec_env(make_env, config['train.N'], seed, 'serial')
+    env = VecMonitor(env)
+    if config['env.standardize']:  # running averages of observation and reward
+        env = VecStandardizeObservation(env, clip=10.)
+        env = VecStandardizeReward(env, clip=10., gamma=0.99)
+    
+    agent = Agent(config, env, device)
+    runner = EpisodeRunner()
+    engine = Engine(config, agent=agent, env=env, runner=runner)
+    train_logs = []
+    for i in count():
+        if 'train.iter' in config and i >= config['train.iter']:  # enough iterations
+            break
+        elif 'train.timestep' in config and agent.total_T >= config['train.timestep']:  # enough timesteps
+            break
+        train_logger = engine.train(i)
+        train_logs.append(train_logger.logs)
+        if i == 0 or (i+1) % config['log.interval'] == 0:
+            train_logger.dump(keys=None, index=None, indent=0, border='-'*50)
+    pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
+    return None  
+    
 
-        
 if __name__ == '__main__':
-    run_experiment(worker_class=ExperimentWorker, 
-                   master_class=ExperimentMaster, 
+    run_experiment(run=run, 
+                   config=config, 
+                   seeds=[1770966829, 1500925526, 2054191100], 
                    num_worker=100)

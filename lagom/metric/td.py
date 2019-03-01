@@ -38,10 +38,12 @@ def get_td0_target(D, Vs, last_Vs, gamma):
     
     """
     if torch.is_tensor(Vs):
-        Vs = Vs.detach().cpu().numpy().squeeze(-1).tolist()
+        assert Vs.ndimension() == 2
+        Vs = Vs.detach().cpu().numpy().tolist()
     Vs = _split_reshape(Vs, D.Ts)
     if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1).tolist()
+        assert last_Vs.ndimension() == 1
+        last_Vs = last_Vs.detach().cpu().numpy().tolist()
     out = np.zeros((D.N, D.T), dtype=np.float32)
     for n in range(D.N):
         y = []
@@ -77,10 +79,12 @@ def get_td0_error(D, Vs, last_Vs, gamma):
     
     """
     if torch.is_tensor(Vs):
-        Vs = Vs.detach().cpu().numpy().squeeze(-1).tolist()
+        assert Vs.ndimension() == 2
+        Vs = Vs.detach().cpu().numpy().tolist()
     Vs = _split_reshape(Vs, D.Ts)
     if torch.is_tensor(last_Vs):
-        last_Vs = last_Vs.detach().cpu().numpy().squeeze(-1).tolist()
+        assert last_Vs.ndimension() == 1
+        last_Vs = last_Vs.detach().cpu().numpy().tolist()
     out = np.zeros((D.N, D.T), dtype=np.float32)
     for n in range(D.N):
         y = []

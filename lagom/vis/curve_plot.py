@@ -5,7 +5,7 @@ import numpy as np
 
 from functools import partial
 
-from lagom.transform import InterpCurve
+from lagom.transform import interp_curves
 
 from .base_plot import BasePlot
 
@@ -63,7 +63,7 @@ class CurvePlot(BasePlot):
         if xvalues is None:
             xvalues = np.arange(1, N+1)
         else:
-            xvalues = np.array(xvalues)
+            xvalues = np.asarray(xvalues)
         
         # Sanity check if all xvalues are identical, otherwise the uncertainty bands are impossible to plot
         # We check if first element is not scallar to determine batched xvalues, because we should allow
@@ -73,8 +73,7 @@ class CurvePlot(BasePlot):
             # Interpolate the lines to share same x values if check is failed to pass
             if not check_pass:
                 # Get new shared xvalues and queried y values from interpolated lines
-                interp = InterpCurve()
-                xvalues, data = interp(xvalues, data, num_point=500)
+                xvalues, data = interp_curves(xvalues, data, num_point=500)
             else:  # passed the check, batch with same xvalues, but we want one xvalues only
                 xvalues = xvalues[0]  # take first one, because rest of them are identical
         
