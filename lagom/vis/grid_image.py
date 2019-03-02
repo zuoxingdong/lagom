@@ -2,10 +2,8 @@ import numpy as np
 
 from PIL import Image
 
-from .base_plot import BasePlot
 
-
-class GridImage(BasePlot):
+class GridImage(object):
     r"""Generate a grid of images. The images can be iteratively added. 
     
     Example::
@@ -22,19 +20,15 @@ class GridImage(BasePlot):
         
         * https://github.com/facebookresearch/visdom/blob/master/py/visdom/__init__.py
         
+    Args:
+        ncol (int, optional): Number of images to show in each row of the grid. 
+            Final grid size is [N/ncol, ncol]. Default: 8. 
+        padding (int, optional): Number of paddings. Default: 2.
+        pad_value (float, optional): Padding value in the range [0, 255]. 
+            Black is 0 and white 255. Default: 0
+
     """
     def __init__(self, ncol=8, padding=2, pad_value=0):
-        r"""Initialize the grid image.
-        
-        Args:
-            ncol (int, optional): Number of images to show in each row of the grid. 
-                Final grid size is [N/ncol, ncol]. Default: 8. 
-            padding (int, optional): Number of paddings. Default: 2.
-            pad_value (float, optional): Padding value in the range [0, 255]. 
-                Black is 0 and white 255. Default: 0
-        """
-        super().__init__()
-        
         self.ncol = ncol
         self.padding = padding
         self.pad_value = pad_value
