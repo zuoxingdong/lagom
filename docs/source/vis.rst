@@ -3,12 +3,12 @@ lagom.vis: Visualization
 
 .. automodule:: lagom.vis
 .. currentmodule:: lagom.vis
-
-.. autoclass:: BasePlot
-    :members:
     
-.. autoclass:: CurvePlot
-    :members:
+.. autofunction:: lineplot
+
+.. autofunction:: auto_ax
+
+.. autofunction:: tick_formatter
     
 .. autoclass:: GridImage
     :members:
