@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from lagom.transform import ExpFactorCumSum
+from lagom.transform import geometric_cumsum
 
 
 def bootstrapped_returns(rewards, last_V, done, gamma):
@@ -18,11 +18,10 @@ def bootstrapped_returns(rewards, last_V, done, gamma):
         The state values for terminal states are masked out as zero !
 
     """
-    f = ExpFactorCumSum(gamma)
     if done:
-        out = f(rewards + [0.0])
+        out = geometric_cumsum(gamma, rewards + [0.0])
     else:
-        out = f(rewards + [last_V])
+        out = geometric_cumsum(gamma, rewards + [last_V])
     return out[0, :-1].tolist()
 
 

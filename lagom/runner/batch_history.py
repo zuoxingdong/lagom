@@ -112,7 +112,7 @@ class BatchHistory(object):
             for m in range(len(self.info[n])):
                 if 'terminal_observation' in self.info[n][m][-1]:
                     out.append(self.info[n][m][-1]['terminal_observation'])
-        out = np.stack(out)
+        out = np.stack(out).astype(np.float32)
         return out
         
     @property

@@ -27,12 +27,12 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/agent.std_range', 
+     'log.dir': 'logs/env.time_aware_obs', 
      'log.interval': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
      'env.standardize': True,  # use VecStandardize
-     'env.time_aware_obs': False,  # append time step to observation
+     'env.time_aware_obs': Grid([True, False]),  # append time step to observation
      
      'nn.recurrent': False,
      'nn.sizes': [64, 64],  # FF:[64, 64]/RNN:[128]
@@ -41,7 +41,7 @@ config = Config(
      'agent.lr': 7e-4,
      'agent.lr_V': 1e-3,
      'agent.use_lr_scheduler': True,
-     'agent.min_lr': 1e-6,
+     'agent.min_lr': 5e-5,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.97,
      'agent.standardize_Q': False,  # standardize discounted returns
@@ -50,14 +50,14 @@ config = Config(
      'agent.entropy_coef': 0.01,
      'agent.value_coef': 0.5,
      'agent.fit_terminal_value': False,
-     'agent.terminal_value_coef': 0.1,
+     'agent.terminal_value_coef': None,
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'sigmoidal',  # std parameterization
-     'agent.std_range': Grid([(0.01, 1.0), (0.01, 2.0), (0.1, 1.0), (0.1, 2.0)]),  # bounded std: (min, max)
-     'agent.beta': 1.0,  # beta-sigmoidal
+     'agent.std_style': 'exp',  # std parameterization
+     'agent.std_range': None,  # bounded std: (min, max)
+     'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': 1e6,  # either 'train.iter' or 'train.timestep'
      'train.N': 1,  # num envs/num of traj per iteration
