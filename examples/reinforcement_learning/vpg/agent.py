@@ -23,7 +23,7 @@ from lagom.networks import linear_lr_scheduler
 from lagom.metric import get_bootstrapped_returns
 from lagom.metric import get_gae
 
-from lagom.transform import ExplainedVariance
+from lagom.transform import explained_variance as ev
 
 
 class MLP(Module):
@@ -157,9 +157,7 @@ class Agent(BaseAgent):
         out['entropy_loss'] = entropy_loss.item()
         out['policy_entropy'] = -entropy_loss.item()
         out['value_loss'] = value_loss.item()
-        ev = ExplainedVariance()
-        ev = ev(y_true=Qs.detach().cpu().numpy().squeeze(), y_pred=Vs.detach().cpu().numpy().squeeze())
-        out['explained_variance'] = ev
+        out['explained_variance'] = ev(y_true=Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
         if self.config['agent.fit_terminal_value'] and D.terminal_observations is not None:
             out['terminal_value_loss'] = terminal_value_loss.item()
         return out
