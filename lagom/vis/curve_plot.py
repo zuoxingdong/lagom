@@ -67,6 +67,8 @@ def auto_ax(ax,
     ax.xaxis.set_major_formatter(plt.FuncFormatter(partial(tick_formatter, scale_magnitude=xmagnitude)))
     if legend_kws is not None:
         ax.legend(**legend_kws)
+    else:
+        ax.get_legend().set_visible(False)
     
     return ax
 

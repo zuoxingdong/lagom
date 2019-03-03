@@ -1,7 +1,4 @@
-from .base_transform import BaseTransform
-
-
-class LinearSchedule(BaseTransform):
+class LinearSchedule(object):
     r"""A linear scheduling from an initial to a final value over a certain timesteps, then the final
     value is fixed constantly afterwards. 
         
@@ -15,22 +12,20 @@ class LinearSchedule(BaseTransform):
 
         Note that for learning rate decay, one should use PyTorch ``optim.lr_scheduler`` instead. 
     
-    Example::
+    Example:
     
         >>> scheduler = LinearSchedule(initial=1.0, final=0.1, N=3, start=0)
         >>> [scheduler(i) for i in range(6)]
         [1.0, 0.7, 0.4, 0.1, 0.1, 0.1]
     
+    Args:
+        initial (float): initial value
+        final (float): final value
+        N (int): number of scheduling timesteps
+        start (int, optional): the timestep to start the scheduling. Default: 0
+        
     """
     def __init__(self, initial, final, N, start=0):
-        r"""Initialize the scheduler. 
-        
-        Args:
-            initial (float): initial value
-            final (float): final value
-            N (int): number of scheduling timesteps
-            start (int, optional): the timestep to start the scheduling. Default: 0
-        """
         assert N > 0, f'expected N as positive integer, got {N}'
         assert start >= 0, f'expected start as non-negative integer, got {start}'
         

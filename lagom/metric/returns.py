@@ -1,11 +1,10 @@
 import numpy as np
 
-from lagom.transform import ExpFactorCumSum
+from lagom.transform import geometric_cumsum
 
 
 def returns(rewards, gamma):
-    f = ExpFactorCumSum(gamma)
-    return f(rewards).tolist()[0]
+    return geometric_cumsum(gamma, rewards).tolist()[0]
 
 
 def get_returns(D, gamma):

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from lagom.transform import ExpFactorCumSum
+from lagom.transform import geometric_cumsum
 
 from .td import td0_error
 from .td import _split_reshape
@@ -9,8 +9,7 @@ from .td import _split_reshape
 
 def gae(rewards, Vs, last_V, done, gamma, lam):
     td0 = td0_error(rewards, Vs, last_V, done, gamma)
-    f = ExpFactorCumSum(gamma*lam)
-    return f(td0).tolist()[0]
+    return geometric_cumsum(gamma*lam, td0).tolist()[0]
 
 
 def get_gae(D, Vs, last_Vs, gamma, lam):
