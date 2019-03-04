@@ -22,3 +22,6 @@ lagom.utils: Utils
 .. autofunction:: timed
 
 .. autofunction:: ask_yes_or_no
+
+.. autoclass:: CloudpickleWrapper
+    :members:
