@@ -3,7 +3,7 @@ cuda: true
 log.dir: logs/agent.terminal_value_coef
 log.interval: 10
 env.standardize: true
-env.time_aware_obs: false
+env.time_aware_obs: true
 nn.recurrent: false
 nn.sizes:
 - 64
@@ -12,7 +12,7 @@ nn.independent_V: false
 agent.lr: 0.0007
 agent.lr_V: 0.001
 agent.use_lr_scheduler: true
-agent.min_lr: 1.0e-06
+agent.min_lr: 5.0e-05
 agent.gamma: 0.99
 agent.gae_lambda: 0.97
 agent.standardize_Q: false
@@ -30,4 +30,4 @@ train.timestep: 1000000.0
 train.N: 1
 train.ratio_T: 1.0
 env.id: HalfCheetah-v2
-agent.terminal_value_coef: 0.0
+agent.terminal_value_coef: 0.01
