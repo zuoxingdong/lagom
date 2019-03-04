@@ -11,10 +11,9 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
     
     Example::
         
-        >>> make_envs(make_env=make_gym_env, env_id='CartPole-v1', num_env=3, init_seed=0)
-        [functools.partial(<function make_gym_env at 0x7f2127b5ce18>, env_id='CartPole-v1', seed=209652396),
-         functools.partial(<function make_gym_env at 0x7f2127b5ce18>, env_id='CartPole-v1', seed=398764591),
-         functools.partial(<function make_gym_env at 0x7f2127b5ce18>, env_id='CartPole-v1', seed=924231285)]
+        >>> import gym
+        >>> make_vec_env(lambda: gym.make('CartPole-v1'), 3, 0)
+        <SerialVecEnv: 3, CartPole-v1>
     
     Args:
         make_env (function): a function to create an environment
