@@ -27,12 +27,12 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/env.time_aware_obs', 
+     'log.dir': 'logs/default', 
      'log.interval': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
      'env.standardize': True,  # use VecStandardize
-     'env.time_aware_obs': Grid([True, False]),  # append time step to observation
+     'env.time_aware_obs': False,  # append time step to observation
      
      'nn.recurrent': False,
      'nn.sizes': [64, 64],  # FF:[64, 64]/RNN:[128]

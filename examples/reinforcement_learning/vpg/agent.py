@@ -79,7 +79,8 @@ class Agent(BaseAgent):
         self.lr_scheduler = linear_lr_scheduler(self.optimizer, N, config['agent.min_lr'])
         
     def choose_action(self, obs, **kwargs):
-        obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        if not torch.is_tensor(obs):
+            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         out = {}
         features = self.feature_network(obs)
         
