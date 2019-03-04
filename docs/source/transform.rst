@@ -4,29 +4,21 @@ lagom.transform: Transformations
 .. automodule:: lagom.transform
 .. currentmodule:: lagom.transform
 
-.. autoclass:: BaseTransform
+.. autofunction:: interp_curves
+
+.. autofunction:: geometric_cumsum
+
+.. autofunction:: explained_variance
+
+.. autoclass:: LinearSchedule
     :members:
 
-.. autoclass:: RankTransform
-    :members:
-    
-.. autoclass:: ExpFactorCumSum
-    :members:    
-    
-.. autoclass:: ExplainedVariance
+.. autofunction:: rank_transform
+
+.. autoclass:: RunningAverage
     :members:
 
 .. autoclass:: RunningMeanStd
     :members:
-    
-.. autoclass:: RunningAverage
-    :members:
-    
-.. autoclass:: InterpCurve
-    :members:
-    
-.. autoclass:: SmoothFilter
-    :members:
-    
-.. autoclass:: LinearSchedule
-    :members:
+
+.. autofunction:: smooth_filter

@@ -1,9 +1,7 @@
 import numpy as np
 
-from .base_transform import BaseTransform
 
-
-class RunningMeanStd(BaseTransform):
+class RunningMeanStd(object):
     r"""Estimates sample mean and standard deviation by using `Chan's method`_. 
     
     .. note::
@@ -21,7 +19,7 @@ class RunningMeanStd(BaseTransform):
         The internal batched mean and variance are calculated over the first dimension. This allows
         to deal with batched data with shape ``[N, ...]`` where ``N`` is the batch size.
     
-    Example::
+    Example:
     
         >>> runningavg = RunningMeanStd()
         >>> [runningavg(i) for i in [1, 2, 3, 4]]
@@ -55,7 +53,7 @@ class RunningMeanStd(BaseTransform):
         Args:
             x (object): additional data to update the estimation of mean and standard deviation. 
         """
-        x = self.to_numpy(x, np.float32)
+        x = np.asarray(x, dtype=np.float32)
         
         # Store the original data shape, useful for returning mu and sigma with idential shape
         # Only for first time that data comes in, so assume all data flow with same shape
