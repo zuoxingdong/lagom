@@ -1,4 +1,4 @@
-from lagom.envs.wrappers import RewardWrapper
+from gym import RewardWrapper
 
 
 class RewardScale(RewardWrapper):
@@ -18,16 +18,14 @@ class RewardScale(RewardWrapper):
         >>> reward
         0.1
         
-    """
-    def __init__(self, env, scale=0.01):
-        r"""Initialize the wrapper. 
-        
-        Args:
+    Args:
             env (Env): environment
             scale (float): reward scaling factor
-        """
-        super().__init__(env=env)
+        
+    """
+    def __init__(self, env, scale=0.01):
+        super().__init__(env)
         self.scale = scale
         
-    def process_reward(self, reward):
+    def reward(self, reward):
         return self.scale*reward

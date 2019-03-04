@@ -1,9 +1,14 @@
 import numpy as np
 
-from lagom.envs.wrappers import RewardWrapper
+from gym import RewardWrapper
 
 
 class ClipReward(RewardWrapper):
-    r""""Clip reward to [-1, 1]. """
-    def process_reward(self, reward):
-        return np.clip(reward, -1, 1)
+    r""""Clip reward to [min, max]. """
+    def __init__(self, env, min_r, max_r):
+        super().__init__(env)
+        self.min_r = min_r
+        self.max_r = max_r
+            
+    def reward(self, reward):
+        return np.clip(reward, self.min_r, self.max_r)

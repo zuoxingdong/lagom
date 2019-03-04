@@ -1,41 +1,17 @@
 from .base_agent import BaseAgent
 
+from lagom.envs import VecEnv
+
 
 class RandomAgent(BaseAgent):
-    r"""A random agent samples action uniformly from action space. """
-    def __init__(self, config, env_spec):
-        super().__init__(config, env_spec, None)
-        
+    r"""A random agent samples action uniformly from action space. """    
     def choose_action(self, obs, **kwargs):
-        out = {}
-        
-        if self.env_spec.is_vec_env:
-            action = [self.action_space.sample() for _ in range(self.env_spec.num_env)]
+        if isinstance(self.env, VecEnv):
+            action = [self.env.action_space.sample() for _ in range(self.env.num_env)]
         else:
-            action = self.action_space.sample()
-        
-        out['action'] = action
-        
-        return out
-    
-    def make_modules(self, config):
-        pass
-    
-    def prepare(self, config, **kwargs):
-        pass
-    
-    def reset(self, config, **kwargs):
-        pass    
-        
+            action = self.env.action_space.sample()
+        out = {'raw_action': action}
+        return out  
+
     def learn(self, D, **kwargs):
-        pass
-    
-    @property
-    def recurrent(self):
-        pass
-    
-    def save(self, f):
-        pass
-    
-    def load(self, f):
         pass

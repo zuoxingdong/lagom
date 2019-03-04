@@ -1,14 +1,14 @@
 import numpy as np
 
-from lagom.envs.spaces import Box
-from .wrapper import ObservationWrapper
+from gym.spaces import Box
+from gym import ObservationWrapper
 
 
 class ScaleImageObservation(ObservationWrapper):
     r"""Convert float range to [0, 1] by dividing 255. """
-    def process_observation(self, observation):
-        return observation.astype(np.float32)/255
+    def __init__(self, env):
+        super().__init__(env)
+        self.observation_space = Box(low=0, high=1, shape=self.observation_space.shape, dtype=np.float32)
     
-    @property
-    def observation_space(self):
-        return Box(low=0, high=1, shape=self.env.observation_space.shape, dtype=np.float32)
+    def observation(self, observation):
+        return observation.astype(np.float32)/255.
