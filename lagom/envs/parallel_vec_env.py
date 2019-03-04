@@ -8,7 +8,6 @@ from lagom.utils import CloudpickleWrapper
 from .vec_env import VecEnv
 
 
-
 def worker(master_conn, worker_conn, make_env):
     r"""Environment worker to do working for master and send back result via Pipe connection. 
     
