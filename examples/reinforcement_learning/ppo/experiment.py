@@ -27,7 +27,7 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/agent.std_range', 
+     'log.dir': 'logs/default', 
      'log.interval': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
@@ -56,10 +56,10 @@ config = Config(
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'sigmoidal',  # std parameterization
-     'agent.std_range': Grid([(0.01, 1.0), (0.1, 1.0), (0.01, 2.0), (0.1, 2.0)]),  # bounded std: (min, max)
-     'agent.beta': 1.0,  # beta-sigmoidal
+     'agent.std0': 0.4,  # initial std
+     'agent.std_style': 'exp',  # std parameterization
+     'agent.std_range': None,  # bounded std: (min, max)
+     'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': 1e6,  # either 'train.iter' or 'train.timestep'
      'train.N': 2,  # num envs/num of traj per iteration
