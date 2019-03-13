@@ -13,3 +13,4 @@ pyglet
 cloudpickle
 pyyaml
 colored
+opencv-python
