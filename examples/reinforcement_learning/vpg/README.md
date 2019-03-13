@@ -15,6 +15,4 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 # Results
 
 ## MLP policy
-MLP policy | LSTM policy
- --- | --- 
-<img src='logs/default/result.png' width='100%'> | <img src='data/lstm_result.png' width='100%'>
+<img src='logs/default/result.png' width='100%'>
