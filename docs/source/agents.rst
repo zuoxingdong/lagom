@@ -9,6 +9,3 @@ lagom.agents
 
 .. autoclass:: RandomAgent
     :members:
-
-.. autoclass:: StickyAgent
-    :members:
