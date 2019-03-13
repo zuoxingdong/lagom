@@ -1,0 +1,9 @@
+ID: 0
+cuda: true
+log.dir: logs/default
+log.interval: 100
+nn.type: VAE
+nn.z_dim: 8
+train.num_epoch: 100
+train.batch_size: 128
+eval.batch_size: 128
