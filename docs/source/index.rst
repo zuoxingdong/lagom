@@ -48,7 +48,6 @@ A graphical illustration is coming soon.
     :caption: lagom API
     
     lagom
-    lagom.agents <agents>
     lagom.envs <envs>
     lagom.es <es>
     lagom.experiment <experiment>
