@@ -52,7 +52,6 @@ A graphical illustration is coming soon.
     lagom.es <es>
     lagom.experiment <experiment>
     lagom.metric <metric>
-    lagom.memory <memory>
     lagom.multiprocessing <multiprocessing>
     lagom.networks <networks>
     lagom.runner <runner>
