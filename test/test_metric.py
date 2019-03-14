@@ -6,7 +6,7 @@ import torch
 
 import gym
 
-from lagom.agents import RandomAgent
+from lagom import RandomAgent
 from lagom.envs import make_vec_env
 from lagom.runner import BatchHistory
 from lagom.runner import EpisodeRunner
