@@ -7,7 +7,7 @@ import pytest
 
 import gym
 
-from lagom.agents import RandomAgent
+from lagom import RandomAgent
 from lagom.runner import BatchHistory
 from lagom.runner import EpisodeRunner
 from lagom.runner import RollingSegmentRunner
