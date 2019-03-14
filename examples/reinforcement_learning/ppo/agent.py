@@ -8,7 +8,7 @@ import torch.optim as optim
 from gym.spaces import Discrete
 from gym.spaces import Box
 
-from lagom.agents import BaseAgent
+from lagom import BaseAgent
 
 from lagom.envs import flatdim
 
