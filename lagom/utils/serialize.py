@@ -105,8 +105,8 @@ class CloudpickleWrapper(object):
     def __init__(self, x):
         self.x = x
         
-    def __call__(self):
-        return self.x()
+    def __call__(self, *args, **kwargs):
+        return self.x(*args, **kwargs)
     
     def __getstate__(self):
         import cloudpickle
