@@ -2,14 +2,13 @@
 # We don't use it because Ubuntu is expected. 
 
 from abc import ABC
+from abc import abstractmethod
 
 from multiprocessing import Process
 from multiprocessing import Pipe
 
-from .base_master import BaseMaster
 
-
-class ProcessMaster(BaseMaster, ABC):
+class ProcessMaster(ABC):
     r"""Base class for all masters implemented with Python multiprocessing.Process. 
     
     It creates a number of workers each with an individual Process. The communication between master
@@ -50,7 +49,28 @@ class ProcessMaster(BaseMaster, ABC):
         # Not used here. Already copied by forked process
         [worker_conn.close() for worker_conn in self.worker_conns]
         
+    @abstractmethod
+    def make_tasks(self):
+        r"""Returns a list of tasks. 
+        
+        Returns
+        -------
+        tasks : list
+            a list of tasks
+        """
+        pass
+        
     def assign_tasks(self, tasks):
+        r"""Assign a given list of tasks to the workers and return the received results. 
+        
+        Args:
+            tasks (list): a list of tasks
+            
+        Returns
+        -------
+        results : object
+            received results
+        """
         jobs = [[] for _ in range(self.num_worker)]
         for task_id, task in enumerate(tasks):
             jobs[task_id % self.num_worker].append([task_id, task])  # job = [task_id, task]
@@ -65,6 +85,7 @@ class ProcessMaster(BaseMaster, ABC):
         return results
     
     def close(self):
+        r"""Defines everything required after finishing all the works, e.g. stop all workers, clean up. """
         [master_conn.send('close') for master_conn in self.master_conns]
         assert all([master_conn.recv() == 'confirmed' for master_conn in self.master_conns])
         
