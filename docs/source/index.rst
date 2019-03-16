@@ -49,7 +49,6 @@ A graphical illustration is coming soon.
     
     lagom
     lagom.envs <envs>
-    lagom.es <es>
     lagom.experiment <experiment>
     lagom.metric <metric>
     lagom.multiprocessing <multiprocessing>
