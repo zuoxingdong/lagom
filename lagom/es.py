@@ -8,6 +8,23 @@ class BaseES(ABC):
     .. note::
     
         The optimization is treated as minimization. e.g. maximize rewards is equivalent to minimize negative rewards.
+        
+    .. note::
+    
+        For painless parallelization, we highly recommend to use `concurrent.futures.ProcessPoolExecutor` with a few 
+        practical tips. 
+        
+        * Set `max_workers` argument to control the max parallelization capacity. 
+        * When execution get stuck, try to use :class:`CloudpickleWrapper` to wrap the objective function
+          e.g. particularly for lambda, class methods
+        * Use `with ProcessPoolExecutor` once to wrap entire iterative ES generations. Because using this 
+          internally for each generation, it can slow down the parallelization dramatically due to overheads.
+        * To reduce overheads further (e.g. PyTorch models, gym environments)
+            * Recreate such models for each generation will be very expensive. 
+            * Use initializer function for ProcessPoolExecutor
+            * Within initializer function, define PyTorch models and gym environments as global variables
+              Note that the global variables are defined to each worker independently
+            * Don't forget to use `with torch.no_grad` to increase forward pass speed.
 
     """ 
     @abstractmethod
