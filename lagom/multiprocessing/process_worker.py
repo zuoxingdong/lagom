@@ -1,9 +1,8 @@
 from abc import ABC
+from abc import abstractmethod
 
-from .base_worker import BaseWorker
 
-
-class ProcessWorker(BaseWorker, ABC):
+class ProcessWorker(ABC):
     r"""Base class for all workers implemented with Python multiprocessing.Process. 
     
     It communicates with master via a Pipe connection. The worker is stand-by infinitely waiting for task
@@ -25,3 +24,18 @@ class ProcessWorker(BaseWorker, ABC):
             else:
                 result = [[task_id, self.work(task_id, task)] for task_id, task in job]
                 worker_conn.send(result)
+                
+    @abstractmethod
+    def work(self, task_id, task):
+        r"""Work on the given task and return the result. 
+        
+        Args:
+            task_id (int): the task ID.
+            task (object): a given task. 
+            
+        Returns
+        -------
+        result : object
+            working result. 
+        """
+        pass
