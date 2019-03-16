@@ -19,3 +19,11 @@ Engine
 ----------------------------
 .. autoclass:: BaseEngine
     :members:
+    
+Evolution Strategies
+----------------------------
+.. autoclass:: BaseES
+    :members:
+    
+.. autoclass:: CMAES
+    :members:
