@@ -12,8 +12,8 @@ class VecMonitor(VecEnvWrapper):
         super().__init__(venv)
         
         self.t0 = time()
-        self.episode_rewards = np.zeros(self.num_env, dtype=np.float32)
-        self.episode_horizons = np.zeros(self.num_env, dtype=np.int32)
+        self.episode_rewards = np.zeros(len(venv), dtype=np.float32)
+        self.episode_horizons = np.zeros(len(venv), dtype=np.int32)
         
         self.return_queue = deque(maxlen=deque_size)
         self.horizon_queue = deque(maxlen=deque_size)

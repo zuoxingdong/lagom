@@ -17,7 +17,7 @@ class RollingSegmentRunner(BaseRunner):
     
         if self.obs_buffer is None or reset:
             observations = env.reset()
-            dones = [False for _ in range(env.num_env)]  # for RNN
+            dones = [False for _ in range(len(env))]  # for RNN
             if agent.is_recurrent:
                 agent.reset()  # e.g. RNN initial states
         else:

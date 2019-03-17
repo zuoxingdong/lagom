@@ -39,7 +39,7 @@ class VecStandardizeReward(VecEnvWrapper):
         self.runningavg = RunningMeanStd()
         
         # Buffer to save discounted returns from each environment
-        self.all_returns = np.zeros(self.num_env, dtype=np.float32)
+        self.all_returns = np.zeros(len(venv), dtype=np.float32)
         
     def step_wait(self):
         observations, rewards, dones, infos = self.venv.step_wait()

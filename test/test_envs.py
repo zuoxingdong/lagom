@@ -110,7 +110,8 @@ def test_vec_env(vec_env_class, env_id, num_env):
     list_make_env = [make_env for _ in range(num_env)]
     env = vec_env_class(list_make_env)
     assert isinstance(env, (SerialVecEnv, ParallelVecEnv))
-    assert env.num_env == num_env
+    assert len(env) == num_env
+    assert len(list(env)) == num_env
     assert env.observation_space == base_env.observation_space
     assert env.action_space == base_env.action_space
     assert env.reward_range == base_env.reward_range
@@ -156,13 +157,13 @@ def test_equivalence_vec_env(env_id, num_env, init_seed):
 
     assert env1.observation_space == env2.observation_space
     assert env1.action_space == env2.action_space
-    assert env1.num_env == env2.num_env
+    assert len(env1) == len(env2)
     obs1 = env1.reset()
     obs2 = env2.reset()
     assert np.allclose(obs1, obs2)
 
     for _ in range(20):
-        actions = [env1.action_space.sample() for _ in range(env1.num_env)]
+        actions = [env1.action_space.sample() for _ in range(len(env1))]
         obs1, rewards1, dones1, _ = env1.step(actions)
         obs2, rewards2, dones2, _ = env2.step(actions)
         assert np.allclose(obs1, obs2)
@@ -359,7 +360,7 @@ def test_vec_monitor(env_id, num_env, init_seed, mode):
     env.reset()
     counter = 0
     for _ in range(2000):
-        actions = [env.action_space.sample() for _ in range(env.num_env)]
+        actions = [env.action_space.sample() for _ in range(len(env))]
         _, _, dones, infos = env.step(actions)
         for i, (done, info) in enumerate(zip(dones, infos)):
             if done:
