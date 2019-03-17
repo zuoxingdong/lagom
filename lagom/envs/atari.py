@@ -6,7 +6,7 @@ from gym import Wrapper
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
 from .wrappers import ScaleImageObservation
-from .wrappers import ClipReward
+from .wrappers import SignClipReward
 from .wrappers import FrameStack
 
 
@@ -23,21 +23,19 @@ class AtariPreprocessing(Wrapper):
     * FireReset: take action on reset for environments that are fixed until firing. 
     * Frame skipping: 4 by default
     * Max-pooling: most recent two observations
-    * Termination signal when a life is lost: turned off by default
+    * Termination signal when a life is lost: turned off by default. Not recommended by Machado et al. (2018).
     * Resize to a square image: 84x84 by default
     * Grayscale
     
+    Args:
+        env (Env): environment
+        noop_max (int): max number of no-ops
+        frame_skip (int): the frequency at which the agent experiences the game. 
+        done_on_life_loss (bool): if True, then step() returns done=True whenever a
+            life is lost. 
+    
     """
     def __init__(self, env, noop_max=30, frame_skip=4, done_on_life_loss=False):
-        r"""Constructor
-        
-        Args:
-            env (Env): environment
-            noop_max (int): max number of no-ops
-            frame_skip (int): the frequency at which the agent experiences the game. 
-            done_on_life_loss (bool): if True, then step() returns done=True whenever a
-                life is lost. 
-        """
         super().__init__(env)
         assert frame_skip > 0
         
@@ -114,12 +112,11 @@ class AtariPreprocessing(Wrapper):
 
 def wrap_atari(env):
     assert 'NoFrameskip-v4' in env.spec.id
-    env = env.env  # remove gym TimeLimit wrapper (caps 100k frames), we want to cap 108k frames (30 min)
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)
     env = ScaleImageObservation(env)
-    env = ClipReward(env, -1.0, 1.0)
+    env = SignClipReward(env)
     env = FrameStack(env, 4)
     
     return env
