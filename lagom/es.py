@@ -88,17 +88,7 @@ class CMAES(BaseES):
         https://github.com/CMA-ES/pycma
     
     """
-    def __init__(self, 
-                 x0, 
-                 sigma0, 
-                 opts=None):
-        r"""Initialize CMA-ES
-        
-        Args:
-            mu0 (list/ndarray): initial mean
-            std0 (float): initial standard deviation
-            popsize (int): population size
-        """
+    def __init__(self, x0, sigma0, opts=None):
         import cma
         self.es = cma.CMAEvolutionStrategy(x0, sigma0, opts)
         
