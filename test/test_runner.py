@@ -37,7 +37,7 @@ def test_batch_history(num_env, init_seed, mode, T):
 
     observations = env.reset()
     for t in range(T):
-        actions = [env.action_space.sample() for _ in range(env.num_env)]
+        actions = [env.action_space.sample() for _ in range(len(env))]
         next_observations, rewards, dones, infos = env.step(actions)
         D.add(observations, actions, rewards, dones, infos, {})
         observations = next_observations
@@ -100,19 +100,19 @@ def test_episode_runner(env_id, num_env, init_seed, mode, T):
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
     D = runner(agent, env, T)
-    assert sum(D.num_traj) == env.num_env
-    assert D.observations.shape[0] == env.num_env
+    assert sum(D.num_traj) == len(env)
+    assert D.observations.shape[0] == len(env)
     assert np.allclose(D.observations, D.batch_observations)
     assert D.last_observations.shape[0] == num_env
-    assert D.actions.shape[0] == env.num_env
+    assert D.actions.shape[0] == len(env)
     assert np.allclose(D.actions, D.batch_actions)
-    assert D.rewards.shape[0] == env.num_env
+    assert D.rewards.shape[0] == len(env)
     assert np.allclose(D.rewards, D.batch_rewards)
-    assert D.dones.shape[0] == env.num_env
+    assert D.dones.shape[0] == len(env)
     assert np.allclose(D.dones, D.batch_dones)
-    assert D.masks.shape[0] == env.num_env
+    assert D.masks.shape[0] == len(env)
     assert np.allclose(D.masks, D.batch_masks)
-    assert D.validity_masks.shape[0] == env.num_env
+    assert D.validity_masks.shape[0] == len(env)
     assert np.allclose(D.validity_masks, D.batch_validity_masks)
 
     
@@ -130,17 +130,17 @@ def test_rolling_segment_runner(env_id, num_env, init_seed, mode, T):
     agent = RandomAgent(None, env, None)
     runner = RollingSegmentRunner()
     D = runner(agent, env, T)
-    assert sum(D.num_traj) >= env.num_env
-    assert D.observations.shape[0] >= env.num_env
+    assert sum(D.num_traj) >= len(env)
+    assert D.observations.shape[0] >= len(env)
     assert D.batch_observations.shape[:2] == (num_env, T)
     assert D.last_observations.shape[0] == sum(D.num_traj)
-    assert D.actions.shape[0] >= env.num_env
+    assert D.actions.shape[0] >= len(env)
     assert D.batch_actions.shape[:2] == (num_env, T)
-    assert D.rewards.shape[0] >= env.num_env
+    assert D.rewards.shape[0] >= len(env)
     assert D.batch_rewards.shape[:2] == (num_env, T)
-    assert D.dones.shape[0] >= env.num_env
+    assert D.dones.shape[0] >= len(env)
     assert D.batch_dones.shape[:2] == (num_env, T)
-    assert D.masks.shape[0] >= env.num_env
+    assert D.masks.shape[0] >= len(env)
     assert D.batch_masks.shape[:2] == (num_env, T)
-    assert D.validity_masks.shape[0] >= env.num_env
+    assert D.validity_masks.shape[0] >= len(env)
     assert D.batch_validity_masks.shape[:2] == (num_env, T)

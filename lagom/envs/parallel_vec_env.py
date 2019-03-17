@@ -44,6 +44,8 @@ def worker(master_conn, worker_conn, make_env):
             break
         elif cmd == 'env_info':
             worker_conn.send([env.observation_space, env.action_space, env.reward_range, env.spec])
+        elif cmd == 'get_env':
+            worker_conn.send(env)
 
 
 class ParallelVecEnv(VecEnv):
@@ -98,7 +100,6 @@ class ParallelVecEnv(VecEnv):
         self.waiting = False  # If True, then workers are still working
         
     def step_async(self, actions):
-        assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
         for master_conn, action in zip(self.master_conns, actions):
             master_conn.send(['step', action])
         self.waiting = True
@@ -133,3 +134,11 @@ class ParallelVecEnv(VecEnv):
         [master_conn.close() for master_conn in self.master_conns]
         [process.join() for process in self.list_process]
         self.closed = True
+        
+    def __getitem__(self, index):
+        self.master_conns[index].send(['get_env', None])
+        return self.master_conns[index].recv()
+    
+    def __del__(self):
+        if not self.closed:
+            self.close()

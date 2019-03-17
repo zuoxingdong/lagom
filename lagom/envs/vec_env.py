@@ -42,7 +42,6 @@ class VecEnv(ABC):
     
     def __init__(self, list_make_env, observation_space, action_space, reward_range, spec):
         self.list_make_env = list_make_env
-        self.num_env = len(self.list_make_env)
         self.observation_space = observation_space
         self.action_space = action_space
         self.reward_range = reward_range
@@ -90,7 +89,7 @@ class VecEnv(ABC):
         
         See docstrings in :meth:`step_async` and :meth:`step_wait` for more details. 
         """
-        assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
+        assert len(actions) == len(self), f'expected length {len(self)}, got {len(actions)}'
         # Send actions to all environments asynchronously
         self.step_async(actions)
         
@@ -199,8 +198,15 @@ class VecEnv(ABC):
         """
         return self
     
+    def __len__(self):
+        return len(self.list_make_env)
+    
+    @abstractmethod
+    def __getitem__(self, index):
+        pass
+    
     def __repr__(self):
-        return f'<{self.__class__.__name__}: {self.num_env}, {self.spec.id}>'
+        return f'<{self.__class__.__name__}: {len(self)}, {self.spec.id}>'
 
     
 class VecEnvWrapper(VecEnv):
@@ -242,6 +248,12 @@ class VecEnvWrapper(VecEnv):
     @property
     def unwrapped(self):
         return self.venv.unwrapped
+    
+    def __len__(self):
+        return len(self.venv)
+    
+    def __getitem__(self, index):
+        return self.venv[index]
     
     def __repr__(self):
         return f'<{self.__class__.__name__}, {self.venv}>'
