@@ -39,7 +39,6 @@ class SerialVecEnv(VecEnv):
                          spec=self.list_env[0].spec)
         
     def step_async(self, actions):
-        assert len(actions) == self.num_env, f'expected length {self.num_env}, got {len(actions)}'
         self.actions = actions  # Record as current actions
         
     def step_wait(self):
@@ -72,3 +71,6 @@ class SerialVecEnv(VecEnv):
     
     def close_extras(self):
         return [env.close() for env in self.list_env]
+    
+    def __getitem__(self, index):
+        return self.list_env[index]
