@@ -10,4 +10,3 @@ from .engine import BaseEngine
 from .es import BaseES
 from .es import CMAES
 from .es import CEM
-from .es import OpenAIES
