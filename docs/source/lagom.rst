@@ -27,3 +27,6 @@ Evolution Strategies
     
 .. autoclass:: CMAES
     :members:
+    
+.. autoclass:: CEM
+    :members:
