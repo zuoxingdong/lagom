@@ -11,7 +11,7 @@ class EpisodeRunner(BaseRunner):
         assert isinstance(env, VecEnv)
         D = BatchHistory(env)
         
-        dones = [False for _ in range(env.num_env)]  # for RNN
+        dones = [False for _ in range(len(env))]  # for RNN
         
         observations = env.reset()
         if agent.is_recurrent:

@@ -6,7 +6,7 @@ import numpy as np
 class BatchHistory(object):
     def __init__(self, env):
         self.env = env
-        self.n = self.env.num_env
+        self.n = len(env)
         
         self.s = [[[]] for _ in range(self.n)]
         self.a = [[[]] for _ in range(self.n)]
