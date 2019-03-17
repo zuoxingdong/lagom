@@ -20,6 +20,7 @@ from lagom.envs import wrap_atari
 from lagom.envs.wrappers import get_wrapper
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import ClipReward
+from lagom.envs.wrappers import SignClipReward
 from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
@@ -202,6 +203,23 @@ def test_clip_reward(env_id):
 
     assert abs(wrapped_reward) < abs(reward)
     assert wrapped_reward == -0.0005 or wrapped_reward == 0.0002
+    
+
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'MountainCar-v0', 
+                                    'Pong-v0', 'SpaceInvaders-v0'])
+def test_sign_clip_reward(env_id):
+    env = gym.make(env_id)
+    wrapped_env = SignClipReward(env)
+    
+    env.reset()
+    wrapped_env.reset()
+    
+    for _ in range(1000):
+        action = env.action_space.sample()
+        _, wrapped_reward, done, _ = wrapped_env.step(action)
+        assert wrapped_reward in [-1.0, 0.0, 1.0]
+        if done:
+            break
     
     
 @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])

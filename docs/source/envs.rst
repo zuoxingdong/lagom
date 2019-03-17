@@ -42,6 +42,9 @@ Wrappers
 .. autoclass:: ClipReward
     :members:
     
+.. autoclass:: SignClipReward
+    :members:
+    
 .. autoclass:: FlattenObservation
     :members:
     
