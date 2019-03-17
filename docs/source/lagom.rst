@@ -30,3 +30,6 @@ Evolution Strategies
     
 .. autoclass:: CEM
     :members:
+    
+.. autoclass:: OpenAIES
+    :members:
