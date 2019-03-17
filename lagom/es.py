@@ -1,6 +1,12 @@
 from abc import ABC
 from abc import abstractmethod
 
+from collections import namedtuple
+
+import numpy as np
+
+from lagom.transform import LinearSchedule
+
 
 class BaseES(ABC):
     r"""Base class for all evolution strategies. 
@@ -109,3 +115,61 @@ class CMAES(BaseES):
     @property
     def result(self):
         return self.es.result
+
+    
+class CEM(BaseES):
+    def __init__(self, 
+                 x0, 
+                 sigma0, 
+                 opts=None):
+        self.x0 = x0
+        self.sigma0 = sigma0
+        self.popsize = opts['popsize']
+        self.elite_ratio = opts['elite_ratio']
+        self.elite_size = max(1, int(self.elite_ratio*self.popsize))
+        
+        self.seed = opts['seed'] if 'seed' in opts else np.random.randint(1, 2**32)
+        self.np_random = np.random.RandomState(self.seed)
+        
+        self.noise_scheduler = LinearSchedule(*opts['noise_scheduler_args'])
+        self.iter = 0
+        
+        # initialize mean and std
+        self.x = np.asarray(x0).astype(np.float32)
+        self.shape = self.x.shape
+        if np.isscalar(sigma0):
+            self.sigma = np.full(self.shape, sigma0, dtype=np.float32)
+        else:
+            self.sigma = np.asarray(sigma0).astype(np.float32)
+            
+        self.xbest = None
+        self.fbest = None
+
+    def ask(self):
+        extra_noise = self.noise_scheduler(self.iter)
+        sigma = np.sqrt(self.sigma**2 + extra_noise)
+        solutions = self.np_random.normal(self.x, sigma, size=(self.popsize,) + self.shape)
+        return solutions
+        
+    def tell(self, solutions, function_values):
+        solutions = np.asarray(solutions).astype(np.float32)
+        elite_idx = np.argsort(function_values)[:self.elite_size]
+        elite = solutions[elite_idx]
+        
+        self.x = elite.mean(axis=0)
+        self.sigma = elite.std(axis=0)
+        self.iter += 1
+        
+        self.xbest = elite[0]
+        self.fbest = function_values[elite_idx[0]]
+        
+    @property
+    def result(self):
+        CEMResult = namedtuple('CEMResult', 
+                               ['xbest', 'fbest', 'evals_best', 'evaluations', 'iterations', 'xfavorite', 'stds'],
+                               defaults=[None]*7)
+        result = CEMResult(xbest=self.xbest, fbest=self.fbest, iterations=self.iter, xfavorite=self.x, stds=self.sigma)
+        return result
+    
+    def __repr__(self):
+        return f'CEM in dimension {len(self.x0)} (seed={self.seed})'
