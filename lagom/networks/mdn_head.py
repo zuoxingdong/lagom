@@ -4,46 +4,39 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from lagom.networks import Module
+from lagom.networks import ortho_init
+
 from torch.distributions import Categorical
 from torch.distributions import Normal
 
-from lagom.networks import BaseNetwork
-from lagom.networks import make_fc
-from lagom.networks import ortho_init
 
-
-class MDN(BaseNetwork):
-    def make_params(self, config):
-        self.feature_layers = make_fc(1, [15, 15])
+class MDNHead(Module):
+    def __init__(self, in_features, out_features, num_density, device, **kwargs):
+        super().__init__(**kwargs)
         
-        self.pi_head = nn.Linear(15, config['num_density']*1)
-        self.mean_head = nn.Linear(15, config['num_density']*1)
-        self.logvar_head = nn.Linear(15, config['num_density']*1)
+        self.in_features = in_features
+        self.out_features = out_features
+        self.num_density = num_density
+        self.device = device
         
-    def init_params(self, config):
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-            
+        self.pi_head = nn.Linear(in_features, out_features*num_density)
         ortho_init(self.pi_head, weight_scale=0.01, constant_bias=0.0)
+        self.mean_head = nn.Linear(in_features, out_features*num_density)
         ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
+        self.logvar_head = nn.Linear(in_features, out_features*num_density)
         ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
         
-    def reset(self, config, **kwargs):
-        pass
+        self.to(self.device)
         
     def forward(self, x):
-        for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
-            
-        # shape [N, K, D]
-        logit_pi = self.pi_head(x).view(-1, self.config['num_density'], 1)
-        mean = self.mean_head(x).view(-1, self.config['num_density'], 1)
-        logvar = self.logvar_head(x).view(-1, self.config['num_density'], 1)
+        logit_pi = self.pi_head(x).view(-1, self.num_density, self.out_features)
+        mean = self.mean_head(x).view(-1, self.num_density, self.out_features)
+        logvar = self.logvar_head(x).view(-1, self.num_density, self.out_features)
         std = torch.exp(0.5*logvar)
-        
         return logit_pi, mean, std
-    
-    def mdn_loss(self, logit_pi, mean, std, target):
+        
+    def loss(self, logit_pi, mean, std, target):
         r"""Calculate the MDN loss function. 
         
         The loss function (negative log-likelihood) is defined by:
@@ -124,8 +117,7 @@ class MDN(BaseNetwork):
         mean = mean.permute(0, 2, 1).view(-1, K)
         std = std.permute(0, 2, 1).view(-1, K)
         
-        dist = Categorical(pi)
-        pi_samples = dist.sample()
+        pi_samples = Categorical(pi).sample()
         
         mean = mean[torch.arange(N*D), pi_samples]
         std = std[torch.arange(N*D), pi_samples]
