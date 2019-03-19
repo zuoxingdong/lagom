@@ -25,6 +25,9 @@ lagom.networks: Networks
 
 .. autofunction:: make_rnncell
 
+.. autoclass:: MDNHead
+    :members:
+
 RL components
 -----------------------------    
 .. autoclass:: CategoricalHead
