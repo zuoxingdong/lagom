@@ -9,6 +9,6 @@ from .serial_vec_env import SerialVecEnv
 from .parallel_vec_env import ParallelVecEnv
 
 from .atari import AtariPreprocessing
-from .atari import wrap_atari
+from .atari import make_atari
 
 from .make_vec_env import make_vec_env
