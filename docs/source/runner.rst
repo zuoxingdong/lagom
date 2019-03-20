@@ -3,15 +3,11 @@ lagom.runner: Runner
 .. automodule:: lagom.runner
 .. currentmodule:: lagom.runner
 
-.. autoclass:: BatchHistory
-    :members:
-
 .. autoclass:: BaseRunner
+    :members:
+    
+.. autoclass:: Trajectory
     :members:
     
 .. autoclass:: EpisodeRunner
     :members:
-    
-.. autoclass:: RollingSegmentRunner
-    :members:
-
