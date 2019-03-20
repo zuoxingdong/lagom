@@ -15,3 +15,5 @@ from .make_blocks import make_rnncell
 from .categorical_head import CategoricalHead
 from .diag_gaussian_head import DiagGaussianHead
 from .state_value_head import StateValueHead
+
+from .mdn_head import MDNHead
