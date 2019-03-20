@@ -6,8 +6,27 @@ from gym import Wrapper
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
 from .wrappers import ScaleImageObservation
-from .wrappers import SignClipReward
 from .wrappers import FrameStack
+
+
+class TimeLimit(Wrapper):
+    def __init__(self, env, max_episode_steps):
+        super().__init__(env)
+        self._max_episode_steps = max_episode_steps
+        self.env.spec.max_episode_steps = max_episode_steps
+        self._elapsed_steps = 0
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        self._elapsed_steps += 1
+        if self._elapsed_steps >= self._max_episode_steps:
+            done = True
+            info['TimeLimit.truncated'] = True
+        return observation, reward, done, info
+
+    def reset(self, **kwargs):
+        self._elapsed_steps = 0
+        return self.env.reset(**kwargs)
 
 
 class AtariPreprocessing(Wrapper):
@@ -110,13 +129,31 @@ class AtariPreprocessing(Wrapper):
         return self.obs_buffer[0]
 
 
-def wrap_atari(env):
-    assert 'NoFrameskip-v4' in env.spec.id
+def make_atari(name, sticky_action=True, max_episode_steps=None):
+    r"""Create Atari 2600 environment and wrapped it with preprocessing guided by 
+    
+    Machado et al. (2018), "Revisiting the Arcade Learning Environment: 
+    Evaluation Protocols and Open Problems for General Agents".
+    
+    Args:
+        name (str): name of Atari 2600
+        sticky_action (bool): whether to use sticky actions, i.e. 25% probability to persist
+            the action when a new command is sent to the ALE, introducing a mild stochasticity.
+        max_episode_steps (int): user-defined episode length. 
+    """
+    assert name is not None
+    ver = 'v0' if sticky_action else 'v4'
+    env_id = f'{name}NoFrameskip-{ver}'
+    env = gym.make(env_id)
+    env = env.env  # strip out gym TimeLimit
+    if max_episode_steps is not None:
+        env = TimeLimit(env, max_episode_steps)
+    else:
+        env = TimeLimit(env, env.spec.max_episode_steps)
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)
     env = ScaleImageObservation(env)
-    env = SignClipReward(env)
     env = FrameStack(env, 4)
     
     return env

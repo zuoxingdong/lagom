@@ -25,7 +25,7 @@ lagom.envs
 .. autoclass:: AtariPreprocessing
     :members:
 
-.. autofunction:: wrap_atari
+.. autofunction:: make_atari
 
 .. autofunction:: make_vec_env
 
