@@ -16,7 +16,7 @@ from lagom.envs import unflatten
 from lagom.envs import SerialVecEnv
 from lagom.envs import ParallelVecEnv
 from lagom.envs import make_vec_env
-from lagom.envs import wrap_atari
+from lagom.envs import make_atari
 from lagom.envs.wrappers import get_wrapper
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import ClipReward
@@ -82,11 +82,8 @@ def test_space_utils():
     
     
 @pytest.mark.parametrize('env_id', ['Pong', 'Breakout', 'SpaceInvaders'])
-def test_wrap_atari(env_id):
-    with pytest.raises(AssertionError):
-        wrap_atari(gym.make(env_id + '-v0'))
-    
-    env = wrap_atari(gym.make(env_id + 'NoFrameskip-v4'))
+def test_make_atari(env_id):
+    env = make_atari(env_id)
     assert env.observation_space.shape == (84, 84, 4)
     assert np.allclose(env.observation_space.low, 0.0)
     assert np.allclose(env.observation_space.high, 1.0)
@@ -96,7 +93,6 @@ def test_wrap_atari(env_id):
         assert obs.shape == (84, 84, 4)
         assert obs.max() <= 1.0
         assert obs.min() >= 0.0
-        assert reward >= -1.0 and reward <= 1.0
         if done:
             break
 
