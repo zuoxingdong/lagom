@@ -28,10 +28,10 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/default_', 
+     'log.dir': 'logs/default', 
      'log.interval': 10, 
      
-     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
+     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
      'env.standardize': True,  # use VecStandardize
      'env.time_aware_obs': False,  # append time step to observation
      
@@ -59,7 +59,7 @@ config = Config(
      'agent.std_range': None,  # bounded std: (min, max)
      'agent.beta': None,  # beta-sigmoidal
      
-     'train.timestep': 1e6,  # total number of training (environmental) timesteps
+     'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 2000,  # number of timesteps per iteration
      
     })
