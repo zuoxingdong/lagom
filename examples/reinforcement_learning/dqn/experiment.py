@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from itertools import count
 from collections import deque
@@ -29,7 +30,7 @@ config = Config(
      'log.dir': 'logs/default', 
      'log.interval': 10000, 
      
-     'env.id': Grid(['Pong']), 
+     'env.id': Grid(['Pong']), # ['Breakout', 'SpaceInvaders']
      'env.max_episode_steps': 27000,
      
      'agent.gamma': 0.99,
@@ -41,12 +42,12 @@ config = Config(
      'agent.eps_eval': 0.001,  # eps fixed during evaluation
      'agent.eps_decay_period': 250000,  # length of the epsilon decay schedule
      'agent.lr': 2.5e-4,
-     'agent.max_grad_norm': None,  # grad clipping by norm
+     'agent.max_grad_norm': 10.0,  # grad clipping by norm
      
      'replay.capacity': 1000000,
      'replay.batch_size': 32,
      
-     'train.iter': 200,
+     'train.iter': 100,#200,
      'train.timestep': 250000,  # number of steps per iteration
      'eval.timestep': 125000
      
@@ -94,5 +95,5 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[1770966829],#, 1500925526, 2054191100], 
-                   num_worker=100)
+                   seeds=[4153361530], #, 3503522377, 2876994566, 172236777, 3949341511, 849059707], 
+                   num_worker=os.cpu_count())

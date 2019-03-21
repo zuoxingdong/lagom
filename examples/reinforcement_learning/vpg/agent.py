@@ -99,7 +99,7 @@ class Agent(BaseAgent):
         return out
     
     def learn(self, D, **kwargs):
-        # Compute all metrics
+        # Compute all metrics, D: list of Trajectory
         logprobs = [torch.cat(traj.get_all_info('action_logprob')) for traj in D]
         entropies = [torch.cat(traj.get_all_info('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_all_info('V')) for traj in D]
