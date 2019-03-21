@@ -1,6 +1,6 @@
-ID: 0
+ID: 13
 cuda: true
-log.dir: logs/default
+log.dir: logs/agent.std0
 log.interval: 10
 env.standardize: true
 env.time_aware_obs: false
@@ -22,10 +22,10 @@ agent.value_coef: 0.5
 agent.fit_terminal_value: false
 agent.terminal_value_coef: null
 env.clip_action: true
-agent.std0: 0.5
 agent.std_style: exp
 agent.std_range: null
 agent.beta: null
-train.timestep: 1000000.0
+train.timestep: 1000000
 train.timestep_per_iter: 2000
-env.id: HalfCheetah-v2
+env.id: Ant-v2
+agent.std0: 0.4

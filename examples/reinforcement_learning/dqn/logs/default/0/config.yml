@@ -12,10 +12,10 @@ agent.eps_train: 0.01
 agent.eps_eval: 0.001
 agent.eps_decay_period: 250000
 agent.lr: 0.00025
-agent.max_grad_norm: null
+agent.max_grad_norm: 10.0
 replay.capacity: 1000000
 replay.batch_size: 32
-train.iter: 200
+train.iter: 100
 train.timestep: 250000
 eval.timestep: 125000
 env.id: Pong

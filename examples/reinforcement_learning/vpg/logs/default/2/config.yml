@@ -1,4 +1,4 @@
-ID: 0
+ID: 2
 cuda: true
 log.dir: logs/default
 log.interval: 10
@@ -28,4 +28,4 @@ agent.std_range: null
 agent.beta: null
 train.timestep: 1000000.0
 train.timestep_per_iter: 2000
-env.id: HalfCheetah-v2
+env.id: Ant-v2
