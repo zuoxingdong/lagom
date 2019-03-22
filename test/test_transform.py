@@ -74,6 +74,7 @@ def test_linear_schedule():
     assert scheduler(2) == 1.5
     assert scheduler(3) == 2.0
     assert all([scheduler(i) == 2.0] for i in [4, 5, 6, 7, 8])
+    assert all([scheduler(i) == scheduler.get_current() for i in range(10)])
 
     # increasing: with warmup start
     scheduler = LinearSchedule(initial=0.5, final=2.0, N=3, start=2)
@@ -82,6 +83,7 @@ def test_linear_schedule():
     assert scheduler(4) == 1.5
     assert scheduler(5) == 2.0
     assert all([scheduler(i) == 2.0 for i in [6, 7, 8]])
+    assert all([scheduler(i) == scheduler.get_current() for i in range(10)])
 
     # decreasing: without warmup start
     scheduler = LinearSchedule(initial=1.0, final=0.1, N=3, start=0)
@@ -90,6 +92,7 @@ def test_linear_schedule():
     assert scheduler(2) == 0.4
     assert scheduler(3) == 0.1
     assert all([scheduler(i) == 0.1 for i in [4, 5, 6]])
+    assert all([scheduler(i) == scheduler.get_current() for i in range(10)])
 
     # decreasing: with warmup start
     scheduler = LinearSchedule(initial=1.0, final=0.1, N=3, start=2)
@@ -98,6 +101,7 @@ def test_linear_schedule():
     assert scheduler(4) == 0.4
     assert scheduler(5) == 0.1
     assert all([scheduler(i) == 0.1 for i in [6, 7, 8]])
+    assert all([scheduler(i) == scheduler.get_current() for i in range(10)])
 
 
 def test_rank_transform():

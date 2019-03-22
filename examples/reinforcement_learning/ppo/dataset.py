@@ -1,33 +1,28 @@
+import numpy as np
+
 from torch.utils import data
 
 
 class Dataset(data.Dataset):
     def __init__(self, D, logprobs, entropies, Vs, Qs, As):
-        self.D = D
-        self.observations = D.batch_observations
-        self.actions = D.batch_actions
-        self.logprobs = logprobs.detach().cpu().numpy()
-        self.entropies = entropies.detach().cpu().numpy()
-        self.Vs = Vs.detach().cpu().numpy()
-        self.Qs = Qs.detach().cpu().numpy()
-        self.As = As.detach().cpu().numpy()
+        self.observations = np.concatenate([np.concatenate(traj.observations[:-1], 0) for traj in D], 0).astype(np.float32)
+        self.actions = np.concatenate([traj.numpy_actions for traj in D], 0)
+        tensor_to_numpy = lambda x: x.detach().cpu().numpy()
+        self.logprobs = tensor_to_numpy(logprobs)
+        self.entropies = tensor_to_numpy(entropies)
+        self.Vs = tensor_to_numpy(Vs)
+        self.Qs = tensor_to_numpy(Qs)
+        self.As = tensor_to_numpy(As)
         
-        # rolling batch [N, T, ...] to [N*T, ...]
-        self.observations = self.observations.reshape([len(self), *D.env.observation_space.shape])
-        self.actions = self.actions.reshape([len(self), *D.env.action_space.shape])
-        self.logprobs = self.logprobs.flatten()
-        self.entropies = self.entropies.flatten()
-        self.Vs = self.Vs.flatten()
-        self.Qs = self.Qs.flatten()
-        self.As = self.As.flatten()
-        
-        assert self.observations.shape[0] == len(self)
         assert self.actions.shape[0] == len(self)
         assert all([item.shape == (len(self),) for item in [self.logprobs, self.entropies, 
                                                             self.Vs, self.Qs, self.As]])
 
     def __len__(self):
-        return self.D.N*self.D.T
+        return self.observations.shape[0]
         
     def __getitem__(self, i):
-        return self.observations[i], self.actions[i], self.logprobs[i], self.entropies[i], self.Vs[i], self.Qs[i], self.As[i]
+        batch = (self.observations[i], self.actions[i], self.logprobs[i], 
+                 self.entropies[i], self.Vs[i], self.Qs[i], self.As[i])
+        return batch
+    
