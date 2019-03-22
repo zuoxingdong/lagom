@@ -33,6 +33,8 @@ class LinearSchedule(object):
         self.final = final
         self.N = N
         self.start = start
+        
+        self.x = None
     
     def __call__(self, x):
         r"""Returns the current value of the scheduling. 
@@ -48,10 +50,14 @@ class LinearSchedule(object):
         assert isinstance(x, int) and x >= 0, f'expected as a non-negative integer, got {x}'
         
         if x == 0 or x < self.start:
-            return self.initial
+            self.x = self.initial
         elif x >= self.start + self.N:
-            return self.final
+            self.x = self.final
         else:  # scheduling over N steps
             delta = self.final - self.initial
             ratio = (x - self.start)/self.N
-            return self.initial + ratio*delta
+            self.x = self.initial + ratio*delta
+        return self.x
+    
+    def get_current(self):
+        return self.x

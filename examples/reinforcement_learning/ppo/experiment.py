@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from itertools import count
 
@@ -27,10 +28,10 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/default', 
+     'log.dir': 'default', 
      'log.interval': 10, 
      
-     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2']), 
+     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
      'env.standardize': True,  # use VecStandardize
      'env.time_aware_obs': False,  # append time step to observation
      
@@ -44,13 +45,10 @@ config = Config(
      'agent.min_lr': 5e-5,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.97,
-     'agent.standardize_Q': False,  # standardize discounted returns
      'agent.standardize_adv': True,  # standardize advantage estimates
      'agent.max_grad_norm': 0.5,  # grad clipping by norm
      'agent.entropy_coef': 0.0,  # PPO: no entropy bobus
      'agent.value_coef': 0.5,
-     'agent.fit_terminal_value': False,
-     'agent.terminal_value_coef': None,
      'agent.clip_range': 0.2,  # PPO epsilon of ratio clipping
      'agent.target_kl': 0.015,  # appropriate KL between new and old policies after an update, for early stopping (Usually small, e.g. 0.01, 0.05)
      
@@ -61,9 +59,8 @@ config = Config(
      'agent.std_range': None,  # bounded std: (min, max)
      'agent.beta': None,  # beta-sigmoidal
      
-     'train.timestep': 1e6,  # either 'train.iter' or 'train.timestep'
-     'train.N': 2,  # num envs/num of traj per iteration
-     'train.ratio_T': 1.0,  # percentage of max allowed horizon
+     'train.timestep': int(1e6),  # total number of training (environmental) timesteps
+     'train.timestep_per_iter': 2000,  # number of timesteps per iteration
      'train.batch_size': 256,
      'train.num_epochs': 80
     })
@@ -80,7 +77,7 @@ def run(config, seed, device):
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
-    env = make_vec_env(make_env, config['train.N'], seed, 'serial')
+    env = make_vec_env(make_env, 1, seed, 'serial')  # single environment
     env = VecMonitor(env)
     if config['env.standardize']:  # running averages of observation and reward
         env = VecStandardizeObservation(env, clip=10.)
@@ -91,9 +88,7 @@ def run(config, seed, device):
     engine = Engine(config, agent=agent, env=env, runner=runner)
     train_logs = []
     for i in count():
-        if 'train.iter' in config and i >= config['train.iter']:  # enough iterations
-            break
-        elif 'train.timestep' in config and agent.total_T >= config['train.timestep']:  # enough timesteps
+        if agent.total_timestep >= config['train.timestep']:
             break
         train_logger = engine.train(i)
         train_logs.append(train_logger.logs)
@@ -107,4 +102,4 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=100)
+                   num_worker=os.cpu_count())
