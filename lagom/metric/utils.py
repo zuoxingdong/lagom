@@ -4,10 +4,12 @@ import torch
 
 def _wrap_Vs(Vs):
     if torch.is_tensor(Vs):
-        Vs = Vs.squeeze(0).detach().cpu().numpy()
+        Vs = Vs.squeeze().detach().cpu().numpy()
     else:
         Vs = np.asarray(Vs).squeeze()  # numpy: remove all single axes
-    assert Vs.ndim == 1
+    if Vs.ndim == 0:
+        Vs = np.expand_dims(Vs, 0)
+    assert Vs.ndim == 1, f'expected ndim=1, got {Vs.ndim}'
     return Vs
 
 
