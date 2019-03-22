@@ -20,8 +20,8 @@ from lagom.networks import DiagGaussianHead
 from lagom.networks import StateValueHead
 from lagom.networks import linear_lr_scheduler
 
-from lagom.metric import get_bootstrapped_returns
-from lagom.metric import get_gae
+from lagom.metric import bootstrapped_returns
+from lagom.metric import gae
 
 from lagom.transform import explained_variance as ev
 
@@ -72,14 +72,10 @@ class Agent(BaseAgent):
                                                 **kwargs)
         self.V_head = StateValueHead(feature_dim, device, **kwargs)
         
-        self.total_T = 0
+        self.total_timestep = 0
         
         self.optimizer = optim.Adam(self.parameters(), lr=config['agent.lr'])
-        if 'train.timestep' in config:
-            N = config['train.timestep']
-        elif 'train.iter' in config:
-            N = config['train.iter']
-        self.lr_scheduler = linear_lr_scheduler(self.optimizer, N, config['agent.min_lr'])
+        self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], config['agent.min_lr'])
         
     def choose_action(self, obs, **kwargs):
         if not torch.is_tensor(obs):
@@ -102,8 +98,7 @@ class Agent(BaseAgent):
         out['V'] = V
         
         # sanity check for NaN
-        if torch.any(torch.isnan(action)):
-            raise ValueError('NaN!')
+        assert not torch.any(torch.isnan(action))
         return out
     
     def learn_one_update(self, data):
@@ -111,41 +106,34 @@ class Agent(BaseAgent):
         observations, old_actions, old_logprobs, old_entropies, old_Vs, old_Qs, old_As = data
         # TODO: independent critic
         out = self.choose_action(observations)
-        logprobs = out['action_dist'].log_prob(old_actions).squeeze(-1)
-        entropies = out['entropy'].squeeze(-1)
-        Vs = out['V'].squeeze(-1)
+        logprobs = out['action_dist'].log_prob(old_actions).squeeze()
+        entropies = out['entropy'].squeeze()
+        Vs = out['V'].squeeze()
         
         ratio = torch.exp(logprobs - old_logprobs)
         eps = self.config['agent.clip_range']
         policy_loss = -torch.min(ratio*old_As, 
                                  torch.clamp(ratio, 1.0 - eps, 1.0 + eps)*old_As)
-        policy_loss = policy_loss.mean()
         entropy_loss = -entropies
-        entropy_loss = entropy_loss.mean()
         clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
         value_loss = torch.max(F.mse_loss(Vs, old_Qs, reduction='none'), 
                                F.mse_loss(clipped_Vs, old_Qs, reduction='none'))
-        value_loss = value_loss.mean()
-        
         loss = policy_loss + self.config['agent.value_coef']*value_loss + self.config['agent.entropy_coef']*entropy_loss
+        loss = loss.mean()
         
         # TODO: independent critic
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-        if self.config['agent.use_lr_scheduler']:
-            if 'train.timestep' in self.config:
-                self.lr_scheduler.step(self.total_T)
-            elif 'train.iter' in self.config:
-                self.lr_scheduler.step()
+        self.lr_scheduler.step(self.total_timestep)
         self.optimizer.step()
         
         out = {}
         out['loss'] = loss.item()
-        out['policy_loss'] = policy_loss.item()
-        out['entropy_loss'] = entropy_loss.item()
-        out['policy_entropy'] = -entropy_loss.item()
-        out['value_loss'] = value_loss.item()
+        out['policy_loss'] = policy_loss.mean().item()
+        out['entropy_loss'] = entropy_loss.mean().item()
+        out['policy_entropy'] = -entropy_loss.mean().item()
+        out['value_loss'] = value_loss.mean().item()
         out['explained_variance'] = ev(y_true=old_Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
         approx_kl = torch.mean(old_logprobs - logprobs)
         out['approx_kl'] = approx_kl.item()
@@ -154,26 +142,26 @@ class Agent(BaseAgent):
         return out
         
     def learn(self, D, **kwargs):
-        # mask-out values when its environment already terminated for episodes
-        validity_masks = torch.from_numpy(D.batch_validity_masks).to(self.device)
-        logprobs = torch.stack(D.get_batch_info('action_logprob'), 1).squeeze(-1)
-        logprobs *= validity_masks
-        entropies = torch.stack(D.get_batch_info('entropy'), 1).squeeze(-1)
-        entropies *= validity_masks
-        Vs = torch.stack(D.get_batch_info('V'), 1).squeeze(-1)
-        Vs *= validity_masks
-        with torch.no_grad():
-            # TODO: independent critic 
-            last_Vs = self.V_head(self.feature_network(torch.from_numpy(D.last_observations).to(self.device))).squeeze(-1)
-        Qs = get_bootstrapped_returns(D, last_Vs, self.config['agent.gamma'])
-        Qs = torch.from_numpy(Qs.copy()).to(self.device)
-        if self.config['agent.standardize_Q']:
-            Qs = (Qs - Qs.mean(1, keepdim=True))/(Qs.std(1, keepdim=True) + 1e-8)
-        As = get_gae(D, Vs, last_Vs, self.config['agent.gamma'], self.config['agent.gae_lambda'])
-        As = torch.from_numpy(As.copy()).to(self.device)
+        # Compute all metrics, D: list of Trajectory
+        logprobs = [torch.cat(traj.get_all_info('action_logprob')) for traj in D]
+        entropies = [torch.cat(traj.get_all_info('entropy')) for traj in D]
+        Vs = [torch.cat(traj.get_all_info('V')) for traj in D]
+        
+        last_observations = np.concatenate([traj.observations[-1] for traj in D], 0).astype(np.float32)
+        with torch.no_grad():  # TODO: independent critic 
+            last_Vs = self.V_head(self.feature_network(torch.from_numpy(last_observations).to(self.device))).squeeze(-1)
+        Qs = [bootstrapped_returns(self.config['agent.gamma'], traj, last_V) 
+                  for traj, last_V in zip(D, last_Vs)]
+        As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj, V, last_V) 
+                  for traj, V, last_V in zip(D, Vs, last_Vs)]
+        
+        # Metrics -> Tensor, device
+        logprobs, entropies, Vs = map(lambda x: torch.cat(x).squeeze(), [logprobs, entropies, Vs])
+        Qs, As = map(lambda x: torch.from_numpy(np.concatenate(x).copy()).to(self.device), [Qs, As])
         if self.config['agent.standardize_adv']:
-            As = (As - As.mean(1, keepdim=True))/(As.std(1, keepdim=True) + 1e-8)
-        assert all([x.ndimension() == 2 for x in [logprobs, entropies, Vs, Qs, As]])
+            As = (As - As.mean())/(As.std() + 1e-8)
+        
+        assert all([x.ndimension() == 1 for x in [logprobs, entropies, Vs, Qs, As]])
         
         dataset = Dataset(D, logprobs, entropies, Vs, Qs, As)
         kwargs = {'num_workers': 1, 'pin_memory': True} if self.config['cuda'] else {}
@@ -185,7 +173,7 @@ class Agent(BaseAgent):
             if approx_kl > self.config['agent.target_kl']:
                 break
         
-        self.total_T += sum([sum(Ts) for Ts in D.Ts])
+        self.total_timestep += sum([len(traj) for traj in D])
         out = {}
         if self.config['agent.use_lr_scheduler']:
             out['current_lr'] = self.lr_scheduler.get_lr()
