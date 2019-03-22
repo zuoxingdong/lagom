@@ -28,7 +28,7 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/default_', 
+     'log.dir': 'default', 
      'log.interval': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
