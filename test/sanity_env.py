@@ -10,7 +10,7 @@ class SanityEnv(gym.Env):
         
         self.reward_range = (0.1, float('inf'))
         self.observation_space = Box(10, 60, shape=(), dtype=np.float32)
-        self.action_space = Box(1, 6, shape=(), dtype=np.float32)
+        self.action_space = Box(1, 6, shape=(1,), dtype=np.float32)
         self.spec = gym.envs.registration.EnvSpec('Sanity-v0', max_episode_steps=self.T)
         
     def step(self, action):
