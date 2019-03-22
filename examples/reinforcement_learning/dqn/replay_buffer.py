@@ -23,6 +23,8 @@ class ReplayBuffer(object):
         return len(self.buffer)
         
     def add(self, observation, action, reward, next_observation, done):
+        # Unnormalize & convert obs to uint8 to save a lot of memory, ~8x less memory
+        observation, next_observation = map(lambda x: (x*255.).astype(np.uint8), [observation, next_observation])
         transition = (observation, action, reward, next_observation, done)
         self.buffer.append(transition)
         
@@ -50,8 +52,9 @@ class ReplayBuffer(object):
         D = zip(*D)
         observations, actions, rewards, next_observations, dones = list(map(lambda x: np.asarray(x), D))
         masks = 1. - dones
-        observations, rewards, next_observations, masks = map(lambda x: x.astype(np.float32), 
-                                                              [observations, rewards, next_observations, masks])
+        # Convert obs back to float32 and normalize by 255
+        observations, next_observations = map(lambda x: x.astype(np.float32)/255., [observations, next_observations])
+        rewards, masks = map(lambda x: x.astype(np.float32), [rewards, masks])
         D = (observations, actions, rewards, next_observations, masks)
         D = list(map(lambda x: torch.from_numpy(x).to(self.device), D))
         return D

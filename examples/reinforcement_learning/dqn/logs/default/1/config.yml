@@ -1,4 +1,4 @@
-ID: 0
+ID: 1
 cuda: true
 log.dir: logs/default
 log.interval: 10000
@@ -18,4 +18,4 @@ replay.batch_size: 32
 train.iter: 100
 train.timestep: 250000
 eval.timestep: 125000
-env.id: Pong
+env.id: SpaceInvaders
