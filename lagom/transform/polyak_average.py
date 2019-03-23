@@ -1,8 +1,8 @@
 import numpy as np
 
 
-class RunningAverage(object):
-    r"""Keep a running average of a quantity. 
+class PolyakAverage(object):
+    r"""Keep a running average of a quantity via Polyak averaging. 
     
     Compared with estimating mean, it is more sentitive to recent changes. 
     
@@ -15,7 +15,7 @@ class RunningAverage(object):
         assert alpha >= 0 and alpha <= 1
         self.alpha = alpha
         
-        self._value = None
+        self.x = None
         
     def __call__(self, x):
         r"""Update the estimate. 
@@ -24,13 +24,12 @@ class RunningAverage(object):
             x (object): additional data to update the estimation of running average. 
         """
         x = np.asarray(x, dtype=np.float32)
-        if self._value is None:
-            self._value = x
+        if self.x is None:
+            self.x = x
         else:
-            self._value = self.alpha*self._value + (1 - self.alpha)*x
-        return self.value
+            self.x = self.alpha*self.x + (1 - self.alpha)*x
+        return self.x
         
-    @property
-    def value(self):
+    def get_current(self):
         r"""Return the current running average. """
-        return self._value
+        return self.x
