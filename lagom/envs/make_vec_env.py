@@ -24,7 +24,7 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
     
     Returns
     -------
-    venv : VecEnv
+    env : VecEnv
         created vectorized environment
     
     """
