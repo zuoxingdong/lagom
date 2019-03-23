@@ -21,15 +21,15 @@ class VecStandardizeReward(VecEnvWrapper):
         unbounded explosion of reward running averages. 
         
     Args:
-        venv (VecEnv): a vectorized environment
+        env (VecEnv): a vectorized environment
         clip (float): clipping range of standardized reward, i.e. [-clip, clip]
         gamma (float): discounted factor. Note that the value 1.0 should not be used. 
         constant_std (ndarray): Constant standard deviation to standardize reward. Note that
             when it is provided, then running average will be ignored. 
     
     """
-    def __init__(self, venv, clip=10., gamma=0.99, constant_std=None):
-        super().__init__(venv)
+    def __init__(self, env, clip=10., gamma=0.99, constant_std=None):
+        super().__init__(env)
         self.clip = clip
         assert gamma > 0.0 and gamma < 1.0, 'we do not allow discounted factor as 1.0. See docstring for details. '
         self.gamma = gamma
@@ -39,10 +39,10 @@ class VecStandardizeReward(VecEnvWrapper):
         self.runningavg = RunningMeanStd()
         
         # Buffer to save discounted returns from each environment
-        self.all_returns = np.zeros(len(venv), dtype=np.float32)
+        self.all_returns = np.zeros(len(env), dtype=np.float32)
         
     def step_wait(self):
-        observations, rewards, dones, infos = self.venv.step_wait()
+        observations, rewards, dones, infos = self.env.step_wait()
         # Set discounted return buffer as zero for those episodes which terminate
         self.all_returns[dones] = 0.0
         return observations, self.process_reward(rewards), dones, infos
@@ -65,10 +65,6 @@ class VecStandardizeReward(VecEnvWrapper):
         rewards = np.clip(rewards, -self.clip, self.clip)
         
         return rewards
-    
-    @property
-    def mean(self):
-        return self.runningavg.mu
     
     @property
     def std(self):
