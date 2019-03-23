@@ -18,4 +18,4 @@ def get_wrapper(env, name):
     elif env.unwrapped is env:  # reaching underlying environment
         return None
     else:
-        return get_wrapper(env.unwrapped, name)
+        return get_wrapper(env.env, name)
