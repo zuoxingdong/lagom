@@ -14,3 +14,6 @@ from .time_aware_observation import TimeAwareObservation
 from .vec_monitor import VecMonitor
 from .vec_standardize_observation import VecStandardizeObservation
 from .vec_standardize_reward import VecStandardizeReward
+
+# TODO: remove after gym updated new TimeLimit
+from .time_limit import TimeLimit
