@@ -7,7 +7,7 @@ from lagom.transform import geometric_cumsum
 from lagom.transform import explained_variance
 from lagom.transform import LinearSchedule
 from lagom.transform import rank_transform
-from lagom.transform import RunningAverage
+from lagom.transform import PolyakAverage
 from lagom.transform import RunningMeanStd
 from lagom.transform import smooth_filter
 
@@ -114,32 +114,32 @@ def test_rank_transform():
     assert np.allclose(rank_transform([3, 14, 1], centered=False), [1, 2, 0])
 
 
-def test_running_average():
+def test_polyak_average():
     with pytest.raises(AssertionError):
-        RunningAverage(alpha=-1.0)
+        PolyakAverage(alpha=-1.0)
     with pytest.raises(AssertionError):
-        RunningAverage(alpha=1.2)
+        PolyakAverage(alpha=1.2)
         
-    f = RunningAverage(alpha=0.1)
+    f = PolyakAverage(alpha=0.1)
     x = f(0.5)
     assert np.allclose(x, 0.5)
     x = f(1.5)
     assert np.allclose(x, 1.4)
-    assert np.allclose(x, f.value)
+    assert np.allclose(x, f.get_current())
     
-    f = RunningAverage(alpha=0.1)
+    f = PolyakAverage(alpha=0.1)
     x = f(1.0)
     assert np.allclose(x, 1.0)
     x = f(2.0)
     assert np.allclose(x, 1.9)
-    assert np.allclose(x, f.value)
+    assert np.allclose(x, f.get_current())
     
-    f = RunningAverage(alpha=0.1)
+    f = PolyakAverage(alpha=0.1)
     x = f([0.5, 1.0])
     assert np.allclose(x, [0.5, 1.0])
     x = f([1.5, 2.0])
     assert np.allclose(x, [1.4, 1.9])
-    assert np.allclose(x, f.value)
+    assert np.allclose(x, f.get_current())
 
 
 def test_runningmeanstd():
