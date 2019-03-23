@@ -8,18 +8,18 @@ from lagom.envs import VecEnvWrapper
 
 class VecMonitor(VecEnvWrapper):
     r"""Record episode reward, horizon and time and report it when an episode terminates. """
-    def __init__(self, venv, deque_size=100):
-        super().__init__(venv)
+    def __init__(self, env, deque_size=100):
+        super().__init__(env)
         
         self.t0 = time()
-        self.episode_rewards = np.zeros(len(venv), dtype=np.float32)
-        self.episode_horizons = np.zeros(len(venv), dtype=np.int32)
+        self.episode_rewards = np.zeros(len(env), dtype=np.float32)
+        self.episode_horizons = np.zeros(len(env), dtype=np.int32)
         
         self.return_queue = deque(maxlen=deque_size)
         self.horizon_queue = deque(maxlen=deque_size)
         
     def step_wait(self):
-        observations, rewards, dones, infos = self.venv.step_wait()
+        observations, rewards, dones, infos = self.env.step_wait()
         
         self.episode_rewards += rewards
         self.episode_horizons += 1
@@ -37,7 +37,7 @@ class VecMonitor(VecEnvWrapper):
         return observations, rewards, dones, infos
         
     def reset(self):
-        observations = self.venv.reset()
+        observations = self.env.reset()
         
         self.episode_rewards.fill(0.0)
         self.episode_horizons.fill(0)
