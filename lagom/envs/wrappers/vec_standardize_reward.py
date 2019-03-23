@@ -67,9 +67,5 @@ class VecStandardizeReward(VecEnvWrapper):
         return rewards
     
     @property
-    def mean(self):
-        return self.runningavg.mu
-    
-    @property
     def std(self):
         return self.runningavg.sigma
