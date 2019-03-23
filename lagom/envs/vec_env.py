@@ -218,42 +218,43 @@ class VecEnvWrapper(VecEnv):
     
     .. note::
     
-        Don't forget to call ``super().__init__(venv)`` if the subclass overrides :meth:`__init__`.
+        Don't forget to call ``super().__init__(env)`` if the subclass overrides :meth:`__init__`.
     
     """
-    def __init__(self, venv):
-        self.venv = venv
-        self.metadata = venv.metadata
-        super().__init__(list_make_env=venv.list_make_env, 
-                         observation_space=venv.observation_space, 
-                         action_space=venv.action_space, 
-                         reward_range=venv.reward_range, 
-                         spec=venv.spec)
+    def __init__(self, env):
+        assert isinstance(env, VecEnv)
+        self.env = env
+        self.metadata = env.metadata
+        super().__init__(list_make_env=env.list_make_env, 
+                         observation_space=env.observation_space, 
+                         action_space=env.action_space, 
+                         reward_range=env.reward_range, 
+                         spec=env.spec)
         
     def step_async(self, actions):
-        self.venv.step_async(actions)
+        self.env.step_async(actions)
     
     def step_wait(self):
-        return self.venv.step_wait()
+        return self.env.step_wait()
     
     def reset(self):
-        return self.venv.reset()
+        return self.env.reset()
     
     def get_images(self):
-        return self.venv.get_images()
+        return self.env.get_images()
     
     def close_extras(self):
-        return self.venv.close_extras()
+        return self.env.close_extras()
     
     @property
     def unwrapped(self):
-        return self.venv.unwrapped
+        return self.env.unwrapped
     
     def __len__(self):
-        return len(self.venv)
+        return len(self.env)
     
     def __getitem__(self, index):
-        return self.venv[index]
+        return self.env[index]
     
     def __repr__(self):
-        return f'<{self.__class__.__name__}, {self.venv}>'
+        return f'<{self.__class__.__name__}, {self.env}>'

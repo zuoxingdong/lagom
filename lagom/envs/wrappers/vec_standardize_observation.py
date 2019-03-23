@@ -15,7 +15,7 @@ class VecStandardizeObservation(VecEnvWrapper):
         save and load observation scalings, otherwise, the performance will be incorrect. 
     
     Args:
-        venv (VecEnv): a vectorized environment
+        env (VecEnv): a vectorized environment
         clip (float): clipping range of standardized observation, i.e. [-clip, clip]
         constant_mean (ndarray): Constant mean to standardize observation. Note that
             when it is provided, then running average will be ignored.
@@ -23,8 +23,8 @@ class VecStandardizeObservation(VecEnvWrapper):
             when it is provided, then running average will be ignored. 
     
     """
-    def __init__(self, venv, clip=10., constant_mean=None, constant_std=None):
-        super().__init__(venv)
+    def __init__(self, env, clip=10., constant_mean=None, constant_std=None):
+        super().__init__(env)
         self.clip = clip
         self.constant_mean = constant_mean
         self.constant_std = constant_std
@@ -33,11 +33,11 @@ class VecStandardizeObservation(VecEnvWrapper):
         self.runningavg = RunningMeanStd()
         
     def step_wait(self):
-        observations, rewards, dones, infos = self.venv.step_wait()
+        observations, rewards, dones, infos = self.env.step_wait()
         return self.process_obs(observations), rewards, dones, infos
     
     def reset(self):
-        observations = self.venv.reset()
+        observations = self.env.reset()
         return self.process_obs(observations)
     
     def process_obs(self, observations):
