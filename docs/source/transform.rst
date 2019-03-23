@@ -15,7 +15,7 @@ lagom.transform: Transformations
 
 .. autofunction:: rank_transform
 
-.. autoclass:: RunningAverage
+.. autoclass:: PolyakAverage
     :members:
 
 .. autoclass:: RunningMeanStd
