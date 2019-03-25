@@ -8,7 +8,7 @@ from lagom.transform import explained_variance
 from lagom.transform import LinearSchedule
 from lagom.transform import rank_transform
 from lagom.transform import PolyakAverage
-from lagom.transform import RunningMeanStd
+from lagom.transform import RunningMeanVar
 from lagom.transform import smooth_filter
 
 
@@ -35,17 +35,8 @@ def test_interp_curves():
 
 def test_geometric_cumsum():
     assert np.allclose(geometric_cumsum(0.1, [1, 2, 3]), [1.23, 2.3, 3])
-
-    x = [1, 2, 3, 4, 5, 6]
-    dones = [False, False, True, False, False, False]
-    mask = np.logical_not(dones).astype(int).tolist()
-    assert np.allclose(geometric_cumsum(0.1, x, mask=mask), [1.23, 2.3, 3, 4.56, 5.6, 6])
-    
     assert np.allclose(geometric_cumsum(0.1, [[1, 2, 3, 4], [5, 6, 7, 8]]), 
                        [[1.234, 2.34, 3.4, 4], [5.678, 6.78, 7.8, 8]])
-    assert np.allclose(geometric_cumsum(0.1, [[1, 2, 3, 4], [5, 6, 7, 8]], 
-                                        mask=[[1, 1, 0, 1], [1, 0, 1, 1]]), 
-                       [[1.23, 2.3, 3, 4], [5.6, 6, 7.8, 8]])
 
 
 def test_explained_variance():
@@ -142,37 +133,35 @@ def test_polyak_average():
     assert np.allclose(x, f.get_current())
 
 
-def test_runningmeanstd():
-    def check(runningmeanstd, x):
-        assert runningmeanstd.mu.shape == ()
-        assert runningmeanstd.sigma.shape == ()
-        assert np.allclose(runningmeanstd.mu, np.mean(x))
-        assert np.allclose(runningmeanstd.sigma, np.std(x))
+def test_running_mean_var():
+    with pytest.raises(AssertionError):
+        f = RunningMeanVar(shape=())
+        f(0.5)
+    with pytest.raises(AssertionError):
+        f = RunningMeanVar(shape=(1,))
+        f([0.5])
+    
+    x = np.random.randn(1000)
+    xs = np.array_split(x, [1, 200, 500, 600, 900, 950])
+    assert np.allclose(np.concatenate(xs), x)
+    f = RunningMeanVar(shape=())
+    for x_part in xs:
+        f(x_part)
+    assert np.allclose(f.mean, x.mean())
+    assert np.allclose(f.var, x.var())
+    assert np.allclose(np.sqrt(f.var + 1e-8), x.std())
+    assert f.n == 1000
 
-    a = [1, 2, 3, 4]
-    b = [2, 1, 4, 3]
-    c = [4, 3, 2, 1]
-
-    for item in [a, b, c]:
-        runningmeanstd = RunningMeanStd()
-        for i in item:
-            runningmeanstd(i)
-        check(runningmeanstd, item)
-
-    for item in [a, b, c]:
-        runningmeanstd = RunningMeanStd()
-        runningmeanstd(item)
-        check(runningmeanstd, item)
-
-    del a, b, c
-
-    b = np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]])
-    runningmeanstd = RunningMeanStd()
-    runningmeanstd(b)
-    assert runningmeanstd.mu.shape == (3,)
-    assert runningmeanstd.sigma.shape == (3,)
-    assert np.allclose(runningmeanstd.mu, b.mean(0))
-    assert np.allclose(runningmeanstd.sigma, b.std(0))
+    x = np.random.randn(1000, 32, 3)
+    xs = np.array_split(x, [1, 200, 500, 600, 900, 950])
+    assert np.allclose(np.concatenate(xs), x)
+    f = RunningMeanVar(shape=(32, 3))
+    for x_part in xs:
+        f(x_part)
+    assert np.allclose(f.mean, x.mean(0))
+    assert np.allclose(f.var, x.var(0))
+    assert np.allclose(np.sqrt(f.var + 1e-8), x.std(0))
+    assert f.n == 1000
 
 
 def test_smooth_filter():

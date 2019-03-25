@@ -3,6 +3,7 @@ import numpy as np
 import gym
 from gym import Wrapper
 
+from .wrappers import AutoReset
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
 from .wrappers import ScaleImageObservation
@@ -150,6 +151,7 @@ def make_atari(name, sticky_action=True, max_episode_steps=None):
         env = TimeLimit(env, max_episode_steps)
     else:
         env = TimeLimit(env, env.spec.max_episode_steps)
+    env = AutoReset(env)
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)

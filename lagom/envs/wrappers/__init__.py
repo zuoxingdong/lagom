@@ -1,5 +1,6 @@
 from .get_wrapper import get_wrapper
 
+from .auto_reset import AutoReset
 from .clip_action import ClipAction
 from .clip_reward import ClipReward
 from .sign_clip_reward import SignClipReward
