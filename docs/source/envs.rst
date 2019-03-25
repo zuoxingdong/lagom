@@ -36,6 +36,9 @@ Wrappers
 
 .. autofunction:: get_wrapper
 
+.. autoclass:: AutoReset
+    :members:
+
 .. autoclass:: ClipAction
     :members:
 
