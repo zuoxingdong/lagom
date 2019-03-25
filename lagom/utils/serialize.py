@@ -55,7 +55,7 @@ def yaml_load(f):
         f = f.as_posix()
     
     with open(f, 'r') as file:
-        return yaml.load(file)
+        return yaml.load(file, Loader=yaml.FullLoader)
 
 
 def yaml_dump(obj, f, ext='.yml'):
@@ -72,29 +72,16 @@ def yaml_dump(obj, f, ext='.yml'):
         Except for pure array object, it is not recommended to use
         ``np.load`` because it is often much slower. 
         
-    .. warning::
-    
-        It preserves the order of Python dict. Although this property is already
-        supported for Python 3.7, but currently PyYAML does not. So we do a work around
-        to preserve the ordering of Python dict. 
-        
-        * ``TODO``: remove it when PyYAML supports it officially. 
-        
     Args:
         obj (object): a serializable object
         f (str/Path): file path
         ext (str, optional): file extension. Default: .yml
+        
     """
     if isinstance(f, Path):
         f = f.as_posix()
-    
-    # TODO: remove it when PyYAML supports it officially. 
-    tag = 'tag:yaml.org,2002:map'
-    representer = lambda dumper, data: dumper.represent_mapping(tag, list(data.items()))
-    yaml.add_representer(dict, representer)
-    
     with open(f+ext, 'w') as file:
-        return yaml.dump(obj, file, default_flow_style=False)
+        return yaml.dump(obj, file, sort_keys=False)
 
     
 class CloudpickleWrapper(object):
