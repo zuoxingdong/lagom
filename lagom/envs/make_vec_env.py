@@ -7,7 +7,7 @@ from .parallel_vec_env import ParallelVecEnv
 from .wrappers import AutoReset
 
 
-def make_vec_env(make_env, num_env, init_seed, mode='serial'):
+def make_vec_env(make_env, num_env, init_seed, mode='serial', auto_reset=True):
     r"""Create a vectorized environment, each associated with a different random seed.
     
     Example::
@@ -22,6 +22,7 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
         init_seed (int): initial seed for :class:`Seeder` to sample random seeds. 
         mode (str, optional): specifies the type of vectorized environment ['serial', 'parallel'].
             'serial': uses :class:`SerialVecEnv`. 'parallel': uses :class:`ParallelVecEnv`
+        auto_reset (bool, optional): if ``True``, then wrap the environment with :class:`AutoReset`
     
     Returns
     -------
@@ -35,7 +36,8 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
     
     def f(seed):
         env = make_env()
-        env = AutoReset(env)
+        if auto_reset:
+            env = AutoReset(env)
         env.seed(seed)
         return env
     
