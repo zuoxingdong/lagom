@@ -23,7 +23,7 @@ class PolyakAverage(object):
         Args:
             x (object): additional data to update the estimation of running average. 
         """
-        x = np.asarray(x, dtype=np.float32)
+        x = np.asarray(x)
         if self.x is None:
             self.x = x
         else:

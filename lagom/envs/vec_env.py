@@ -46,28 +46,14 @@ class VecEnv(ABC):
         self.action_space = action_space
         self.reward_range = reward_range
         self.spec = spec
-        
+
     @abstractmethod
-    def step_async(self, actions):
+    def step(self, actions):
         r"""Ask all the environments to take a step with a list of actions, each for one environment. 
-        
-        .. note::
-        
-            Call :meth:`step_wait` to get the step execution results. 
-        
-        .. note::
-        
-            Do not call this function when it is already pending. 
         
         Args:
             actions (list): a list of actions, each for one environment. 
-        """
-        pass
-        
-    @abstractmethod
-    def step_wait(self):
-        r"""Wait for the jobs in :meth:`step_async` to finish and return all results. 
-        
+            
         Returns
         -------
         observations : list
@@ -78,23 +64,9 @@ class VecEnv(ABC):
             a list of booleans indicating whether the episode terminates, each returned from one environment. 
         infos : list
             a list of dictionaries of additional informations, each returned from one environment. 
+            
         """
         pass
-        
-    def step(self, actions):
-        r"""Take an action in each environment for one time step through the environments' dynamics. 
-        
-        It firstly calls :meth:`step_async` to distribute actions to all environments and then
-        calls :meth:`step_wait` to get all the results. 
-        
-        See docstrings in :meth:`step_async` and :meth:`step_wait` for more details. 
-        """
-        assert len(actions) == len(self), f'expected length {len(self)}, got {len(actions)}'
-        # Send actions to all environments asynchronously
-        self.step_async(actions)
-        
-        # wait to receive all results and return them
-        return self.step_wait()
     
     @abstractmethod
     def reset(self):
@@ -207,6 +179,14 @@ class VecEnv(ABC):
     
     def __repr__(self):
         return f'<{self.__class__.__name__}: {len(self)}, {self.spec.id}>'
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+        # propagate exception
+        return False 
 
     
 class VecEnvWrapper(VecEnv):
@@ -231,11 +211,8 @@ class VecEnvWrapper(VecEnv):
                          reward_range=env.reward_range, 
                          spec=env.spec)
         
-    def step_async(self, actions):
-        self.env.step_async(actions)
-    
-    def step_wait(self):
-        return self.env.step_wait()
+    def step(self, actions):
+        return self.env.step(actions)
     
     def reset(self):
         return self.env.reset()

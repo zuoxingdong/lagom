@@ -2,6 +2,8 @@ import numpy as np
 
 from gym.spaces import Box
 from gym.spaces import Discrete
+from gym.spaces import MultiDiscrete
+from gym.spaces import MultiBinary
 from gym.spaces import Tuple
 from gym.spaces import Dict
 
@@ -15,10 +17,14 @@ def flatdim(space):
         return int(sum([flatdim(s) for s in space.spaces]))
     elif isinstance(space, Dict):
         return int(sum([flatdim(s) for s in space.spaces.values()]))
+    elif isinstance(space, MultiBinary):
+        return int(space.n)
+    elif isinstance(space, MultiDiscrete):
+        return int(np.prod(space.shape))
     else:
-        raise TypeError('only support Box/Discrete/Tuple/Dict')
-    
-    
+        raise NotImplementedError
+
+
 def flatten(space, x):
     if isinstance(space, Box):
         return np.asarray(x, dtype=np.float32).flatten()
@@ -30,10 +36,14 @@ def flatten(space, x):
         return np.concatenate([flatten(s, x_part) for x_part, s in zip(x, space.spaces)])
     elif isinstance(space, Dict):
         return np.concatenate([flatten(space.spaces[key], item) for key, item in x.items()])
+    elif isinstance(space, MultiBinary):
+        return np.asarray(x).flatten()
+    elif isinstance(space, MultiDiscrete):
+        return np.asarray(x).flatten()
     else:
-        raise TypeError('only support Box/Discrete/Tuple/Dict')
-    
-    
+        raise NotImplementedError
+
+
 def unflatten(space, x):
     if isinstance(space, Box):
         return np.asarray(x, dtype=np.float32).reshape(space.shape)
@@ -51,5 +61,9 @@ def unflatten(space, x):
         list_unflattened = [(key, unflatten(s, flattened)) 
                             for flattened, (key, s) in zip(list_flattened, space.spaces.items())]
         return dict(list_unflattened)
+    elif isinstance(space, MultiBinary):
+        return np.asarray(x).reshape(space.shape)
+    elif isinstance(space, MultiDiscrete):
+        return np.asarray(x).reshape(space.shape)
     else:
-        raise TypeError('only support Box/Discrete/Tuple/Dict')
+        raise NotImplementedError

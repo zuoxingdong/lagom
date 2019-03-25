@@ -18,6 +18,7 @@ from lagom.envs import ParallelVecEnv
 from lagom.envs import make_vec_env
 from lagom.envs import make_atari
 from lagom.envs.wrappers import get_wrapper
+from lagom.envs.wrappers import AutoReset
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import ClipReward
 from lagom.envs.wrappers import SignClipReward
@@ -102,7 +103,7 @@ def test_make_atari(env_id):
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 def test_vec_env(vec_env_class, env_id, num_env):
     def make_env():
-        return gym.make(env_id)
+        return AutoReset(gym.make(env_id))
     base_env = make_env()
     list_make_env = [make_env for _ in range(num_env)]
     env = vec_env_class(list_make_env)
@@ -132,7 +133,7 @@ def test_vec_env(vec_env_class, env_id, num_env):
 @pytest.mark.parametrize('mode', ['serial', 'parallel'])
 def test_make_vec_env(env_id, num_env, init_seed, mode):
     def make_env():
-        return gym.make(env_id)
+        return AutoReset(gym.make(env_id))
     env = make_vec_env(make_env, num_env, init_seed, mode)
     if mode == 'serial':
         assert isinstance(env, SerialVecEnv)
@@ -147,7 +148,7 @@ def test_make_vec_env(env_id, num_env, init_seed, mode):
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 @pytest.mark.parametrize('init_seed', [0, 10])
 def test_equivalence_vec_env(env_id, num_env, init_seed):
-    make_env = lambda: gym.make(env_id)
+    make_env = lambda: AutoReset(gym.make(env_id))
 
     env1 = make_vec_env(make_env, num_env, init_seed, mode='serial')
     env2 = make_vec_env(make_env, num_env, init_seed, mode='parallel')
@@ -166,6 +167,35 @@ def test_equivalence_vec_env(env_id, num_env, init_seed):
         assert np.allclose(obs1, obs2)
         assert np.allclose(rewards1, rewards2)
         assert np.allclose(dones1, dones2)
+    
+    
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize('T', [1, 10, 100, 1000])
+@pytest.mark.parametrize('seed', [0, 1])
+def test_auto_reset(env_id, T, seed):
+    env = gym.make(env_id)
+    actions = [env.action_space.sample() for _ in range(T)]
+    env = AutoReset(env)
+    env.seed(seed)
+    env.reset()
+    observations, rewards, dones, infos = zip(*[env.step(action) for action in actions])
+    del env
+
+    counter = 0
+    env = gym.make(env_id)
+    env.seed(seed)
+    env.reset()
+    while counter < T:
+        observation, reward, done, info = env.step(actions[counter])
+        assert np.allclose(reward, rewards[counter])
+        assert done == dones[counter]
+        if done:
+            assert np.allclose(observation, infos[counter]['last_observation'])
+            observation = env.reset()
+        else:
+            assert np.allclose(observation, observations[counter])
+
+        counter += 1
     
     
 def test_clip_action():
@@ -204,7 +234,7 @@ def test_clip_reward(env_id):
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'MountainCar-v0', 
                                     'Pong-v0', 'SpaceInvaders-v0'])
 def test_sign_clip_reward(env_id):
-    env = gym.make(env_id)
+    env = AutoReset(gym.make(env_id))
     wrapped_env = SignClipReward(env)
     
     env.reset()
@@ -378,7 +408,7 @@ def test_vec_monitor(env_id, num_env, init_seed, mode):
         _, _, dones, infos = env.step(actions)
         for i, (done, info) in enumerate(zip(dones, infos)):
             if done:
-                assert 'terminal_observation' in info
+                assert 'last_observation' in info
                 assert 'episode' in info
                 assert 'return' in info['episode']
                 assert 'horizon' in info['episode']
