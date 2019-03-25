@@ -26,12 +26,7 @@ def worker(master_conn, worker_conn, make_env):
         
         if cmd == 'step':
             observation, reward, done, info = env.step(data)
-            # If episode terminates, reset this environment and report initial observation for new episode
-            # the terminal observation is stored in the info
-            if done:
-                info['terminal_observation'] = observation
-                observation = env.reset()
-            worker_conn.send([observation, reward, done, info])
+            worker_conn.send((observation, reward, done, info))
         elif cmd == 'reset':
             observation = env.reset()
             worker_conn.send(observation)
@@ -72,14 +67,12 @@ class ParallelVecEnv(VecEnv):
         [array([-0.04002427,  0.00464987, -0.01704236, -0.03673052]),
          array([ 0.00854682,  0.00830137, -0.03052506,  0.03439879]),
          array([0.00025361, 0.02915667, 0.01103413, 0.04977449])]
+         
+    Args:
+            list_make_env (list): a list of functions to generate environments.
     
     """
     def __init__(self, list_make_env):
-        r"""Initialize the vectorized environment. 
-        
-        Args:
-            list_make_env (list): a list of functions to generate environments.
-        """
         self.master_conns, self.worker_conns = zip(*[Pipe() for _ in range(len(list_make_env))])
         self.list_process = [Process(target=worker, 
                                      args=[master_conn, worker_conn, CloudpickleWrapper(make_env)], 
@@ -99,19 +92,15 @@ class ParallelVecEnv(VecEnv):
         
         self.waiting = False  # If True, then workers are still working
         
-    def step_async(self, actions):
-        for master_conn, action in zip(self.master_conns, actions):
-            master_conn.send(['step', action])
+    def step(self, actions):
+        [master_conn.send(['step', action]) for master_conn, action in zip(self.master_conns, actions)]
         self.waiting = True
-        
-    def step_wait(self):
         # Note that different worker finishes the job differently, but list comprehension
         # automatically preserve the order. This order is very important, otherwise it is a BUG !
         results = [master_conn.recv() for master_conn in self.master_conns]
         self.waiting = False
         observations, rewards, dones, infos = zip(*results)
-        
-        return list(observations), list(rewards), list(dones), list(infos)  # zip produces tuples
+        return list(observations), list(rewards), list(dones), list(infos)
     
     def reset(self):
         [master_conn.send(['reset', None]) for master_conn in self.master_conns]
