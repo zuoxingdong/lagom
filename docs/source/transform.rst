@@ -18,7 +18,7 @@ lagom.transform: Transformations
 .. autoclass:: PolyakAverage
     :members:
 
-.. autoclass:: RunningMeanStd
+.. autoclass:: RunningMeanVar
     :members:
 
 .. autofunction:: smooth_filter

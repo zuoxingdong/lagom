@@ -4,5 +4,5 @@ from .explained_variance import explained_variance
 from .linear_schedule import LinearSchedule
 from .rank_transform import rank_transform
 from .polyak_average import PolyakAverage
-from .running_mean_std import RunningMeanStd
+from .running_mean_var import RunningMeanVar
 from .smooth_filter import smooth_filter
