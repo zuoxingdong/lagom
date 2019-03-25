@@ -20,7 +20,7 @@ class EpisodeRunner(BaseRunner):
             reward, done, info = map(lambda x: x[0], [reward, done, info])
             info = {**info, **out_agent}
             if done:  
-                D[-1].add_observation([info['terminal_observation']])  # add a batch one, consistent
+                D[-1].add_observation([info['last_observation']])  # add a batch one, consistent
             else:
                 D[-1].add_observation(next_observation)
             D[-1].add_action(action)

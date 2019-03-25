@@ -31,7 +31,7 @@ def rank_transform(x, centered=True):
         ranks of input data
     
     """
-    x = np.asarray(x, dtype=np.float32)
+    x = np.asarray(x)
     assert x.ndim == 1, 'must be one dimensional, i.e. a vector of scalar values'
     
     ranks = np.empty(len(x), dtype=int)

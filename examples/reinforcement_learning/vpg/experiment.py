@@ -32,7 +32,8 @@ config = Config(
      'log.interval': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
-     'env.standardize': True,  # use VecStandardize
+     'env.standardize_obs': True,
+     'env.standardize_reward': True, 
      'env.time_aware_obs': False,  # append time step to observation
      
      'nn.recurrent': False,
@@ -78,9 +79,10 @@ def run(config, seed, device):
         return env
     env = make_vec_env(make_env, 1, seed, 'serial')  # single environment
     env = VecMonitor(env)
-    if config['env.standardize']:  # running averages of observation and reward
+    if config['env.standardize_obs']:
         env = VecStandardizeObservation(env, clip=10.)
-        env = VecStandardizeReward(env, clip=10., gamma=0.99)
+    if config['env.standardize_reward']:
+        env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
     
     agent = Agent(config, env, device)
     runner = EpisodeRunner()

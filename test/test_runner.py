@@ -33,7 +33,7 @@ def test_trajectory(init_seed, mode, T):
         # unbatched for [reward, done, info]
         reward, done, info = map(lambda x: x[0], [reward, done, info])
         if done:
-            D.add_observation([info['terminal_observation']])
+            D.add_observation([info['last_observation']])
         else:
             D.add_observation(next_observation)
         D.add_action(action)
@@ -62,7 +62,7 @@ def test_trajectory(init_seed, mode, T):
         assert done
         assert D.completed
         assert D.dones[-1]
-        assert np.allclose(D.observations[-1], [info['terminal_observation']])
+        assert np.allclose(D.observations[-1], [info['last_observation']])
     if not done:
         assert not D.completed
         assert not D.dones[-1]
@@ -100,4 +100,4 @@ def test_episode_runner(env_id, num_env, init_seed, mode, T):
             assert traj.numpy_masks.shape == (len(traj), )
             assert len(traj.infos) == len(traj)
             if traj.completed:
-                assert np.allclose(traj.observations[-1], traj.infos[-1]['terminal_observation'])
+                assert np.allclose(traj.observations[-1], traj.infos[-1]['last_observation'])
