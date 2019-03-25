@@ -62,7 +62,7 @@ def initialize_replay(config, env, replay):
         action = random_agent.choose_action(observation)['raw_action']
         next_observation, reward, done, info = env.step(action)
         if done[0]:  # single environment
-            terminal_observation = info[0]['terminal_observation']
+            terminal_observation = info[0]['last_observation']
             replay.add(observation[0], action[0], reward[0], terminal_observation, done[0])
         else:
             replay.add(observation[0], action[0], reward[0], next_observation[0], done[0])

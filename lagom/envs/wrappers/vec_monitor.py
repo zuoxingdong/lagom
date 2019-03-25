@@ -18,8 +18,8 @@ class VecMonitor(VecEnvWrapper):
         self.return_queue = deque(maxlen=deque_size)
         self.horizon_queue = deque(maxlen=deque_size)
         
-    def step_wait(self):
-        observations, rewards, dones, infos = self.env.step_wait()
+    def step(self, actions):
+        observations, rewards, dones, infos = self.env.step(actions)
         
         self.episode_rewards += rewards
         self.episode_horizons += 1

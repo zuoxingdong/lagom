@@ -34,7 +34,7 @@ def smooth_filter(x, window_length, polyorder, **kwargs):
         smoothed curve data
     
     """
-    x = np.asarray(x, dtype=np.float32)
+    x = np.asarray(x)
     assert x.ndim == 1, 'only a single vector of scalar values is supported'
     out = savgol_filter(x, window_length, polyorder, **kwargs)
     return out

@@ -26,7 +26,7 @@ class Engine(BaseEngine):
                 step_counter += 1
 
                 if done[0]:
-                    terminal_observation = info[0]['terminal_observation']
+                    terminal_observation = info[0]['last_observation']
                     self.replay.add(observation[0], action[0], np.clip(reward[0], -1, 1), terminal_observation, done[0])
                 else:
                     self.replay.add(observation[0], action[0], np.clip(reward[0], -1, 1), next_observation[0], done[0])

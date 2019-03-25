@@ -21,21 +21,21 @@ def explained_variance(y_true, y_pred, **kwargs):
    
     .. note::
     
-        It calls the function from ``scikit-learn`` which handles exceptions better e.g. zero division..
+        It calls the function from ``scikit-learn`` which handles exceptions better e.g. zero division, batch size.
         
     Example:
     
         >>> explained_variance(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8])
-        0.9571734666824341
+        0.9571734475374732
         
         >>> explained_variance(y_true=[[3, -0.5, 2, 7]], y_pred=[[2.5, 0.0, 2, 8]])
-        0.9571734666824341
+        0.9571734475374732
         
         >>> explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]])
-        0.9838709533214569
+        0.9838709677419355
         
         >>> explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]])
-        0.6704022586345673
+        0.6704023148857179
         
     Args:
         y_true (list): ground truth output
@@ -48,9 +48,7 @@ def explained_variance(y_true, y_pred, **kwargs):
         estimated explained variance
         
     """
-    y_true = np.asarray(y_true, dtype=np.float32)
-    y_pred = np.asarray(y_pred, dtype=np.float32)
-    y_true = y_true.squeeze()
-    y_pred = y_pred.squeeze()
+    y_true = np.squeeze(y_true)
+    y_pred = np.squeeze(y_pred)
     assert y_true.shape == y_pred.shape
     return explained_variance_score(y_true=y_true, y_pred=y_pred, **kwargs)
