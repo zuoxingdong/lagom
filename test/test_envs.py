@@ -86,14 +86,14 @@ def test_space_utils():
 def test_make_atari(env_id):
     env = make_atari(env_id)
     assert env.observation_space.shape == (84, 84, 4)
-    assert np.allclose(env.observation_space.low, 0.0)
-    assert np.allclose(env.observation_space.high, 1.0)
+    assert np.allclose(env.observation_space.low, 0)
+    assert np.allclose(env.observation_space.high, 255)
     obs = env.reset()
     for _ in range(200):
         obs, reward, done, info = env.step(env.action_space.sample())
         assert obs.shape == (84, 84, 4)
-        assert obs.max() <= 1.0
-        assert obs.min() >= 0.0
+        assert obs.max() <= 255
+        assert obs.min() >= 0
         if done:
             break
 
@@ -133,7 +133,7 @@ def test_vec_env(vec_env_class, env_id, num_env):
 @pytest.mark.parametrize('mode', ['serial', 'parallel'])
 def test_make_vec_env(env_id, num_env, init_seed, mode):
     def make_env():
-        return AutoReset(gym.make(env_id))
+        return gym.make(env_id)
     env = make_vec_env(make_env, num_env, init_seed, mode)
     if mode == 'serial':
         assert isinstance(env, SerialVecEnv)
@@ -148,7 +148,7 @@ def test_make_vec_env(env_id, num_env, init_seed, mode):
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 @pytest.mark.parametrize('init_seed', [0, 10])
 def test_equivalence_vec_env(env_id, num_env, init_seed):
-    make_env = lambda: AutoReset(gym.make(env_id))
+    make_env = lambda: gym.make(env_id)
 
     env1 = make_vec_env(make_env, num_env, init_seed, mode='serial')
     env2 = make_vec_env(make_env, num_env, init_seed, mode='parallel')

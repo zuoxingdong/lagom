@@ -3,31 +3,12 @@ import numpy as np
 import gym
 from gym import Wrapper
 
-from .wrappers import AutoReset
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
 from .wrappers import ScaleImageObservation
 from .wrappers import FrameStack
 
-
-class TimeLimit(Wrapper):
-    def __init__(self, env, max_episode_steps):
-        super().__init__(env)
-        self._max_episode_steps = max_episode_steps
-        self.env.spec.max_episode_steps = max_episode_steps
-        self._elapsed_steps = 0
-
-    def step(self, action):
-        observation, reward, done, info = self.env.step(action)
-        self._elapsed_steps += 1
-        if self._elapsed_steps >= self._max_episode_steps:
-            done = True
-            info['TimeLimit.truncated'] = True
-        return observation, reward, done, info
-
-    def reset(self, **kwargs):
-        self._elapsed_steps = 0
-        return self.env.reset(**kwargs)
+from .wrappers import TimeLimit
 
 
 class AtariPreprocessing(Wrapper):
@@ -151,11 +132,9 @@ def make_atari(name, sticky_action=True, max_episode_steps=None):
         env = TimeLimit(env, max_episode_steps)
     else:
         env = TimeLimit(env, env.spec.max_episode_steps)
-    env = AutoReset(env)
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)
-    env = ScaleImageObservation(env)
     env = FrameStack(env, 4)
     
     return env
