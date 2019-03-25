@@ -1,13 +1,11 @@
 import numpy as np
 
-from lagom.transform import RunningMeanStd
+from lagom.transform import RunningMeanVar
 from lagom.envs import VecEnvWrapper
 
 
 class VecStandardizeObservation(VecEnvWrapper):
-    r"""Standardizes the observations by running averages. 
-    
-    Each observation is substracted from the running mean and devided by running standard deviation. 
+    r"""Standardizes the observations by running estimation of mean and variance. 
     
     .. warning::
     
@@ -19,21 +17,26 @@ class VecStandardizeObservation(VecEnvWrapper):
         clip (float): clipping range of standardized observation, i.e. [-clip, clip]
         constant_mean (ndarray): Constant mean to standardize observation. Note that
             when it is provided, then running average will be ignored.
-        constant_std (ndarray): Constant standard deviation to standardize observation. Note that
+        constant_var (ndarray): Constant variance to standardize observation. Note that
             when it is provided, then running average will be ignored. 
     
     """
-    def __init__(self, env, clip=10., constant_mean=None, constant_std=None):
+    def __init__(self, env, clip=10., constant_moments=None):
         super().__init__(env)
         self.clip = clip
-        self.constant_mean = constant_mean
-        self.constant_std = constant_std
+        self.constant_moments = constant_moments
         
         self.eps = 1e-8
-        self.runningavg = RunningMeanStd()
         
-    def step_wait(self):
-        observations, rewards, dones, infos = self.env.step_wait()
+        if constant_moments is None:
+            self.online = True
+            self.running_moments = RunningMeanVar(shape=env.observation_space.shape)
+        else:
+            self.online = False
+            self.constant_mean, self.constant_var = constant_moments    
+        
+    def step(self, actions):
+        observations, rewards, dones, infos = self.env.step(actions)
         return self.process_obs(observations), rewards, dones, infos
     
     def reset(self):
@@ -41,26 +44,23 @@ class VecStandardizeObservation(VecEnvWrapper):
         return self.process_obs(observations)
     
     def process_obs(self, observations):
-        obs = np.asarray(observations)
-        if self.constant_mean is None and self.constant_std is None:
-            self.runningavg(obs)
-            mean = np.expand_dims(self.runningavg.mu, 0)  # add batch dim for safe broadcast
-            std = np.expand_dims(self.runningavg.sigma, 0)
-        elif self.constant_mean is not None and self.constant_std is not None:
-            mean = np.expand_dims(self.constant_mean, 0)  # add batch dim for safe broadcast
-            std = np.expand_dims(self.constant_std, 0)
+        if self.online:
+            self.running_moments(observations)
+            if self.running_moments.n >= 1:  # keep first observation unchanged due to zero std
+                mean = self.running_moments.mean
+                std = np.sqrt(self.running_moments.var + self.eps)
+                observations = (observations - mean)/std
         else:
-            raise ValueError
-        
-        obs = (obs - mean)/(std + self.eps)
-        obs = np.clip(obs, -self.clip, self.clip)
-        
-        return obs
+            mean = self.constant_mean
+            std = np.sqrt(self.constant_var + self.eps)
+            observations = (observations - mean)/std
+        observations = np.clip(observations, -self.clip, self.clip)
+        return observations.astype(np.float32)
     
     @property
     def mean(self):
-        return self.runningavg.mu
+        return self.running_moments.mean
     
     @property
-    def std(self):
-        return self.runningavg.sigma
+    def var(self):
+        return self.running_moments.var
