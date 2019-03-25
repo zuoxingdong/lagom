@@ -169,7 +169,7 @@ def test_equivalence_vec_env(env_id, num_env, init_seed):
         assert np.allclose(dones1, dones2)
     
     
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'LunarLander-v2'])
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
 @pytest.mark.parametrize('T', [1, 10, 100, 1000])
 @pytest.mark.parametrize('seed', [0, 1])
 def test_auto_reset(env_id, T, seed):
