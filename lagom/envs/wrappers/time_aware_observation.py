@@ -3,6 +3,8 @@ import numpy as np
 from gym.spaces import Box
 from gym import ObservationWrapper
 
+from .utils import get_all_wrappers
+
 
 class TimeAwareObservation(ObservationWrapper):
     r"""Augment the observation with current time step in the trajectory. 
@@ -13,6 +15,7 @@ class TimeAwareObservation(ObservationWrapper):
     
     """
     def __init__(self, env):
+        assert self.__class__.__name__ not in get_all_wrappers(env), 'TimeAwareObservation cannot be wrapped twice'
         super().__init__(env)
         low = np.append(self.observation_space.low, 0.0)
         high = np.append(self.observation_space.high, np.inf)
