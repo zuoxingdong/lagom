@@ -26,7 +26,11 @@ def worker(master_conn, worker_conn, make_env):
         
         if cmd == 'step':
             observation, reward, done, info = env.step(data)
-            worker_conn.send((observation, reward, done, info))
+            # If done=True, reset environment, store last observation in info and report new initial observation
+            if done:
+                info['last_observation'] = observation
+                observation = env.reset()
+            worker_conn.send([observation, reward, done, info])
         elif cmd == 'reset':
             observation = env.reset()
             worker_conn.send(observation)
@@ -100,7 +104,7 @@ class ParallelVecEnv(VecEnv):
         results = [master_conn.recv() for master_conn in self.master_conns]
         self.waiting = False
         observations, rewards, dones, infos = zip(*results)
-        return list(observations), list(rewards), list(dones), list(infos)
+        return list(observations), list(rewards), list(dones), list(infos)  # zip produces tuples
     
     def reset(self):
         [master_conn.send(['reset', None]) for master_conn in self.master_conns]
