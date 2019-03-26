@@ -15,10 +15,8 @@ class VecStandardizeObservation(VecEnvWrapper):
     Args:
         env (VecEnv): a vectorized environment
         clip (float): clipping range of standardized observation, i.e. [-clip, clip]
-        constant_mean (ndarray): Constant mean to standardize observation. Note that
-            when it is provided, then running average will be ignored.
-        constant_var (ndarray): Constant variance to standardize observation. Note that
-            when it is provided, then running average will be ignored. 
+        constant_moments (tuple): a tuple of constant mean and variance to standardize observation.
+            Note that if it is provided, then running average will be ignored.
     
     """
     def __init__(self, env, clip=10., constant_moments=None):
@@ -37,6 +35,9 @@ class VecStandardizeObservation(VecEnvWrapper):
         
     def step(self, actions):
         observations, rewards, dones, infos = self.env.step(actions)
+        for i, info in enumerate(infos):  # standardize last_observation
+            if 'last_observation' in info:
+                infos[i]['last_observation'] = self.process_obs([info['last_observation']])
         return self.process_obs(observations), rewards, dones, infos
     
     def reset(self):

@@ -36,8 +36,7 @@ Wrappers
 
 .. autofunction:: get_wrapper
 
-.. autoclass:: AutoReset
-    :members:
+.. autofunction:: get_all_wrappers
 
 .. autoclass:: ClipAction
     :members:
@@ -60,7 +59,7 @@ Wrappers
 .. autoclass:: ResizeObservation
     :members:
 
-.. autoclass:: RewardScale
+.. autoclass:: ScaleReward
     :members:
 
 .. autoclass:: ScaleImageObservation

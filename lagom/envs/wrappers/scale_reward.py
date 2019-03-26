@@ -1,7 +1,7 @@
 from gym import RewardWrapper
 
 
-class RewardScale(RewardWrapper):
+class ScaleReward(RewardWrapper):
     r"""Scale the reward. 
     
     .. note::
@@ -12,7 +12,7 @@ class RewardScale(RewardWrapper):
     
         >>> from lagom.envs import make_gym_env
         >>> env = make_gym_env(env_id='CartPole-v1', seed=0)
-        >>> env = RewardScale(env, scale=0.1)
+        >>> env = ScaleReward(env, scale=0.1)
         >>> env.reset()
         >>> observation, reward, done, info = env.step(env.action_space.sample())
         >>> reward
