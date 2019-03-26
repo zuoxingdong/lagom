@@ -4,7 +4,6 @@ from lagom.utils import Seeder
 
 from .serial_vec_env import SerialVecEnv
 from .parallel_vec_env import ParallelVecEnv
-from .wrappers import AutoReset
 
 
 def make_vec_env(make_env, num_env, init_seed, mode='serial'):
@@ -35,7 +34,6 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
     
     def f(seed):
         env = make_env()
-        env = AutoReset(env)
         env.seed(seed)
         return env
     

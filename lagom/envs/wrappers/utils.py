@@ -19,3 +19,22 @@ def get_wrapper(env, name):
         return None
     else:
         return get_wrapper(env.env, name)
+
+
+def get_all_wrappers(env):
+    r"""Returns a list of wrapper names of a wrapped environment. 
+    
+    Args:
+        env (Env): wrapped environment
+    
+    Returns
+    -------
+    out : list
+        list of string names of wrappers
+    
+    """
+    out = []
+    while env is not env.unwrapped:
+        out.append(env.__class__.__name__)
+        env = env.env
+    return out

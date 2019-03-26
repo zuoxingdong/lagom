@@ -18,7 +18,7 @@ from lagom.envs import ParallelVecEnv
 from lagom.envs import make_vec_env
 from lagom.envs import make_atari
 from lagom.envs.wrappers import get_wrapper
-from lagom.envs.wrappers import AutoReset
+from lagom.envs.wrappers import get_all_wrappers
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import ClipReward
 from lagom.envs.wrappers import SignClipReward
@@ -26,7 +26,7 @@ from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
 from lagom.envs.wrappers import ResizeObservation
-from lagom.envs.wrappers import RewardScale
+from lagom.envs.wrappers import ScaleReward
 from lagom.envs.wrappers import ScaleImageObservation
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import VecMonitor
@@ -86,14 +86,14 @@ def test_space_utils():
 def test_make_atari(env_id):
     env = make_atari(env_id)
     assert env.observation_space.shape == (84, 84, 4)
-    assert np.allclose(env.observation_space.low, 0.0)
-    assert np.allclose(env.observation_space.high, 1.0)
+    assert np.allclose(env.observation_space.low, 0)
+    assert np.allclose(env.observation_space.high, 255)
     obs = env.reset()
     for _ in range(200):
         obs, reward, done, info = env.step(env.action_space.sample())
         assert obs.shape == (84, 84, 4)
-        assert obs.max() <= 1.0
-        assert obs.min() >= 0.0
+        assert obs.max() <= 255
+        assert obs.min() >= 0
         if done:
             break
 
@@ -103,7 +103,7 @@ def test_make_atari(env_id):
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 def test_vec_env(vec_env_class, env_id, num_env):
     def make_env():
-        return AutoReset(gym.make(env_id))
+        return gym.make(env_id)
     base_env = make_env()
     list_make_env = [make_env for _ in range(num_env)]
     env = vec_env_class(list_make_env)
@@ -133,7 +133,7 @@ def test_vec_env(vec_env_class, env_id, num_env):
 @pytest.mark.parametrize('mode', ['serial', 'parallel'])
 def test_make_vec_env(env_id, num_env, init_seed, mode):
     def make_env():
-        return AutoReset(gym.make(env_id))
+        return gym.make(env_id)
     env = make_vec_env(make_env, num_env, init_seed, mode)
     if mode == 'serial':
         assert isinstance(env, SerialVecEnv)
@@ -148,7 +148,7 @@ def test_make_vec_env(env_id, num_env, init_seed, mode):
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 @pytest.mark.parametrize('init_seed', [0, 10])
 def test_equivalence_vec_env(env_id, num_env, init_seed):
-    make_env = lambda: AutoReset(gym.make(env_id))
+    make_env = lambda: gym.make(env_id)
 
     env1 = make_vec_env(make_env, num_env, init_seed, mode='serial')
     env2 = make_vec_env(make_env, num_env, init_seed, mode='parallel')
@@ -167,36 +167,7 @@ def test_equivalence_vec_env(env_id, num_env, init_seed):
         assert np.allclose(obs1, obs2)
         assert np.allclose(rewards1, rewards2)
         assert np.allclose(dones1, dones2)
-    
-    
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
-@pytest.mark.parametrize('T', [1, 10, 100, 1000])
-@pytest.mark.parametrize('seed', [0, 1])
-def test_auto_reset(env_id, T, seed):
-    env = gym.make(env_id)
-    actions = [env.action_space.sample() for _ in range(T)]
-    env = AutoReset(env)
-    env.seed(seed)
-    env.reset()
-    observations, rewards, dones, infos = zip(*[env.step(action) for action in actions])
-    del env
 
-    counter = 0
-    env = gym.make(env_id)
-    env.seed(seed)
-    env.reset()
-    while counter < T:
-        observation, reward, done, info = env.step(actions[counter])
-        assert np.allclose(reward, rewards[counter])
-        assert done == dones[counter]
-        if done:
-            assert np.allclose(observation, infos[counter]['last_observation'])
-            observation = env.reset()
-        else:
-            assert np.allclose(observation, observations[counter])
-
-        counter += 1
-    
     
 def test_clip_action():
     # mountaincar: action-based rewards
@@ -234,7 +205,7 @@ def test_clip_reward(env_id):
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'MountainCar-v0', 
                                     'Pong-v0', 'SpaceInvaders-v0'])
 def test_sign_clip_reward(env_id):
-    env = AutoReset(gym.make(env_id))
+    env = gym.make(env_id)
     wrapped_env = SignClipReward(env)
     
     env.reset()
@@ -302,6 +273,17 @@ def test_get_wrapper(env_id):
     assert get_wrapper(env, 'ClipReward') is None
     
     
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
+def test_get_all_wrappers(env_id):
+    def make_env():
+        return gym.make(env_id)
+    env = make_env()
+    env = ClipReward(env, 0.1, 0.5)
+    env = FlattenObservation(env)
+    env = FrameStack(env, 4)
+    assert get_all_wrappers(env) == ['FrameStack', 'FlattenObservation', 'ClipReward', 'TimeLimit']
+    
+    
 @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
 @pytest.mark.parametrize('keep_dim', [True, False])
 def test_gray_scale_observation(env_id, keep_dim):
@@ -334,7 +316,7 @@ def test_resize_observation(env_id, size):
     
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
 @pytest.mark.parametrize('scale', [0.1, 200])
-def test_reward_scale(env_id, scale):
+def test_scale_reward(env_id, scale):
     env = gym.make(env_id)
 
     action = env.action_space.sample()
@@ -343,7 +325,7 @@ def test_reward_scale(env_id, scale):
     env.reset()
     _, reward, _, _ = env.step(action)
     
-    wrapped_env = RewardScale(env, scale)
+    wrapped_env = ScaleReward(env, scale)
     env.seed(0)
     wrapped_env.reset()
     _, wrapped_reward, _, _ = wrapped_env.step(action)
