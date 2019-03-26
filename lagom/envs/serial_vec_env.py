@@ -27,8 +27,21 @@ class SerialVecEnv(VecEnv):
     
     def step(self, actions):
         assert len(actions) == len(self)
-        observations, rewards, dones, infos = zip(*[env.step(action) for env, action in zip(self.list_env, actions)])
-        return list(observations), list(rewards), list(dones), list(infos)
+        observations = []
+        rewards = []
+        dones = []
+        infos = []
+        for i, (env, action) in enumerate(zip(self.list_env, actions)):
+            observation, reward, done, info = env.step(action)
+            # If done=True, reset environment, store last observation in info and report new initial observation
+            if done:
+                info['last_observation'] = observation
+                observation = env.reset()
+            observations.append(observation)
+            rewards.append(reward)
+            dones.append(done)
+            infos.append(info)
+        return observations, rewards, dones, infos
     
     def reset(self):
         observations = [env.reset() for env in self.list_env]

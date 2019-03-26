@@ -117,6 +117,10 @@ def make_atari(name, sticky_action=True, max_episode_steps=None):
     Machado et al. (2018), "Revisiting the Arcade Learning Environment: 
     Evaluation Protocols and Open Problems for General Agents".
     
+    .. note::
+    
+        To be very memory efficient, we do not scale image by dividing by 255.
+    
     Args:
         name (str): name of Atari 2600
         sticky_action (bool): whether to use sticky actions, i.e. 25% probability to persist
