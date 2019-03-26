@@ -22,7 +22,7 @@ def td0_target(gamma, traj, Vs, last_V):
     Vs = _wrap_Vs(Vs)
     last_V = _wrap_last_V(last_V)
     
-    if traj.completed:
+    if traj.reach_terminal:
         Vs = np.append(Vs, 0.0)
     else:
         Vs = np.append(Vs, last_V)
@@ -48,7 +48,7 @@ def td0_error(gamma, traj, Vs, last_V):
     Vs = _wrap_Vs(Vs)
     last_V = _wrap_last_V(last_V)
     
-    if traj.completed:
+    if traj.reach_terminal:
         Vs = np.append(Vs, 0.0)
     else:
         Vs = np.append(Vs, last_V)
