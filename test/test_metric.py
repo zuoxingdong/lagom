@@ -8,6 +8,7 @@ import gym
 
 from lagom import RandomAgent
 from lagom.envs import make_vec_env
+from lagom.envs.wrappers import TimeLimit
 from lagom.runner import Trajectory
 from lagom.runner import EpisodeRunner
 
@@ -48,7 +49,7 @@ def test_returns(num_env, init_seed, mode, T):
           0.6]
     ys = [None, y1, y2, y3, y4, y5, y6]
 
-    make_env = lambda: SanityEnv()
+    make_env = lambda: TimeLimit(SanityEnv())
     env = make_vec_env(make_env, num_env, init_seed, mode)
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
@@ -99,6 +100,7 @@ def test_bootstrapped_returns(gamma, last_V):
     
     D = Trajectory()
     D.dones = [False, False, False, True]
+    D.infos = [{}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     D.completed = True
     out = bootstrapped_returns(gamma, D, last_V)
@@ -108,8 +110,17 @@ def test_bootstrapped_returns(gamma, last_V):
          0.4 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = bootstrapped_returns(gamma, D, last_V)
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V)), 
+         0.3 + gamma*(0.4 + gamma*last_V), 
+         0.4 + gamma*last_V]
+    assert np.allclose(out, y)
+    
     D = Trajectory()
     D.dones = [False, False, False, False, True]
+    D.infos = [{}, {}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
     D.completed = True
     out = bootstrapped_returns(gamma, D, last_V)
@@ -120,8 +131,18 @@ def test_bootstrapped_returns(gamma, last_V):
          0.5 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = bootstrapped_returns(gamma, D, last_V)
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V))), 
+         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)), 
+         0.4 + gamma*(0.5 + gamma*last_V),
+         0.5 + gamma*last_V]
+    assert np.allclose(out, y)
+    
     D = Trajectory()
     D.dones = [False, False]
+    D.infos = [{}, {}]
     D.rewards = [0.1, 0.2]
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*last_V), 
@@ -133,6 +154,7 @@ def test_bootstrapped_returns(gamma, last_V):
 def test_td0_target(gamma):
     D = Trajectory()
     D.dones = [False, False, False, True]
+    D.infos = [{}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     D.completed = True
     Vs = [1, 2, 3, 4]
@@ -142,9 +164,18 @@ def test_td0_target(gamma):
          0.3 + gamma*4, 
          0.4 + gamma*40*0.0]
     assert np.allclose(out, y)
+    
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = td0_target(gamma, D, Vs, 40)
+    y = [0.1 + gamma*2, 
+         0.2 + gamma*3,
+         0.3 + gamma*4, 
+         0.4 + gamma*40]
+    assert np.allclose(out, y)
 
     D = Trajectory()
     D.dones = [False, False, False, False]
+    D.infos = [{}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     Vs = [1, 2, 3, 4]
     out = td0_target(gamma, D, Vs, 40)
@@ -156,6 +187,7 @@ def test_td0_target(gamma):
     
     D = Trajectory()
     D.dones = [False, False, False, False, False, True]
+    D.infos = [{}, {}, {}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
     D.completed = True
     Vs = [1, 2, 3, 4, 5, 6]
@@ -167,12 +199,23 @@ def test_td0_target(gamma):
          0.5 + gamma*6, 
          0.6 + gamma*60*0.0]
     assert np.allclose(out, y)
+    
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = td0_target(gamma, D, Vs, 60)
+    y = [0.1 + gamma*2, 
+         0.2 + gamma*3, 
+         0.3 + gamma*4, 
+         0.4 + gamma*5, 
+         0.5 + gamma*6, 
+         0.6 + gamma*60]
+    assert np.allclose(out, y)
 
 
 @pytest.mark.parametrize('gamma', [0.1, 0.5])
 def test_td0_error(gamma):
     D = Trajectory()
     D.dones = [False, False, False, True]
+    D.infos = [{}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     D.completed = True
     Vs = [1, 2, 3, 4]
@@ -182,9 +225,18 @@ def test_td0_error(gamma):
          0.3 + gamma*4 - 3, 
          0.4 + gamma*40*0.0 - 4]
     assert np.allclose(out, y)
+    
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = td0_error(gamma, D, Vs, 40)
+    y = [0.1 + gamma*2 - 1, 
+         0.2 + gamma*3 - 2,
+         0.3 + gamma*4 - 3, 
+         0.4 + gamma*40 - 4]
+    assert np.allclose(out, y)
 
     D = Trajectory()
     D.dones = [False, False, False, False]
+    D.infos = [{}, {}, {}, {'TimeLimit.truncated': True}]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     Vs = [1, 2, 3, 4]
     out = td0_error(gamma, D, Vs, 40)
@@ -196,6 +248,7 @@ def test_td0_error(gamma):
     
     D = Trajectory()
     D.dones = [False, False, False, False, False, True]
+    D.infos = [{}, {}, {}, {}, {}, {}]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
     D.completed = True
     Vs = [1, 2, 3, 4, 5, 6]
@@ -207,11 +260,22 @@ def test_td0_error(gamma):
          0.5 + gamma*6 - 5,  
          0.6 + gamma*60*0.0 - 6]
     assert np.allclose(out, y)
+    
+    D.infos[-1]['TimeLimit.truncated'] = True
+    out = td0_error(gamma, D, Vs, 60)
+    y = [0.1 + gamma*2 - 1, 
+         0.2 + gamma*3 - 2, 
+         0.3 + gamma*4 - 3, 
+         0.4 + gamma*5 - 4, 
+         0.5 + gamma*6 - 5,  
+         0.6 + gamma*60 - 6]
+    assert np.allclose(out, y)
 
 
 def test_gae():
     D = Trajectory()
     D.dones = [False, False, True]
+    D.infos = [{}, {}, {}]
     D.rewards = [1, 2, 3]
     D.completed = True
     Vs = [0.1, 1.1, 2.1]
@@ -222,6 +286,7 @@ def test_gae():
     
     D = Trajectory()
     D.dones = [False, False, True]
+    D.infos = [{}, {}, {}]
     D.rewards = [1, 2, 3]
     D.completed = True
     Vs = [0.5, 1.5, 2.5]
@@ -232,6 +297,7 @@ def test_gae():
 
     D = Trajectory()
     D.dones = [False, False, False, False, False]
+    D.infos = [{}, {}, {}, {}, {}]
     D.rewards = [1, 2, 3, 4, 5]
     Vs = [0.5, 1.5, 2.5, 3.5, 4.5]
     out = gae(1.0, 0.5, D, Vs, 20)
@@ -241,6 +307,7 @@ def test_gae():
     
     D = Trajectory()
     D.dones = [False, False, False, False, False]
+    D.infos = [{}, {}, {}, {}, {}]
     D.rewards = [1, 2, 3, 4, 5]
     Vs = [0.1, 1.1, 2.1, 3.1, 4.1]
     out = gae(1.0, 0.5, D, Vs, 10)
@@ -250,6 +317,7 @@ def test_gae():
     
     D = Trajectory()
     D.dones = [False, False, False, False, False, False, False, True]
+    D.infos = [{}, {}, {}, {}, {}, {}, {}, {}]
     D.rewards = [1, 2, 3, 4, 5, 6, 7, 8]
     D.completed = True
     Vs = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
