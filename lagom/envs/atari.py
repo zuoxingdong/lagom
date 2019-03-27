@@ -5,7 +5,6 @@ from gym import Wrapper
 
 from .wrappers import ResizeObservation
 from .wrappers import GrayScaleObservation
-from .wrappers import ScaleImageObservation
 from .wrappers import FrameStack
 
 from .wrappers import TimeLimit
