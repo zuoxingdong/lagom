@@ -9,7 +9,7 @@ from .frame_stack import FrameStack
 from .gray_scale_observation import GrayScaleObservation
 from .resize_observation import ResizeObservation
 from .scale_reward import ScaleReward
-from .scale_image_observation import ScaleImageObservation
+from .scaled_float_frame import ScaledFloatFrame
 from .time_aware_observation import TimeAwareObservation
 
 from .vec_monitor import VecMonitor
