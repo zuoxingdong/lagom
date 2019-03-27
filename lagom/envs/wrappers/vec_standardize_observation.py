@@ -37,7 +37,7 @@ class VecStandardizeObservation(VecEnvWrapper):
         observations, rewards, dones, infos = self.env.step(actions)
         for i, info in enumerate(infos):  # standardize last_observation
             if 'last_observation' in info:
-                infos[i]['last_observation'] = self.process_obs([info['last_observation']])
+                infos[i]['last_observation'] = self.process_obs([info['last_observation']]).squeeze(0)
         return self.process_obs(observations), rewards, dones, infos
     
     def reset(self):

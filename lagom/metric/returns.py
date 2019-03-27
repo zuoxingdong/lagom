@@ -25,7 +25,7 @@ def bootstrapped_returns(gamma, traj, last_V):
     """
     last_V = _wrap_last_V(last_V)
     
-    if traj.completed:
+    if traj.reach_terminal:
         out = geometric_cumsum(gamma, traj.rewards + [0.0])
     else:
         out = geometric_cumsum(gamma, traj.rewards + [last_V])

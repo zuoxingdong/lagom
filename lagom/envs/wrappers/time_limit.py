@@ -6,9 +6,11 @@ from .utils import get_all_wrappers
 # TODO: temporary, remove after it is officially ported to gym
 # So, no unit test in lagom
 class TimeLimit(gym.Wrapper):
-    def __init__(self, env, max_episode_steps):
+    def __init__(self, env, max_episode_steps=None):
         assert self.__class__.__name__ not in get_all_wrappers(env), 'TimeLimit cannot be wrapped twice' 
         super().__init__(env)
+        if max_episode_steps is None:
+            max_episode_steps = env.spec.max_episode_steps
         self.env.spec.max_episode_steps = max_episode_steps
         self._max_episode_steps = max_episode_steps
         self._elapsed_steps = None

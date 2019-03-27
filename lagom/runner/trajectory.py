@@ -21,6 +21,14 @@ class Trajectory(object):
         assert out.shape[0] == len(self) + 1  # plus initial observation
         return out
     
+    @property
+    def last_observation(self):
+        return self.observations[-1]
+    
+    @property
+    def reach_terminal(self):
+        return self.dones[-1] and 'TimeLimit.truncated' not in self.infos[-1]
+    
     def add_action(self, action):
         assert not self.completed
         self.actions.append(action)
