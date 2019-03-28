@@ -50,6 +50,9 @@ Wrappers
 .. autoclass:: FlattenObservation
     :members:
     
+.. autoclass:: LazyFrames
+    :members:
+    
 .. autoclass:: FrameStack
     :members:
 
