@@ -1,9 +1,35 @@
+from collections import deque
+
 import numpy as np
 
 from gym.spaces import Box
 from gym import ObservationWrapper
 
 
+class LazyFrames(object):
+    r"""Ensures common frames are only stored once to optimize memory use. 
+    
+    .. note::
+    
+        This object should only be converted to numpy array just before forward pass. 
+        
+    """
+    def __init__(self, frames):
+        self._frames = frames
+        
+    def __array__(self, dtype=None):
+        out = np.stack(self._frames, axis=0)
+        if dtype is not None:
+            out = out.astype(dtype)
+        return out
+    
+    def __len__(self):
+        return len(self.__array__())
+    
+    def __getitem__(self, i):
+        return self.__array__()[i]
+        
+    
 class FrameStack(ObservationWrapper):
     r"""Observation wrapper that stacks the observations in a rolling manner. 
     
@@ -14,8 +40,7 @@ class FrameStack(ObservationWrapper):
     
     .. note::
     
-        Each call :meth:`step`, the new observation is augmented to the stacked buffer
-        and the oldest one is removed. 
+        To be memory efficient, the stacked observations are wrapped by :class:`LazyFrame`.
     
     .. note::
     
@@ -24,56 +49,38 @@ class FrameStack(ObservationWrapper):
     
     Example::
     
-        >>> from lagom.envs import make_gym_env
-        >>> env = make_gym_env(env_id='CartPole-v1', seed=1)
-        >>> env = FrameStack(env, num_stack=4)
-        >>> env
-        <FrameStack, <GymWrapper, <TimeLimit<CartPoleEnv<CartPole-v1>>>>>
-        
+        >>> import gym
+        >>> env = gym.make('PongNoFrameskip-v0')
+        >>> env = FrameStack(env, 4)
         >>> env.observation_space
-        Box(4, 4)
-        
-        >>> env.reset()
-        array([[ 0.03073904,  0.        ,  0.        ,  0.        ],
-               [ 0.00145001,  0.        ,  0.        ,  0.        ],
-               [-0.03088818,  0.        ,  0.        ,  0.        ],
-               [-0.03131252,  0.        ,  0.        ,  0.        ]],
-              dtype=float32)
-              
-        >>> env.step(env.action_space.sample())
-        (array([[ 0.03076804,  0.03073904,  0.        ,  0.        ],
-                [-0.19321568,  0.00145001,  0.        ,  0.        ],
-                [-0.03151444, -0.03088818,  0.        ,  0.        ],
-                [ 0.25146705, -0.03131252,  0.        ,  0.        ]],
-               dtype=float32), 1.0, False, {})
+        Box(4, 210, 160, 3)
     
     Args:
-            env (Env): environment object
-            num_stack (int): number of stacks
+        env (Env): environment object
+        num_stack (int): number of stacks
     
     """
+
     def __init__(self, env, num_stack):
         super().__init__(env)
-        assert isinstance(self.observation_space, Box), 'must be Box type'
         self.num_stack = num_stack
+
+        self.frames = deque(maxlen=num_stack)
         
-        # Create a new observation space
-        low = np.repeat(self.observation_space.low[..., np.newaxis], self.num_stack, axis=-1)
-        high = np.repeat(self.observation_space.high[..., np.newaxis], self.num_stack, axis=-1)
-        dtype = self.observation_space.dtype
-        self.observation_space = Box(low=low, high=high, dtype=dtype)
+        low = np.repeat(self.observation_space.low[np.newaxis, ...], num_stack, axis=0)
+        high = np.repeat(self.observation_space.high[np.newaxis, ...], num_stack, axis=0)
+        self.observation_space = Box(low=low, high=high, dtype=self.observation_space.dtype)
         
-        # Initialize the buffer for stacked observation
-        self.stack_buffer = np.zeros(self.observation_space.shape, dtype=dtype)
+    def _get_observation(self):
+        assert len(self.frames) == self.num_stack
+        return LazyFrames(list(self.frames))
+        
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        self.frames.append(observation)
+        return self._get_observation(), reward, done, info
         
     def reset(self, **kwargs):
-        self.stack_buffer.fill(0.0)
-        return super().reset(**kwargs)
-
-    def observation(self, observation):
-        # Shift the oldest observation to the front
-        self.stack_buffer = np.roll(self.stack_buffer, shift=1, axis=-1)
-        # Replace the front as new observation
-        self.stack_buffer[..., 0] = observation
-        
-        return self.stack_buffer
+        observation = self.env.reset(**kwargs)
+        [self.frames.append(observation) for _ in range(self.num_stack)]
+        return self._get_observation()
