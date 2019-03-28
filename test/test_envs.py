@@ -27,7 +27,7 @@ from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
 from lagom.envs.wrappers import ResizeObservation
 from lagom.envs.wrappers import ScaleReward
-from lagom.envs.wrappers import ScaleImageObservation
+from lagom.envs.wrappers import ScaledFloatFrame
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
@@ -334,9 +334,9 @@ def test_scale_reward(env_id, scale):
     
     
 @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
-def test_scale_image_observation(env_id):
+def test_scaled_float_frame(env_id):
     env = gym.make(env_id)
-    env = ScaleImageObservation(env)
+    env = ScaledFloatFrame(env)
     assert np.allclose(env.observation_space.high, 1.0)
     assert np.allclose(env.observation_space.low, 0.0)
     obs = env.reset()
