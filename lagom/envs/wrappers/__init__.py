@@ -5,6 +5,7 @@ from .clip_action import ClipAction
 from .clip_reward import ClipReward
 from .sign_clip_reward import SignClipReward
 from .flatten_observation import FlattenObservation
+from .frame_stack import LazyFrames
 from .frame_stack import FrameStack
 from .gray_scale_observation import GrayScaleObservation
 from .resize_observation import ResizeObservation
