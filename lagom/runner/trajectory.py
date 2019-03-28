@@ -27,7 +27,9 @@ class Trajectory(object):
     
     @property
     def reach_terminal(self):
-        return self.dones[-1] and 'TimeLimit.truncated' not in self.infos[-1]
+        # TODO: handle TimeLimit seems not give performance boost
+        # return self.dones[-1] and 'TimeLimit.truncated' not in self.infos[-1]
+        return self.dones[-1]
     
     def add_action(self, action):
         assert not self.completed
