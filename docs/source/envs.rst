@@ -62,7 +62,7 @@ Wrappers
 .. autoclass:: ScaleReward
     :members:
 
-.. autoclass:: ScaleImageObservation
+.. autoclass:: ScaledFloatFrame
     :members:
 
 .. autoclass:: TimeAwareObservation
