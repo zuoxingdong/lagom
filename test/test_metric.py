@@ -110,7 +110,8 @@ def test_bootstrapped_returns(gamma, last_V):
          0.4 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V)), 
@@ -131,7 +132,8 @@ def test_bootstrapped_returns(gamma, last_V):
          0.5 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V))), 
@@ -165,7 +167,8 @@ def test_td0_target(gamma):
          0.4 + gamma*40*0.0]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = td0_target(gamma, D, Vs, 40)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3,
@@ -200,7 +203,8 @@ def test_td0_target(gamma):
          0.6 + gamma*60*0.0]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = td0_target(gamma, D, Vs, 60)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3, 
@@ -226,7 +230,8 @@ def test_td0_error(gamma):
          0.4 + gamma*40*0.0 - 4]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = td0_error(gamma, D, Vs, 40)
     y = [0.1 + gamma*2 - 1, 
          0.2 + gamma*3 - 2,
@@ -261,7 +266,8 @@ def test_td0_error(gamma):
          0.6 + gamma*60*0.0 - 6]
     assert np.allclose(out, y)
     
-    D.infos[-1]['TimeLimit.truncated'] = True
+    #D.infos[-1]['TimeLimit.truncated'] = True
+    D.dones[-1] = False
     out = td0_error(gamma, D, Vs, 60)
     y = [0.1 + gamma*2 - 1, 
          0.2 + gamma*3 - 2, 
