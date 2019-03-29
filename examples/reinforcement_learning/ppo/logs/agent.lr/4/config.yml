@@ -1,6 +1,6 @@
-ID: 0
+ID: 4
 cuda: true
-log.dir: logs/default
+log.dir: logs/agent.lr
 log.freq: 10
 env.standardize_obs: true
 env.standardize_reward: true
@@ -9,7 +9,6 @@ nn.recurrent: false
 nn.sizes:
 - 64
 - 64
-agent.lr: 0.0003
 agent.use_lr_scheduler: false
 agent.gamma: 0.99
 agent.gae_lambda: 0.97
@@ -28,4 +27,5 @@ train.timestep: 1000000
 train.timestep_per_iter: 2000
 train.batch_size: 256
 train.num_epochs: 80
-env.id: HalfCheetah-v2
+env.id: Hopper-v2
+agent.lr: 0.0003
