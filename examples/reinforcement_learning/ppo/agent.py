@@ -38,14 +38,15 @@ class MLP(Module):
         
         self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            nn.init.normal_(layer.weight, mean=0.0, std=np.sqrt(1/layer.out_features))
+            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
         
         self.to(self.device)
         
     def forward(self, x):
         for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = F.selu(layer_norm(layer(x)))
+            x = layer_norm(F.relu(layer(x)))
         return x
 
 
@@ -75,7 +76,8 @@ class Agent(BaseAgent):
         self.total_timestep = 0
         
         self.optimizer = optim.Adam(self.parameters(), lr=config['agent.lr'])
-        self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], config['agent.min_lr'])
+        if config['agent.use_lr_scheduler']:
+            self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
         
     def choose_action(self, obs, **kwargs):
         if not torch.is_tensor(obs):
@@ -93,7 +95,6 @@ class Agent(BaseAgent):
         out['raw_action'] = action.detach().cpu().numpy()
         out['action_logprob'] = action_dist.log_prob(action.detach())
         
-        # TODO: independent critic
         V = self.V_head(features)
         out['V'] = V
         
@@ -104,7 +105,7 @@ class Agent(BaseAgent):
     def learn_one_update(self, data):
         data = [d.to(self.device) for d in data]
         observations, old_actions, old_logprobs, old_entropies, old_Vs, old_Qs, old_As = data
-        # TODO: independent critic
+        
         out = self.choose_action(observations)
         logprobs = out['action_dist'].log_prob(old_actions).squeeze()
         entropies = out['entropy'].squeeze()
@@ -121,11 +122,11 @@ class Agent(BaseAgent):
         loss = policy_loss + self.config['agent.value_coef']*value_loss + self.config['agent.entropy_coef']*entropy_loss
         loss = loss.mean()
         
-        # TODO: independent critic
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
-        self.lr_scheduler.step(self.total_timestep)
+        if self.config['agent.use_lr_scheduler']:
+            self.lr_scheduler.step(self.total_timestep)
         self.optimizer.step()
         
         out = {}
@@ -147,8 +148,8 @@ class Agent(BaseAgent):
         entropies = [torch.cat(traj.get_all_info('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_all_info('V')) for traj in D]
         
-        last_observations = np.concatenate([traj.observations[-1] for traj in D], 0).astype(np.float32)
-        with torch.no_grad():  # TODO: independent critic 
+        last_observations = np.concatenate([traj.last_observation for traj in D], 0).astype(np.float32)
+        with torch.no_grad():
             last_Vs = self.V_head(self.feature_network(torch.from_numpy(last_observations).to(self.device))).squeeze(-1)
         Qs = [bootstrapped_returns(self.config['agent.gamma'], traj, last_V) 
                   for traj, last_V in zip(D, last_Vs)]
