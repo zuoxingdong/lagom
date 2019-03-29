@@ -14,6 +14,7 @@ from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 
 from lagom.envs import make_vec_env
+from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
@@ -28,8 +29,8 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'default', 
-     'log.interval': 10, 
+     'log.dir': 'logs/default', 
+     'log.freq': 10, 
      
      'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
      'env.standardize_obs': True,
@@ -37,13 +38,10 @@ config = Config(
      'env.time_aware_obs': False,  # append time step to observation
      
      'nn.recurrent': False,
-     'nn.sizes': [64, 64],  # FF:[64, 64]/RNN:[128]
-     'nn.independent_V': False,  # param-share of policy and value
+     'nn.sizes': [64, 64],
      
-     'agent.lr': 3e-4,
-     'agent.lr_V': 1e-3,
-     'agent.use_lr_scheduler': True,
-     'agent.min_lr': 5e-5,
+     'agent.lr': 1e-3,
+     'agent.use_lr_scheduler': False,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.97,
      'agent.standardize_adv': True,  # standardize advantage estimates
@@ -55,7 +53,7 @@ config = Config(
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.4,  # initial std
+     'agent.std0': 0.5,  # initial std
      'agent.std_style': 'exp',  # std parameterization
      'agent.std_range': None,  # bounded std: (min, max)
      'agent.beta': None,  # beta-sigmoidal
@@ -73,6 +71,8 @@ def run(config, seed, device):
     
     def make_env():
         env = gym.make(config['env.id'])
+        env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
+        env = TimeLimit(env, env.spec.max_episode_steps)
         if config['env.time_aware_obs']:
             env = TimeAwareObservation(env)
         if config['env.clip_action'] and isinstance(env.action_space, Box):
@@ -94,7 +94,7 @@ def run(config, seed, device):
             break
         train_logger = engine.train(i)
         train_logs.append(train_logger.logs)
-        if i == 0 or (i+1) % config['log.interval'] == 0:
+        if i == 0 or (i+1) % config['log.freq'] == 0:
             train_logger.dump(keys=None, index=None, indent=0, border='-'*50)
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None  
