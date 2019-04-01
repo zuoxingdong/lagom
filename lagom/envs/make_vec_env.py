@@ -35,6 +35,8 @@ def make_vec_env(make_env, num_env, init_seed, mode='serial'):
     def f(seed):
         env = make_env()
         env.seed(seed)
+        env.observation_space.seed(seed)
+        env.action_space.seed(seed)
         return env
     
     # Use partial to generate a list of argument-free make_env, each with different seed
