@@ -1,5 +1,4 @@
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,9 +8,7 @@ from gym.spaces import Discrete
 from gym.spaces import Box
 
 from lagom import BaseAgent
-
 from lagom.envs import flatdim
-
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
@@ -19,10 +16,8 @@ from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
 from lagom.networks import StateValueHead
 from lagom.networks import linear_lr_scheduler
-
 from lagom.metric import bootstrapped_returns
 from lagom.metric import gae
-
 from lagom.transform import explained_variance as ev
 
 from torch.utils.data import DataLoader
@@ -39,7 +34,6 @@ class MLP(Module):
         self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
             ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-            
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
         
         self.to(self.device)
@@ -54,12 +48,8 @@ class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
         
-        if config['nn.recurrent']:
-            pass
-        else:
-            self.feature_network = MLP(config, env, device, **kwargs)
+        self.feature_network = MLP(config, env, device, **kwargs)
         feature_dim = config['nn.sizes'][-1]
-        
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
@@ -124,13 +114,14 @@ class Agent(BaseAgent):
         
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
+        grad_norm = nn.utils.clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
         if self.config['agent.use_lr_scheduler']:
             self.lr_scheduler.step(self.total_timestep)
         self.optimizer.step()
         
         out = {}
         out['loss'] = loss.item()
+        out['grad_norm'] = grad_norm
         out['policy_loss'] = policy_loss.mean().item()
         out['entropy_loss'] = entropy_loss.mean().item()
         out['policy_entropy'] = -entropy_loss.mean().item()
@@ -148,9 +139,9 @@ class Agent(BaseAgent):
         entropies = [torch.cat(traj.get_all_info('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_all_info('V')) for traj in D]
         
-        last_observations = np.concatenate([traj.last_observation for traj in D], 0).astype(np.float32)
+        last_observations = torch.from_numpy(np.concatenate([traj.last_observation for traj in D], 0)).float()
         with torch.no_grad():
-            last_Vs = self.V_head(self.feature_network(torch.from_numpy(last_observations).to(self.device))).squeeze(-1)
+            last_Vs = self.V_head(self.feature_network(last_observations.to(self.device))).squeeze(-1)
         Qs = [bootstrapped_returns(self.config['agent.gamma'], traj, last_V) 
                   for traj, last_V in zip(D, last_Vs)]
         As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj, V, last_V) 
@@ -179,6 +170,7 @@ class Agent(BaseAgent):
         if self.config['agent.use_lr_scheduler']:
             out['current_lr'] = self.lr_scheduler.get_lr()
         out['loss'] = np.mean([item['loss'] for item in logs])
+        out['grad_norm'] = np.mean([item['grad_norm'] for item in logs])
         out['policy_loss'] = np.mean([item['policy_loss'] for item in logs])
         out['entropy_loss'] = np.mean([item['entropy_loss'] for item in logs])
         out['policy_entropy'] = np.mean([item['policy_entropy'] for item in logs])
