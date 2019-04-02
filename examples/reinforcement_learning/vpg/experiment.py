@@ -7,12 +7,10 @@ from gym.spaces import Box
 
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
-
 from lagom.experiment import Config
 from lagom.experiment import Grid
 from lagom.experiment import Sample
 from lagom.experiment import run_experiment
-
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import TimeAwareObservation
@@ -20,7 +18,6 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
-
 from lagom.runner import EpisodeRunner
 
 from agent import Agent
@@ -37,7 +34,6 @@ config = Config(
      'env.standardize_reward': True, 
      'env.time_aware_obs': False,  # append time step to observation
      
-     'nn.recurrent': False,
      'nn.sizes': [64, 64],
      
      'agent.lr': 1e-3,
