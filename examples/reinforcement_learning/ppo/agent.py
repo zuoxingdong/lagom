@@ -8,7 +8,9 @@ from gym.spaces import Discrete
 from gym.spaces import Box
 
 from lagom import BaseAgent
+from lagom.utils import pickle_dump
 from lagom.envs import flatdim
+from lagom.envs.wrappers import get_wrapper
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
@@ -180,3 +182,9 @@ class Agent(BaseAgent):
         out['clip_frac'] = np.mean([item['clip_frac'] for item in logs])
         out['finished_inner_epochs'] = f'{epoch+1}/{self.config["train.num_epochs"]}'
         return out
+    
+    def checkpoint(self, logdir, num_iter):
+        self.save(logdir/f'agent_{num_iter}.pth')
+        obs_env = get_wrapper(self.env, 'VecStandardizeObservation')
+        if obs_env is not None:
+            pickle_dump(obj=(obs_env.mean, obs_env.var), f=logdir/f'obs_moments_{num_iter}', ext='.pth')

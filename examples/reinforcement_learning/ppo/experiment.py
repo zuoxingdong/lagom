@@ -28,8 +28,9 @@ config = Config(
     {'cuda': True, 
      'log.dir': 'logs/default', 
      'log.freq': 10, 
+     'checkpoint.freq': 50,
      
-     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Ant-v2']), 
+     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Walker2d-v2', 'Ant-v2']), 
      'env.standardize_obs': True,
      'env.standardize_reward': True, 
      'env.time_aware_obs': False,  # append time step to observation
@@ -92,6 +93,9 @@ def run(config, seed, device):
         train_logs.append(train_logger.logs)
         if i == 0 or (i+1) % config['log.freq'] == 0:
             train_logger.dump(keys=None, index=None, indent=0, border='-'*50)
+        if i == 0 or (i+1) % config['checkpoint.freq'] == 0:
+            agent.checkpoint(logdir, i + 1)
+    agent.checkpoint(logdir, i + 1)
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None  
     
