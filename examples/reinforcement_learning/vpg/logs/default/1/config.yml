@@ -5,7 +5,6 @@ log.freq: 10
 env.standardize_obs: true
 env.standardize_reward: true
 env.time_aware_obs: false
-nn.recurrent: false
 nn.sizes:
 - 64
 - 64
