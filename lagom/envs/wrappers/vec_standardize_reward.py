@@ -11,7 +11,10 @@ class VecStandardizeReward(VecEnvWrapper):
     
         We do not subtract running mean from reward but only divides it by running
         standard deviation. Because subtraction by mean will alter the reward shape
-        so this might degrade the performance. 
+        so this might degrade the performance. Note that we perform this transformation 
+        from the second incoming reward while keeping first reward unchanged, otherwise 
+        it'll have too large magnitude (then just being clipped) due to the fact that
+        we do not subtract it from mean. 
         
     .. note::
     
@@ -48,9 +51,10 @@ class VecStandardizeReward(VecEnvWrapper):
         
     def step(self, actions):
         observations, rewards, dones, infos = self.env.step(actions)
+        rewards = self.process_reward(rewards)
         # Set discounted return buffer as zero for those episodes which terminate
         self.all_returns[dones] = 0.0
-        return observations, self.process_reward(rewards), dones, infos
+        return observations, rewards, dones, infos
     
     def reset(self):
         # Reset returns buffer, because all environments are also reset
@@ -62,6 +66,7 @@ class VecStandardizeReward(VecEnvWrapper):
         if self.online:
             self.all_returns = rewards + self.gamma*self.all_returns
             self.running_moments(self.all_returns)
+            # first reward unchanged, otherwise too large magnitude due to no mean subtraction
             if self.running_moments.n >= 2:
                 std = np.sqrt(self.running_moments.var + self.eps)
                 rewards = rewards/std
@@ -69,7 +74,7 @@ class VecStandardizeReward(VecEnvWrapper):
             std = np.sqrt(self.constant_var + self.eps)
             rewards = rewards/std
         rewards = np.clip(rewards, -self.clip, self.clip)
-        return rewards.astype(np.float32)
+        return rewards
         
     @property
     def var(self):

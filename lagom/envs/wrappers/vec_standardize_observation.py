@@ -42,21 +42,20 @@ class VecStandardizeObservation(VecEnvWrapper):
     
     def reset(self):
         observations = self.env.reset()
-        return self.process_obs(observations)
+        return self.process_obs(observations)  # initial observation has very small magnitude
     
     def process_obs(self, observations):
         if self.online:
             self.running_moments(observations)
-            if self.running_moments.n >= 1:  # keep first observation unchanged due to zero std
-                mean = self.running_moments.mean
-                std = np.sqrt(self.running_moments.var + self.eps)
-                observations = (observations - mean)/std
+            mean = self.running_moments.mean
+            std = np.sqrt(self.running_moments.var + self.eps)
+            observations = (observations - mean)/std
         else:
             mean = self.constant_mean
             std = np.sqrt(self.constant_var + self.eps)
             observations = (observations - mean)/std
         observations = np.clip(observations, -self.clip, self.clip)
-        return observations.astype(np.float32)
+        return observations
     
     @property
     def mean(self):
