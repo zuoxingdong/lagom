@@ -54,7 +54,7 @@ class Module(nn.Module):
             https://pytorch.org/docs/master/notes/serialization.html#best-practices
         """
         import pickle
-        torch.save(self.state_dict(), f, pickle.HIGHEST_PROTOCOL)
+        torch.save(obj=self.state_dict(), f=f, pickle_protocol=pickle.HIGHEST_PROTOCOL)
         
     def load(self, f):
         r"""Load the network parameters from a file. 
