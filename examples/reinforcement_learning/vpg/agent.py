@@ -8,7 +8,9 @@ from gym.spaces import Discrete
 from gym.spaces import Box
 
 from lagom import BaseAgent
+from lagom.utils import pickle_dump
 from lagom.envs import flatdim
+from lagom.envs.wrappers import get_wrapper
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
@@ -30,7 +32,7 @@ class MLP(Module):
         
         self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)    
+            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
         
         self.to(self.device)
@@ -143,3 +145,9 @@ class Agent(BaseAgent):
         out['V_max'] = np.max(Vs_numpy)
         out['explained_variance'] = ev(y_true=Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
         return out
+    
+    def checkpoint(self, logdir, num_iter):
+        self.save(logdir/f'agent_{num_iter}.pth')
+        obs_env = get_wrapper(self.env, 'VecStandardizeObservation')
+        if obs_env is not None:
+            pickle_dump(obj=(obs_env.mean, obs_env.var), f=logdir/f'obs_moments_{num_iter}', ext='.pth')
