@@ -35,7 +35,3 @@ RL components
     
 .. autoclass:: DiagGaussianHead
     :members:
-    
-.. autoclass:: StateValueHead
-    :members:
-
