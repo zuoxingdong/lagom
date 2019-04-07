@@ -4,6 +4,7 @@ from .seeding import Seeder
 from .colorize import color_str
 
 from .timing import timed
+from .timing import timeit
 
 from .serialize import pickle_load
 from .serialize import pickle_dump
