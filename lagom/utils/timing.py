@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 
-from time import time
+from time import perf_counter
 from datetime import timedelta
+from datetime import datetime
 
 from .colorize import color_str
 
@@ -14,8 +15,9 @@ def timed(color='green', attribute='bold'):
         color (str, optional): color name. Default: 'green'
         attribute (str, optional): attribute. Default: 'bold'
     """
-    t = time()
+    t = perf_counter()
     yield
-    print(color_str(string=f'\nTotal time: {timedelta(seconds=round(time() - t))}', 
+    timestamp = datetime.now().isoformat(' ', 'seconds')
+    print(color_str(string=f'\nTotal time: {timedelta(seconds=round(perf_counter() - t))} at {timestamp}', 
                     color=color, 
                     attribute=attribute))
