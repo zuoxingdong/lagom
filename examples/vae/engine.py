@@ -1,4 +1,4 @@
-from time import time
+from time import perf_counter
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class Engine(BaseEngine):
         
         logger = Logger()
         for i, (data, label) in enumerate(self.train_loader):
-            start_time = time()
+            start_time = perf_counter()
             data = data.to(self.model.device)
             re_x, mu, logvar = self.model(data)
             out = vae_loss(re_x, data, mu, logvar, 'BCE')
@@ -34,7 +34,7 @@ class Engine(BaseEngine):
             logger('train_loss', out['loss'].item())
             logger('reconstruction_loss', out['re_loss'].item())
             logger('KL_loss', out['KL_loss'].item())
-            logger('num_seconds', round(time() - start_time, 1))
+            logger('num_seconds', round(perf_counter() - start_time, 1))
             if i == 0 or (i+1) % self.config['log.interval'] == 0:
                 logger.dump(keys=None, index=-1, indent=0, border='-'*50)
         mean_loss = np.mean([logger.logs['train_loss']])

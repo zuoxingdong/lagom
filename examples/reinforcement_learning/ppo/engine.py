@@ -1,4 +1,4 @@
-from time import time
+from time import perf_counter
 from itertools import chain
 
 import numpy as np
@@ -12,14 +12,14 @@ from lagom.envs.wrappers import get_wrapper
 class Engine(BaseEngine):        
     def train(self, n=None, **kwargs):
         self.agent.train()
-        start_time = time()
+        start_time = perf_counter()
         
         D = self.runner(self.agent, self.env, self.config['train.timestep_per_iter'])
         out_agent = self.agent.learn(D) 
         
         logger = Logger()
         logger('train_iteration', n+1)
-        logger('num_seconds', round(time() - start_time, 1))
+        logger('num_seconds', round(perf_counter() - start_time, 1))
         [logger(key, value) for key, value in out_agent.items()]
         logger('num_trajectories', len(D))
         logger('num_timesteps', sum([len(traj) for traj in D]))
