@@ -1,19 +1,16 @@
 from shutil import rmtree
-
 from pathlib import Path
 
-from time import time
-from datetime import timedelta
-
-from lagom.utils import color_str
 from lagom.utils import pickle_dump
 from lagom.utils import yaml_dump
 from lagom.utils import ask_yes_or_no
+from lagom.utils import timeit
 
 from .experiment_master import ExperimentMaster
 from .experiment_worker import ExperimentWorker
 
 
+@timeit(color='green', attribute='bold')
 def run_experiment(run, config, seeds, num_worker):
     r"""A convenient function to launch a parallelized experiment (Master-Worker). 
     
@@ -55,8 +52,6 @@ def run_experiment(run, config, seeds, num_worker):
         num_worker (int): number of workers
         
     """
-    t = time()
-    
     experiment = ExperimentMaster(ExperimentWorker, num_worker, run, config, seeds)
     
     log_path = Path(experiment.configs[0]['log.dir'])
@@ -87,6 +82,4 @@ def run_experiment(run, config, seeds, num_worker):
             
     # Run experiment in parallel
     results = experiment()
-    print(color_str(f'\nTotal time: {timedelta(seconds=round(time() - t))}', 'green', 'bold'))
-    
     return results

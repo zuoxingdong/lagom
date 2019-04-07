@@ -2,14 +2,12 @@ from pathlib import Path
 from itertools import count
 
 import torch.optim as optim
-
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
 
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
-
 from lagom.experiment import Config
 from lagom.experiment import Grid
 from lagom.experiment import Sample
