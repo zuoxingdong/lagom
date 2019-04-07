@@ -1,4 +1,4 @@
-from time import time
+from time import perf_counter
 from collections import deque
 
 import numpy as np
@@ -11,7 +11,7 @@ class VecMonitor(VecEnvWrapper):
     def __init__(self, env, deque_size=100):
         super().__init__(env)
         
-        self.t0 = time()
+        self.t0 = perf_counter()
         self.episode_rewards = np.zeros(len(env), dtype=np.float32)
         self.episode_horizons = np.zeros(len(env), dtype=np.int32)
         
@@ -27,7 +27,7 @@ class VecMonitor(VecEnvWrapper):
             if done:
                 infos[i]['episode'] = {'return': self.episode_rewards[i], 
                                        'horizon': self.episode_horizons[i],
-                                       'time': round(time() - self.t0, 4)}
+                                       'time': round(perf_counter() - self.t0, 4)}
                 self.return_queue.append(self.episode_rewards[i])
                 self.horizon_queue.append(self.episode_horizons[i])
                 
