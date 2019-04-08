@@ -1,3 +1,5 @@
+from .describe import Describe
+from .describe import describe
 from .interp_curves import interp_curves
 from .geometric_cumsum import geometric_cumsum
 from .explained_variance import explained_variance
