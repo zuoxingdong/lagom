@@ -20,7 +20,6 @@ from lagom.networks import make_transposed_cnn
 from lagom.networks import make_rnncell
 from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
-from lagom.networks import StateValueHead
 
 
 class TestMakeBlocks(object):
@@ -168,17 +167,6 @@ def test_linear_lr_scheduler(method, N, min_lr, initial_lr):
         lr_scheduler.step()
         assert lr_scheduler.get_lr()[0] >= min_lr
     assert lr_scheduler.get_lr()[0] == min_lr       
-
-
-@pytest.mark.parametrize('feature_dim', [5, 10, 30])
-@pytest.mark.parametrize('batch_size', [1, 16, 32])
-def test_state_value_head(feature_dim, batch_size):
-    value_head = StateValueHead(feature_dim, torch.device('cpu'))
-    assert isinstance(value_head, Module)
-    assert value_head.feature_dim == feature_dim
-    assert value_head.device.type == 'cpu'
-    x = value_head(torch.randn(batch_size, feature_dim))
-    assert x.shape == (batch_size, 1)
     
     
 @pytest.mark.parametrize('feature_dim', [5, 10, 30])
