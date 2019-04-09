@@ -16,11 +16,11 @@ from lagom.networks import make_fc
 from lagom.networks import ortho_init
 from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
-from lagom.networks import StateValueHead
 from lagom.networks import linear_lr_scheduler
 from lagom.metric import bootstrapped_returns
 from lagom.metric import gae
 from lagom.transform import explained_variance as ev
+from lagom.transform import describe
 
 from torch.utils.data import DataLoader
 from dataset import Dataset
@@ -63,7 +63,8 @@ class Agent(BaseAgent):
                                                 config['agent.std_range'],
                                                 config['agent.beta'], 
                                                 **kwargs)
-        self.V_head = StateValueHead(feature_dim, device, **kwargs)
+        self.V_head = nn.Linear(feature_dim, 1).to(device)
+        ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         
         self.total_timestep = 0
         
