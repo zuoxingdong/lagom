@@ -45,6 +45,8 @@ def worker(master_conn, worker_conn, make_env):
             worker_conn.send([env.observation_space, env.action_space, env.reward_range, env.spec])
         elif cmd == 'get_env':
             worker_conn.send(env)
+        elif cmd == 'set_env':
+            env = data
 
 
 class ParallelVecEnv(VecEnv):
@@ -131,6 +133,9 @@ class ParallelVecEnv(VecEnv):
     def __getitem__(self, index):
         self.master_conns[index].send(['get_env', None])
         return self.master_conns[index].recv()
+    
+    def __setitem__(self, index, x):
+        self.master_conns[index].send(['set_env', x])
     
     def __del__(self):
         if not self.closed:
