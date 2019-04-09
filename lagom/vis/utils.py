@@ -27,7 +27,7 @@ def set_ticker(ax, axis='x', num=None, KM_format=False, integer=False):
 
 
 def read_xy(log_folder, file_name, get_x, get_y):
-    glob_dir = lambda x: [p for p in x.glob('*/') if p.is_dir()]
+    glob_dir = lambda x: [p for p in x.glob('*/') if p.is_dir() and str(p.name).isdigit()]
     dfs = []
     for id_folder in glob_dir(Path(log_folder)):
         x = []

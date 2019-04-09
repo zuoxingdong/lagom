@@ -177,6 +177,10 @@ class VecEnv(ABC):
     def __getitem__(self, index):
         pass
     
+    @abstractmethod
+    def __setitem__(self, index, x):
+        pass
+    
     def __repr__(self):
         return f'<{self.__class__.__name__}: {len(self)}, {self.spec.id}>'
     
@@ -232,6 +236,9 @@ class VecEnvWrapper(VecEnv):
     
     def __getitem__(self, index):
         return self.env[index]
+    
+    def __setitem__(self, index, x):
+        self.env[index] = x
     
     def __repr__(self):
         return f'<{self.__class__.__name__}, {self.env}>'
