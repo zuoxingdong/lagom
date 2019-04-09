@@ -18,19 +18,18 @@ def test_interp_curves():
     y1 = [0.25, 0.22, 0.53, 0.37, 0.55]
     x2 = [2, 4, 6, 7, 9, 11, 15]
     y2 = [0.03, 0.12, 0.4, 0.2, 0.18, 0.32, 0.39]
-    new_x, new_y = interp_curves([x1, x2], [y1, y2], num_point=100)
+    new_x, ys = interp_curves([x1, x2], [y1, y2])
     
-    assert isinstance(new_x, list)
-    assert isinstance(new_y, list)
-    assert len(new_x[0]) == 100
-    assert len(new_y[0]) == 100
-    assert len(new_x[1]) == 100
-    assert len(new_y[1]) == 100
-    assert new_x[0] == new_x[1]
-    assert min(new_x[0]) == 2 and min(new_x[1]) == 2
-    assert max(new_x[0]) <= 20 and max(new_x[1]) <= 20
-    assert min(new_y[0]) > 0 and min(new_y[1]) > 0
-    assert max(new_y[0]) <= 0.6 and max(new_y[1]) <= 0.6
+    assert isinstance(new_x, (list, np.ndarray))
+    assert isinstance(ys, (list, np.ndarray))
+    assert len(new_x) == 10
+    assert len(ys) == 2
+    assert len(ys[0]) == 10
+    assert len(ys[1]) == 10
+    assert min(new_x) == 2
+    assert max(new_x) == 20
+    assert min(ys[0]) > 0 and min(ys[1]) > 0
+    assert max(ys[0]) < 0.6 and max(ys[1]) < 0.6
 
 
 def test_geometric_cumsum():
