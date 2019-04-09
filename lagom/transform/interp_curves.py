@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def interp_curves(x, y, num_point):
+def interp_curves(x, y):
     r"""Piecewise linear interpolation of a discrete set of data points and generate new :math:`x-y` values
     from the interpolated line. 
     
@@ -49,14 +49,7 @@ def interp_curves(x, y, num_point):
         interpolated y values
         
     """
-    min_x = min([min(item) for item in x])
-    max_x = max([max(item) for item in x])
-    
-    out_x = []
-    out_y = []
-    for n, (curve_x, curve_y) in enumerate(zip(x, y)):
-        new_x = np.linspace(min_x, max_x, num=num_point).tolist()
-        new_y = np.interp(new_x, curve_x, curve_y).tolist()
-        out_x.append(new_x)
-        out_y.append(new_y)
-    return out_x, out_y
+    new_x = np.unique(np.hstack(x))
+    assert new_x.ndim == 1
+    ys = [np.interp(new_x, curve_x, curve_y) for curve_x, curve_y in zip(x, y)]
+    return new_x, ys
