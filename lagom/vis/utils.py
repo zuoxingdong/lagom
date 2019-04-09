@@ -1,4 +1,10 @@
+from pathlib import Path
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from lagom.utils import pickle_load
+from lagom.utils import yaml_load
+from lagom.transform import interp_curves
 
 
 def set_ticker(ax, axis='x', num=None, KM_format=False, integer=False):
@@ -18,3 +24,25 @@ def set_ticker(ax, axis='x', num=None, KM_format=False, integer=False):
                 return f'{int(x/1000000)}M' if integer else f'{x/1000000}M'
         axis.set_major_formatter(plt.FuncFormatter(tick_formatter))
     return ax
+
+
+def read_xy(log_folder, file_name, get_x, get_y):
+    glob_dir = lambda x: [p for p in x.glob('*/') if p.is_dir()]
+    dfs = []
+    for id_folder in glob_dir(Path(log_folder)):
+        x = []
+        y = []
+        for seed_folder in glob_dir(id_folder):
+            logs = pickle_load(seed_folder / file_name)
+            x.append([get_x(log) for log in logs])
+            y.append([get_y(log) for log in logs])
+        new_x, ys = interp_curves(x, y)  # all seeds share same x values
+        df = pd.DataFrame({'x': np.tile(new_x, len(ys)), 'y': np.hstack(ys)})
+        config = yaml_load(id_folder / 'config.yml')
+        config = pd.DataFrame([config.values()], columns=config.keys())
+        config = config.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
+        df = pd.concat([df, config], axis=1, ignore_index=False)
+        df = df.fillna(method='pad')  # padding all NaN configs
+        dfs.append(df)
+    dfs = pd.concat(dfs, axis=0, ignore_index=True)    
+    return dfs

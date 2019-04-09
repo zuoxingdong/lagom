@@ -11,3 +11,5 @@ lagom.vis: Visualization
     :members:
 
 .. autofunction:: set_ticker
+
+.. autofunction:: read_xy
