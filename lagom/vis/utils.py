@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from lagom.utils import pickle_load
+from lagom.utils import yaml_load
 from lagom.transform import interp_curves
 
 
