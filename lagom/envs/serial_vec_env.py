@@ -55,3 +55,6 @@ class SerialVecEnv(VecEnv):
     
     def __getitem__(self, index):
         return self.list_env[index]
+    
+    def __setitem__(self, index, x):
+        self.list_env[index] = x
