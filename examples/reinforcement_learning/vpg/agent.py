@@ -16,11 +16,11 @@ from lagom.networks import make_fc
 from lagom.networks import ortho_init
 from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
-from lagom.networks import StateValueHead
 from lagom.networks import linear_lr_scheduler
 from lagom.metric import bootstrapped_returns
 from lagom.metric import gae
 from lagom.transform import explained_variance as ev
+from lagom.transform import describe
 
 
 class MLP(Module):
@@ -60,7 +60,8 @@ class Agent(BaseAgent):
                                                 config['agent.std_range'],
                                                 config['agent.beta'], 
                                                 **kwargs)
-        self.V_head = StateValueHead(feature_dim, device, **kwargs)
+        self.V_head = nn.Linear(feature_dim, 1).to(device)
+        ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         
         self.total_timestep = 0
         
@@ -138,11 +139,8 @@ class Agent(BaseAgent):
         out['entropy_loss'] = entropy_loss.mean().item()
         out['policy_entropy'] = -entropy_loss.mean().item()
         out['value_loss'] = value_loss.mean().item()
-        Vs_numpy = Vs.detach().cpu().numpy()
-        out['V_mean'] = np.mean(Vs_numpy)
-        out['V_std'] = np.std(Vs_numpy)
-        out['V_min'] = np.min(Vs_numpy)
-        out['V_max'] = np.max(Vs_numpy)
+        Vs_numpy = Vs.detach().cpu().numpy().squeeze()
+        out['V'] = describe(Vs_numpy, axis=-1, repr_indent=1, repr_prefix='\n')
         out['explained_variance'] = ev(y_true=Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
         return out
     

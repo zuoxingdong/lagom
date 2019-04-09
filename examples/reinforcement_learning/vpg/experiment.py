@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from itertools import count
+from functools import partial
 
 import gym
 from gym.spaces import Box
@@ -30,7 +31,7 @@ config = Config(
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
-     'env.id': Grid(['HalfCheetah-v2', 'Hopper-v2', 'Walker2d-v2', 'Ant-v2']), 
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
      'env.standardize_reward': True, 
      'env.time_aware_obs': False,  # append time step to observation
@@ -54,16 +55,13 @@ config = Config(
      'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
-     'train.timestep_per_iter': 2000,  # number of timesteps per iteration
+     'train.timestep_per_iter': 1000,  # number of timesteps per iteration
      
     })
 
 
-def run(config, seed, device):
-    set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
-    
-    def make_env():
+def make_env(config, seed):
+    def _make_env():
         env = gym.make(config['env.id'])
         env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
         env = TimeLimit(env, env.spec.max_episode_steps)
@@ -72,7 +70,15 @@ def run(config, seed, device):
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
-    env = make_vec_env(make_env, 1, seed, 'serial')  # single environment
+    env = make_vec_env(_make_env, 1, seed, 'serial')  # single environment
+    return env
+    
+
+def run(config, seed, device):
+    set_global_seeds(seed)
+    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
+    
+    env = make_env(config, seed)
     env = VecMonitor(env)
     if config['env.standardize_obs']:
         env = VecStandardizeObservation(env, clip=10.)
@@ -89,12 +95,12 @@ def run(config, seed, device):
         train_logger = engine.train(i)
         train_logs.append(train_logger.logs)
         if i == 0 or (i+1) % config['log.freq'] == 0:
-            train_logger.dump(keys=None, index=None, indent=0, border='-'*50)
+            train_logger.dump(keys=None, index=0, indent=0, border='-'*50)
         if i == 0 or (i+1) % config['checkpoint.freq'] == 0:
             agent.checkpoint(logdir, i + 1)
     agent.checkpoint(logdir, i + 1)
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
-    return None  
+    return None
     
 
 if __name__ == '__main__':
