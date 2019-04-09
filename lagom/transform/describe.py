@@ -10,10 +10,14 @@ class Describe:
     min: float
     max: float
     repr_indent: int = 0
+    repr_prefix: str = None
         
     def __repr__(self):
+        s = ''
+        if self.repr_prefix is not None:
+            s += self.repr_prefix
         ind = '\t'*self.repr_indent
-        s = ind + f'count: {self.count}\n'
+        s += ind + f'count: {self.count}\n'
         s += ind + f'mean: {self.mean}\n'
         s += ind + f'std: {self.std}\n'
         s += ind + f'min: {self.min}\n'
@@ -21,10 +25,13 @@ class Describe:
         return s
 
 
-def describe(x, axis=-1, repr_indent=0):
-    count = np.shape(x)[-1]
-    mean = np.mean(x, axis)
-    std = np.std(x, axis)
-    min = np.min(x, axis)
-    max = np.max(x, axis)
-    return Describe(count, mean, std, min, max, repr_indent)
+def describe(x, axis=-1, repr_indent=0, repr_prefix=None):
+    if x is None or np.size(x) == 0:
+        return None
+    x = np.asarray(x)
+    count = x.shape[-1]
+    mean = x.mean(axis)
+    std = x.std(axis)
+    min = x.min(axis)
+    max = x.max(axis)
+    return Describe(count, mean, std, min, max, repr_indent, repr_prefix)

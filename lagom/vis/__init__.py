@@ -7,3 +7,4 @@ except ImportError:
 from .grid_image import GridImage
 
 from .utils import set_ticker
+from .utils import read_xy
