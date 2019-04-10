@@ -11,10 +11,11 @@ from lagom.utils import color_str
 
 class Engine(BaseEngine):
     def train(self, n=None, **kwargs):
+        self.agent.train()
+        
         train_logs = []
         eval_logs = []
         eval_togo = 0
-        checkpoint_togo = 0
         num_episode = 0
         observation = self.env.reset()
         for i in count():
@@ -24,10 +25,14 @@ class Engine(BaseEngine):
             if i < self.config['replay.init_size']:
                 action = [self.env.action_space.sample()]
             else:
-                action = self.agent.choose_action(observation, mode='train')['action']
+                
+                action = self.agent.choose_action(self.replay.normalize_obs(observation))['action']
+                
+                
+                
+                
             next_observation, reward, done, info = self.env.step(action)
             eval_togo += 1
-            checkpoint_togo += 1
             if done[0]:  # [0] due to single environment
                 if 'TimeLimit.truncated' in info[0]:  # NOTE: must use latest TimeLimit
                     reach_terminal = False
@@ -37,20 +42,17 @@ class Engine(BaseEngine):
                 
                 # DDPG updates in the end of episode, for each time step
                 out_agent = self.agent.learn(D=None, replay=self.replay, episode_length=info[0]['episode']['horizon'])
-                num_episode += 1
-                if checkpoint_togo >= self.config['checkpoint.freq']:
-                    checkpoint_togo %= self.config['checkpoint.freq']
-                    self.agent.checkpoint(self.logdir, num_episode)
                 
+                num_episode += 1
                 logger = Logger()
                 logger('accumulated_trained_timesteps', i + 1)
                 logger('accumulated_trained_episodes', num_episode)
                 [logger(key, value) for key, value in out_agent.items()]
                 logger('episode_return', info[0]['episode']['return'])
                 logger('episode_horizon', info[0]['episode']['horizon'])
-                train_logs.append(logger.logs)
-                if num_episode == 1 or num_episode % self.config['log.freq'] == 0:
+                if num_episode % self.config['log.freq'] == 0:
                     logger.dump(keys=None, index=None, indent=0, border='-'*50)
+                train_logs.append(logger.logs)
                 
                 if eval_togo >= self.config['eval.freq']:
                     eval_togo %= self.config['eval.freq']
@@ -68,8 +70,15 @@ class Engine(BaseEngine):
         for _ in range(self.config['eval.num_episode']):
             observation = self.eval_env.reset()
             for _ in range(self.eval_env.spec.max_episode_steps):
+                observation = torch.from_numpy(np.asarray(observation)).float().to(self.agent.device)
                 with torch.no_grad():
-                    action = self.agent.choose_action(observation, mode='eval')['action']
+                    
+                    
+                    action = self.agent.actor(self.replay.normalize_obs(observation)).detach().cpu().numpy()
+                    
+                    
+                    
+                    
                 next_observation, reward, done, info = self.eval_env.step(action)
                 if done[0]:  # [0] single environment
                     returns.append(info[0]['episode']['return'])

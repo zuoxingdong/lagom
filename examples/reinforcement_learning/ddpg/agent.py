@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from lagom import BaseAgent
+from lagom.utils import pickle_dump
 from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
@@ -25,6 +26,12 @@ class Actor(Module):
         
         self.action_head = nn.Linear(300, flatdim(env.action_space))
         ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
+        # Layernorm here will make action large again, so don't use it !
+        #self.action_layer_norm = nn.LayerNorm(flatdim(env.action_space))
+        
+        
+        #ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
+        #ortho_init(self.action_head, weight_scale=0.1, constant_bias=0.0)
         
         assert np.unique(env.action_space.high).size == 1
         assert -np.unique(env.action_space.low).item() == np.unique(env.action_space.high).item()
@@ -53,6 +60,9 @@ class Critic(Module):
         
         self.Q_head = nn.Linear(300, 1)
         ortho_init(self.Q_head, weight_scale=1.0, constant_bias=0.0)
+        #ortho_init(self.Q_head, weight_scale=0.01, constant_bias=0.0)
+        
+        
         
         self.to(self.device)
         
@@ -72,13 +82,13 @@ class Agent(BaseAgent):
         self.actor_target = Actor(config, env, device, **kwargs)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_target.eval()
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=1e-3)
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=config['agent.actor.lr'])
         
         self.critic = Critic(config, env, device, **kwargs)
         self.critic_target = Critic(config, env, device, **kwargs)
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_target.eval()
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=1e-3)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
         self.action_noise = config['agent.action_noise']
         
@@ -88,25 +98,15 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
         for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
-        
-    def train(self):
-        self.training = True
-        self.actor.train()
-        self.critic.train()
-        return self
-        
-    def eval(self):
-        self.training = False
-        self.actor.eval()
-        self.critic.eval()
-        return self
-        
+
     def choose_action(self, obs, **kwargs):
+        mode = kwargs['mode']
+        assert mode in ['train', 'eval']
         if not torch.is_tensor(obs):
             obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         with torch.no_grad():
             action = self.actor(obs).detach().cpu().numpy()
-        if self.training:
+        if mode == 'train':
             eps = np.random.normal(0.0, self.action_noise, size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}
@@ -129,6 +129,7 @@ class Agent(BaseAgent):
             targets = rewards + self.config['agent.gamma']*masks*next_Qs.detach()
             
             critic_loss = F.mse_loss(Qs, targets)
+            self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
@@ -136,6 +137,7 @@ class Agent(BaseAgent):
             
             actor_loss = -self.critic(observations, self.actor(observations)).mean()
             self.actor_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
             actor_loss.backward()
             actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
             self.actor_optimizer.step()
@@ -154,3 +156,7 @@ class Agent(BaseAgent):
         out['min_Q'] = np.min(Q_vals)
         out['max_Q'] = np.max(Q_vals)
         return out
+    
+    def checkpoint(self, logdir, num_iter):
+        self.save(logdir/f'agent_{num_iter}.pth')
+        # TODO: save normalization moments
