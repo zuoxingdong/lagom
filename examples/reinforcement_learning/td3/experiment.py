@@ -6,36 +6,36 @@ from gym.spaces import Box
 
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
+
 from lagom.experiment import Config
 from lagom.experiment import Grid
 from lagom.experiment import Sample
 from lagom.experiment import run_experiment
+
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
+
 from lagom.runner import EpisodeRunner
 
 from agent import Agent
 from engine import Engine
 from replay_buffer import ReplayBuffer
-# Test for obs/reward normalization
-#from new_engine import Engine
-#from new_replay_buffer import ReplayBuffer
 
 
 config = Config(
     {'cuda': True, 
      'log.dir': 'logs/default', 
-     'log.freq': 5,  # every n episodes
-     'checkpoint.freq': int(1e5),  # every n timesteps
+     'log.freq': 1, 
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
+     'env.id': Grid(['HalfCheetah-v2']),  #['Hopper-v2', 'Ant-v2']
      'env.clip_action': True,  # clip action within valid bound before step()
      'env.time_aware_obs': False,  # append time step to observation
      
-     # NOTE: VecStandardize* does NOT work, normalize buffer + PopArt instead
+     # NOTE: VecStandardizeObservation/VecStandardizeReward does NOT work well here
+     # use buffer moments and popart instead
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
@@ -44,6 +44,9 @@ config = Config(
      'agent.critic.lr': 1e-3,
      'agent.critic.use_lr_scheduler': False,
      'agent.action_noise': 0.1,
+     'agent.target_noise': 0.2,
+     'agent.target_noise_clip': 0.5,
+     'agent.policy_delay': 2,
      'agent.max_grad_norm': 1000,  # grad clipping by norm
      
      'replay.capacity': 1000000, 
@@ -78,7 +81,7 @@ def run(config, seed, device):
     
     agent = Agent(config, env, device)
     replay = ReplayBuffer(config['replay.capacity'], device)
-    engine = Engine(config, agent=agent, env=env, eval_env=eval_env, replay=replay, logdir=logdir)
+    engine = Engine(config, agent=agent, env=env, eval_env=eval_env, replay=replay)
     
     train_logs, eval_logs = engine.train()
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
@@ -89,5 +92,5 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[4153361530, 3503522377, 2876994566, 172236777, 3949341511, 849059707], 
+                   seeds=[4153361530], #3503522377, 2876994566, 172236777, 3949341511, 849059707], 
                    num_worker=os.cpu_count())
