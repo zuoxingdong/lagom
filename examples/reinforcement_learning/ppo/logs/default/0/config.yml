@@ -1,6 +1,6 @@
 ID: 0
 cuda: true
-log.dir: logs/default_
+log.dir: logs/default
 log.freq: 10
 checkpoint.freq: 50
 env.standardize_obs: true
@@ -28,4 +28,4 @@ train.timestep: 1000000
 train.timestep_per_iter: 2000
 train.batch_size: 256
 train.num_epochs: 80
-env.id: HalfCheetah-v2
+env.id: HalfCheetah-v3
