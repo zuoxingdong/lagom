@@ -6,7 +6,7 @@ import torch
 
 
 class ReplayBuffer(object):
-    r"""A deque-based buffer of bounded size that implements experience replay for DDPG.
+    r"""A deque-based buffer of bounded size that implements experience replay for TD3.
     
     .. note:
         Difference with DQN replay buffer: we handle raw observation (no pixel) for continuous control
@@ -27,9 +27,7 @@ class ReplayBuffer(object):
         return len(self.buffer)
 
     def add(self, observation, action, reward, next_observation, done):
-        to_float = lambda x: np.asarray(x, dtype=np.float32)  # save half memory than float64
-        # TODO: concatenate, otherwise, too many dimensions, or squeeze() ? but no good seems
-        transition = (to_float(observation), to_float(action), reward, to_float(next_observation), done)
+        transition = (observation, action, reward, next_observation, done)
         self.buffer.append(transition)
         
     def sample(self, batch_size):
