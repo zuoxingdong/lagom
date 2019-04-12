@@ -24,7 +24,7 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
-from lagom import CEM
+from openaies import OpenAIES
 from agent import Agent
 
 
@@ -53,8 +53,12 @@ config = Config(
      'train.popsize': 64,
      'train.mu0': 0.0,
      'train.std0': 1.0,
-     'train.elite_ratio': 0.2,
-     'train.noise_scheduler_args': [0.01, 0.0, 200, 0]
+     'train.lr': 1e-1,
+     'train.lr_decay': 1.0,
+     'train.min_lr': 1e-6,
+     'train.sigma_scheduler_args': [1.0, 0.01, 450, 0],
+     'train.antithetic': False,
+     'train.rank_transform': True
      
     })
 
@@ -104,29 +108,33 @@ def run(config, seed, device):
     
     print('Initializing...')
     agent = Agent(config, make_env(config, seed), device)
-    cem = CEM([config['train.mu0']]*agent.num_params, config['train.std0'], 
+    es = OpenAIES([config['train.mu0']]*agent.num_params, config['train.std0'], 
               {'popsize': config['train.popsize'], 
                'seed': seed, 
-               'elite_ratio': config['train.elite_ratio'], 
-               'noise_scheduler_args': config['train.noise_scheduler_args']})
+               'sigma_scheduler_args': config['train.sigma_scheduler_args'],
+               'lr': config['train.lr'],
+               'lr_decay': config['train.lr_decay'],
+               'min_lr': config['train.min_lr'],
+               'antithetic': config['train.antithetic'],
+               'rank_transform': config['train.rank_transform']})
     train_logs = []
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
         print('Finish initialization. Training starts...')
         for generation in range(config['train.generations']):
-            solutions = cem.ask()
+            solutions = es.ask()
             out = list(executor.map(fitness, solutions))
             Rs, Hs = zip(*out)
-            cem.tell(solutions, [-R for R in Rs])
+            es.tell(solutions, [-R for R in Rs])
             logger = Logger()
             logger('generation', generation+1)
             logger('Returns', describe(Rs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
-            logger('fbest', cem.result.fbest)
+            logger('fbest', es.result.fbest)
             train_logs.append(logger.logs)
             if generation == 0 or (generation+1)%config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
             if generation == 0 or (generation+1)%config['checkpoint.freq'] == 0:
-                agent.from_vec(torch.from_numpy(cem.result.xbest).float())
+                agent.from_vec(torch.from_numpy(es.result.xbest).float())
                 agent.checkpoint(logdir, generation+1)
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None
