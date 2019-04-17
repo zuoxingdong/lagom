@@ -16,18 +16,12 @@ lagom.envs
 .. autoclass:: VecEnvWrapper
     :members:
     
-.. autoclass:: SerialVecEnv
-    :members:
-    
-.. autoclass:: ParallelVecEnv
-    :members:
+.. autofunction:: make_vec_env
     
 .. autoclass:: AtariPreprocessing
     :members:
 
 .. autofunction:: make_atari
-
-.. autofunction:: make_vec_env
 
 Wrappers
 --------------
