@@ -5,12 +5,21 @@ from .trajectory import Trajectory
 
 
 class EpisodeRunner(BaseRunner):
+    def __init__(self, reset_on_call=True):
+        self.reset_on_call = reset_on_call
+        self.observation = None
+    
     def __call__(self, agent, env, T, **kwargs):
         assert isinstance(env, VecEnv)
         assert len(env) == 1, 'for cleaner API, one should use single VecEnv'
         
         D = [Trajectory()]
-        observation = env.reset()
+        if self.reset_on_call:
+            observation = env.reset()
+        else:
+            if self.observation is None:
+                self.observation = env.reset()
+            observation = self.observation
         D[-1].add_observation(observation)
         for t in range(T):
             out_agent = agent.choose_action(observation, **kwargs)
@@ -34,4 +43,5 @@ class EpisodeRunner(BaseRunner):
             observation = next_observation
         if len(D[-1]) == 0:
             D = D[:-1]
+        self.observation = observation
         return D
