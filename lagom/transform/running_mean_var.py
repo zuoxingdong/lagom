@@ -44,7 +44,7 @@ class RunningMeanVar(object):
             x (object): additional batched data.
         """
         x = np.asarray(x, dtype=np.float64)
-        assert x.ndim == len(self.shape) + 1
+        assert x.ndim == len(self.shape) + 1, f'expected {len(self.shape) + 1}, got {x.ndim}'
         
         batch_mean = x.mean(axis=0)
         batch_var = x.var(axis=0)

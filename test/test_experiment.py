@@ -7,6 +7,7 @@ import pytest
 
 from lagom.experiment import Grid
 from lagom.experiment import Sample
+from lagom.experiment import Condition
 from lagom.experiment import Config
 from lagom.experiment import ExperimentWorker
 from lagom.experiment import ExperimentMaster
@@ -30,6 +31,12 @@ def test_sample():
     for _ in range(100):
         x = sampler()
         assert x >=3 and x< 7
+        
+        
+def test_condition():
+    condition = Condition(lambda x: 10 if x['one'] == 'ten' else -1)
+    assert condition({'one': 'ten'}) == 10
+    assert condition({'one': 10}) == -1
 
 
 @pytest.mark.parametrize('num_sample', [1, 5, 10])
@@ -39,6 +46,7 @@ def test_config(num_sample, keep_dict_order):
         Config([1, 2, 3])
         
     config = Config({'log.dir': 'some path',
+                     'beta': Condition(lambda x: 'small' if x['alpha'] < 5 else 'large'),
                      'network.type': 'MLP', 
                      'network.hidden_size': [64, 64],
                      'network.lr': Grid([1e-3, 1e-4]), 
@@ -58,6 +66,10 @@ def test_config(num_sample, keep_dict_order):
         for key in config.items.keys():
             assert key in x
         assert x['log.dir'] == 'some path'
+        if x['alpha'] < 5:
+            assert x['beta'] == 'small'
+        else:
+            assert x['beta'] == 'large'
         assert x['network.type'] == 'MLP'
         assert x['network.hidden_size'] == [64, 64]
         assert x['network.lr'] in [1e-3, 1e-4]
@@ -69,7 +81,7 @@ def test_config(num_sample, keep_dict_order):
             assert list(x.keys()) == ['ID'] + list(config.items.keys())
         else:
             assert list(x.keys()) != ['ID'] + list(config.items.keys())
-            assert list(x.keys()) == ['ID', 'log.dir', 'network.type', 'network.hidden_size', 
+            assert list(x.keys()) == ['ID', 'log.dir', 'beta', 'network.type', 'network.hidden_size', 
                                       'env.id', 'network.lr', 'iter', 'alpha']
     
     # test for non-random sampling
