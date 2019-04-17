@@ -17,7 +17,7 @@
 - [Documentation](#documentation)
 - [Examples](#examples)
 - [Test](#test)
-- [Roadmap](#roadmap)
+- [What's new](#What's-new)
 - [Reference](#reference)
 
 # Basics
@@ -27,11 +27,12 @@
 We are continuously making `lagom` more 'self-contained' to set up and run experiments quickly. It internally supports base classes for multiprocessing ([master-worker framework](https://en.wikipedia.org/wiki/Master/slave_(technology))) for parallelization (e.g. experiments and evolution strategies). It also supports hyperparameter search by defining configurations either as grid search or random search. 
 
 A common pipeline to use `lagom` can be done as following:
-1. Define [environment](lagom/envs) and [agent](lagom/agents) (mainly for RL)
-2. Use [runner](lagom/runner) to collect data (trajectories or segments) for agent
-3. Define [engine](lagom/engine) for training and evaluating the agent
-4. Define [algorithm](lagom/base_algo.py)
-5. Define [experiment](lagom/experiment) and [configurations](lagom/experiment/configurator.py)
+1. Define your [RL agent](lagom/agent.py)
+2. Define your [environment](lagom/envs)
+3. Define your [engine](lagom/engine.py) for training and evaluating the agent in the environment.
+4. Define your [Configurations](lagom/experiment/config.py) for hyperparameter search
+5. Define `run(config, seed, device)` for your experiment pipeline
+6. Call `run_experiment(run, config, seeds, num_worker)` to parallelize your experiments
 
 A graphical illustration is coming soon. 
 
@@ -84,28 +85,21 @@ We are using [pytest](https://docs.pytest.org) for tests. Feel free to run via
 pytest test -v
 ```
 
-# Roadmap
+# What's new
 
-## Core
-    - Tutorials
-## More standard RL baselines
-    - IMPALA
-    - TRPO/PPO
-    - NAF
-    - ACKTR
-    - DDPG
-    - ACER
-    - Q-Prop
-    - DQN: DQN/Rainbow
-## More standard networks
-    - Monte Carlo Dropout/Concrete Dropout
-## Misc
-    - Support pip install
-    - Technical report
+- 2019-03-04 (v0.0.3)
+    - Much easier and cleaner APIs
+
+- 2018-11-04 (v0.0.2)
+    - More high-level API designs
+    - More unit tests
+
+- 2018-09-20 (v0.0.1)
+    - Initial release
 
 # Reference
 
-This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [OpenAI baselines](https://github.com/openai/baselines), [OpenAI Spinning Up](https://github.com/openai/spinningup) and [Dopamine](https://github.com/google/dopamine)
+This repo is inspired by [OpenAI Gym](https://github.com/openai/gym/), [OpenAI baselines](https://github.com/openai/baselines), [OpenAI Spinning Up](https://github.com/openai/spinningup)
 
 Please use this bibtex if you want to cite this repository in your publications:
 

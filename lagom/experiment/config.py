@@ -13,6 +13,15 @@ class Sample(object):
         
     def __call__(self):
         return self.f()
+    
+    
+class Condition(object):
+    def __init__(self, f):
+        assert callable(f)
+        self.f = f
+        
+    def __call__(self, config):
+        return self.f(config)
 
 
 class Config(object):
@@ -113,6 +122,9 @@ class Config(object):
             if self.keep_dict_order:
                 x = {**{'ID': x['ID']}, **{key: x[key] for key in self.items.keys()}}
                 
+            for key, value in x.items():
+                if isinstance(value, Condition):
+                    x[key] = value(x)
+                
             list_config.append(x)
-            
         return list_config
