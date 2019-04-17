@@ -1,5 +1,7 @@
 from shutil import rmtree
+from shutil import copyfile
 from pathlib import Path
+import inspect
 
 from lagom.utils import pickle_dump
 from lagom.utils import yaml_dump
@@ -69,6 +71,11 @@ def run_experiment(run, config, seeds, num_worker):
             log_path.mkdir(parents=True)
             print(f"The old logging directory is renamed to '{old_log_path.absolute()}'. ")
             input('Please, press Enter to continue\n>>> ')
+            
+    # save source files
+    source_path = Path(log_path / 'source_files/')
+    source_path.mkdir(parents=True)
+    [copyfile(s, source_path / s.name) for s in Path(inspect.getsourcefile(run)).parent.glob('*.py')]
             
     # Create subfolders for each ID and subsubfolders for each random seed
     for config in experiment.configs:
