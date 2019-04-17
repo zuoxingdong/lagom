@@ -13,6 +13,9 @@ Config
 .. autoclass:: Sample
     :members:
     
+.. autoclass:: Condition
+    :members:
+    
 .. autoclass:: Config
     :members:
     

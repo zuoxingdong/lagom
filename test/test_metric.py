@@ -23,9 +23,8 @@ from .sanity_env import SanityEnv
 
 @pytest.mark.parametrize('num_env', [1])
 @pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('mode', ['serial', 'parallel'])
 @pytest.mark.parametrize('T', [1, 4, 6, 20])
-def test_returns(num_env, init_seed, mode, T):
+def test_returns(num_env, init_seed, T):
     gamma = 0.1
     y1 = [0.1]
     y2 = [0.1 + gamma*0.2, 0.2]
@@ -50,7 +49,7 @@ def test_returns(num_env, init_seed, mode, T):
     ys = [None, y1, y2, y3, y4, y5, y6]
 
     make_env = lambda: TimeLimit(SanityEnv())
-    env = make_vec_env(make_env, num_env, init_seed, mode)
+    env = make_vec_env(make_env, num_env, init_seed)
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
     D = runner(agent, env, T)

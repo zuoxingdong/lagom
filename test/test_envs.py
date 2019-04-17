@@ -13,9 +13,8 @@ from gym.spaces import Dict
 from lagom.envs import flatdim
 from lagom.envs import flatten
 from lagom.envs import unflatten
-from lagom.envs import SerialVecEnv
-from lagom.envs import ParallelVecEnv
 from lagom.envs import make_vec_env
+from lagom.envs import VecEnv
 from lagom.envs import make_atari
 from lagom.envs.wrappers import get_wrapper
 from lagom.envs.wrappers import get_all_wrappers
@@ -99,16 +98,15 @@ def test_make_atari(env_id):
             break
 
 
-@pytest.mark.parametrize('vec_env_class', [SerialVecEnv, ParallelVecEnv])
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
 @pytest.mark.parametrize('num_env', [1, 3, 5])
-def test_vec_env(vec_env_class, env_id, num_env):
+def test_vec_env(env_id, num_env):
     def make_env():
         return gym.make(env_id)
     base_env = make_env()
     list_make_env = [make_env for _ in range(num_env)]
-    env = vec_env_class(list_make_env)
-    assert isinstance(env, (SerialVecEnv, ParallelVecEnv))
+    env = VecEnv(list_make_env)
+    assert isinstance(env, VecEnv)
     assert len(env) == num_env
     assert len(list(env)) == num_env
     assert env.observation_space == base_env.observation_space
@@ -131,43 +129,14 @@ def test_vec_env(vec_env_class, env_id, num_env):
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 @pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('mode', ['serial', 'parallel'])
-def test_make_vec_env(env_id, num_env, init_seed, mode):
+def test_make_vec_env(env_id, num_env, init_seed):
     def make_env():
         return gym.make(env_id)
-    env = make_vec_env(make_env, num_env, init_seed, mode)
-    if mode == 'serial':
-        assert isinstance(env, SerialVecEnv)
-    else:
-        assert isinstance(env, ParallelVecEnv)
+    env = make_vec_env(make_env, num_env, init_seed)
+    assert isinstance(env, VecEnv)
     seeds = [x.keywords['seed'] for x in env.list_make_env]
     seeder = Seeder(init_seed)
     assert seeds == seeder(num_env)
-    
-    
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
-@pytest.mark.parametrize('num_env', [1, 3, 5])
-@pytest.mark.parametrize('init_seed', [0, 10])
-def test_equivalence_vec_env(env_id, num_env, init_seed):
-    make_env = lambda: gym.make(env_id)
-
-    env1 = make_vec_env(make_env, num_env, init_seed, mode='serial')
-    env2 = make_vec_env(make_env, num_env, init_seed, mode='parallel')
-
-    assert env1.observation_space == env2.observation_space
-    assert env1.action_space == env2.action_space
-    assert len(env1) == len(env2)
-    obs1 = env1.reset()
-    obs2 = env2.reset()
-    assert np.allclose(obs1, obs2)
-
-    for _ in range(20):
-        actions = [env1.action_space.sample() for _ in range(len(env1))]
-        obs1, rewards1, dones1, _ = env1.step(actions)
-        obs2, rewards2, dones2, _ = env2.step(actions)
-        assert np.allclose(obs1, obs2)
-        assert np.allclose(rewards1, rewards2)
-        assert np.allclose(dones1, dones2)
 
     
 def test_clip_action():
@@ -382,10 +351,9 @@ def test_time_aware_observation(env_id):
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
 @pytest.mark.parametrize('num_env', [1, 3, 5])
 @pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('mode', ['serial', 'parallel'])
-def test_vec_monitor(env_id, num_env, init_seed, mode):
+def test_vec_monitor(env_id, num_env, init_seed):
     make_env = lambda: gym.make(env_id)
-    env = make_vec_env(make_env, num_env, init_seed, mode)
+    env = make_vec_env(make_env, num_env, init_seed)
     env = VecMonitor(env)
 
     env.reset()
