@@ -17,11 +17,10 @@ from .sanity_env import SanityEnv
 
 
 @pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('mode', ['serial', 'parallel'])
 @pytest.mark.parametrize('T', [1, 5, 100])
-def test_trajectory(init_seed, mode, T):
+def test_trajectory(init_seed, T):
     make_env = lambda: TimeLimit(SanityEnv())
-    env = make_vec_env(make_env, 1, init_seed, mode)  # single environment
+    env = make_vec_env(make_env, 1, init_seed)  # single environment
     D = Trajectory()
     assert len(D) == 0
     assert not D.completed
@@ -72,14 +71,13 @@ def test_trajectory(init_seed, mode, T):
 @pytest.mark.parametrize('env_id', ['Sanity', 'CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
 @pytest.mark.parametrize('num_env', [1, 3])
 @pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('mode', ['serial', 'parallel'])
 @pytest.mark.parametrize('T', [1, 5, 100])
-def test_episode_runner(env_id, num_env, init_seed, mode, T):    
+def test_episode_runner(env_id, num_env, init_seed, T):    
     if env_id == 'Sanity':
         make_env = lambda: TimeLimit(SanityEnv())
     else:
         make_env = lambda: gym.make(env_id)
-    env = make_vec_env(make_env, num_env, init_seed, mode)
+    env = make_vec_env(make_env, num_env, init_seed)
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
     

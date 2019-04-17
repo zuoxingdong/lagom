@@ -1,53 +1,43 @@
 import numpy as np
 
-from abc import ABC
-from abc import abstractmethod
-
 from lagom.vis import GridImage
 
 try:  # workaround on server without fake screen but still running other things well
     from lagom.vis import ImageViewer
 except ImportError:
-    import warnings
-    warnings.warn('ImageViewer failed to import due to pyglet. ')
+    pass
 
 
-class VecEnv(ABC):
-    r"""Base class for all asynchronous, vectorized environments. 
+class VecEnv(object):
+    r"""A vectorized environment runs serially for each sub-environment. 
     
-    A vectorized environment handles batched data with its sub-environments. Each observation
-    returned from vectorized environment is a batch of observations for each sub-environment. 
-    And :meth:`step` is expected to receive a batch of actions for each sub-environment. 
+    Each observation returned from vectorized environment is a batch of observations 
+    for each sub-environment. And :meth:`step` is expected to receive a batch of 
+    actions for each sub-environment. 
     
     .. note::
     
         All sub-environments should share the identical observation and action spaces.
         In other words, a vector of multiple different environments is not supported. 
     
-    .. note::
-        
-        The random seeds for all environments should be handled within each make_env function. 
-        And it should not handled here in general, because of APIs for parallelized environments.
-    
     Args:
         list_make_env (list): a list of functions each returns an instantiated enviroment. 
         observation_space (Space): observation space of the environment
         action_space (Space): action space of the environment
-    
+        
     """
+    metadata = {'render.modes': ['human', 'rgb_array']}
     closed = False
     viewer = None
 
-    metadata = {'render.modes': ['human', 'rgb_array']}
-    
-    def __init__(self, list_make_env, observation_space, action_space, reward_range, spec):
+    def __init__(self, list_make_env):
         self.list_make_env = list_make_env
-        self.observation_space = observation_space
-        self.action_space = action_space
-        self.reward_range = reward_range
-        self.spec = spec
+        self.list_env = [make_env() for make_env in list_make_env]
+        self.observation_space = self.list_env[0].observation_space
+        self.action_space = self.list_env[0].action_space
+        self.reward_range = self.list_env[0].reward_range
+        self.spec = self.list_env[0].spec
 
-    @abstractmethod
     def step(self, actions):
         r"""Ask all the environments to take a step with a list of actions, each for one environment. 
         
@@ -66,9 +56,23 @@ class VecEnv(ABC):
             a list of dictionaries of additional informations, each returned from one environment. 
             
         """
-        pass
+        assert len(actions) == len(self)
+        observations = []
+        rewards = []
+        dones = []
+        infos = []
+        for i, (env, action) in enumerate(zip(self.list_env, actions)):
+            observation, reward, done, info = env.step(action)
+            # If done=True, reset environment, store last observation in info and report new initial observation
+            if done:
+                info['last_observation'] = observation
+                observation = env.reset()
+            observations.append(observation)
+            rewards.append(reward)
+            dones.append(done)
+            infos.append(info)
+        return observations, rewards, dones, infos
     
-    @abstractmethod
     def reset(self):
         r"""Reset all the environments and return a list of initial observations from each environment. 
         
@@ -81,7 +85,8 @@ class VecEnv(ABC):
         observations : list
             a list of initial observations from all environments. 
         """
-        pass
+        observations = [env.reset() for env in self.list_env]
+        return observations
     
     def render(self, mode='human'):
         r"""Render all the environments. 
@@ -109,8 +114,7 @@ class VecEnv(ABC):
             return gridimg
         else:
             raise ValueError(f'expected human or rgb_array, got {mode}')
-        
-    @abstractmethod
+
     def get_images(self):
         r"""Returns a batched RGB array with shape [N, H, W, C] from all environments. 
         
@@ -119,7 +123,7 @@ class VecEnv(ABC):
         imgs : ndarray
             a batched RGB array with shape [N, H, W, C]
         """
-        pass
+        return [env.render(mode='rgb_array') for env in self.list_env]
     
     def get_viewer(self):
         r"""Returns an instantiated :class:`ImageViewer`. 
@@ -133,10 +137,9 @@ class VecEnv(ABC):
             self.viewer = ImageViewer(max_width=500)  # set a max width here
         return self.viewer
     
-    @abstractmethod
     def close_extras(self):
         r"""Clean up the extra resources e.g. beyond what's in this base class. """
-        pass
+        return [env.close() for env in self.list_env]
     
     def close(self):
         r"""Close all environments. 
@@ -173,13 +176,11 @@ class VecEnv(ABC):
     def __len__(self):
         return len(self.list_make_env)
     
-    @abstractmethod
     def __getitem__(self, index):
-        pass
+        return self.list_env[index]
     
-    @abstractmethod
     def __setitem__(self, index, x):
-        pass
+        self.list_env[index] = x
     
     def __repr__(self):
         return f'<{self.__class__.__name__}: {len(self)}, {self.spec.id}>'
@@ -209,11 +210,7 @@ class VecEnvWrapper(VecEnv):
         assert isinstance(env, VecEnv)
         self.env = env
         self.metadata = env.metadata
-        super().__init__(list_make_env=env.list_make_env, 
-                         observation_space=env.observation_space, 
-                         action_space=env.action_space, 
-                         reward_range=env.reward_range, 
-                         spec=env.spec)
+        super().__init__(list_make_env=env.list_make_env)
         
     def step(self, actions):
         return self.env.step(actions)
