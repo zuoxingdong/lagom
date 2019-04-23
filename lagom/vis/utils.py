@@ -5,6 +5,7 @@ import pandas as pd
 from lagom.utils import pickle_load
 from lagom.utils import yaml_load
 from lagom.transform import interp_curves
+from lagom.transform import smooth_filter
 
 
 def set_ticker(ax, axis='x', num=None, KM_format=False, integer=False):
@@ -26,7 +27,7 @@ def set_ticker(ax, axis='x', num=None, KM_format=False, integer=False):
     return ax
 
 
-def read_xy(log_folder, file_name, get_x, get_y):
+def read_xy(log_folder, file_name, get_x, get_y, smooth_out=False):
     glob_dir = lambda x: [p for p in x.glob('*/') if p.is_dir() and str(p.name).isdigit()]
     dfs = []
     for id_folder in glob_dir(Path(log_folder)):
@@ -37,6 +38,8 @@ def read_xy(log_folder, file_name, get_x, get_y):
             x.append([get_x(log) for log in logs])
             y.append([get_y(log) for log in logs])
         new_x, ys = interp_curves(x, y)  # all seeds share same x values
+        if smooth_out:
+            ys = [smooth_filter(y, window_length=51, polyorder=3) for y in ys]
         df = pd.DataFrame({'x': np.tile(new_x, len(ys)), 'y': np.hstack(ys)})
         config = yaml_load(id_folder / 'config.yml')
         config = pd.DataFrame([config.values()], columns=config.keys())
