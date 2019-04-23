@@ -35,23 +35,21 @@ class MLP(Module):
         
         self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
+            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
         
         self.to(self.device)
         
     def forward(self, x):
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
+        for layer in self.feature_layers:
+            x = torch.tanh(layer(x))
         return x
-
 
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
         
-        self.feature_network = MLP(config, env, device, **kwargs)
         feature_dim = config['nn.sizes'][-1]
+        self.feature_network = MLP(config, env, device, **kwargs)
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
@@ -81,7 +79,6 @@ class Agent(BaseAgent):
         action_dist = self.action_head(features)
         out['action_dist'] = action_dist
         out['entropy'] = action_dist.entropy()
-        out['perplexity'] = action_dist.perplexity()
         
         action = action_dist.sample()
         out['action'] = action
@@ -90,9 +87,6 @@ class Agent(BaseAgent):
         
         V = self.V_head(features)
         out['V'] = V
-        
-        # sanity check for NaN
-        assert not torch.any(torch.isnan(action))
         return out
     
     def learn_one_update(self, data):
@@ -130,10 +124,8 @@ class Agent(BaseAgent):
         out['policy_entropy'] = -entropy_loss.mean().item()
         out['value_loss'] = value_loss.mean().item()
         out['explained_variance'] = ev(y_true=old_Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
-        approx_kl = torch.mean(old_logprobs - logprobs)
-        out['approx_kl'] = approx_kl.item()
-        clip_frac = ((ratio < 1.0 - eps) | (ratio > 1.0 + eps)).float().mean()
-        out['clip_frac'] = clip_frac.item()
+        out['approx_kl'] = torch.mean(old_logprobs - logprobs).item()
+        out['clip_frac'] = ((ratio < 1.0 - eps) | (ratio > 1.0 + eps)).float().mean().item()
         return out
         
     def learn(self, D, **kwargs):
@@ -163,11 +155,7 @@ class Agent(BaseAgent):
         dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True, **kwargs)
         for epoch in range(self.config['train.num_epochs']):
             logs = [self.learn_one_update(data) for data in dataloader]
-            
-            approx_kl = np.mean([item['approx_kl'] for item in logs])
-            if approx_kl > self.config['agent.target_kl']:
-                break
-        
+
         self.total_timestep += sum([len(traj) for traj in D])
         out = {}
         if self.config['agent.use_lr_scheduler']:
@@ -181,7 +169,6 @@ class Agent(BaseAgent):
         out['explained_variance'] = np.mean([item['explained_variance'] for item in logs])
         out['approx_kl'] = np.mean([item['approx_kl'] for item in logs])
         out['clip_frac'] = np.mean([item['clip_frac'] for item in logs])
-        out['finished_inner_epochs'] = f'{epoch+1}/{self.config["train.num_epochs"]}'
         return out
     
     def checkpoint(self, logdir, num_iter):
