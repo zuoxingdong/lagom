@@ -1,0 +1,36 @@
+ID: 0
+cuda: true
+cuda_ids:
+- 2
+- 3
+- 6
+- 7
+log.dir: logs/openai_layer_norm
+log.freq: 10
+checkpoint.freq: 50
+env.standardize_obs: true
+env.standardize_reward: true
+env.time_aware_obs: false
+nn.sizes:
+- 64
+- 64
+agent.lr: 0.0003
+agent.use_lr_scheduler: true
+agent.gamma: 0.99
+agent.gae_lambda: 0.95
+agent.standardize_adv: true
+agent.max_grad_norm: 0.5
+agent.entropy_coef: 0.0
+agent.value_coef: 0.5
+agent.clip_range: 0.2
+agent.target_kl: 0.01
+env.clip_action: true
+agent.std0: 0.5
+agent.std_style: exp
+agent.std_range: null
+agent.beta: null
+train.timestep: 1000000
+train.timestep_per_iter: 2048
+train.batch_size: 64
+train.num_epochs: 10
+env.id: HalfCheetah-v3
