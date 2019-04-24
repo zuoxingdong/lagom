@@ -39,7 +39,8 @@ class AtariPreprocessing(Wrapper):
         super().__init__(env)
         assert frame_skip > 0
         
-        self.noop_max = noop_max
+        self.noop_max = noop_max info = self.env.step(action)
+        self.frames.append(observa
         assert env.unwrapped.get_action_meanings()[0] == 'NOOP'
         
         self.frame_skip = frame_skip
@@ -110,7 +111,7 @@ class AtariPreprocessing(Wrapper):
         return self.obs_buffer[0]
 
 
-def make_atari(name, sticky_action=True, max_episode_steps=None):
+def make_atari(name, sticky_action=True, max_episode_steps=None, lz4_compress=False):
     r"""Create Atari 2600 environment and wrapped it with preprocessing guided by 
     
     Machado et al. (2018), "Revisiting the Arcade Learning Environment: 
@@ -138,6 +139,5 @@ def make_atari(name, sticky_action=True, max_episode_steps=None):
     env = ResizeObservation(env, 84)
     env = GrayScaleObservation(env, keep_dim=False)
     env = AtariPreprocessing(env)
-    env = FrameStack(env, 4)
-    
+    env = FrameStack(env, 4, lz4_compress)    
     return env
