@@ -42,5 +42,6 @@ class ExperimentWorker(ProcessWorker):
             device = torch.device(f'cuda:{device_id}')
         else:
             device = torch.device('cpu')
+            torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK, e.g. with LayerNorm
             
         return device
