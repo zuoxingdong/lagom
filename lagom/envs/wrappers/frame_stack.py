@@ -1,4 +1,6 @@
 from collections import deque
+from lz4.block import compress
+from lz4.block import decompress
 
 import numpy as np
 
@@ -9,16 +11,27 @@ from gym import ObservationWrapper
 class LazyFrames(object):
     r"""Ensures common frames are only stored once to optimize memory use. 
     
+    To further reduce the memory use, it is optionally to turn on lz4 to 
+    compress the observations.
+    
     .. note::
     
         This object should only be converted to numpy array just before forward pass. 
         
     """
-    def __init__(self, frames):
+    def __init__(self, frames, lz4_compress=False):
+        if lz4_compress:
+            self.shape = frames[0].shape
+            frames = [compress(frame) for frame in frames]
         self._frames = frames
+        self.lz4_compress = lz4_compress
         
     def __array__(self, dtype=None):
-        out = np.stack(self._frames, axis=0)
+        if self.lz4_compress:
+            frames = [np.frombuffer(decompress(frame), dtype=np.uint8).reshape(self.shape) for frame in self._frames]
+        else:
+            frames = self._frames
+        out = np.stack(frames, axis=0)
         if dtype is not None:
             out = out.astype(dtype)
         return out
@@ -61,9 +74,10 @@ class FrameStack(ObservationWrapper):
     
     """
 
-    def __init__(self, env, num_stack):
+    def __init__(self, env, num_stack, lz4_compress=False):
         super().__init__(env)
         self.num_stack = num_stack
+        self.lz4_compress = lz4_compress
 
         self.frames = deque(maxlen=num_stack)
         
@@ -73,7 +87,7 @@ class FrameStack(ObservationWrapper):
         
     def _get_observation(self):
         assert len(self.frames) == self.num_stack
-        return LazyFrames(list(self.frames))
+        return LazyFrames(list(self.frames), self.lz4_compress)
         
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
