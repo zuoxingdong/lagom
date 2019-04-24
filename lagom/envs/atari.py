@@ -39,8 +39,7 @@ class AtariPreprocessing(Wrapper):
         super().__init__(env)
         assert frame_skip > 0
         
-        self.noop_max = noop_max info = self.env.step(action)
-        self.frames.append(observa
+        self.noop_max = noop_max
         assert env.unwrapped.get_action_meanings()[0] == 'NOOP'
         
         self.frame_skip = frame_skip
