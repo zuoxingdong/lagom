@@ -32,20 +32,20 @@ config = Config(
      
      
      
-     'log.dir': 'logs/default_new', 
+     'log.dir': 'logs/new_default', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
-     'env.standardize_reward': True,
+     'env.standardize_reward': True, 
      
      'nn.sizes': [64, 64],
      
-     'agent.lr': 1e-3,
-     'agent.use_lr_scheduler': False,
+     'agent.lr': 7e-4,
+     'agent.use_lr_scheduler': True,
      'agent.gamma': 0.99,
-     'agent.gae_lambda': 0.97,
+     'agent.gae_lambda': 0.95,
      'agent.standardize_adv': True,  # standardize advantage estimates
      'agent.max_grad_norm': 0.5,  # grad clipping by norm
      'agent.entropy_coef': 0.01,

@@ -7,7 +7,7 @@ cuda_ids:
 - 5
 - 6
 - 7
-log.dir: logs/default
+log.dir: logs/new_default
 log.freq: 10
 checkpoint.freq: 50
 env.standardize_obs: true
@@ -15,10 +15,10 @@ env.standardize_reward: true
 nn.sizes:
 - 64
 - 64
-agent.lr: 0.001
-agent.use_lr_scheduler: false
+agent.lr: 0.0007
+agent.use_lr_scheduler: true
 agent.gamma: 0.99
-agent.gae_lambda: 0.97
+agent.gae_lambda: 0.95
 agent.standardize_adv: true
 agent.max_grad_norm: 0.5
 agent.entropy_coef: 0.01

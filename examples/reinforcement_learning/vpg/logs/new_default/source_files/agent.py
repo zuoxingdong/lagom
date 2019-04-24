@@ -23,7 +23,7 @@ from lagom.transform import explained_variance as ev
 from lagom.transform import describe
 
 
-
+"""
 class MLP(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -42,9 +42,8 @@ class MLP(Module):
         for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
             x = layer_norm(F.relu(layer(x)))
         return x
-
-
 """
+
 class MLP(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -62,7 +61,7 @@ class MLP(Module):
         for layer in self.feature_layers:
             x = torch.tanh(layer(x))
         return x
-"""
+
 
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):

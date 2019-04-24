@@ -32,13 +32,13 @@ config = Config(
      
      
      
-     'log.dir': 'logs/default_new', 
+     'log.dir': 'logs/default', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
-     'env.standardize_reward': True,
+     'env.standardize_reward': True, 
      
      'nn.sizes': [64, 64],
      

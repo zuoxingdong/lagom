@@ -45,7 +45,7 @@ config = Config(
      'agent.lr': 1e-3,
      'agent.use_lr_scheduler': False,
      'agent.gamma': 0.99,
-     'agent.gae_lambda': 0.97,
+     'agent.gae_lambda': 0.95,
      'agent.standardize_adv': True,  # standardize advantage estimates
      'agent.max_grad_norm': 0.5,  # grad clipping by norm
      'agent.entropy_coef': 0.01,
