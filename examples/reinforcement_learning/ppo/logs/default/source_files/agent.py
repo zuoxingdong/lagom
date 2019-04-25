@@ -44,6 +44,7 @@ class MLP(Module):
             x = torch.tanh(layer(x))
         return x
 
+
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
@@ -151,8 +152,7 @@ class Agent(BaseAgent):
         assert all([x.ndimension() == 1 for x in [logprobs, entropies, Vs, Qs, As]])
         
         dataset = Dataset(D, logprobs, entropies, Vs, Qs, As)
-        kwargs = {'num_workers': 1, 'pin_memory': True} if self.config['cuda'] else {}
-        dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True, **kwargs)
+        dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True)
         for epoch in range(self.config['train.num_epochs']):
             logs = [self.learn_one_update(data) for data in dataloader]
 
