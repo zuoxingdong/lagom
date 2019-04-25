@@ -1,9 +1,15 @@
 ID: 0
 cuda: true
+cuda_ids:
+- 1
+- 2
+- 3
+- 5
+- 6
+- 7
 log.dir: logs/default
-log.freq: 1
-env.clip_action: true
-env.time_aware_obs: false
+log.freq: 5
+checkpoint.freq: 100000
 agent.gamma: 0.99
 agent.polyak: 0.995
 agent.actor.lr: 0.001
@@ -14,11 +20,11 @@ agent.action_noise: 0.1
 agent.target_noise: 0.2
 agent.target_noise_clip: 0.5
 agent.policy_delay: 2
-agent.max_grad_norm: 1000
+agent.max_grad_norm: 999999
 replay.capacity: 1000000
 replay.init_size: 10000
-replay.batch_size: 128
+replay.batch_size: 100
 train.timestep: 1000000
 eval.freq: 5000
 eval.num_episode: 10
-env.id: HalfCheetah-v2
+env.id: HalfCheetah-v3
