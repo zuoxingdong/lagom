@@ -73,9 +73,9 @@ Detailed tutorials is coming soon. For now, it is recommended to have a look in 
 
 The documentation hosted by ReadTheDocs is available online at [http://lagom.readthedocs.io](http://lagom.readthedocs.io)
 
-# Examples
+# Baselines
 
-We are continuously providing [examples/](examples/) to use lagom. 
+We provide a set of implementations of reinforcement learning algorithms at [baselines](baselines/) using lagom. 
 
 # Test
 
