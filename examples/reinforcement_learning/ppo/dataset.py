@@ -20,9 +20,8 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return self.observations.shape[0]
-        
+
     def __getitem__(self, i):
-        batch = (self.observations[i], self.actions[i], self.logprobs[i], 
-                 self.entropies[i], self.Vs[i], self.Qs[i], self.As[i])
-        return batch
-    
+        D = (self.observations[i], self.actions[i], self.logprobs[i], 
+             self.entropies[i], self.Vs[i], self.Qs[i], self.As[i])
+        return D
