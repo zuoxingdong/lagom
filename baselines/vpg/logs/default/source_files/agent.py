@@ -23,7 +23,6 @@ from lagom.transform import explained_variance as ev
 from lagom.transform import describe
 
 
-
 class MLP(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -44,26 +43,6 @@ class MLP(Module):
         return x
 
 
-"""
-class MLP(Module):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(**kwargs)
-        self.config = config
-        self.env = env
-        self.device = device
-        
-        self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
-        
-        self.to(self.device)
-        
-    def forward(self, x):
-        for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
-        return x
-"""
-
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
@@ -73,14 +52,7 @@ class Agent(BaseAgent):
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
-            self.action_head = DiagGaussianHead(feature_dim, 
-                                                flatdim(env.action_space), 
-                                                device, 
-                                                config['agent.std0'], 
-                                                config['agent.std_style'], 
-                                                config['agent.std_range'],
-                                                config['agent.beta'], 
-                                                **kwargs)
+            self.action_head = DiagGaussianHead(feature_dim, flatdim(env.action_space), device, config['agent.std0'], **kwargs)
         self.V_head = nn.Linear(feature_dim, 1).to(device)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         
