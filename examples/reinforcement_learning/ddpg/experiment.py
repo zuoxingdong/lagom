@@ -2,20 +2,18 @@ import os
 from pathlib import Path
 
 import gym
-from gym.spaces import Box
 
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
 from lagom.experiment import Config
 from lagom.experiment import Grid
 from lagom.experiment import Sample
+from lagom.experiment import Condition
 from lagom.experiment import run_experiment
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
-from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
-from lagom.runner import EpisodeRunner
 
 from agent import Agent
 from engine import Engine
@@ -32,10 +30,6 @@ config = Config(
      'checkpoint.freq': int(1e5),  # every n timesteps
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
-     'env.clip_action': True,  # clip action within valid bound before step()
-     'env.time_aware_obs': False,  # append time step to observation
-     
-     # NOTE: VecStandardize* does NOT work, normalize buffer + PopArt instead
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
@@ -44,11 +38,12 @@ config = Config(
      'agent.critic.lr': 1e-3,
      'agent.critic.use_lr_scheduler': False,
      'agent.action_noise': 0.1,
-     'agent.max_grad_norm': 1000,  # grad clipping by norm
+     'agent.max_grad_norm': 999999,  # grad clipping by norm
      
      'replay.capacity': 1000000, 
-     'replay.init_size': 10000,  # number of time steps to run random policy to initialize replay buffer
-     'replay.batch_size': 128,
+     # number of time steps to take uniform actions initially
+     'replay.init_size': Condition(lambda x: 1000 if x['env.id'] in ['Hopper-v3', 'Walker2d-v3'] else 10000),  
+     'replay.batch_size': 100,
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'eval.freq': 5000,
@@ -57,23 +52,25 @@ config = Config(
     })
 
 
+def make_env(config, seed):
+    def _make_env():
+        env = gym.make(config['env.id'])
+        env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
+        env = TimeLimit(env, env.spec.max_episode_steps)
+        env = ClipAction(env)
+        return env
+    env = make_vec_env(_make_env, 1, seed)  # single environment
+    return env
+
+
 def run(config, seed, device):
     set_global_seeds(seed)
     logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
-    def make_env():
-        env = gym.make(config['env.id'])
-        env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
-        env = TimeLimit(env, env.spec.max_episode_steps)
-        if config['env.time_aware_obs']:
-            env = TimeAwareObservation(env)
-        if config['env.clip_action'] and isinstance(env.action_space, Box):
-            env = ClipAction(env)
-        return env
-    env = make_vec_env(make_env, 1, seed, 'serial')  # single environment
+    env = make_env(config, seed)
     env = VecMonitor(env)
     
-    eval_env = make_vec_env(make_env, 1, seed, 'serial')
+    eval_env = make_env(config, seed)
     eval_env = VecMonitor(eval_env)
     
     agent = Agent(config, env, device)

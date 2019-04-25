@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from lagom import BaseAgent
+from lagom.transform import describe
 from lagom.utils import pickle_dump
 from lagom.envs import flatdim
 from lagom.networks import Module
@@ -20,18 +21,7 @@ class Actor(Module):
         self.device = device
         
         self.feature_layers = make_fc(flatdim(env.observation_space), [400, 300])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in [400, 300]])
-        
         self.action_head = nn.Linear(300, flatdim(env.action_space))
-        ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
-        # Layernorm here will make action large again, so don't use it !
-        #self.action_layer_norm = nn.LayerNorm(flatdim(env.action_space))
-        
-        
-        #ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
-        #ortho_init(self.action_head, weight_scale=0.1, constant_bias=0.0)
         
         assert np.unique(env.action_space.high).size == 1
         assert -np.unique(env.action_space.low).item() == np.unique(env.action_space.high).item()
@@ -40,12 +30,12 @@ class Actor(Module):
         self.to(self.device)
         
     def forward(self, x):
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
+        for layer in self.feature_layers:
+            x = F.relu(layer(x))
         x = self.max_action*torch.tanh(self.action_head(x))
         return x
 
-    
+
 class Critic(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -54,22 +44,14 @@ class Critic(Module):
         self.device = device
         
         self.feature_layers = make_fc(flatdim(env.observation_space) + flatdim(env.action_space), [400, 300])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in [400, 300]])
-        
         self.Q_head = nn.Linear(300, 1)
-        ortho_init(self.Q_head, weight_scale=1.0, constant_bias=0.0)
-        #ortho_init(self.Q_head, weight_scale=0.01, constant_bias=0.0)
-        
-        
         
         self.to(self.device)
         
     def forward(self, x, action):
         x = torch.cat([x, action], dim=-1)
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
+        for layer in self.feature_layers:
+            x = F.relu(layer(x))
         x = self.Q_head(x)
         return x
     
@@ -146,15 +128,12 @@ class Agent(BaseAgent):
             
             out['actor_loss'].append(actor_loss.item())
             out['critic_loss'].append(critic_loss.item())
-            Q_vals.extend(Qs.detach().cpu().numpy())
+            Q_vals.append(Qs)
         out['actor_loss'] = np.mean(out['actor_loss'])
         out['actor_grad_norm'] = actor_grad_norm
         out['critic_loss'] = np.mean(out['critic_loss'])
         out['critic_grad_norm'] = critic_grad_norm
-        out['mean_Q'] = np.mean(Q_vals)
-        out['std_Q'] = np.std(Q_vals)
-        out['min_Q'] = np.min(Q_vals)
-        out['max_Q'] = np.max(Q_vals)
+        out['Q'] = describe(torch.cat(Q_vals).detach().cpu().numpy().squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
         return out
     
     def checkpoint(self, logdir, num_iter):
