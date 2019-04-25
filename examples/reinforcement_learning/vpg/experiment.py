@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from itertools import count
-from functools import partial
 
 import gym
 from gym.spaces import Box
@@ -14,7 +13,6 @@ from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
-from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
@@ -33,8 +31,7 @@ config = Config(
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
-     'env.standardize_reward': True, 
-     'env.time_aware_obs': False,  # append time step to observation
+     'env.standardize_reward': True,
      
      'nn.sizes': [64, 64],
      
@@ -65,12 +62,10 @@ def make_env(config, seed):
         env = gym.make(config['env.id'])
         env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
         env = TimeLimit(env, env.spec.max_episode_steps)
-        if config['env.time_aware_obs']:
-            env = TimeAwareObservation(env)
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
-    env = make_vec_env(_make_env, 1, seed, 'serial')  # single environment
+    env = make_vec_env(_make_env, 1, seed)  # single environment
     return env
     
 
@@ -81,12 +76,12 @@ def run(config, seed, device):
     env = make_env(config, seed)
     env = VecMonitor(env)
     if config['env.standardize_obs']:
-        env = VecStandardizeObservation(env, clip=10.)
+        env = VecStandardizeObservation(env, clip=5.)
     if config['env.standardize_reward']:
         env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
     
     agent = Agent(config, env, device)
-    runner = EpisodeRunner()
+    runner = EpisodeRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     train_logs = []
     for i in count():
