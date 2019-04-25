@@ -190,40 +190,16 @@ def test_categorical_head(feature_dim, batch_size, num_action):
 @pytest.mark.parametrize('feature_dim', [5, 20])
 @pytest.mark.parametrize('action_dim', [1, 4])
 @pytest.mark.parametrize('std0', [0.21, 0.5, 1.0])
-@pytest.mark.parametrize('std_style', ['exp', 'softplus', 'sigmoidal'])
-@pytest.mark.parametrize('std_range', [(0.01, 1.2), (0.2, 1.5)])
-@pytest.mark.parametrize('beta', [0.5, 2.0])
-def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0, std_style, std_range, beta):
+def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
     device = torch.device('cpu')
     with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, -0.5, std_style, std_range, beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'softexp', std_range, beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'sigmoidal', [0.1, 0.5, 1.0], beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'sigmoidal', [-0.5, 1.0], beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'sigmoidal', [0.5, 0.1], beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'sigmoidal', std_range, None)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, 0.009, 'sigmoidal', std_range, beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'exp', std_range, beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'exp', std_range, None)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'softplus', std_range, beta)
-    with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, std0, 'softplus', None, beta)
+        DiagGaussianHead(feature_dim, action_dim, device, -0.5)
     
     def _basic_check(action_head):
         assert action_head.feature_dim == feature_dim
         assert action_head.action_dim == action_dim
         assert action_head.device.type == 'cpu'
         assert action_head.std0 == std0
-        assert action_head.std_style == std_style
         assert action_head.eps == 1e-4
         assert isinstance(action_head.mean_head, nn.Linear)
         assert isinstance(action_head.logvar_head, nn.Parameter)
@@ -235,15 +211,7 @@ def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0, std_style
         action = action_dist.sample()
         assert action.shape == (batch_size, action_dim)
     
-    if std_style in ['exp', 'softplus']:
-        action_head = DiagGaussianHead(feature_dim, action_dim, device, std0, std_style, None, None)
-        assert action_head.std_range is None
-        assert action_head.beta is None
-    else:  # sigmoidal
-        action_head = DiagGaussianHead(feature_dim, action_dim, device, std0, std_style, std_range, beta)
-        assert action_head.std_range is not None
-        assert action_head.beta is not None
-        
+    action_head = DiagGaussianHead(feature_dim, action_dim, device, std0)    
     _basic_check(action_head)
     action_dist = action_head(torch.randn(batch_size, feature_dim))
     _dist_check(action_dist)

@@ -43,14 +43,7 @@ class Agent(BaseAgent):
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
-            self.action_head = DiagGaussianHead(feature_dim, 
-                                                flatdim(env.action_space), 
-                                                device, 
-                                                config['agent.std0'], 
-                                                config['agent.std_style'], 
-                                                config['agent.std_range'],
-                                                config['agent.beta'], 
-                                                **kwargs)
+            self.action_head = DiagGaussianHead(feature_dim, flatdim(env.action_space), device, config['agent.std0'], **kwargs)
         self.total_timestep = 0
         
     def choose_action(self, obs, **kwargs):
