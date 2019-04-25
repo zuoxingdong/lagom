@@ -11,4 +11,4 @@ This example includes the implementations of the following reinforcement learnin
 
 # Benchmarks
 
-<img src='data/benchmark.png' width='100%'>
+<img src='benchmark.png' width='100%'>
