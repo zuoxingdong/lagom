@@ -25,13 +25,6 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     
-     
-     #####
-     'cuda_ids': [1, 2, 3, 5, 6, 7],
-     #####
-     
-     
      'log.dir': 'logs/default', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
