@@ -3,7 +3,6 @@ cuda: false
 log.dir: logs/default
 log.freq: 10
 checkpoint.freq: 50
-env.id: HalfCheetah-v3
 env.standardize_obs: false
 nn.sizes:
 - 64
@@ -20,6 +19,7 @@ train.std0: 1.0
 train.elite_ratio: 0.2
 train.noise_scheduler_args:
 - 0.01
-- 0.0
+- 0.001
 - 200
 - 0
+env.id: HalfCheetah-v3
