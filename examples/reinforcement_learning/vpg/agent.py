@@ -47,8 +47,8 @@ class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
         
-        self.feature_network = MLP(config, env, device, **kwargs)
         feature_dim = config['nn.sizes'][-1]
+        self.feature_network = MLP(config, env, device, **kwargs)
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
@@ -78,7 +78,6 @@ class Agent(BaseAgent):
         action_dist = self.action_head(features)
         out['action_dist'] = action_dist
         out['entropy'] = action_dist.entropy()
-        out['perplexity'] = action_dist.perplexity()
         
         action = action_dist.sample()
         out['action'] = action
@@ -87,9 +86,6 @@ class Agent(BaseAgent):
         
         V = self.V_head(features)
         out['V'] = V
-        
-        # sanity check for NaN
-        assert not torch.any(torch.isnan(action))
         return out
     
     def learn(self, D, **kwargs):
