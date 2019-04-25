@@ -25,7 +25,7 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/default', 
+     'log.dir': 'logs/default_new', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
