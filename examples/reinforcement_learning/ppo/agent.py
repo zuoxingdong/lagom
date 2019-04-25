@@ -26,6 +26,26 @@ from torch.utils.data import DataLoader
 from dataset import Dataset
 
 
+
+class MLP(Module):
+    def __init__(self, config, env, device, **kwargs):
+        super().__init__(**kwargs)
+        self.config = config
+        self.env = env
+        self.device = device
+        
+        self.feature_layers = make_fc(flatdim(env.observation_space), config['nn.sizes'])
+        for layer in self.feature_layers:
+            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
+        
+        self.to(self.device)
+        
+    def forward(self, x):
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = layer_norm(F.relu(layer(x)))
+        return x
+"""
 class MLP(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -43,7 +63,7 @@ class MLP(Module):
         for layer in self.feature_layers:
             x = torch.tanh(layer(x))
         return x
-
+"""
 
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
