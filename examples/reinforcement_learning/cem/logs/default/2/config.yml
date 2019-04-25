@@ -1,4 +1,4 @@
-ID: 0
+ID: 2
 cuda: false
 log.dir: logs/default
 log.freq: 10
@@ -22,4 +22,4 @@ train.noise_scheduler_args:
 - 0.001
 - 200
 - 0
-env.id: HalfCheetah-v3
+env.id: Walker2d-v3

@@ -37,7 +37,7 @@ config = Config(
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
-     'env.id': 'HalfCheetah-v3',#Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': False,
      
      'nn.sizes': [64, 64],
@@ -54,7 +54,7 @@ config = Config(
      'train.mu0': 0.0,
      'train.std0': 1.0,
      'train.elite_ratio': 0.2,
-     'train.noise_scheduler_args': [0.01, 0.0, 200, 0]
+     'train.noise_scheduler_args': [0.01, 0.001, 200, 0]
      
     })
 
@@ -67,7 +67,7 @@ def make_env(config, seed):
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
-    env = make_vec_env(_make_env, 1, seed, 'serial')  # single environment
+    env = make_vec_env(_make_env, 1, seed)  # single environment
     return env
     
     
@@ -135,5 +135,5 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[1770966829],#, 1500925526, 2054191100], 
-                   num_worker=os.cpu_count())
+                   seeds=[1770966829, 1500925526, 2054191100], 
+                   num_worker=2)
