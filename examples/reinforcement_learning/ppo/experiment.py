@@ -25,7 +25,7 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/default_new', 
+     'log.dir': 'logs/relu_layernorm', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
@@ -35,8 +35,8 @@ config = Config(
      
      'nn.sizes': [64, 64],
      
-     'agent.lr': 3e-4,
-     'agent.use_lr_scheduler': True,
+     'agent.lr': 1e-3, ###############3e-4,
+     'agent.use_lr_scheduler': False, #################True,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.95,
      'agent.standardize_adv': True,  # standardize advantage estimates
