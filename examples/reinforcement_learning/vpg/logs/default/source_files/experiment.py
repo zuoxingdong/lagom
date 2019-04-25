@@ -38,7 +38,7 @@ config = Config(
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
-     'env.standardize_reward': True, 
+     'env.standardize_reward': True,
      
      'nn.sizes': [64, 64],
      
