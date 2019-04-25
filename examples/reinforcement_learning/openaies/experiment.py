@@ -71,7 +71,7 @@ def make_env(config, seed):
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
-    env = make_vec_env(_make_env, 1, seed, 'serial')  # single environment
+    env = make_vec_env(_make_env, 1, seed)  # single environment
     return env
     
     
