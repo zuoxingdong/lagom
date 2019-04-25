@@ -1,3 +1,4 @@
+from time import perf_counter
 from itertools import count
 
 import numpy as np
@@ -5,8 +6,9 @@ import torch
 
 from lagom import Logger
 from lagom import BaseEngine
-from lagom.envs.wrappers import get_wrapper
+from lagom.transform import describe
 from lagom.utils import color_str
+from lagom.envs.wrappers import get_wrapper
 
 
 class Engine(BaseEngine):
@@ -29,13 +31,13 @@ class Engine(BaseEngine):
             eval_togo += 1
             checkpoint_togo += 1
             if done[0]:  # [0] due to single environment
-                if 'TimeLimit.truncated' in info[0]:  # NOTE: must use latest TimeLimit
-                    reach_terminal = False
-                else:
-                    reach_terminal = done[0]
+                start_time = perf_counter()
+                # NOTE: must use latest TimeLimit
+                reach_time_limit = info[0].get('TimeLimit.truncated', False)
+                reach_terminal = not reach_time_limit
                 self.replay.add(observation[0], action[0], reward[0], info[0]['last_observation'], reach_terminal)
                 
-                # DDPG updates in the end of episode, for each time step
+                # updates in the end of episode, for each time step
                 out_agent = self.agent.learn(D=None, replay=self.replay, episode_length=info[0]['episode']['horizon'])
                 num_episode += 1
                 if checkpoint_togo >= self.config['checkpoint.freq']:
@@ -43,6 +45,7 @@ class Engine(BaseEngine):
                     self.agent.checkpoint(self.logdir, num_episode)
                 
                 logger = Logger()
+                logger('num_seconds', round(perf_counter() - start_time, 1))
                 logger('accumulated_trained_timesteps', i + 1)
                 logger('accumulated_trained_episodes', num_episode)
                 [logger(key, value) for key, value in out_agent.items()]
@@ -50,7 +53,7 @@ class Engine(BaseEngine):
                 logger('episode_horizon', info[0]['episode']['horizon'])
                 train_logs.append(logger.logs)
                 if num_episode == 1 or num_episode % self.config['log.freq'] == 0:
-                    logger.dump(keys=None, index=None, indent=0, border='-'*50)
+                    logger.dump(keys=None, index=0, indent=0, border='-'*50)
                 
                 if eval_togo >= self.config['eval.freq']:
                     eval_togo %= self.config['eval.freq']
@@ -61,8 +64,8 @@ class Engine(BaseEngine):
             observation = next_observation
         return train_logs, eval_logs
 
-
     def eval(self, n=None, **kwargs):
+        start_time = perf_counter()
         returns = []
         horizons = []
         for _ in range(self.config['eval.num_episode']):
@@ -77,28 +80,14 @@ class Engine(BaseEngine):
                     break
                 observation = next_observation
         logger = Logger()
+        logger('num_seconds', round(perf_counter() - start_time, 1))
         logger('accumulated_trained_timesteps', kwargs['accumulated_trained_timesteps'])
         logger('accumulated_trained_episodes', kwargs['accumulated_trained_episodes'])
-        logger('online_num_episode', len(returns))
-        logger('online_mean_return', np.mean(returns))
-        logger('online_std_return', np.std(returns))
-        logger('online_min_return', np.min(returns))
-        logger('online_max_return', np.max(returns))
-        logger('online_mean_horizon', np.mean(horizons))
-        logger('online_std_horizon', np.std(horizons))
-        logger('online_min_horizon', np.min(horizons))
-        logger('online_max_horizon', np.max(horizons))
+        logger('online_return', describe(returns, axis=-1, repr_indent=1, repr_prefix='\n'))
+        logger('online_horizon', describe(horizons, axis=-1, repr_indent=1, repr_prefix='\n'))
+        
         monitor_env = get_wrapper(self.eval_env, 'VecMonitor')
-        running_returns = monitor_env.return_queue
-        running_horizons = monitor_env.horizon_queue
-        logger('running_queue', f'{len(running_returns)}/{running_returns.maxlen}')
-        logger('running_mean_return', np.mean(running_returns))
-        logger('running_std_return', np.std(running_returns))
-        logger('running_min_return', np.min(running_returns))
-        logger('running_max_return', np.max(running_returns))
-        logger('running_mean_horizon', np.mean(running_horizons))
-        logger('running_std_horizon', np.std(running_horizons))
-        logger('running_min_horizon', np.min(running_horizons))
-        logger('running_max_horizon', np.max(running_horizons))
-        logger.dump(keys=None, index=None, indent=0, border=color_str('+'*50, color='green'))
+        logger('running_return', describe(monitor_env.return_queue, axis=-1, repr_indent=1, repr_prefix='\n'))
+        logger('running_horizon', describe(monitor_env.horizon_queue, axis=-1, repr_indent=1, repr_prefix='\n'))
+        logger.dump(keys=None, index=0, indent=0, border=color_str('+'*50, color='green'))
         return logger.logs
