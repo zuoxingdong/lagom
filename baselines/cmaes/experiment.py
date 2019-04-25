@@ -24,7 +24,7 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
-from openaies import OpenAIES
+from lagom import CMAES
 from agent import Agent
 
 
@@ -37,7 +37,7 @@ config = Config(
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
-     'env.id': 'HalfCheetah-v3',#Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': False,
      
      'nn.sizes': [64, 64],
@@ -45,20 +45,11 @@ config = Config(
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'exp',  # std parameterization
-     'agent.std_range': None,  # bounded std: (min, max)
-     'agent.beta': None,  # beta-sigmoidal
      
      'train.generations': int(1e3),  # total number of ES generations
      'train.popsize': 64,
      'train.mu0': 0.0,
      'train.std0': 1.0,
-     'train.lr': 1e-1,
-     'train.lr_decay': 1.0,
-     'train.min_lr': 1e-6,
-     'train.sigma_scheduler_args': [1.0, 0.01, 450, 0],
-     'train.antithetic': False,
-     'train.rank_transform': True
      
     })
 
@@ -108,15 +99,9 @@ def run(config, seed, device):
     
     print('Initializing...')
     agent = Agent(config, make_env(config, seed), device)
-    es = OpenAIES([config['train.mu0']]*agent.num_params, config['train.std0'], 
-              {'popsize': config['train.popsize'], 
-               'seed': seed, 
-               'sigma_scheduler_args': config['train.sigma_scheduler_args'],
-               'lr': config['train.lr'],
-               'lr_decay': config['train.lr_decay'],
-               'min_lr': config['train.min_lr'],
-               'antithetic': config['train.antithetic'],
-               'rank_transform': config['train.rank_transform']})
+    es = CMAES([config['train.mu0']]*agent.num_params, config['train.std0'], 
+               {'popsize': config['train.popsize'], 
+                'seed': seed})
     train_logs = []
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
         print('Finish initialization. Training starts...')
@@ -143,5 +128,5 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[1770966829],#, 1500925526, 2054191100], 
-                   num_worker=os.cpu_count())
+                   seeds=[1770966829, 1500925526, 2054191100], 
+                   num_worker=2)

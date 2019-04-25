@@ -25,7 +25,7 @@ from engine import Engine
 
 config = Config(
     {'cuda': True, 
-     'log.dir': 'logs/relu_layernorm', 
+     'log.dir': 'logs/default', 
      'log.freq': 10, 
      'checkpoint.freq': 50,
      
@@ -35,8 +35,8 @@ config = Config(
      
      'nn.sizes': [64, 64],
      
-     'agent.lr': 1e-3, ###############3e-4,
-     'agent.use_lr_scheduler': False, #################True,
+     'agent.lr': 3e-4,
+     'agent.use_lr_scheduler': True,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.95,
      'agent.standardize_adv': True,  # standardize advantage estimates
@@ -48,9 +48,6 @@ config = Config(
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'exp',  # std parameterization
-     'agent.std_range': None,  # bounded std: (min, max)
-     'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 2048,  # number of timesteps per iteration

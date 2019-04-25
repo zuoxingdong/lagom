@@ -47,9 +47,6 @@ config = Config(
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'exp',  # std parameterization
-     'agent.std_range': None,  # bounded std: (min, max)
-     'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration
