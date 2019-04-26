@@ -3,6 +3,7 @@ from pathlib import Path
 from itertools import count
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor
+import time
 
 import gym
 from gym.spaces import Box
@@ -26,9 +27,6 @@ from lagom.envs.wrappers import VecStandardizeObservation
 
 from lagom import CEM
 from agent import Agent
-
-
-torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
 
 
 config = Config(
@@ -69,6 +67,7 @@ def make_env(config, seed):
     
     
 def initializer(config, seed, device):
+    torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
     global env
     env = make_env(config, seed)
     env = VecMonitor(env)
@@ -110,12 +109,14 @@ def run(config, seed, device):
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
         print('Finish initialization. Training starts...')
         for generation in range(config['train.generations']):
+            start_time = time.perf_counter()
             solutions = cem.ask()
             out = list(executor.map(fitness, solutions))
             Rs, Hs = zip(*out)
             cem.tell(solutions, [-R for R in Rs])
             logger = Logger()
             logger('generation', generation+1)
+            logger('num_seconds', round(time.perf_counter() - start_time, 1))
             logger('Returns', describe(Rs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('fbest', cem.result.fbest)
