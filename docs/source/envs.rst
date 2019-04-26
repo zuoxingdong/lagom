@@ -44,6 +44,9 @@ Wrappers
 .. autoclass:: FlattenObservation
     :members:
     
+.. autoclass:: NormalizeAction
+    :members:
+    
 .. autoclass:: LazyFrames
     :members:
     
