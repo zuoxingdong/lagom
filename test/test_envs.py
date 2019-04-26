@@ -21,6 +21,7 @@ from lagom.envs.wrappers import get_all_wrappers
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import ClipReward
 from lagom.envs.wrappers import SignClipReward
+from lagom.envs.wrappers import NormalizeAction
 from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
@@ -188,6 +189,19 @@ def test_sign_clip_reward(env_id):
         if done:
             break
     
+    
+def test_normalize_action():
+    env = gym.make('CartPole-v1')
+    with pytest.raises(AssertionError):
+        env = NormalizeAction(env)
+    del env
+    
+    env = gym.make('Pendulum-v0')
+    env = NormalizeAction(env)
+    env.reset()
+    with pytest.raises(AssertionError):
+        env.step(env.action_space.sample()*10)
+
     
 @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
 def test_flatten_observation(env_id):
