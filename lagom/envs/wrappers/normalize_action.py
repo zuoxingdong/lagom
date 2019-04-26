@@ -8,6 +8,7 @@ class NormalizeAction(gym.ActionWrapper):
     def __init__(self, env):
         assert isinstance(env.action_space, spaces.Box), 'expected Box action space.'
         super().__init__(env)
+
     def action(self, action):
         assert np.all(action >= -1.0) and np.all(action <= 1.0), 'expected range within [-1, 1], use tanh'
         low = self.env.action_space.low
