@@ -200,7 +200,7 @@ def test_normalize_action():
     env = NormalizeAction(env)
     env.reset()
     with pytest.raises(AssertionError):
-        env.step(env.action_space.sample()*10)
+        env.step(10+env.action_space.sample())
 
     
 @pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
