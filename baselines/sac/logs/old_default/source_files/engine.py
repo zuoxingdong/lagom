@@ -40,7 +40,7 @@ class Engine(BaseEngine):
                 # updates in the end of episode, for each time step
                 out_agent = self.agent.learn(D=None, replay=self.replay, episode_length=info[0]['episode']['horizon'])
                 num_episode += 1
-                if (i+1) >= int(self.config['train.timestep']*(checkpoint_count/(self.config['checkpoint.num'] - 1))):
+                if i >= int(self.config['train.timestep']*(checkpoint_count/(self.config['checkpoint.num'] - 1))):
                     self.agent.checkpoint(self.logdir, num_episode)
                     checkpoint_count += 1
                 logger = Logger()
@@ -61,9 +61,6 @@ class Engine(BaseEngine):
             else:
                 self.replay.add(observation[0], action[0], reward[0], next_observation[0], done[0])
             observation = next_observation
-        if checkpoint_count < self.config['checkpoint.num']:
-            self.agent.checkpoint(self.logdir, num_episode)
-            checkpoint_count += 1
         return train_logs, eval_logs
 
     def eval(self, n=None, **kwargs):
@@ -74,7 +71,7 @@ class Engine(BaseEngine):
             observation = self.eval_env.reset()
             for _ in range(self.eval_env.spec.max_episode_steps):
                 with torch.no_grad():
-                    action = self.agent.choose_action(observation, mode='eval')['action']
+                    action = self.agent.choose_action(observation, mode='deterministic')['action']
                 next_observation, reward, done, info = self.eval_env.step(action)
                 if done[0]:  # [0] single environment
                     returns.append(info[0]['episode']['return'])
