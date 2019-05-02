@@ -107,7 +107,7 @@ def run(config, seed, device):
         for generation in range(config['train.generations']):
             start_time = time.perf_counter()
             solutions = es.ask()
-            out = list(executor.map(fitness, solutions))
+            out = list(executor.map(fitness, solutions, chunksize=4))
             Rs, Hs = zip(*out)
             es.tell(solutions, [-R for R in Rs])
             logger = Logger()
@@ -130,4 +130,4 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=2)
+                   num_worker=1)
