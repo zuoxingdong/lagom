@@ -1,19 +1,19 @@
 ID: 0
 cuda: true
+cuda_ids:
+- 7
 log.dir: logs/default
-log.freq: 5
-checkpoint.freq: 100000
+log.freq: 1000
+checkpoint.num: 3
 agent.gamma: 0.99
 agent.polyak: 0.995
 agent.actor.lr: 0.0003
 agent.actor.use_lr_scheduler: false
 agent.critic.lr: 0.0003
 agent.critic.use_lr_scheduler: false
-agent.V.lr: 0.0003
-agent.V.use_lr_scheduler: false
 agent.policy_delay: 2
-agent.alpha: 0.2
-agent.max_grad_norm: 50
+agent.initial_temperature: 1.0
+agent.max_grad_norm: 999999
 replay.capacity: 1000000
 replay.init_size: 10000
 replay.batch_size: 256

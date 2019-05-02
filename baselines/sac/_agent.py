@@ -16,25 +16,8 @@ from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
-    
-        
-        
-LOGSTD_MAX = 2
-LOGSTD_MIN = -20
-def gaussian_likelihood(noise, log_std):
-    pre_sum = -0.5 * noise.pow(2) - log_std
-    return pre_sum.sum(
-        -1, keepdim=True) - 0.5 * np.log(2 * np.pi) * noise.size(-1)
 
-
-def apply_squashing_func(mu, pi, log_pi):
-    mu = torch.tanh(mu)
-    if pi is not None:
-        pi = torch.tanh(pi)
-    if log_pi is not None:
-        log_pi -= torch.log(F.relu(1 - pi.pow(2)) + 1e-6).sum(-1, keepdim=True)
-    return mu, pi, log_pi
-
+  
 
 class TanhTransform(Transform):
     r"""
@@ -47,7 +30,7 @@ class TanhTransform(Transform):
 
     @staticmethod
     def atanh(x):
-        return 0.5 * (x.log1p() - (-x).log1p())
+        return 0.5*(x.log1p() - (-x).log1p())
 
     def __eq__(self, other):
         return isinstance(other, TanhTransform)
@@ -57,15 +40,54 @@ class TanhTransform(Transform):
 
     def _inverse(self, y):
         eps = torch.finfo(y.dtype).eps
-        #return self.atanh(y.clamp(min=-1. + eps, max=1. - eps))
-        return self.atanh(y)
+        return self.atanh(y.clamp(min=-1. + eps, max=1. +- eps))
 
     def log_abs_det_jacobian(self, x, y):
-        # We use a formula that is more numerically stable, see details in the following link
-        # https://github.com/tensorflow/probability/commit/ef6bb176e0ebd1cf6e25c6b5cecdd2428c22963f#diff-e120f70e92e6741bca649f04fcd907b7
-        return 2. * (np.log(2.) - x - F.softplus(-2. * x))
+        return 2.*(np.log(2.) - x - F.softplus(-2.*x))
     
-
+        
+### Use with NormalizeAction wrapper together
+class TanhDiagGaussianHead(Module):
+    r"""Defines a module for a tanh-squashed diagonal Gaussian (continuous) action distribution
+    which the standard deviation is dependent on the state. 
+    
+    This is particularly useful for SAC, because it maximizes trade-off between reward and entropy.
+    Entropy must be unique to state. For ReLU network, a randomly initialized network can produce 
+    very large value for logstd, which results in either entirely deterministic or too random
+    to come back to earth. Either of these introduces numerical instability which could break 
+    the algorithm. We constraint logstd between a range. 
+    
+    """
+    def __init__(self, feature_dim, action_dim, device, **kwargs):
+        super().__init__(**kwargs)
+        self.feature_dim = feature_dim
+        self.action_dim = action_dim
+        self.device = device
+        
+        self.logstd_min = -20
+        self.logstd_max = 2
+        
+        self.mean_head = nn.Linear(self.feature_dim, self.action_dim)
+        # 0.01 -> almost zeros initially
+        ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
+        
+        self.logstd_head = nn.Linear(self.feature_dim, self.action_dim)
+        
+        self.to(self.device)
+        
+    def forward(self, x):
+        mean = self.mean_head(x)
+        logstd = torch.tanh(self.logstd_head(x))
+        logstd = self.logstd_min + 0.5*(1 + logstd)*(self.logstd_max - self.logstd_min)
+        std = torch.exp(logstd)
+        action_dist = TransformedDistribution(Independent(Normal(loc=mean, scale=std), 1), [TanhTransform()])
+        return action_dist
+        
+    def mean_forward(self, x):
+        mean = self.mean_head(x)
+        return torch.tanh(mean)
+    
+        
 class Actor(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -74,58 +96,21 @@ class Actor(Module):
         self.device = device
         
         self.feature_layers = make_fc(flatdim(env.observation_space), [256, 256])
-        self.mean_head = nn.Linear(256, flatdim(env.action_space))
-        self.logstd_head = nn.Linear(256, flatdim(env.action_space))
+        self.action_head = TanhDiagGaussianHead(256, flatdim(env.action_space), device, **kwargs)
         
         self.to(device)
 
-    def forward(self, x, compute_pi=True, compute_log_pi=True):
+    def forward(self, x):
         for layer in self.feature_layers:
             x = F.relu(layer(x))
-        mu = self.mean_head(x)
-        logstd = self.logstd_head(x)
-        logstd = torch.tanh(logstd)
-        logstd = LOGSTD_MIN + 0.5 * (LOGSTD_MAX - LOGSTD_MIN) * (
-            logstd + 1)
-        
-        dist = TransformedDistribution(Independent(Normal(mu, logstd.exp()), 1), [TanhTransform(cache_size=1)])
-        
-        if compute_pi:
-            #std = logstd.exp()
-            #noise = torch.randn_like(mu)
-            #pi = mu + noise * std
-            
-            pi = dist.rsample()
-            
-        else:
-            pi = None
-
-        if compute_log_pi:
-            #log_pi = Independent(Normal(mu, logstd.exp()), 1).log_prob(pi).unsqueeze(-1)
-            
-            
-            #log_pi = gaussian_likelihood(noise, logstd)
-            
-            
-            log_pi = dist.log_prob(pi).unsqueeze(-1)
-            
-        else:
-            log_pi = None
-        
-        mu = torch.tanh(mu)
-        #if compute_pi:
-        #    pi = torch.tanh(pi)
-        #if compute_log_pi:
-        #    log_pi -= torch.log(F.relu(1 - pi.pow(2)) + 1e-6).sum(-1, keepdim=True)
-        
-        
-        #print(mu.shape, pi.shape, log_pi.shape)
-        #print(log_pi)
-        #breakpoint()
-        
-        #mu, pi, log_pi = apply_squashing_func(mu, pi, log_pi)
-
-        return mu, pi, log_pi
+        action_dist = self.action_head(x)
+        return action_dist
+    
+    def mean_forward(self, x):
+        for layer in self.feature_layers:
+            x = F.relu(layer(x))
+        action = self.action_head.mean_forward(x)
+        return action
 
 
 class Critic(Module):
@@ -177,8 +162,8 @@ class Agent(BaseAgent):
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
         self.target_entropy = -float(flatdim(env.action_space))
-        self.log_alpha = nn.Parameter(torch.tensor(np.log(config['agent.initial_temperature'])).to(device))
-        self.log_alpha_optimizer = optim.Adam([self.log_alpha], lr=config['agent.actor.lr'])
+        self.log_alpha = nn.Parameter(torch.tensor(np.log(config['agent.alpha0'])).to(device))
+        self.log_alpha_optimizer = optim.Adam([self.log_alpha], lr=1e-3)
         
         self.optimizer_zero_grad = lambda: [opt.zero_grad() for opt in [self.actor_optimizer, 
                                                                         self.critic_optimizer, 
@@ -195,20 +180,22 @@ class Agent(BaseAgent):
 
     def choose_action(self, obs, **kwargs):
         mode = kwargs['mode']
-        assert mode in ['train', 'stochastic', 'eval']
+        assert mode in ['train', 'stochastic', 'deterministic']
         if not torch.is_tensor(obs):
             obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         out = {}
         if mode == 'train':
-            pass
+            action_dist = self.actor(obs)
+            action = action_dist.rsample()  # grad flow
+            out['action'] = action
+            out['action_logprob'] = action_dist.log_prob(action.detach())
         elif mode == 'stochastic':
             with torch.no_grad():
-                mu, pi, _ = self.actor(obs, compute_log_pi=False)
-                out['action'] = pi.detach().cpu().numpy()
-        elif mode == 'eval':
+                action_dist = self.actor(obs)
+                out['action'] = action_dist.sample().detach().cpu().numpy()
+        elif mode == 'deterministic':
             with torch.no_grad():
-                mu, _, _ = self.actor(obs, compute_pi=False, compute_log_pi=False)
-                out['action'] = mu.detach().cpu().numpy()
+                out['action'] = self.actor.mean_forward(obs).detach().cpu().numpy()
         else:
             raise NotImplementedError
         return out
@@ -226,54 +213,31 @@ class Agent(BaseAgent):
         for i in range(episode_length):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
+            out_actor = self.choose_action(observations, mode='train')
+            sampled_actions = out_actor['action'].squeeze()
+            sampled_actions_logprob = out_actor['action_logprob'].squeeze()
+            
             Qs1, Qs2 = self.critic(observations, actions)
-            #Qs1, Qs2 = map(lambda x: x.squeeze(), [Qs1, Qs2])
-
-            ########print(Qs1.mean().item())
-            
+            Qs1, Qs2 = map(lambda x: x.squeeze(), [Qs1, Qs2])
             with torch.no_grad():
-                #out_actor = self.choose_action(next_observations, mode='train')
-                _, policy_action, log_pi = self.actor(next_observations)
-                next_Qs1, next_Qs2 = self.critic_target(next_observations, policy_action)
-                
-                
-                #print(log_pi.shape)
-                #print(next_actions_logprob.shape)
-                
-                next_Qs = torch.min(next_Qs1, next_Qs2) - self.alpha.detach()*log_pi
-                Q_targets = rewards.unsqueeze(-1) + self.config['agent.gamma']*masks.unsqueeze(-1)*next_Qs
-                
-                #print(Q_targets.shape)
-            
-            #print(Qs1.shape, Q_targets.shape)
+                next_Qs1, next_Qs2 = self.critic_target(next_observations, sampled_actions)
+                next_Qs = torch.min(next_Qs1, next_Qs2).squeeze() - self.alpha*sampled_actions_logprob
+                Q_targets = rewards + self.config['agent.gamma']*masks*next_Qs.detach()
             
             critic_loss = F.mse_loss(Qs1, Q_targets) + F.mse_loss(Qs2, Q_targets)
             self.optimizer_zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
             self.critic_optimizer.step()
-            
-            #print(critic_loss)
-            
+
             if i % self.config['agent.policy_delay'] == 0:
-                _, pi, log_pi = self.actor(observations)
-                actor_Qs1, actor_Qs2 = self.critic(observations, pi)
-                actor_Qs = torch.min(actor_Qs1, actor_Qs2)
-                actor_loss = (self.alpha.detach()*log_pi - actor_Qs).mean()
-                
-                
-                
-                
+                actor_loss = -(self.critic.Q1(observations, sampled_actions).squeeze() - self.alpha*sampled_actions_logprob).mean()
                 self.optimizer_zero_grad()
                 actor_loss.backward()
                 actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
                 self.actor_optimizer.step()
                 
-                
-                
-                
-                alpha_loss = torch.mean(self.alpha*(-log_pi - self.target_entropy).detach())
-                
+                alpha_loss = torch.mean(self.alpha*(-sampled_actions_logprob - self.target_entropy).detach())
                 self.optimizer_zero_grad()
                 alpha_loss.backward()
                 self.log_alpha_optimizer.step()
@@ -285,7 +249,7 @@ class Agent(BaseAgent):
             out['critic_loss'].append(critic_loss)
             Q1_vals.append(Qs1)
             Q2_vals.append(Qs2)
-            logprob_vals.append(log_pi)
+            logprob_vals.append(sampled_actions_logprob)
         out['actor_loss'] = torch.tensor(out['actor_loss']).mean().item()
         out['actor_grad_norm'] = actor_grad_norm
         out['critic_loss'] = torch.tensor(out['critic_loss']).mean().item()
