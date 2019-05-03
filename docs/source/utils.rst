@@ -9,6 +9,10 @@ lagom.utils: Utils
 .. autoclass:: Seeder
     :members:
     
+.. autofunction:: tensorify
+
+.. autofunction:: numpify
+    
 .. autofunction:: pickle_dump
 
 .. autofunction:: pickle_load
