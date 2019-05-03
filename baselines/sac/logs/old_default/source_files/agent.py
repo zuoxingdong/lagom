@@ -57,10 +57,13 @@ class TanhTransform(Transform):
 
     def _inverse(self, y):
         eps = torch.finfo(y.dtype).eps
-        return self.atanh(y.clamp(min=-1. + eps, max=1. - eps))
+        #return self.atanh(y.clamp(min=-1. + eps, max=1. - eps))
+        return self.atanh(y)
 
     def log_abs_det_jacobian(self, x, y):
-        return 2.*(np.log(2.) - x - F.softplus(-2.*x))
+        # We use a formula that is more numerically stable, see details in the following link
+        # https://github.com/tensorflow/probability/commit/ef6bb176e0ebd1cf6e25c6b5cecdd2428c22963f#diff-e120f70e92e6741bca649f04fcd907b7
+        return 2. * (np.log(2.) - x - F.softplus(-2. * x))
     
 
 class Actor(Module):
@@ -85,15 +88,14 @@ class Actor(Module):
         logstd = LOGSTD_MIN + 0.5 * (LOGSTD_MAX - LOGSTD_MIN) * (
             logstd + 1)
         
-        #dist = Independent(Normal(mu, logstd.exp()), 1)
-        #dist = TransformedDistribution(dist, [TanhTransform()])
+        dist = TransformedDistribution(Independent(Normal(mu, logstd.exp()), 1), [TanhTransform(cache_size=1)])
         
         if compute_pi:
-            std = logstd.exp()
-            noise = torch.randn_like(mu)
-            pi = mu + noise * std
+            #std = logstd.exp()
+            #noise = torch.randn_like(mu)
+            #pi = mu + noise * std
             
-            #pi = dist.rsample()
+            pi = dist.rsample()
             
         else:
             pi = None
@@ -102,22 +104,26 @@ class Actor(Module):
             #log_pi = Independent(Normal(mu, logstd.exp()), 1).log_prob(pi).unsqueeze(-1)
             
             
-            log_pi = gaussian_likelihood(noise, logstd)
+            #log_pi = gaussian_likelihood(noise, logstd)
             
             
-            #log_pi = dist.log_prob(pi).unsqueeze(-1)
+            log_pi = dist.log_prob(pi).unsqueeze(-1)
             
         else:
             log_pi = None
         
-        #mu = torch.tanh(mu)
+        mu = torch.tanh(mu)
         #if compute_pi:
         #    pi = torch.tanh(pi)
         #if compute_log_pi:
         #    log_pi -= torch.log(F.relu(1 - pi.pow(2)) + 1e-6).sum(-1, keepdim=True)
         
         
-        mu, pi, log_pi = apply_squashing_func(mu, pi, log_pi)
+        #print(mu.shape, pi.shape, log_pi.shape)
+        #print(log_pi)
+        #breakpoint()
+        
+        #mu, pi, log_pi = apply_squashing_func(mu, pi, log_pi)
 
         return mu, pi, log_pi
 
@@ -171,8 +177,8 @@ class Agent(BaseAgent):
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
         self.target_entropy = -float(flatdim(env.action_space))
-        self.log_alpha = nn.Parameter(torch.tensor(np.log(1.0))).to(device)
-        self.log_alpha_optimizer = optim.Adam([self.log_alpha], lr=1e-3)
+        self.log_alpha = nn.Parameter(torch.tensor(np.log(config['agent.initial_temperature'])).to(device))
+        self.log_alpha_optimizer = optim.Adam([self.log_alpha], lr=config['agent.actor.lr'])
         
         self.optimizer_zero_grad = lambda: [opt.zero_grad() for opt in [self.actor_optimizer, 
                                                                         self.critic_optimizer, 
@@ -189,7 +195,7 @@ class Agent(BaseAgent):
 
     def choose_action(self, obs, **kwargs):
         mode = kwargs['mode']
-        assert mode in ['train', 'stochastic', 'deterministic']
+        assert mode in ['train', 'stochastic', 'eval']
         if not torch.is_tensor(obs):
             obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         out = {}
@@ -199,7 +205,7 @@ class Agent(BaseAgent):
             with torch.no_grad():
                 mu, pi, _ = self.actor(obs, compute_log_pi=False)
                 out['action'] = pi.detach().cpu().numpy()
-        elif mode == 'deterministic':
+        elif mode == 'eval':
             with torch.no_grad():
                 mu, _, _ = self.actor(obs, compute_pi=False, compute_log_pi=False)
                 out['action'] = mu.detach().cpu().numpy()
@@ -223,13 +229,15 @@ class Agent(BaseAgent):
             Qs1, Qs2 = self.critic(observations, actions)
             #Qs1, Qs2 = map(lambda x: x.squeeze(), [Qs1, Qs2])
 
-            ##########print(Qs1.mean().item())
+            ########print(Qs1.mean().item())
             
             with torch.no_grad():
                 #out_actor = self.choose_action(next_observations, mode='train')
                 _, policy_action, log_pi = self.actor(next_observations)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, policy_action)
                 
+                
+                #print(log_pi.shape)
                 #print(next_actions_logprob.shape)
                 
                 next_Qs = torch.min(next_Qs1, next_Qs2) - self.alpha.detach()*log_pi
@@ -244,14 +252,13 @@ class Agent(BaseAgent):
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
             self.critic_optimizer.step()
-
+            
+            #print(critic_loss)
+            
             if i % self.config['agent.policy_delay'] == 0:
                 _, pi, log_pi = self.actor(observations)
                 actor_Qs1, actor_Qs2 = self.critic(observations, pi)
                 actor_Qs = torch.min(actor_Qs1, actor_Qs2)
-                
-                
-                
                 actor_loss = (self.alpha.detach()*log_pi - actor_Qs).mean()
                 
                 
@@ -266,8 +273,6 @@ class Agent(BaseAgent):
                 
                 
                 alpha_loss = torch.mean(self.alpha*(-log_pi - self.target_entropy).detach())
-                
-                #print((self.alpha*(sampled_actions_logprob - self.target_entropy)).shape)
                 
                 self.optimizer_zero_grad()
                 alpha_loss.backward()

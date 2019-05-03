@@ -21,7 +21,7 @@ from replay_buffer import ReplayBuffer
 
 
 config = Config(
-    {'cuda': True, 
+    {'cuda': False, #############True, 
      'log.dir': 'logs/default', 
      'log.freq': 1000,  # every n timesteps
      'checkpoint.num': 3,
@@ -35,7 +35,7 @@ config = Config(
      'agent.critic.lr': 3e-4,
      'agent.critic.use_lr_scheduler': False,
      'agent.policy_delay': 2,
-     'agent.initial_temperature': 1.0,
+     'agent.alpha0': 0.2,  # initial temperature
      'agent.max_grad_norm': 999999,  # grad clipping by norm
      
      'replay.capacity': 1000000, 
