@@ -1,6 +1,9 @@
 from .seeding import set_global_seeds
 from .seeding import Seeder
 
+from .dtype import tensorify
+from .dtype import numpify
+
 from .colorize import color_str
 
 from .timing import timed

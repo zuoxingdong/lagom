@@ -23,10 +23,10 @@ from replay_buffer import ReplayBuffer
 config = Config(
     {'cuda': True, 
      'log.dir': 'logs/default', 
-     'log.freq': 5,  # every n episodes
-     'checkpoint.freq': int(1e5),  # every n timesteps
+     'log.freq': 1000,  # every n timesteps
+     'checkpoint.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
+     'env.id': Grid(['HalfCheetah-v3']),######, 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
@@ -34,11 +34,9 @@ config = Config(
      'agent.actor.use_lr_scheduler': False,
      'agent.critic.lr': 3e-4,
      'agent.critic.use_lr_scheduler': False,
-     'agent.V.lr': 3e-4,
-     'agent.V.use_lr_scheduler': False,
      'agent.policy_delay': 2,
-     'agent.alpha': 0.2,  # Entropy regularization coefficient (=inverse of reward scale in original SAC)
-     'agent.max_grad_norm': 50, ###999999,  # grad clipping by norm
+     'agent.initial_temperature': 1.0,
+     'agent.max_grad_norm': 999999,  # grad clipping by norm
      
      'replay.capacity': 1000000, 
      # number of time steps to take uniform actions initially
@@ -74,7 +72,7 @@ def run(config, seed, device):
     eval_env = VecMonitor(eval_env)
     
     agent = Agent(config, env, device)
-    replay = ReplayBuffer(config['replay.capacity'], device)
+    replay = ReplayBuffer(env, config['replay.capacity'], device)
     engine = Engine(config, agent=agent, env=env, eval_env=eval_env, replay=replay, logdir=logdir)
     
     train_logs, eval_logs = engine.train()
@@ -86,5 +84,5 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[4153361530, 3503522377, 2876994566, 172236777, 3949341511, 849059707], 
+                   seeds=[4153361530], #####3503522377, 2876994566, 172236777, 3949341511, 849059707], 
                    num_worker=os.cpu_count())
