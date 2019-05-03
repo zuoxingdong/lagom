@@ -22,6 +22,13 @@ from replay_buffer import ReplayBuffer
 
 config = Config(
     {'cuda': True, 
+     
+     
+     ##################
+     'cuda_ids': [7],
+     ##################
+     
+     
      'log.dir': 'logs/default', 
      'log.freq': 1000,  # every n timesteps
      'checkpoint.num': 3,

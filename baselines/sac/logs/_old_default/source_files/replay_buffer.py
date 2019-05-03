@@ -1,7 +1,7 @@
 import numpy as np
+import torch
 
 from lagom.envs import flatdim
-from lagom.utils import tensorify
 
 
 class ReplayBuffer(object):
@@ -34,8 +34,8 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         idx = np.random.randint(0, self.size, size=batch_size)
-        return list(map(lambda x: tensorify(x, self.device), [self.observations[idx], 
-                                                              self.actions[idx], 
-                                                              self.rewards[idx], 
-                                                              self.next_observations[idx], 
-                                                              self.masks[idx]]))
+        return list(map(lambda x: torch.from_numpy(x).to(self.device), [self.observations[idx], 
+                                                                        self.actions[idx], 
+                                                                        self.rewards[idx], 
+                                                                        self.next_observations[idx], 
+                                                                        self.masks[idx]]))
