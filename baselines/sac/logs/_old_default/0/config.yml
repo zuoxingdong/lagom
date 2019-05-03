@@ -1,5 +1,5 @@
 ID: 0
-cuda: true
+cuda: false
 log.dir: logs/default
 log.freq: 1000
 checkpoint.num: 3
@@ -10,7 +10,7 @@ agent.actor.use_lr_scheduler: false
 agent.critic.lr: 0.0003
 agent.critic.use_lr_scheduler: false
 agent.policy_delay: 2
-agent.initial_temperature: 1.0
+agent.alpha0: 0.2
 agent.max_grad_norm: 999999
 replay.capacity: 1000000
 replay.init_size: 10000
