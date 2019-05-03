@@ -2,7 +2,7 @@ ID: 1
 cuda: true
 log.dir: logs/default
 log.freq: 10
-checkpoint.freq: 50
+checkpoint.num: 3
 env.standardize_obs: true
 env.standardize_reward: true
 nn.sizes:
