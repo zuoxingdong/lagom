@@ -1,10 +1,12 @@
 import os
 
 import numpy as np
+import torch
 
 from lagom.utils import color_str
 from lagom.utils import Seeder
-
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.utils import pickle_load
 from lagom.utils import pickle_dump
 from lagom.utils import yaml_load
@@ -35,6 +37,106 @@ def test_seeder():
     seeds = seeder(size=[2, 3])
     assert np.alltrue(np.array(seeds).shape == (2, 3))
 
+    
+def test_tensorify():
+    # tensor
+    x = torch.tensor(2.43)
+    y = tensorify(x, 'cpu')
+    assert torch.equal(x, y)
+    del x, y
+
+    x = torch.randn(10)
+    y = tensorify(x, 'cpu')
+    assert torch.equal(x, y)
+    del x, y
+
+    x = torch.randn(10, 20, 30)
+    y = tensorify(x, 'cpu')
+    assert torch.equal(x, y)
+    del x, y
+
+    # ndarray
+    x = np.array(2.43)
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y.item())
+    del x, y
+
+    x = np.random.randn(10)
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y)
+    del x, y
+
+    x = np.random.randn(10, 20, 30)
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y)
+    del x, y
+
+    # raw list
+    x = [2.43]
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y.item())
+    del x, y
+
+    x = [1, 2, 3, 4, 5, 6]
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y)
+    del x, y
+
+    x = [[1, 2], [3, 4], [5, 6]]
+    y = tensorify(x, 'cpu')
+    assert np.allclose(x, y)
+    del x, y
+
+
+def test_numpify():
+    # tensor
+    x = torch.tensor(2.43)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = torch.randn(10)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = torch.randn(10, 20, 30)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    # ndarray
+    x = np.array(2.43)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = np.random.randn(10)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = np.random.randn(10, 20, 30)
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    # raw list
+    x = [2.43]
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = [1, 2, 3, 4, 5, 6]
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+
+    x = [[1, 2], [3, 4], [5, 6]]
+    y = numpify(x, np.float32)
+    assert np.allclose(x, y)
+    del x, y
+    
 
 def test_pickle_yaml():
     a = {'one': 1, 'two': [2, 3]}
