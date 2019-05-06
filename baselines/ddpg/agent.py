@@ -7,6 +7,8 @@ import torch.optim as optim
 from lagom import BaseAgent
 from lagom.transform import describe
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
@@ -82,13 +84,11 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
     def choose_action(self, obs, **kwargs):
-        mode = kwargs['mode']
-        assert mode in ['train', 'eval']
         if not torch.is_tensor(obs):
             obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
         with torch.no_grad():
             action = self.actor(obs).detach().cpu().numpy()
-        if mode == 'train':
+        if kwargs['mode'] == 'train':
             eps = np.random.normal(0.0, self.action_noise, size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}

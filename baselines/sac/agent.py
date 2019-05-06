@@ -187,7 +187,8 @@ class Agent(BaseAgent):
                 next_Qs = torch.min(next_Qs1, next_Qs2).squeeze(-1) - self.alpha.detach()*next_actions_logprob
                 Q_targets = rewards + self.config['agent.gamma']*masks*next_Qs
             
-            critic_loss = F.mse_loss(Qs1, Q_targets) + F.mse_loss(Qs2, Q_targets)
+            critic_loss = F.mse_loss(Qs1, Q_targets.detach()) + F.mse_loss(Qs2, Q_targets.detach())
+            print(critic_loss.item())############
             self.optimizer_zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
@@ -207,7 +208,7 @@ class Agent(BaseAgent):
                 actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
                 self.actor_optimizer.step()
                 
-                alpha_loss = torch.mean(self.alpha*(-policy_actions_logprob - self.target_entropy).detach())
+                alpha_loss = torch.mean(self.log_alpha*(-policy_actions_logprob - self.target_entropy).detach())
                 
                 self.optimizer_zero_grad()
                 alpha_loss.backward()
