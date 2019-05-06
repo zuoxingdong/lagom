@@ -1,4 +1,4 @@
-ID: 0
+ID: 1
 cuda: false
 log.dir: logs/default
 log.freq: 10
@@ -23,4 +23,4 @@ train.sigma_scheduler_args:
 - 0
 train.antithetic: false
 train.rank_transform: true
-env.id: HalfCheetah-v3
+env.id: Hopper-v3
