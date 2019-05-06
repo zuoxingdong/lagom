@@ -200,9 +200,8 @@ def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
         assert action_head.action_dim == action_dim
         assert action_head.device.type == 'cpu'
         assert action_head.std0 == std0
-        assert action_head.eps == 1e-4
         assert isinstance(action_head.mean_head, nn.Linear)
-        assert isinstance(action_head.logvar_head, nn.Parameter)
+        assert isinstance(action_head.logstd_head, nn.Parameter)
         
     def _dist_check(action_dist):
         assert isinstance(action_dist, Independent)
