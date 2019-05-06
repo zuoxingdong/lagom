@@ -48,7 +48,7 @@ config = Config(
      'train.popsize': 64,
      'train.mu0': 0.0,
      'train.std0': 1.0,
-     'train.lr': 1e-1,
+     'train.lr': 1e-2,
      'train.lr_decay': 1.0,
      'train.min_lr': 1e-6,
      'train.sigma_scheduler_args': [1.0, 0.01, 450, 0],
