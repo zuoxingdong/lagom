@@ -15,9 +15,9 @@ from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 
-from agent import Agent
-from engine import Engine
-from replay_buffer import ReplayBuffer
+from .agent import Agent
+from .engine import Engine
+from .replay_buffer import ReplayBuffer
 
 
 config = Config(
