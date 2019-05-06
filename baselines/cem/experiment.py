@@ -26,14 +26,14 @@ from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
 from lagom import CEM
-from agent import Agent
+from .agent import Agent
 
 
 config = Config(
     {'cuda': False, 
      'log.dir': 'logs/default', 
      'log.freq': 10, 
-     'checkpoint.freq': 50,
+     'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': False,
@@ -72,7 +72,7 @@ def initializer(config, seed, device):
     env = make_env(config, seed)
     env = VecMonitor(env)
     if config['env.standardize_obs']:
-        env = VecStandardizeObservation(env, clip=10.)
+        env = VecStandardizeObservation(env, clip=5.)
     global agent
     agent = Agent(config, env, device)
     
@@ -100,32 +100,34 @@ def run(config, seed, device):
     
     print('Initializing...')
     agent = Agent(config, make_env(config, seed), device)
-    cem = CEM([config['train.mu0']]*agent.num_params, config['train.std0'], 
-              {'popsize': config['train.popsize'], 
-               'seed': seed, 
-               'elite_ratio': config['train.elite_ratio'], 
-               'noise_scheduler_args': config['train.noise_scheduler_args']})
+    es = CEM([config['train.mu0']]*agent.num_params, config['train.std0'], 
+             {'popsize': config['train.popsize'], 
+              'seed': seed, 
+              'elite_ratio': config['train.elite_ratio'], 
+              'noise_scheduler_args': config['train.noise_scheduler_args']})
     train_logs = []
+    checkpoint_count = 0
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
         print('Finish initialization. Training starts...')
         for generation in range(config['train.generations']):
             start_time = time.perf_counter()
-            solutions = cem.ask()
+            solutions = es.ask()
             out = list(executor.map(fitness, solutions, chunksize=4))
             Rs, Hs = zip(*out)
-            cem.tell(solutions, [-R for R in Rs])
+            es.tell(solutions, [-R for R in Rs])
             logger = Logger()
             logger('generation', generation+1)
             logger('num_seconds', round(time.perf_counter() - start_time, 1))
             logger('Returns', describe(Rs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
-            logger('fbest', cem.result.fbest)
+            logger('fbest', es.result.fbest)
             train_logs.append(logger.logs)
             if generation == 0 or (generation+1)%config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
-            if generation == 0 or (generation+1)%config['checkpoint.freq'] == 0:
-                agent.from_vec(torch.from_numpy(cem.result.xbest).float())
+            if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
+                agent.from_vec(torch.from_numpy(es.result.xbest).float())
                 agent.checkpoint(logdir, generation+1)
+                checkpoint_count += 1
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None
     
@@ -134,4 +136,4 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=1)
+                   num_worker=5)
