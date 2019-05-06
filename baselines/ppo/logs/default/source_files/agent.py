@@ -9,6 +9,8 @@ from gym.spaces import Box
 
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.envs import flatdim
 from lagom.envs.wrappers import get_wrapper
 from lagom.networks import Module
@@ -54,14 +56,7 @@ class Agent(BaseAgent):
         if isinstance(env.action_space, Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
-            self.action_head = DiagGaussianHead(feature_dim, 
-                                                flatdim(env.action_space), 
-                                                device, 
-                                                config['agent.std0'], 
-                                                config['agent.std_style'], 
-                                                config['agent.std_range'],
-                                                config['agent.beta'], 
-                                                **kwargs)
+            self.action_head = DiagGaussianHead(feature_dim, flatdim(env.action_space), device, config['agent.std0'], **kwargs)
         self.V_head = nn.Linear(feature_dim, 1).to(device)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         
@@ -72,8 +67,7 @@ class Agent(BaseAgent):
             self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
         
     def choose_action(self, obs, **kwargs):
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        obs = tensorify(obs, self.device)
         out = {}
         features = self.feature_network(obs)
         
@@ -83,7 +77,7 @@ class Agent(BaseAgent):
         
         action = action_dist.sample()
         out['action'] = action
-        out['raw_action'] = action.detach().cpu().numpy()
+        out['raw_action'] = numpify(action, 'float')
         out['action_logprob'] = action_dist.log_prob(action.detach())
         
         V = self.V_head(features)
@@ -124,7 +118,7 @@ class Agent(BaseAgent):
         out['entropy_loss'] = entropy_loss.mean().item()
         out['policy_entropy'] = -entropy_loss.mean().item()
         out['value_loss'] = value_loss.mean().item()
-        out['explained_variance'] = ev(y_true=old_Qs.detach().cpu().numpy(), y_pred=Vs.detach().cpu().numpy())
+        out['explained_variance'] = ev(y_true=numpify(old_Qs, 'float'), y_pred=numpify(Vs, 'float'))
         out['approx_kl'] = torch.mean(old_logprobs - logprobs).item()
         out['clip_frac'] = ((ratio < 1.0 - eps) | (ratio > 1.0 + eps)).float().mean().item()
         return out
@@ -135,9 +129,9 @@ class Agent(BaseAgent):
         entropies = [torch.cat(traj.get_all_info('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_all_info('V')) for traj in D]
         
-        last_observations = torch.from_numpy(np.concatenate([traj.last_observation for traj in D], 0)).float()
         with torch.no_grad():
-            last_Vs = self.V_head(self.feature_network(last_observations.to(self.device))).squeeze(-1)
+            last_observations = tensorify(np.concatenate([traj.last_observation for traj in D], 0), self.device)
+            last_Vs = self.V_head(self.feature_network(last_observations)).squeeze(-1)
         Qs = [bootstrapped_returns(self.config['agent.gamma'], traj, last_V) 
                   for traj, last_V in zip(D, last_Vs)]
         As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj, V, last_V) 
@@ -145,7 +139,7 @@ class Agent(BaseAgent):
         
         # Metrics -> Tensor, device
         logprobs, entropies, Vs = map(lambda x: torch.cat(x).squeeze(), [logprobs, entropies, Vs])
-        Qs, As = map(lambda x: torch.from_numpy(np.concatenate(x).copy()).to(self.device), [Qs, As])
+        Qs, As = map(lambda x: tensorify(np.concatenate(x).copy(), self.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-8)
         

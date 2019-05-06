@@ -27,7 +27,7 @@ config = Config(
     {'cuda': True, 
      'log.dir': 'logs/default', 
      'log.freq': 10, 
-     'checkpoint.freq': 50,
+     'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': True,
@@ -48,9 +48,6 @@ config = Config(
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
-     'agent.std_style': 'exp',  # std parameterization
-     'agent.std_range': None,  # bounded std: (min, max)
-     'agent.beta': None,  # beta-sigmoidal
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 2048,  # number of timesteps per iteration
@@ -86,6 +83,7 @@ def run(config, seed, device):
     runner = EpisodeRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     train_logs = []
+    checkpoint_count = 0
     for i in count():
         if agent.total_timestep >= config['train.timestep']:
             break
@@ -93,9 +91,9 @@ def run(config, seed, device):
         train_logs.append(train_logger.logs)
         if i == 0 or (i+1) % config['log.freq'] == 0:
             train_logger.dump(keys=None, index=0, indent=0, border='-'*50)
-        if i == 0 or (i+1) % config['checkpoint.freq'] == 0:
+        if agent.total_timestep >= int(config['train.timestep']*(checkpoint_count/(config['checkpoint.num'] - 1))):
             agent.checkpoint(logdir, i + 1)
-    agent.checkpoint(logdir, i + 1)
+            checkpoint_count += 1
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None
     
