@@ -26,14 +26,14 @@ from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
 from lagom import CMAES
-from agent import Agent
+from .agent import Agent
 
 
 config = Config(
     {'cuda': False, 
      'log.dir': 'logs/default', 
      'log.freq': 10, 
-     'checkpoint.freq': 50,
+     'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
      'env.standardize_obs': False,
@@ -70,7 +70,7 @@ def initializer(config, seed, device):
     env = make_env(config, seed)
     env = VecMonitor(env)
     if config['env.standardize_obs']:
-        env = VecStandardizeObservation(env, clip=10.)
+        env = VecStandardizeObservation(env, clip=5.)
     global agent
     agent = Agent(config, env, device)
     
@@ -102,6 +102,7 @@ def run(config, seed, device):
                {'popsize': config['train.popsize'], 
                 'seed': seed})
     train_logs = []
+    checkpoint_count = 0
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
         print('Finish initialization. Training starts...')
         for generation in range(config['train.generations']):
@@ -119,9 +120,10 @@ def run(config, seed, device):
             train_logs.append(logger.logs)
             if generation == 0 or (generation+1)%config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
-            if generation == 0 or (generation+1)%config['checkpoint.freq'] == 0:
+            if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
                 agent.from_vec(torch.from_numpy(es.result.xbest).float())
                 agent.checkpoint(logdir, generation+1)
+                checkpoint_count += 1
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None
     
@@ -130,4 +132,4 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=1)
+                   num_worker=5)
