@@ -26,7 +26,7 @@ from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
 from lagom import CEM
-from .agent import Agent
+from baselines.cem.agent import Agent
 
 
 config = Config(

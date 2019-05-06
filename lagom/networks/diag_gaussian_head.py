@@ -15,12 +15,10 @@ class DiagGaussianHead(Module):
     r"""Defines a module for a diagonal Gaussian (continuous) action distribution which
     the standard deviation is state independent. 
     
-    The network outputs the mean :math:`\mu(x)` and the state independent logarithm of variance 
-    :math:`\log\sigma^2` (allowing to optimize in log-space, i.e. both negative and positive). 
+    The network outputs the mean :math:`\mu(x)` and the state independent logarithm of standard 
+    deviation :math:`\log\sigma` (allowing to optimize in log-space, i.e. both negative and positive). 
     
-    The variance is obtained by applying exponential function :math:`\epsilon + \exp(x)` 
-    where :math:`\epsilon=1e-4` is a lower bound to avoid numerical instability, e.g. producing ``NaN``. 
-    Then the standard deviation is obtained by taking the square root. 
+    The standard deviation is obtained by applying exponential function :math:`\exp(x)`.
     
     Example:
     
@@ -31,7 +29,7 @@ class DiagGaussianHead(Module):
         Normal(loc: torch.Size([2, 4]), scale: torch.Size([2, 4]))
         >>> action_dist.base_dist.stddev
         tensor([[0.4500, 0.4500, 0.4500, 0.4500],
-                [0.4500, 0.4500, 0.4500, 0.4500]], grad_fn=<SqrtBackward>)
+                [0.4500, 0.4500, 0.4500, 0.4500]], grad_fn=<ExpBackward>)
     
     Args:
         feature_dim (int): number of input features
@@ -43,26 +41,22 @@ class DiagGaussianHead(Module):
     """
     def __init__(self, feature_dim, action_dim, device, std0, **kwargs):
         super().__init__(**kwargs)
-        self.eps = 1e-4  # used for default min-variance to avoid numerical instability
         assert std0 > 0
         self.feature_dim = feature_dim
         self.action_dim = action_dim
         self.device = device
         self.std0 = std0
         
-        self.logvar0 = math.log(std0**2 - self.eps)
-        
         self.mean_head = nn.Linear(self.feature_dim, self.action_dim)
         # 0.01 -> almost zeros initially
         ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
-        self.logvar_head = nn.Parameter(torch.full((self.action_dim,), self.logvar0, requires_grad=True))
+        self.logstd_head = nn.Parameter(torch.full((self.action_dim,), math.log(std0)))
         
         self.to(self.device)
         
     def forward(self, x):
         mean = self.mean_head(x)
-        logvar = self.logvar_head.expand_as(mean)
-        var = self.eps + torch.exp(logvar)
-        std = torch.sqrt(var)
+        logstd = self.logstd_head.expand_as(mean)
+        std = torch.exp(logstd)
         action_dist = Independent(Normal(loc=mean, scale=std), 1)
         return action_dist
