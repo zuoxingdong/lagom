@@ -15,13 +15,16 @@ from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import NormalizeAction
 from lagom.envs.wrappers import VecMonitor
 
-from agent import Agent
-from engine import Engine
-from replay_buffer import ReplayBuffer
+from baselines.sac.agent import Agent
+from baselines.sac.engine import Engine
+from baselines.sac.replay_buffer import ReplayBuffer
 
 
 config = Config(
     {'cuda': True, 
+     ##########
+     'cuda_ids': [6],
+     ###########
      'log.dir': 'logs/default', 
      'log.freq': 1000,  # every n timesteps
      'checkpoint.num': 3,
@@ -34,7 +37,7 @@ config = Config(
      'agent.actor.use_lr_scheduler': False,
      'agent.critic.lr': 3e-4,
      'agent.critic.use_lr_scheduler': False,
-     'agent.policy_delay': 2,
+     'agent.policy_delay': 1, ########2,
      'agent.initial_temperature': 1.0,
      'agent.max_grad_norm': 999999,  # grad clipping by norm
      
