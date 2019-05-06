@@ -116,24 +116,24 @@ class TestInit(object):
         # Linear
         a = nn.Linear(2, 3)
         ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight.max().item() > 50.
+        assert a.weight.max().item() > 30.
         assert np.allclose(a.bias.detach().numpy(), 10.)
         ortho_init(a, nonlinearity='relu')
         
         # Conv2d
         a = nn.Conv2d(2, 3, 3)
         ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight.max().item() > 100.
+        assert a.weight.max().item() > 50.
         assert np.allclose(a.bias.detach().numpy(), 10.)
         ortho_init(a, nonlinearity='relu')
         
         # LSTM
         a = nn.LSTM(2, 3, 2)
         ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight_hh_l0.max().item() > 100.
-        assert a.weight_hh_l1.max().item() > 100.
-        assert a.weight_ih_l0.max().item() > 100.
-        assert a.weight_ih_l1.max().item() > 100.
+        assert a.weight_hh_l0.max().item() > 50.
+        assert a.weight_hh_l1.max().item() > 50.
+        assert a.weight_ih_l0.max().item() > 50.
+        assert a.weight_ih_l1.max().item() > 50.
         assert np.allclose(a.bias_hh_l0.detach().numpy(), 10.)
         assert np.allclose(a.bias_hh_l1.detach().numpy(), 10.)
         assert np.allclose(a.bias_ih_l0.detach().numpy(), 10.)
@@ -142,8 +142,8 @@ class TestInit(object):
         # LSTMCell
         a = nn.LSTMCell(3, 2)
         ortho_init(a, weight_scale=1000., constant_bias=10.)
-        assert a.weight_hh.max().item() > 100.
-        assert a.weight_ih.max().item() > 100.
+        assert a.weight_hh.max().item() > 50.
+        assert a.weight_ih.max().item() > 50.
         assert np.allclose(a.bias_hh.detach().numpy(), 10.)
         assert np.allclose(a.bias_ih.detach().numpy(), 10.)
 
