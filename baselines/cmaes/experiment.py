@@ -26,7 +26,7 @@ from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
 from lagom import CMAES
-from .agent import Agent
+from baselines.cmaes.agent import Agent
 
 
 config = Config(

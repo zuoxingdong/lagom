@@ -19,12 +19,12 @@ from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
 from lagom.runner import EpisodeRunner
 
-from agent import Agent
-from engine import Engine
+from baselines.vpg.agent import Agent
+from baselines.vpg.engine import Engine
 
 
 config = Config(
-    {'cuda': True, 
+    {'cuda': False,############True, 
      'log.dir': 'logs/default', 
      'log.freq': 10, 
      'checkpoint.num': 3,
@@ -46,7 +46,7 @@ config = Config(
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.5,  # initial std
+     'agent.std0': 0.6,  # initial std
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration
