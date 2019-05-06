@@ -19,8 +19,8 @@ from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
 from lagom.runner import EpisodeRunner
 
-from agent import Agent
-from engine import Engine
+from .agent import Agent
+from .engine import Engine
 
 
 config = Config(

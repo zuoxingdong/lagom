@@ -15,9 +15,9 @@ from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 
-from agent import Agent
-from engine import Engine
-from replay_buffer import ReplayBuffer
+from .agent import Agent
+from .engine import Engine
+from .replay_buffer import ReplayBuffer
 # Test for obs/reward normalization
 #from new_engine import Engine
 #from new_replay_buffer import ReplayBuffer
