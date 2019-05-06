@@ -25,7 +25,7 @@ from lagom.transform import explained_variance as ev
 from lagom.transform import describe
 
 from torch.utils.data import DataLoader
-from .dataset import Dataset
+from baselines.ppo.dataset import Dataset
 
 
 class MLP(Module):
