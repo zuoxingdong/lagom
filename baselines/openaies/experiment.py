@@ -25,8 +25,8 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
-from .openaies import OpenAIES
-from .agent import Agent
+from baselines.openaies.openaies import OpenAIES
+from baselines.openaies.agent import Agent
 
 
 config = Config(
