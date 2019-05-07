@@ -26,4 +26,4 @@ rm mujoco200_linux.zip
 
 # Install dependencies
 pip install --upgrade pip
-pip install -q -r --upgrade ../requirements.txt
+pip install -q -r ../requirements.txt
