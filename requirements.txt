@@ -1,4 +1,4 @@
-# Update: 2019-04-24
+# Update: 2019-05-07
 
 # System-related
 mkl>=2019.0
@@ -39,9 +39,10 @@ matplotlib>=3.0.3
 seaborn>=0.9.0
 
 # RL
+mujoco-py>=2.0.2.2
+atari_py>=0.1.7
 #gym>=0.12.1  # revert when gym update version with latest TimeLimit
 git+https://github.com/openai/gym.git
-atari_py>=0.1.7
 cma>=2.7.0
 
 # ReadtheDocs
