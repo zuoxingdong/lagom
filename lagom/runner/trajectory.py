@@ -52,6 +52,8 @@ class Trajectory(object):
     def add_step_info(self, step_info):
         assert not self.completed
         self.step_infos.append(step_info)
+        if step_info.last:
+            assert self.completed
 
     @property
     def numpy_dones(self):
