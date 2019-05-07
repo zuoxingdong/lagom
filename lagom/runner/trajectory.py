@@ -6,10 +6,11 @@ class Trajectory(object):
         self.observations = []
         self.actions = []
         self.rewards = []
-        self.dones = []
-        self.infos = []
+        self.step_infos = []
         
-        self.completed = False
+    @property
+    def completed(self):
+        return len(self.step_infos) > 0 and self.step_infos[-1].last
         
     def add_observation(self, observation):
         assert not self.completed
@@ -17,8 +18,7 @@ class Trajectory(object):
     
     @property
     def numpy_observations(self):
-        out = np.concatenate(np.asarray(self.observations), axis=0)
-        assert out.shape[0] == len(self) + 1  # plus initial observation
+        out = np.concatenate(self.observations, axis=0)
         return out
     
     @property
@@ -26,10 +26,12 @@ class Trajectory(object):
         return self.observations[-1]
     
     @property
+    def reach_time_limit(self):
+        return self.step_infos[-1].time_limit
+    
+    @property
     def reach_terminal(self):
-        # TODO: handle TimeLimit seems not give performance boost
-        # return self.dones[-1] and 'TimeLimit.truncated' not in self.infos[-1]
-        return self.dones[-1]
+        return self.step_infos[-1].terminal
     
     def add_action(self, action):
         assert not self.completed
@@ -37,7 +39,7 @@ class Trajectory(object):
         
     @property
     def numpy_actions(self):
-        return np.concatenate(np.asarray(self.actions), axis=0)
+        return np.concatenate(self.actions, axis=0)
         
     def add_reward(self, reward):
         assert not self.completed
@@ -47,29 +49,23 @@ class Trajectory(object):
     def numpy_rewards(self):
         return np.asarray(self.rewards)
     
-    def add_done(self, done):
+    def add_step_info(self, step_info):
         assert not self.completed
-        self.dones.append(done)
-        if done:
-            self.completed = True
-        
+        self.step_infos.append(step_info)
+
     @property
     def numpy_dones(self):
-        return np.asarray(self.dones)
+        return np.asarray([step_info.done for step_info in self.step_infos])
     
     @property
     def numpy_masks(self):
         return 1. - self.numpy_dones
-        
-    def add_info(self, info):
-        assert not self.completed
-        self.infos.append(info)
     
     def get_all_info(self, key):
-        return [info[key] for info in self.infos]
+        return [step_info[key] for step_info in self.step_infos]
     
     def __len__(self):
-        return len(self.dones)
+        return len(self.step_infos)
         
     def __repr__(self):
         return f'Trajectory({len(self)})'
