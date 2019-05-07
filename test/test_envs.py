@@ -32,6 +32,8 @@ from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
+from lagom.envs.wrappers import StepInfo
+from lagom.envs.wrappers import VecStepInfo
 
 
 def test_space_utils():
@@ -387,3 +389,70 @@ def test_vec_monitor(env_id, num_env, init_seed):
                 counter += 1
     assert min(100, counter) == len(env.return_queue)
     assert min(100, counter) == len(env.horizon_queue)
+
+    
+@pytest.mark.parametrize('num_env', [1, 3, 5])
+@pytest.mark.parametrize('init_seed', [0, 10])
+def test_vec_step_info(num_env, init_seed):
+    make_env = lambda: gym.make('Pendulum-v0')
+    env = make_vec_env(make_env, num_env, init_seed)
+    env = VecStepInfo(env)
+
+    observations, step_infos = env.reset()
+    assert all([isinstance(step_info, StepInfo) for step_info in step_infos])
+    assert all([step_info.first for step_info in step_infos])
+    assert all([not step_info.mid for step_info in step_infos])
+    assert all([not step_info.last for step_info in step_infos])
+    assert all([not step_info.time_limit for step_info in step_infos])
+    assert all([not step_info.terminal for step_info in step_infos])
+
+    for _ in range(5000):
+        observations, rewards, step_infos = env.step([env.action_space.sample() for _ in range(num_env)])
+        for step_info in step_infos:
+            assert isinstance(step_info, StepInfo)
+            if step_info.last:
+                assert step_info.done
+                assert np.allclose(step_info['last_observation'], step_info.info['last_observation'])
+                assert not step_info.first and not step_info.mid
+                # Pendulum cut by TimeLimit
+                assert 'TimeLimit.truncated' in step_info.info
+                assert step_info.time_limit
+                assert not step_info.terminal
+            else:
+                assert not step_info.done
+                assert step_info.mid
+                assert not step_info.first and not step_info.last
+                assert not step_info.time_limit
+                assert not step_info.terminal            
+    del make_env, env
+
+    make_env = lambda: gym.make('CartPole-v1')
+    env = make_vec_env(make_env, num_env, init_seed)
+    env = VecStepInfo(env)
+
+    observations, step_infos = env.reset()
+    assert all([isinstance(step_info, StepInfo) for step_info in step_infos])
+    assert all([step_info.first for step_info in step_infos])
+    assert all([not step_info.mid for step_info in step_infos])
+    assert all([not step_info.last for step_info in step_infos])
+    assert all([not step_info.time_limit for step_info in step_infos])
+    assert all([not step_info.terminal for step_info in step_infos])
+
+    for _ in range(5000):
+        observations, rewards, step_infos = env.step([env.action_space.sample() for _ in range(num_env)])
+        for step_info in step_infos:
+            assert isinstance(step_info, StepInfo)
+            if step_info.last:
+                assert step_info.done
+                assert np.allclose(step_info['last_observation'], step_info.info['last_observation'])
+                assert not step_info.first and not step_info.mid
+                # CartPole terminates episode with terminal state via random actions
+                assert 'TimeLimit.truncated' not in step_info.info
+                assert not step_info.time_limit
+                assert step_info.terminal
+            else:
+                assert not step_info.done
+                assert step_info.mid
+                assert not step_info.first and not step_info.last
+                assert not step_info.time_limit
+                assert not step_info.terminal
