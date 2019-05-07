@@ -9,6 +9,8 @@ import gym
 from lagom import RandomAgent
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
+from lagom.envs.wrappers import StepInfo
+from lagom.envs.wrappers import VecStepInfo
 from lagom.runner import Trajectory
 from lagom.runner import EpisodeRunner
 
@@ -50,6 +52,7 @@ def test_returns(num_env, init_seed, T):
 
     make_env = lambda: TimeLimit(SanityEnv())
     env = make_vec_env(make_env, num_env, init_seed)
+    env = VecStepInfo(env)
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
     D = runner(agent, env, T)
@@ -87,7 +90,9 @@ def test_returns(num_env, init_seed, T):
 @pytest.mark.parametrize('last_V', [0.0, 2.0])
 def test_bootstrapped_returns(gamma, last_V):
     D = Trajectory()
-    D.dones = [False, False, False, False, False]
+    dones = [False, False, False, False, False]
+    infos = [{}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
@@ -98,10 +103,10 @@ def test_bootstrapped_returns(gamma, last_V):
     assert np.allclose(out, y)
     
     D = Trajectory()
-    D.dones = [False, False, False, True]
-    D.infos = [{}, {}, {}, {}]
+    dones = [False, False, False, True]
+    infos = [{}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
-    D.completed = True
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0)), 
@@ -109,8 +114,7 @@ def test_bootstrapped_returns(gamma, last_V):
          0.4 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V)), 
@@ -119,10 +123,10 @@ def test_bootstrapped_returns(gamma, last_V):
     assert np.allclose(out, y)
     
     D = Trajectory()
-    D.dones = [False, False, False, False, True]
-    D.infos = [{}, {}, {}, {}, {}]
+    dones = [False, False, False, False, True]
+    infos = [{}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
-    D.completed = True
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V*0.0)))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V*0.0))), 
@@ -131,8 +135,7 @@ def test_bootstrapped_returns(gamma, last_V):
          0.5 + gamma*last_V*0.0]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V))), 
@@ -142,8 +145,9 @@ def test_bootstrapped_returns(gamma, last_V):
     assert np.allclose(out, y)
     
     D = Trajectory()
-    D.dones = [False, False]
-    D.infos = [{}, {}]
+    dones = [False, False]
+    infos = [{}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2]
     out = bootstrapped_returns(gamma, D, last_V)
     y = [0.1 + gamma*(0.2 + gamma*last_V), 
@@ -154,10 +158,10 @@ def test_bootstrapped_returns(gamma, last_V):
 @pytest.mark.parametrize('gamma', [0.1, 0.5])
 def test_td0_target(gamma):
     D = Trajectory()
-    D.dones = [False, False, False, True]
-    D.infos = [{}, {}, {}, {}]
+    dones = [False, False, False, True]
+    infos = [{}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
-    D.completed = True
     Vs = [1, 2, 3, 4]
     out = td0_target(gamma, D, Vs, 40)
     y = [0.1 + gamma*2, 
@@ -166,8 +170,7 @@ def test_td0_target(gamma):
          0.4 + gamma*40*0.0]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = td0_target(gamma, D, Vs, 40)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3,
@@ -176,8 +179,9 @@ def test_td0_target(gamma):
     assert np.allclose(out, y)
 
     D = Trajectory()
-    D.dones = [False, False, False, False]
-    D.infos = [{}, {}, {}, {}]
+    dones = [False, False, False, False]
+    infos = [{}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     Vs = [1, 2, 3, 4]
     out = td0_target(gamma, D, Vs, 40)
@@ -188,10 +192,10 @@ def test_td0_target(gamma):
     assert np.allclose(out, y)
     
     D = Trajectory()
-    D.dones = [False, False, False, False, False, True]
-    D.infos = [{}, {}, {}, {}, {}, {}]
+    dones = [False, False, False, False, False, True]
+    infos = [{}, {}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
-    D.completed = True
     Vs = [1, 2, 3, 4, 5, 6]
     out = td0_target(gamma, D, Vs, 60)
     y = [0.1 + gamma*2, 
@@ -202,8 +206,7 @@ def test_td0_target(gamma):
          0.6 + gamma*60*0.0]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = td0_target(gamma, D, Vs, 60)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3, 
@@ -217,10 +220,10 @@ def test_td0_target(gamma):
 @pytest.mark.parametrize('gamma', [0.1, 0.5])
 def test_td0_error(gamma):
     D = Trajectory()
-    D.dones = [False, False, False, True]
-    D.infos = [{}, {}, {}, {}]
+    dones = [False, False, False, True]
+    infos = [{}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
-    D.completed = True
     Vs = [1, 2, 3, 4]
     out = td0_error(gamma, D, Vs, 40)
     y = [0.1 + gamma*2 - 1, 
@@ -229,8 +232,7 @@ def test_td0_error(gamma):
          0.4 + gamma*40*0.0 - 4]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = td0_error(gamma, D, Vs, 40)
     y = [0.1 + gamma*2 - 1, 
          0.2 + gamma*3 - 2,
@@ -239,8 +241,9 @@ def test_td0_error(gamma):
     assert np.allclose(out, y)
 
     D = Trajectory()
-    D.dones = [False, False, False, False]
-    D.infos = [{}, {}, {}, {'TimeLimit.truncated': True}]
+    dones = [False, False, False, True]
+    infos = [{}, {}, {}, {'TimeLimit.truncated': True}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4]
     Vs = [1, 2, 3, 4]
     out = td0_error(gamma, D, Vs, 40)
@@ -251,10 +254,10 @@ def test_td0_error(gamma):
     assert np.allclose(out, y)
     
     D = Trajectory()
-    D.dones = [False, False, False, False, False, True]
-    D.infos = [{}, {}, {}, {}, {}, {}]
+    dones = [False, False, False, False, False, True]
+    infos = [{}, {}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
-    D.completed = True
     Vs = [1, 2, 3, 4, 5, 6]
     out = td0_error(gamma, D, Vs, 60)
     y = [0.1 + gamma*2 - 1, 
@@ -265,8 +268,7 @@ def test_td0_error(gamma):
          0.6 + gamma*60*0.0 - 6]
     assert np.allclose(out, y)
     
-    #D.infos[-1]['TimeLimit.truncated'] = True
-    D.dones[-1] = False
+    D.step_infos[-1].done = False
     out = td0_error(gamma, D, Vs, 60)
     y = [0.1 + gamma*2 - 1, 
          0.2 + gamma*3 - 2, 
@@ -279,10 +281,10 @@ def test_td0_error(gamma):
 
 def test_gae():
     D = Trajectory()
-    D.dones = [False, False, True]
-    D.infos = [{}, {}, {}]
+    dones = [False, False, True]
+    infos = [{}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [1, 2, 3]
-    D.completed = True
     Vs = [0.1, 1.1, 2.1]
     out = gae(1.0, 0.5, D, Vs, 10)
     assert np.allclose(out, [3.725, 3.45, 0.9])
@@ -290,10 +292,10 @@ def test_gae():
     assert np.allclose(out, [1.03256, 1.128, 0.9])
     
     D = Trajectory()
-    D.dones = [False, False, True]
-    D.infos = [{}, {}, {}]
+    dones = [False, False, True]
+    infos = [{}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [1, 2, 3]
-    D.completed = True
     Vs = [0.5, 1.5, 2.5]
     out = gae(1.0, 0.5, D, Vs, 99)
     assert np.allclose(out, [3.625, 3.25, 0.5])
@@ -301,8 +303,9 @@ def test_gae():
     assert np.allclose(out, [0.6652, 0.76, 0.5])
 
     D = Trajectory()
-    D.dones = [False, False, False, False, False]
-    D.infos = [{}, {}, {}, {}, {}]
+    dones = [False, False, False, False, False]
+    infos = [{}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [1, 2, 3, 4, 5]
     Vs = [0.5, 1.5, 2.5, 3.5, 4.5]
     out = gae(1.0, 0.5, D, Vs, 20)
@@ -311,8 +314,9 @@ def test_gae():
     assert np.allclose(out, [0.665348, 0.7674, 0.87, 1, 2.5])
     
     D = Trajectory()
-    D.dones = [False, False, False, False, False]
-    D.infos = [{}, {}, {}, {}, {}]
+    dones = [False, False, False, False, False]
+    infos = [{}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [1, 2, 3, 4, 5]
     Vs = [0.1, 1.1, 2.1, 3.1, 4.1]
     out = gae(1.0, 0.5, D, Vs, 10)
@@ -321,10 +325,10 @@ def test_gae():
     assert np.allclose(out, [1.03269478, 1.1347393, 1.23696, 1.348, 1.9])
     
     D = Trajectory()
-    D.dones = [False, False, False, False, False, False, False, True]
-    D.infos = [{}, {}, {}, {}, {}, {}, {}, {}]
+    dones = [False, False, False, False, False, False, False, True]
+    infos = [{}, {}, {}, {}, {}, {}, {}, {}]
+    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
     D.rewards = [1, 2, 3, 4, 5, 6, 7, 8]
-    D.completed = True
     Vs = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     out = gae(1.0, 0.5, D, Vs, 30)
     assert np.allclose(out, [5.84375, 7.6875, 9.375, 10.75, 11.5, 11., 8, 0.])
