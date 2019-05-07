@@ -210,7 +210,13 @@ class VecEnvWrapper(VecEnv):
         assert isinstance(env, VecEnv)
         self.env = env
         self.metadata = env.metadata
-        super().__init__(list_make_env=env.list_make_env)
+        
+        self.list_make_env = env.list_make_env
+        self.list_env = env.list_env
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
+        self.reward_range = env.reward_range
+        self.spec = env.spec
         
     def step(self, actions):
         return self.env.step(actions)
