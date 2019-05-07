@@ -39,7 +39,9 @@ matplotlib>=3.0.3
 seaborn>=0.9.0
 
 # RL
-gym[classic_control, atari]>=0.12.1
+#gym>=0.12.1  # revert when gym update version with latest TimeLimit
+git+https://github.com/openai/gym.git
+atari_py>=0.1.7
 cma>=2.7.0
 
 # ReadtheDocs
