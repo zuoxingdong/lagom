@@ -17,6 +17,7 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
+from lagom.envs.wrappers import VecStepInfo
 from lagom.runner import EpisodeRunner
 
 from baselines.vpg.agent import Agent
@@ -24,7 +25,7 @@ from baselines.vpg.engine import Engine
 
 
 config = Config(
-    {'cuda': False,############True, 
+    {'cuda': False,  # CPU a bit faster
      'log.dir': 'logs/default', 
      'log.freq': 10, 
      'checkpoint.num': 3,
@@ -76,6 +77,7 @@ def run(config, seed, device):
         env = VecStandardizeObservation(env, clip=5.)
     if config['env.standardize_reward']:
         env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
+    env = VecStepInfo(env)
     
     agent = Agent(config, env, device)
     runner = EpisodeRunner(reset_on_call=False)
