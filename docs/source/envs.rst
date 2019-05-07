@@ -76,3 +76,9 @@ Wrappers
     
 .. autoclass:: VecStandardizeReward
     :members:
+    
+.. autoclass:: StepInfo
+    :members:
+    
+.. autoclass:: VecStepInfo
+    :members:
