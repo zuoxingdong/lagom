@@ -14,6 +14,7 @@ from lagom import Logger
 from lagom.transform import describe
 from lagom.utils import CloudpickleWrapper  # VERY IMPORTANT
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
 from lagom.utils import set_global_seeds
 from lagom.experiment import Config
 from lagom.experiment import Grid
@@ -30,9 +31,7 @@ from baselines.cmaes.agent import Agent
 
 
 config = Config(
-    {'cuda': False, 
-     'log.dir': 'logs/default', 
-     'log.freq': 10, 
+    {'log.freq': 10, 
      'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
@@ -42,7 +41,7 @@ config = Config(
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.5,  # initial std
+     'agent.std0': 0.6,  # initial std
      
      'train.generations': int(1e3),  # total number of ES generations
      'train.popsize': 64,
@@ -76,7 +75,7 @@ def initializer(config, seed, device):
     
     
 def fitness(param):
-    agent.from_vec(torch.from_numpy(param).float())
+    agent.from_vec(tensorify(param, 'cpu'))
     R = []
     H = []
     with torch.no_grad():
@@ -92,9 +91,8 @@ def fitness(param):
     return np.mean(R), np.mean(H)
     
 
-def run(config, seed, device):
+def run(config, seed, device, logdir):
     set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
     print('Initializing...')
     agent = Agent(config, make_env(config, seed), device)
@@ -121,7 +119,7 @@ def run(config, seed, device):
             if generation == 0 or (generation+1)%config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
             if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
-                agent.from_vec(torch.from_numpy(es.result.xbest).float())
+                agent.from_vec(tensorify(es.result.xbest, 'cpu'))
                 agent.checkpoint(logdir, generation+1)
                 checkpoint_count += 1
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
@@ -132,4 +130,8 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=5)
+                   log_dir='logs/default',
+                   max_workers=None,  # no parallelization 
+                   chunksize=1, 
+                   use_gpu=False,
+                   gpu_ids=None)
