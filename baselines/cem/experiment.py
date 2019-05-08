@@ -135,7 +135,7 @@ if __name__ == '__main__':
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
                    log_dir='logs/default',
-                   max_workers=5, 
+                   max_workers=None,  # no parallelization 
                    chunksize=1, 
                    use_gpu=False,
                    gpu_ids=None)
