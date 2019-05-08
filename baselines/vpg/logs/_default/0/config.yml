@@ -1,4 +1,6 @@
-ID: 3
+ID: 0
+cuda: false
+log.dir: logs/default
 log.freq: 10
 checkpoint.num: 3
 env.standardize_obs: true
@@ -18,4 +20,4 @@ env.clip_action: true
 agent.std0: 0.6
 train.timestep: 1000000
 train.timestep_per_iter: 1000
-env.id: Swimmer-v3
+env.id: HalfCheetah-v3
