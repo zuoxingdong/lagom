@@ -17,16 +17,15 @@ from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
+from lagom.envs.wrappers import VecStepInfo
 from lagom.runner import EpisodeRunner
 
-from agent import Agent
-from engine import Engine
+from baselines.ppo.agent import Agent
+from baselines.ppo.engine import Engine
 
 
 config = Config(
-    {'cuda': True, 
-     'log.dir': 'logs/default', 
-     'log.freq': 10, 
+    {'log.freq': 10, 
      'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
@@ -35,19 +34,18 @@ config = Config(
      
      'nn.sizes': [64, 64],
      
-     'agent.lr': 3e-4,
+     'agent.policy_lr': 3e-4,
      'agent.use_lr_scheduler': True,
+     'agent.value_lr': 1e-3,
      'agent.gamma': 0.99,
      'agent.gae_lambda': 0.95,
      'agent.standardize_adv': True,  # standardize advantage estimates
      'agent.max_grad_norm': 0.5,  # grad clipping by norm
-     'agent.entropy_coef': 0.0,  # PPO: no entropy bobus
-     'agent.value_coef': 0.5,
      'agent.clip_range': 0.2,  # ratio clipping
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.5,  # initial std
+     'agent.std0': 0.6,  # initial std
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 2048,  # number of timesteps per iteration
@@ -68,9 +66,8 @@ def make_env(config, seed):
     return env
     
 
-def run(config, seed, device):
+def run(config, seed, device, logdir):
     set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
     env = make_env(config, seed)
     env = VecMonitor(env)
@@ -78,6 +75,7 @@ def run(config, seed, device):
         env = VecStandardizeObservation(env, clip=5.)
     if config['env.standardize_reward']:
         env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
+    env = VecStepInfo(env)
     
     agent = Agent(config, env, device)
     runner = EpisodeRunner(reset_on_call=False)
@@ -102,4 +100,8 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=os.cpu_count())
+                   log_dir='logs/default',
+                   max_workers=os.cpu_count(), 
+                   chunksize=1, 
+                   use_gpu=False,  # CPU a bit faster
+                   gpu_ids=None)
