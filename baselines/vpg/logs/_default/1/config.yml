@@ -1,0 +1,23 @@
+ID: 1
+cuda: false
+log.dir: logs/default
+log.freq: 10
+checkpoint.num: 3
+env.standardize_obs: true
+env.standardize_reward: true
+nn.sizes:
+- 64
+- 64
+agent.lr: 0.001
+agent.use_lr_scheduler: false
+agent.gamma: 0.99
+agent.gae_lambda: 0.97
+agent.standardize_adv: true
+agent.max_grad_norm: 0.5
+agent.entropy_coef: 0.01
+agent.value_coef: 0.5
+env.clip_action: true
+agent.std0: 0.6
+train.timestep: 1000000
+train.timestep_per_iter: 1000
+env.id: Hopper-v3
