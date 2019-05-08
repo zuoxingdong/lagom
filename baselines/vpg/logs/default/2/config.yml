@@ -1,6 +1,4 @@
 ID: 2
-cuda: false
-log.dir: logs/default
 log.freq: 10
 checkpoint.num: 3
 env.standardize_obs: true
