@@ -9,6 +9,8 @@ from gym.spaces import Box
 
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.envs import flatdim
 from lagom.envs.wrappers import get_wrapper
 from lagom.networks import Module
@@ -47,15 +49,14 @@ class Agent(BaseAgent):
         self.total_timestep = 0
         
     def choose_action(self, obs, **kwargs):
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        obs = tensorify(obs, self.device)
         out = {}
         features = self.feature_network(obs)
         
         action_dist = self.action_head(features)
         out['entropy'] = action_dist.entropy()
         action = action_dist.sample()
-        out['raw_action'] = action.detach().cpu().numpy()
+        out['raw_action'] = numpify(action, 'float')
         return out
     
     def learn(self, D, **kwargs):
