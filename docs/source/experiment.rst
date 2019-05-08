@@ -18,18 +18,6 @@ Config
     
 .. autoclass:: Config
     :members:
-    
-Experiment Master
------------------
-
-.. autoclass:: ExperimentMaster
-    :members:
-
-Experiment Worker
------------------
-
-.. autoclass:: ExperimentWorker
-    :members:
 
 Run experiment
 --------------
