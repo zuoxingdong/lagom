@@ -25,9 +25,7 @@ from baselines.vpg.engine import Engine
 
 
 config = Config(
-    {'cuda': False,  # CPU a bit faster
-     'log.dir': 'logs/default', 
-     'log.freq': 10, 
+    {'log.freq': 10, 
      'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
@@ -67,9 +65,8 @@ def make_env(config, seed):
     return env
     
 
-def run(config, seed, device):
+def run(config, seed, device, logdir):
     set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
     env = make_env(config, seed)
     env = VecMonitor(env)
@@ -102,4 +99,8 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
-                   num_worker=os.cpu_count())
+                   log_dir='logs/default',
+                   max_workers=os.cpu_count(), 
+                   chunksize=1, 
+                   use_gpu=False,  # CPU a bit faster
+                   gpu_ids=None)
