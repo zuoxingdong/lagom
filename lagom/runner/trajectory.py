@@ -63,6 +63,10 @@ class Trajectory(object):
     def numpy_masks(self):
         return 1. - self.numpy_dones
     
+    @property
+    def infos(self):
+        return [step_info.info for step_info in self.step_infos]
+    
     def get_all_info(self, key):
         return [step_info[key] for step_info in self.step_infos]
     
