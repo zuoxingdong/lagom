@@ -9,8 +9,6 @@ from lagom.experiment import Grid
 from lagom.experiment import Sample
 from lagom.experiment import Condition
 from lagom.experiment import Config
-from lagom.experiment import ExperimentWorker
-from lagom.experiment import ExperimentMaster
 from lagom.experiment import run_experiment
 
 
@@ -115,63 +113,33 @@ def test_config(num_sample, keep_dict_order):
         assert list_config[ID]['ID'] == ID
 
 
-def run(config, seed, device):
-        return config['ID'], seed
-
-
 @pytest.mark.parametrize('num_sample', [1, 5])
-@pytest.mark.parametrize('num_worker', [1, 3, 4, 7])
-def test_experiment(num_sample, num_worker):
-    config = Config({'log.dir': 'some path', 
-                     'network.lr': Grid([1e-3, 5e-3]), 
-                     'network.size': [32, 16],
-                     'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
-                    num_sample=num_sample, 
-                    keep_dict_order=True)
-    experiment = ExperimentMaster(ExperimentWorker, num_worker=num_worker, run=run, config=config, seeds=[1, 2, 3])
-    assert len(experiment.configs) == 4
-    assert experiment.num_worker == num_worker
+@pytest.mark.parametrize('max_workers', [1, 5, 100])
+@pytest.mark.parametrize('chunksize', [1, 7, 40])
+def test_run_experiment(num_sample, max_workers, chunksize):
+    def run(config, seed, device, logdir):
+        return config['ID'], seed, device, logdir
     
-    tasks = experiment.make_tasks()
-    assert len(tasks) == 4*3
-    for task in tasks:
-        assert isinstance(task[0], dict) and list(task[0].keys()) == ['ID'] + list(config.items.keys())
-        assert task[1] in [1, 2, 3]
-        assert task[2] is run
-    
-    results = experiment()
-    assert len(results) == 4*3
-    for i in range(0, 4*3, 3):
-        assert results[i][0] == i//3
-        assert results[i+1][0] == i//3
-        assert results[i+2][0] == i//3
-        
-        assert results[i][1] == 1
-        assert results[i+1][1] == 2
-        assert results[i+2][1] == 3
-
-
-@pytest.mark.parametrize('num_sample', [1, 5])
-@pytest.mark.parametrize('num_worker', [1, 3, 4, 7])
-def test_run_experiment(num_sample, num_worker):
-    config = Config({'log.dir': 'some path', 
-                     'network.lr': Grid([1e-3, 5e-3]), 
+    config = Config({'network.lr': Grid([1e-3, 5e-3]), 
                      'network.size': [32, 16],
                      'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
                     num_sample=num_sample, 
                     keep_dict_order=True)
     seeds = [1, 2, 3]
-    run_experiment(run, config, seeds, num_worker)
-    
-    p = Path('./some path')
+    log_dir = './some_path'
+    run_experiment(run, config, seeds, log_dir, max_workers, chunksize, use_gpu=False, gpu_ids=None)
+ 
+    p = Path('./some_path')
     assert p.exists()
     assert (p / 'configs.pkl').exists()
+    assert (p / 'source_files').exists() and (p / 'source_files').is_dir()
     # Check all configuration folders with their IDs and subfolders for all random seeds
     for i in range(4):
         config_p = p / str(i)
         assert config_p.exists()
+        assert (config_p / 'config.yml').exists()
         for seed in seeds:
-            assert (config_p / str(seed)).exists
+            assert (config_p / str(seed)).exists()
     # Clean the logging directory
     rmtree(p)
     # Test remove
