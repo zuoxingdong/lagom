@@ -55,7 +55,7 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         config (Config): a :class:`Config` object defining all configuration settings
         seeds (list): a list of random seeds
         log_dir (str): a string to indicate the path to store loggings.
-        max_workers (int): argument for ProcessPoolExecutor.
+        max_workers (int): argument for ProcessPoolExecutor. if `None`, then all experiments run serially.
         chunksize (int): argument for Executor.map()
         use_gpu (bool): if `True`, then use CUDA. Otherwise, use CPU.
         gpu_ids (list): if `None`, then use all available GPUs. Otherwise, only use the
@@ -124,7 +124,10 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         result = run(config, seed, device, logdir)
         return result
     
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        args = list(product(configs, seeds))
-        results = list(executor.map(CloudpickleWrapper(_run), args, chunksize=chunksize))
+    args = list(product(configs, seeds))
+    if max_workers is None:
+        results = [_run(x) for x in args]
+    else:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            results = list(executor.map(CloudpickleWrapper(_run), args, chunksize=chunksize))
     return results

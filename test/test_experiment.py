@@ -114,7 +114,7 @@ def test_config(num_sample, keep_dict_order):
 
 
 @pytest.mark.parametrize('num_sample', [1, 5])
-@pytest.mark.parametrize('max_workers', [1, 5, 100])
+@pytest.mark.parametrize('max_workers', [None, 1, 5, 100])
 @pytest.mark.parametrize('chunksize', [1, 7, 40])
 def test_run_experiment(num_sample, max_workers, chunksize):
     def run(config, seed, device, logdir):
