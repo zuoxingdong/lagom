@@ -1,62 +1,71 @@
+import os
 from shutil import rmtree
 from shutil import copyfile
 from pathlib import Path
 import inspect
+from itertools import product
+from concurrent.futures import ProcessPoolExecutor
 
+import torch
 from lagom.utils import pickle_dump
 from lagom.utils import yaml_dump
 from lagom.utils import ask_yes_or_no
 from lagom.utils import timeit
-
-from .experiment_master import ExperimentMaster
-from .experiment_worker import ExperimentWorker
+from lagom.utils import CloudpickleWrapper
 
 
 @timeit(color='green', attribute='bold')
-def run_experiment(run, config, seeds, num_worker):
-    r"""A convenient function to launch a parallelized experiment (Master-Worker). 
+def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gpu=False, gpu_ids=None):
+    r"""A convenient function to parallelize the experiment (master-worker pipeline). 
     
-    .. note::
+    It is implemented by using `concurrent.futures.ProcessPoolExecutor`
     
-        It automatically creates all subfolders for logging the experiment. The topmost
-        folder is indicated by the logging directory specified in the configuration. 
-        Then all subfolders for each configuration are created with the name of their ID.
-        Finally, under each configuration subfolder, a set subfolders are created for each
-        random seed (the random seed as folder name). Intuitively, an experiment could have 
-        following directory structure::
-        
-            - logs
-                - 0  # ID number
-                    - 123  # random seed
-                    - 345
-                    - 567
-                - 1
-                    - 123
-                    - 345
-                    - 567
-                - 2
-                    - 123
-                    - 345
-                    - 567
-                - 3
-                    - 123
-                    - 345
-                    - 567
-                - 4
-                    - 123
-                    - 345
-                    - 567
-    
+    It automatically creates all subfolders for each pair of configuration and random seed
+    to store the loggings of the experiment. The root folder is given by the user.
+    Then all subfolders for each configuration are created with the name of their job IDs.
+    Under each configuration subfolder, a set subfolders are created for each
+    random seed (the random seed as folder name). Intuitively, an experiment could have 
+    following directory structure::
+
+        - logs
+            - 0  # ID number
+                - 123  # random seed
+                - 345
+                - 567
+            - 1
+                - 123
+                - 345
+                - 567
+            - 2
+                - 123
+                - 345
+                - 567
+            - 3
+                - 123
+                - 345
+                - 567
+            - 4
+                - 123
+                - 345
+                - 567
+                
     Args:
-        run (function): an algorithm function to train on.
+        run (function): a function that defines an algorithm, it must take the 
+            arguments `(config, seed, device, logdir)`
         config (Config): a :class:`Config` object defining all configuration settings
         seeds (list): a list of random seeds
-        num_worker (int): number of workers
-        
-    """
-    experiment = ExperimentMaster(ExperimentWorker, num_worker, run, config, seeds)
+        log_dir (str): a string to indicate the path to store loggings.
+        max_workers (int): argument for ProcessPoolExecutor.
+        chunksize (int): argument for Executor.map()
+        use_gpu (bool): if `True`, then use CUDA. Otherwise, use CPU.
+        gpu_ids (list): if `None`, then use all available GPUs. Otherwise, only use the
+            GPU device defined in the list. 
     
-    log_path = Path(experiment.configs[0]['log.dir'])
+    """
+    configs = config.make_configs()
+    
+    # create logging dir
+    log_path = Path(log_dir)
     if not log_path.exists():
         log_path.mkdir(parents=True)
     else:
@@ -71,22 +80,51 @@ def run_experiment(run, config, seeds, num_worker):
             log_path.mkdir(parents=True)
             print(f"The old logging directory is renamed to '{old_log_path.absolute()}'. ")
             input('Please, press Enter to continue\n>>> ')
-            
+
     # save source files
     source_path = Path(log_path / 'source_files/')
     source_path.mkdir(parents=True)
     [copyfile(s, source_path / s.name) for s in Path(inspect.getsourcefile(run)).parent.glob('*.py')]
-            
+    
     # Create subfolders for each ID and subsubfolders for each random seed
-    for config in experiment.configs:
+    for config in configs:
         ID = config['ID']
-        for seed in experiment.seeds:
+        for seed in seeds:
             p = log_path / f'{ID}' / f'{seed}'
             p.mkdir(parents=True)
-        yaml_dump(obj=config, f=log_path/f'{ID}'/'config', ext='.yml')
-
-    pickle_dump(experiment.configs, log_path / 'configs', ext='.pkl')
+        yaml_dump(obj=config, f=log_path / f'{ID}' / 'config', ext='.yml')
+        
+    pickle_dump(configs, log_path / 'configs', ext='.pkl')
+    
+    def _run(args):
+        config, seed = args
+        # VERY IMPORTANT TO AVOID GETTING STUCK, oversubscription
+        # see following links
+        # https://github.com/pytorch/pytorch/issues/19163
+        # https://software.intel.com/en-us/intel-threading-building-blocks-openmp-or-native-threads
+        torch.set_num_threads(1)
+        if use_gpu:
+            num_gpu = torch.cuda.device_count()
+            if gpu_ids is None:  # use all GPUs
+                device_id = config['ID'] % num_gpu
+            else:
+                assert all([i >= 0 and i < num_gpu for i in gpu_ids])
+                device_id = gpu_ids[config['ID'] % len(gpu_ids)]
+            torch.cuda.set_device(device_id)
+            device = torch.device(f'cuda:{device_id}')
+        else:
+            device = torch.device('cpu')
             
-    # Run experiment in parallel
-    results = experiment()
+        print(f'@ Experiment: Job ID ({config["ID"]}), PID ({os.getpid()}), seed ({seed}), device ({device})')
+        print('#'*50)
+        [print(f'# {key}: {value}') for key, value in config.items()]
+        print('#'*50)
+        
+        logdir = log_path / f'{config["ID"]}' / f'{seed}'
+        result = run(config, seed, device, logdir)
+        return result
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        args = list(product(configs, seeds))
+        results = list(executor.map(CloudpickleWrapper(_run), args, chunksize=chunksize))
     return results
