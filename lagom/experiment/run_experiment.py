@@ -128,7 +128,7 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         return result
     
     if max_workers is None:
-        results = [_run(job) for x in jobs]
+        results = [_run(job) for job in jobs]
     else:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
