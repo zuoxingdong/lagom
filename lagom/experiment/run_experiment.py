@@ -96,8 +96,11 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         
     pickle_dump(configs, log_path / 'configs', ext='.pkl')
     
-    def _run(args):
-        config, seed = args
+    # Create unique id for each job
+    jobs = list(enumerate(product(configs, seeds)))
+    
+    def _run(job):
+        job_id, (config, seed) = job
         # VERY IMPORTANT TO AVOID GETTING STUCK, oversubscription
         # see following links
         # https://github.com/pytorch/pytorch/issues/19163
@@ -106,16 +109,16 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         if use_gpu:
             num_gpu = torch.cuda.device_count()
             if gpu_ids is None:  # use all GPUs
-                device_id = config['ID'] % num_gpu
+                device_id = job_id % num_gpu
             else:
                 assert all([i >= 0 and i < num_gpu for i in gpu_ids])
-                device_id = gpu_ids[config['ID'] % len(gpu_ids)]
+                device_id = gpu_ids[job_id % len(gpu_ids)]
             torch.cuda.set_device(device_id)
             device = torch.device(f'cuda:{device_id}')
         else:
             device = torch.device('cpu')
             
-        print(f'@ Experiment: Job ID ({config["ID"]}), PID ({os.getpid()}), seed ({seed}), device ({device})')
+        print(f'@ Experiment: ID: {config["ID"]} ({len(configs)}), Seed: {seed}, Device: {device}, Job: {job_id} ({len(jobs)}), PID: {os.getpid()}')
         print('#'*50)
         [print(f'# {key}: {value}') for key, value in config.items()]
         print('#'*50)
@@ -124,10 +127,9 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         result = run(config, seed, device, logdir)
         return result
     
-    args = list(product(configs, seeds))
     if max_workers is None:
-        results = [_run(x) for x in args]
+        results = [_run(job) for x in jobs]
     else:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            results = list(executor.map(CloudpickleWrapper(_run), args, chunksize=chunksize))
+            results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
     return results
