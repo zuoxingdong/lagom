@@ -55,8 +55,9 @@ class Agent(BaseAgent):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, Box):
             self.action_head = DiagGaussianHead(feature_dim, flatdim(env.action_space), device, config['agent.std0'], **kwargs)
-        self.V_head = nn.Linear(feature_dim, 1).to(device)
+        self.V_head = nn.Linear(feature_dim, 1)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
+        self.V_head = self.V_head.to(device)  # reproducible between CPU/GPU, ortho_init behaves differently
         
         self.total_timestep = 0
         
