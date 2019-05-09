@@ -84,17 +84,16 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
     def choose_action(self, obs, **kwargs):
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        obs = tensorify(obs, self.device)
         with torch.no_grad():
-            action = self.actor(obs).detach().cpu().numpy()
+            action = numpify(self.actor(obs), 'float')
         if kwargs['mode'] == 'train':
             eps = np.random.normal(0.0, self.action_noise, size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}
         out['action'] = action
         return out
-        
+
     def learn(self, D, **kwargs):
         replay = kwargs['replay']
         episode_length = kwargs['episode_length']
@@ -126,14 +125,15 @@ class Agent(BaseAgent):
             
             self.polyak_update_target()
             
-            out['actor_loss'].append(actor_loss.item())
-            out['critic_loss'].append(critic_loss.item())
+            out['actor_loss'].append(actor_loss)
+            out['critic_loss'].append(critic_loss)
             Q_vals.append(Qs)
-        out['actor_loss'] = np.mean(out['actor_loss'])
+        out['actor_loss'] = torch.stack(out['actor_loss']).mean().item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = np.mean(out['critic_loss'])
+        out['critic_loss'] = torch.stack(out['critic_loss']).mean().item()
         out['critic_grad_norm'] = critic_grad_norm
-        out['Q'] = describe(torch.cat(Q_vals).detach().cpu().numpy().squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['Q'] = describe_it(Q_vals)
         return out
     
     def checkpoint(self, logdir, num_iter):
