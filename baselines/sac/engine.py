@@ -19,7 +19,7 @@ class Engine(BaseEngine):
         dump_togo = 0
         num_episode = 0
         checkpoint_count = 0
-        observation = self.env.reset()
+        observation, _ = self.env.reset()
         for i in count():
             if i >= self.config['train.timestep']:
                 break
@@ -27,18 +27,15 @@ class Engine(BaseEngine):
                 action = [self.env.action_space.sample()]
             else:
                 action = self.agent.choose_action(observation, mode='stochastic')['action']
-            next_observation, reward, done, info = self.env.step(action)
+            next_observation, reward, step_info = self.env.step(action)
             eval_togo += 1
             dump_togo += 1
-            if done[0]:  # [0] due to single environment
+            if step_info[0].last:  # [0] due to single environment
                 start_time = perf_counter()
-                # NOTE: must use latest TimeLimit
-                reach_time_limit = info[0].get('TimeLimit.truncated', False)
-                reach_terminal = not reach_time_limit
-                self.replay.add(observation[0], action[0], reward[0], info[0]['last_observation'], reach_terminal)
+                self.replay.add(observation[0], action[0], reward[0], step_info[0]['last_observation'], step_info[0].terminal)
                 
                 # updates in the end of episode, for each time step
-                out_agent = self.agent.learn(D=None, replay=self.replay, episode_length=info[0]['episode']['horizon'])
+                out_agent = self.agent.learn(D=None, replay=self.replay, episode_length=step_info[0]['episode']['horizon'])
                 num_episode += 1
                 if (i+1) >= int(self.config['train.timestep']*(checkpoint_count/(self.config['checkpoint.num'] - 1))):
                     self.agent.checkpoint(self.logdir, num_episode)
@@ -48,8 +45,8 @@ class Engine(BaseEngine):
                 logger('accumulated_trained_timesteps', i + 1)
                 logger('accumulated_trained_episodes', num_episode)
                 [logger(key, value) for key, value in out_agent.items()]
-                logger('episode_return', info[0]['episode']['return'])
-                logger('episode_horizon', info[0]['episode']['horizon'])
+                logger('episode_return', step_info[0]['episode']['return'])
+                logger('episode_horizon', step_info[0]['episode']['horizon'])
                 train_logs.append(logger.logs)
                 if dump_togo >= self.config['log.freq']:
                     dump_togo %= self.config['log.freq']
@@ -59,7 +56,7 @@ class Engine(BaseEngine):
                     eval_logs.append(self.eval(accumulated_trained_timesteps=(i+1), 
                                                accumulated_trained_episodes=num_episode))
             else:
-                self.replay.add(observation[0], action[0], reward[0], next_observation[0], done[0])
+                self.replay.add(observation[0], action[0], reward[0], next_observation[0], step_info[0].terminal)
             observation = next_observation
         if checkpoint_count < self.config['checkpoint.num']:
             self.agent.checkpoint(self.logdir, num_episode)
