@@ -103,5 +103,5 @@ if __name__ == '__main__':
                    log_dir='logs/default',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 
-                   use_gpu=False,  # CPU a bit faster
+                   use_gpu=False,###True,######False,  # CPU a bit faster
                    gpu_ids=None)
