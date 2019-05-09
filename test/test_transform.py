@@ -9,6 +9,8 @@ from lagom.transform import LinearSchedule
 from lagom.transform import rank_transform
 from lagom.transform import PolyakAverage
 from lagom.transform import RunningMeanVar
+from lagom.transform import SumTree
+from lagom.transform import MinTree
 from lagom.transform import smooth_filter
 
 
@@ -161,7 +163,96 @@ def test_running_mean_var():
     assert np.allclose(f.var, x.var(0))
     assert np.allclose(np.sqrt(f.var + 1e-8), x.std(0))
     assert f.n == 1000
+    
+    
+def test_sum_tree():
+    # Naive test
+    tree = SumTree(4)
+    tree[2] = 1.0
+    tree[3] = 3.0
 
+    assert np.allclose(tree.sum(), 4.0)
+    assert np.allclose(tree.sum(0, 2), 0.0)
+    assert np.allclose(tree.sum(0, 3), 1.0)
+    assert np.allclose(tree.sum(2, 3), 1.0)
+    assert np.allclose(tree.sum(2, -1), 1.0)
+    assert np.allclose(tree.sum(2, 4), 4.0)
+    
+    del tree
+    
+    # overwritten same element
+    tree = SumTree(4)
+    tree[2] = 1.0
+    tree[2] = 3.0
+
+    assert np.allclose(tree.sum(), 3.0)
+    assert np.allclose(tree.sum(2, 3), 3.0)
+    assert np.allclose(tree.sum(2, -1), 3.0)
+    assert np.allclose(tree.sum(2, 4), 3.0)
+    assert np.allclose(tree.sum(1, 2), 0.0)
+    
+    del tree
+    
+    # prefixsum index: v1
+    tree = SumTree(4)
+    tree[2] = 1.0
+    tree[3] = 3.0
+
+    assert tree.find_prefixsum_index(0.0) == 2
+    assert tree.find_prefixsum_index(0.5) == 2
+    assert tree.find_prefixsum_index(0.99) == 2
+    assert tree.find_prefixsum_index(1.01) == 3
+    assert tree.find_prefixsum_index(3.00) == 3
+    assert tree.find_prefixsum_index(4.00) == 3
+
+    # prefixsum index: v2
+    tree = SumTree(4)
+    tree[0] = 0.5
+    tree[1] = 1.0
+    tree[2] = 1.0
+    tree[3] = 3.0
+
+    assert tree.find_prefixsum_index(0.00) == 0
+    assert tree.find_prefixsum_index(0.55) == 1
+    assert tree.find_prefixsum_index(0.99) == 1
+    assert tree.find_prefixsum_index(1.51) == 2
+    assert tree.find_prefixsum_index(3.00) == 3
+    assert tree.find_prefixsum_index(5.50) == 3
+
+    
+def test_min_tree():
+    tree = MinTree(4)
+    tree[0] = 1.0
+    tree[2] = 0.5
+    tree[3] = 3.0
+
+    assert np.allclose(tree.min(), 0.5)
+    assert np.allclose(tree.min(0, 2), 1.0)
+    assert np.allclose(tree.min(0, 3), 0.5)
+    assert np.allclose(tree.min(0, -1), 0.5)
+    assert np.allclose(tree.min(2, 4), 0.5)
+    assert np.allclose(tree.min(3, 4), 3.0)
+
+    tree[2] = 0.7
+
+    assert np.allclose(tree.min(), 0.7)
+    assert np.allclose(tree.min(0, 2), 1.0)
+    assert np.allclose(tree.min(0, 3), 0.7)
+    assert np.allclose(tree.min(0, -1), 0.7)
+    assert np.allclose(tree.min(2, 4), 0.7)
+    assert np.allclose(tree.min(3, 4), 3.0)
+
+    tree[2] = 4.0
+
+    assert np.allclose(tree.min(), 1.0)
+    assert np.allclose(tree.min(0, 2), 1.0)
+    assert np.allclose(tree.min(0, 3), 1.0)
+    assert np.allclose(tree.min(0, -1), 1.0)
+    assert np.allclose(tree.min(2, 4), 3.0)
+    assert np.allclose(tree.min(2, 3), 4.0)
+    assert np.allclose(tree.min(2, -1), 4.0)
+    assert np.allclose(tree.min(3, 4), 3.0)
+    
 
 def test_smooth_filter():
     with pytest.raises(AssertionError):

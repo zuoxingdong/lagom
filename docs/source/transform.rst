@@ -26,3 +26,12 @@ lagom.transform: Transformations
     :members:
 
 .. autofunction:: smooth_filter
+
+.. autoclass:: SegmentTree
+    :members:
+    
+.. autoclass:: SumTree
+    :members:
+    
+.. autoclass:: MinTree
+    :members:
