@@ -7,66 +7,14 @@ import torch.optim as optim
 from lagom import BaseAgent
 from lagom.transform import describe
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
 
 
-"""
-class Actor(Module):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(**kwargs)
-        self.config = config
-        self.env = env
-        self.device = device
-        
-        self.feature_layers = make_fc(flatdim(env.observation_space), [400, 300])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in [400, 300]])
-        
-        self.action_head = nn.Linear(300, flatdim(env.action_space))
-        ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
-        
-        assert np.unique(env.action_space.high).size == 1
-        assert -np.unique(env.action_space.low).item() == np.unique(env.action_space.high).item()
-        self.max_action = env.action_space.high[0]
-        
-        self.to(self.device)
-        
-    def forward(self, x):
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
-        x = self.max_action*torch.tanh(self.action_head(x))
-        return x
-
-    
-class Critic(Module):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(**kwargs)
-        self.config = config
-        self.env = env
-        self.device = device
-        
-        self.feature_layers = make_fc(flatdim(env.observation_space) + flatdim(env.action_space), [400, 300])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in [400, 300]])
-        
-        self.Q_head = nn.Linear(300, 1)
-        ortho_init(self.Q_head, weight_scale=0.1, constant_bias=0.0)
-        
-        self.to(self.device)
-        
-    def forward(self, x, action):
-        x = torch.cat([x, action], dim=-1)
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
-        x = self.Q_head(x)
-        return x
-"""
-    
 class Actor(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -89,7 +37,7 @@ class Actor(Module):
         x = self.max_action*torch.tanh(self.action_head(x))
         return x
 
-    
+
 class Critic(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
@@ -136,19 +84,16 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
     def choose_action(self, obs, **kwargs):
-        mode = kwargs['mode']
-        assert mode in ['train', 'eval']
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        obs = tensorify(obs, self.device)
         with torch.no_grad():
-            action = self.actor(obs).detach().cpu().numpy()
-        if mode == 'train':
+            action = numpify(self.actor(obs), 'float')
+        if kwargs['mode'] == 'train':
             eps = np.random.normal(0.0, self.action_noise, size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}
         out['action'] = action
         return out
-        
+
     def learn(self, D, **kwargs):
         replay = kwargs['replay']
         episode_length = kwargs['episode_length']
@@ -187,7 +132,8 @@ class Agent(BaseAgent):
         out['actor_grad_norm'] = actor_grad_norm
         out['critic_loss'] = np.mean(out['critic_loss'])
         out['critic_grad_norm'] = critic_grad_norm
-        out['Q'] = describe(torch.cat(Q_vals).detach().cpu().numpy().squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['Q'] = describe_it(Q_vals)
         return out
     
     def checkpoint(self, logdir, num_iter):
