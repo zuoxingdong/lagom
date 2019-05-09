@@ -177,48 +177,49 @@ class Agent(BaseAgent):
         for i in range(episode_length):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
+            # Update Critic
             Qs1, Qs2 = self.critic(observations, actions)
-            Qs1, Qs2 = map(lambda x: x.squeeze(-1), [Qs1, Qs2])
+            #Qs1, Qs2 = map(lambda x: x.squeeze(-1), [Qs1, Qs2])
             with torch.no_grad():
                 out_actor = self.choose_action(next_observations, mode='train')
                 next_actions = out_actor['action']
-                next_actions_logprob = out_actor['action_logprob']
+                next_actions_logprob = out_actor['action_logprob'].unsqueeze(-1)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, next_actions)
-                next_Qs = torch.min(next_Qs1, next_Qs2).squeeze(-1) - self.alpha.detach()*next_actions_logprob
-                Q_targets = rewards + self.config['agent.gamma']*masks*next_Qs
+                next_Qs = torch.min(next_Qs1, next_Qs2) - self.alpha.detach()*next_actions_logprob
+                Q_targets = rewards.unsqueeze(-1) + self.config['agent.gamma']*masks.unsqueeze(-1)*next_Qs
             
             critic_loss = F.mse_loss(Qs1, Q_targets.detach()) + F.mse_loss(Qs2, Q_targets.detach())
-            print(critic_loss.item())############
             self.optimizer_zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
             self.critic_optimizer.step()
             
-            if i % self.config['agent.policy_delay'] == 0:
-                out_actor = self.choose_action(observations, mode='train')
-                policy_actions = out_actor['action']
-                policy_actions_logprob = out_actor['action_logprob']
-                
-                actor_Qs1, actor_Qs2 = self.critic(observations, policy_actions)
-                actor_Qs = torch.min(actor_Qs1, actor_Qs2).squeeze(-1)
-                actor_loss = torch.mean(self.alpha.detach()*policy_actions_logprob - actor_Qs)
-                
-                self.optimizer_zero_grad()
-                actor_loss.backward()
-                actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
-                self.actor_optimizer.step()
-                
-                alpha_loss = torch.mean(self.log_alpha*(-policy_actions_logprob - self.target_entropy).detach())
-                
-                self.optimizer_zero_grad()
-                alpha_loss.backward()
-                self.log_alpha_optimizer.step()
+            # Update Actor
+            out_actor = self.choose_action(observations, mode='train')
+            policy_actions = out_actor['action']
+            policy_actions_logprob = out_actor['action_logprob']
 
-                self.polyak_update_target()
+            actor_Qs1, actor_Qs2 = self.critic(observations, policy_actions)
+            actor_Qs = torch.min(actor_Qs1, actor_Qs2).squeeze(-1)
+            actor_loss = torch.mean(self.alpha.detach()*policy_actions_logprob - actor_Qs)
 
-                out['actor_loss'].append(actor_loss)
-                out['alpha_loss'].append(alpha_loss)
+            self.optimizer_zero_grad()
+            actor_loss.backward()
+            actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
+            self.actor_optimizer.step()
+
+            # Update alpha
+            alpha_loss = torch.mean(self.log_alpha*(-policy_actions_logprob - self.target_entropy).detach())
+
+            self.optimizer_zero_grad()
+            alpha_loss.backward()
+            self.log_alpha_optimizer.step()
+
+            self.polyak_update_target()
+
             out['critic_loss'].append(critic_loss)
+            out['actor_loss'].append(actor_loss)
+            out['alpha_loss'].append(alpha_loss)
             Q1_vals.append(Qs1)
             Q2_vals.append(Qs2)
             logprob_vals.append(policy_actions_logprob)

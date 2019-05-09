@@ -14,6 +14,7 @@ from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import NormalizeAction
 from lagom.envs.wrappers import VecMonitor
+from lagom.envs.wrappers import VecStepInfo
 
 from baselines.sac.agent import Agent
 from baselines.sac.engine import Engine
@@ -21,15 +22,10 @@ from baselines.sac.replay_buffer import ReplayBuffer
 
 
 config = Config(
-    {'cuda': True, 
-     ##########
-     'cuda_ids': [6],
-     ###########
-     'log.dir': 'logs/default', 
-     'log.freq': 1000,  # every n timesteps
+    {'log.freq': 1000,  # every n timesteps
      'checkpoint.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3']),######, 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
@@ -37,7 +33,6 @@ config = Config(
      'agent.actor.use_lr_scheduler': False,
      'agent.critic.lr': 3e-4,
      'agent.critic.use_lr_scheduler': False,
-     'agent.policy_delay': 1, ########2,
      'agent.initial_temperature': 1.0,
      'agent.max_grad_norm': 999999,  # grad clipping by norm
      
@@ -64,12 +59,12 @@ def make_env(config, seed):
     return env
 
 
-def run(config, seed, device):
+def run(config, seed, device, logdir):
     set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
     env = make_env(config, seed)
     env = VecMonitor(env)
+    env = VecStepInfo(env)
     
     eval_env = make_env(config, seed)
     eval_env = VecMonitor(eval_env)
@@ -87,5 +82,9 @@ def run(config, seed, device):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[4153361530], #####3503522377, 2876994566, 172236777, 3949341511, 849059707], 
-                   num_worker=os.cpu_count())
+                   seeds=[4153361530, 3503522377, 2876994566, 172236777, 3949341511, 849059707], 
+                   log_dir='logs/default',
+                   max_workers=os.cpu_count(), 
+                   chunksize=1, 
+                   use_gpu=True,
+                   gpu_ids=None)
