@@ -66,7 +66,7 @@ class Critic(Module):
             ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
         
         feature_dim = config['nn.sizes'][-1]
-        self.V_head = nn.Linear(feature_dim, 1).to(device)
+        self.V_head = nn.Linear(feature_dim, 1)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         
         self.to(self.device)
