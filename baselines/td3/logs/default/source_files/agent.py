@@ -7,6 +7,8 @@ import torch.optim as optim
 from lagom import BaseAgent
 from lagom.transform import describe
 from lagom.utils import pickle_dump
+from lagom.utils import tensorify
+from lagom.utils import numpify
 from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
@@ -87,7 +89,6 @@ class Agent(BaseAgent):
         self.critic_target.eval()
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
-        self.action_noise = config['agent.action_noise']
         self.max_action = env.action_space.high[0]
         
     def polyak_update_target(self):
@@ -98,19 +99,16 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
     def choose_action(self, obs, **kwargs):
-        mode = kwargs['mode']
-        assert mode in ['train', 'eval']
-        if not torch.is_tensor(obs):
-            obs = torch.from_numpy(np.asarray(obs)).float().to(self.device)
+        obs = tensorify(obs, self.device)
         with torch.no_grad():
-            action = self.actor(obs).detach().cpu().numpy()
-        if mode == 'train':
-            eps = np.random.normal(0.0, self.action_noise, size=action.shape)
+            action = numpify(self.actor(obs), 'float')
+        if kwargs['mode'] == 'train':
+            eps = np.random.normal(0.0, self.config['agent.action_noise'], size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}
         out['action'] = action
         return out
-        
+
     def learn(self, D, **kwargs):
         replay = kwargs['replay']
         episode_length = kwargs['episode_length']
@@ -123,18 +121,15 @@ class Agent(BaseAgent):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
             Qs1, Qs2 = self.critic(observations, actions)
-            Qs1, Qs2 = map(lambda x: x.squeeze(), [Qs1, Qs2])
             with torch.no_grad():
                 next_actions = self.actor_target(next_observations)
-                eps = np.random.normal(0.0, self.config['agent.target_noise'], size=next_actions.shape)
-                eps = np.clip(eps, -self.config['agent.target_noise_clip'], self.config['agent.target_noise_clip'])
-                eps = torch.from_numpy(eps).float().to(self.device)
+                eps = torch.empty_like(next_actions).normal_(0.0, self.config['agent.target_noise'])
+                eps = eps.clamp(-self.config['agent.target_noise_clip'], self.config['agent.target_noise_clip'])
                 next_actions = torch.clamp(next_actions + eps, -self.max_action, self.max_action)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, next_actions)
-                next_Qs = torch.min(next_Qs1, next_Qs2).squeeze()
-            targets = rewards + self.config['agent.gamma']*masks*next_Qs.detach()
-            
-            critic_loss = F.mse_loss(Qs1, targets) + F.mse_loss(Qs2, targets)
+                next_Qs = torch.min(next_Qs1, next_Qs2)
+                targets = rewards + self.config['agent.gamma']*masks*next_Qs
+            critic_loss = F.mse_loss(Qs1, targets.detach()) + F.mse_loss(Qs2, targets.detach())
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -151,17 +146,17 @@ class Agent(BaseAgent):
                 
                 self.polyak_update_target()
             
-                out['actor_loss'].append(actor_loss.item())
-            
-            out['critic_loss'].append(critic_loss.item())
+                out['actor_loss'].append(actor_loss)
+            out['critic_loss'].append(critic_loss)
             Q1_vals.append(Qs1)
             Q2_vals.append(Qs2)
-        out['actor_loss'] = np.mean(out['actor_loss'])
+        out['actor_loss'] = torch.tensor(out['actor_loss']).mean().item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = np.mean(out['critic_loss'])
+        out['critic_loss'] = torch.tensor(out['critic_loss']).mean().item()
         out['critic_grad_norm'] = critic_grad_norm
-        out['Q1'] = describe(torch.cat(Q1_vals).detach().cpu().numpy().squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
-        out['Q2'] = describe(torch.cat(Q2_vals).detach().cpu().numpy().squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['Q1'] = describe_it(Q1_vals)
+        out['Q2'] = describe_it(Q2_vals)
         return out
     
     def checkpoint(self, logdir, num_iter):
