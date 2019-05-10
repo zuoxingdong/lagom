@@ -14,24 +14,16 @@ from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
+from lagom.envs.wrappers import VecStepInfo
 
-from agent import Agent
-from engine import Engine
-from replay_buffer import ReplayBuffer
+from baselines.td3.agent import Agent
+from baselines.td3.engine import Engine
+from baselines.td3.replay_buffer import ReplayBuffer
 
 
 config = Config(
-    {'cuda': True, 
-     
-     
-     #####
-     'cuda_ids': [1, 2, 3, 5, 6, 7],
-     #####
-     
-     
-     'log.dir': 'logs/default', 
-     'log.freq': 5,  # every n episodes
-     'checkpoint.freq': int(1e5),  # every n timesteps
+    {'log.freq': 1000,  # every n timesteps
+     'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
      
@@ -70,18 +62,18 @@ def make_env(config, seed):
     return env
 
 
-def run(config, seed, device):
+def run(config, seed, device, logdir):
     set_global_seeds(seed)
-    logdir = Path(config['log.dir']) / str(config['ID']) / str(seed)
     
     env = make_env(config, seed)
     env = VecMonitor(env)
+    env = VecStepInfo(env)
     
     eval_env = make_env(config, seed)
     eval_env = VecMonitor(eval_env)
     
     agent = Agent(config, env, device)
-    replay = ReplayBuffer(config['replay.capacity'], device)
+    replay = ReplayBuffer(env, config['replay.capacity'], device)
     engine = Engine(config, agent=agent, env=env, eval_env=eval_env, replay=replay, logdir=logdir)
     
     train_logs, eval_logs = engine.train()
@@ -94,4 +86,8 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[4153361530, 3503522377, 2876994566, 172236777, 3949341511, 849059707], 
-                   num_worker=os.cpu_count())
+                   log_dir='logs/default',
+                   max_workers=os.cpu_count(), 
+                   chunksize=1, 
+                   use_gpu=True,
+                   gpu_ids=None)
