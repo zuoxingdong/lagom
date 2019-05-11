@@ -11,6 +11,7 @@ from lagom.utils import pickle_dump
 from lagom.utils import yaml_dump
 from lagom.utils import ask_yes_or_no
 from lagom.utils import timeit
+from lagom.utils import color_str
 from lagom.utils import CloudpickleWrapper
 
 
@@ -132,4 +133,5 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
     else:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
+    print(color_str(f'\nExperiment finished. Loggings are stored in {log_path.absolute()}. ', 'cyan', 'bold'))
     return results
