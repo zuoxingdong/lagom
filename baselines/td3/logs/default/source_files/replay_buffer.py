@@ -12,9 +12,9 @@ class ReplayBuffer(object):
         
         self.observations = np.zeros([capacity, flatdim(env.observation_space)], dtype=np.float32)
         self.actions = np.zeros([capacity, flatdim(env.action_space)], dtype=np.float32)
-        self.rewards = np.zeros([capacity, 1], dtype=np.float32)
+        self.rewards = np.zeros(capacity, dtype=np.float32)
         self.next_observations = np.zeros([capacity, flatdim(env.observation_space)], dtype=np.float32)
-        self.masks = np.zeros([capacity, 1], dtype=np.float32)
+        self.masks = np.zeros(capacity, dtype=np.float32)
         
         self.size = 0
         self.pointer = 0
