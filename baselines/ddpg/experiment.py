@@ -38,7 +38,7 @@ config = Config(
      
      'replay.capacity': 1000000, 
      # number of time steps to take uniform actions initially
-     'replay.init_size': Condition(lambda x: 1000 if x['env.id'] in ['Hopper-v3', 'Walker2d-v3'] else 10000),  
+     'replay.init_size': Condition(lambda x: 1000 if x['env.id'] in ['Hopper-v3', 'Walker2d-v3'] else 10000),
      'replay.batch_size': 100,
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
@@ -86,5 +86,5 @@ if __name__ == '__main__':
                    log_dir='logs/default',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 
-                   use_gpu=True,
+                   use_gpu=True,  # GPU much faster, note that performance differs between CPU/GPU
                    gpu_ids=None)
