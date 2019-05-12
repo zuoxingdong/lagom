@@ -86,5 +86,5 @@ if __name__ == '__main__':
                    log_dir='logs/default',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 
-                   use_gpu=True,
+                   use_gpu=True,  # GPU much faster, note that performance differs between CPU/GPU
                    gpu_ids=None)
