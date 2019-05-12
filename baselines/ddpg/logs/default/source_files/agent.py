@@ -74,8 +74,6 @@ class Agent(BaseAgent):
         self.critic_target.eval()
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
-        self.action_noise = config['agent.action_noise']
-        
     def polyak_update_target(self):
         p = self.config['agent.polyak']
         for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
@@ -88,7 +86,7 @@ class Agent(BaseAgent):
         with torch.no_grad():
             action = numpify(self.actor(obs), 'float')
         if kwargs['mode'] == 'train':
-            eps = np.random.normal(0.0, self.action_noise, size=action.shape)
+            eps = np.random.normal(0.0, self.config['agent.action_noise'], size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
         out = {}
         out['action'] = action
@@ -104,12 +102,11 @@ class Agent(BaseAgent):
         for i in range(episode_length):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
-            Qs = self.critic(observations, actions).squeeze()
+            Qs = self.critic(observations, actions)
             with torch.no_grad():
-                next_Qs = self.critic_target(next_observations, self.actor_target(next_observations)).squeeze()
-            targets = rewards + self.config['agent.gamma']*masks*next_Qs.detach()
-            
-            critic_loss = F.mse_loss(Qs, targets)
+                next_Qs = self.critic_target(next_observations, self.actor_target(next_observations))
+                targets = rewards + self.config['agent.gamma']*masks*next_Qs
+            critic_loss = F.mse_loss(Qs, targets.detach())
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -125,12 +122,12 @@ class Agent(BaseAgent):
             
             self.polyak_update_target()
             
-            out['actor_loss'].append(actor_loss.item())
-            out['critic_loss'].append(critic_loss.item())
+            out['actor_loss'].append(actor_loss)
+            out['critic_loss'].append(critic_loss)
             Q_vals.append(Qs)
-        out['actor_loss'] = np.mean(out['actor_loss'])
+        out['actor_loss'] = torch.tensor(out['actor_loss']).mean().item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = np.mean(out['critic_loss'])
+        out['critic_loss'] = torch.tensor(out['critic_loss']).mean().item()
         out['critic_grad_norm'] = critic_grad_norm
         describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
         out['Q'] = describe_it(Q_vals)
