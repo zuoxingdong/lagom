@@ -1,5 +1,5 @@
 ID: 3
-cuda: false
+cuda: true
 log.dir: logs/default
 log.freq: 1000
 checkpoint.num: 3

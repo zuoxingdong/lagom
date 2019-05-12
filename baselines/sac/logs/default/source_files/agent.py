@@ -178,28 +178,19 @@ class Agent(BaseAgent):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
             Qs1, Qs2 = self.critic(observations, actions)
-            #@@@
             #Qs1, Qs2 = map(lambda x: x.squeeze(-1), [Qs1, Qs2])
             with torch.no_grad():
                 out_actor = self.choose_action(next_observations, mode='train')
                 next_actions = out_actor['action']
-                next_actions_logprob = out_actor['action_logprob'].unsqueeze(-1) #@@@
+                next_actions_logprob = out_actor['action_logprob'].unsqueeze(-1)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, next_actions)
-                #@@@
                 next_Qs = torch.min(next_Qs1, next_Qs2) - self.alpha.detach()*next_actions_logprob
                 Q_targets = rewards.unsqueeze(-1) + self.config['agent.gamma']*masks.unsqueeze(-1)*next_Qs
-                #Q_targets = rewards + self.config['agent.gamma']*masks*next_Qs
-                
-                #print(Qs1[0].item())
-
             #############
             #print(Qs1.shape, Qs2.shape, Q_targets.shape)
             #breakpoint()
             ##########
             critic_loss = F.mse_loss(Qs1, Q_targets) + F.mse_loss(Qs2, Q_targets)
-            #########
-            #print(Qs1.sum().item())
-            #########
             self.optimizer_zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
@@ -208,20 +199,14 @@ class Agent(BaseAgent):
             if i % self.config['agent.policy_delay'] == 0:
                 out_actor = self.choose_action(observations, mode='train')
                 policy_actions = out_actor['action']
-                policy_actions_logprob = out_actor['action_logprob']#.unsqueeze(-1) #@@@
+                policy_actions_logprob = out_actor['action_logprob'].unsqueeze(-1)
                 
                 actor_Qs1, actor_Qs2 = self.critic(observations, policy_actions)
-                actor_Qs = torch.min(actor_Qs1, actor_Qs2).squeeze(-1) #@@@
+                actor_Qs = torch.min(actor_Qs1, actor_Qs2)
                 actor_loss = torch.mean(self.alpha.detach()*policy_actions_logprob - actor_Qs)
                 
-
                 ##########
                 #print(policy_actions_logprob.shape, actor_Qs.shape)
-                #breakpoint()
-                #########
-
-                #########
-                #print(actor_loss.item())
                 #########
 
                 self.optimizer_zero_grad()
@@ -230,10 +215,6 @@ class Agent(BaseAgent):
                 self.actor_optimizer.step()
                 #print((policy_actions_logprob - self.target_entropy).shape)
                 alpha_loss = torch.mean(self.log_alpha*(-policy_actions_logprob - self.target_entropy).detach())
-
-                ######
-                #print(alpha_loss.item())
-                ######
                 
                 self.optimizer_zero_grad()
                 alpha_loss.backward()
