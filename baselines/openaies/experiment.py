@@ -118,7 +118,7 @@ def run(config, seed, device, logdir):
         for generation in range(config['train.generations']):
             start_time = time.perf_counter()
             solutions = es.ask()
-            out = list(executor.map(fitness, solutions, chunksize=4))
+            out = list(executor.map(fitness, solutions, chunksize=2))
             Rs, Hs = zip(*out)
             es.tell(solutions, [-R for R in Rs])
             logger = Logger()
