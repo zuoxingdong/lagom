@@ -1,6 +1,4 @@
 ID: 2
-cuda: false
-log.dir: logs/default
 log.freq: 10
 checkpoint.num: 3
 env.standardize_obs: false
@@ -8,12 +6,12 @@ nn.sizes:
 - 64
 - 64
 env.clip_action: true
-agent.std0: 0.5
+agent.std0: 0.6
 train.generations: 1000
 train.popsize: 64
 train.mu0: 0.0
 train.std0: 1.0
-train.lr: 0.1
+train.lr: 0.01
 train.lr_decay: 1.0
 train.min_lr: 1.0e-06
 train.sigma_scheduler_args:
