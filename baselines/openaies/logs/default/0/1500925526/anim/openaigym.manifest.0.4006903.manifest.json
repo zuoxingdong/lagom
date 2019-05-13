@@ -1,0 +1,1 @@
+{"stats": "openaigym.episode_batch.0.4006903.stats.json", "videos": [["openaigym.video.0.4006903.video000000.mp4", "openaigym.video.0.4006903.video000000.meta.json"], ["openaigym.video.0.4006903.video000001.mp4", "openaigym.video.0.4006903.video000001.meta.json"]], "env_info": {"gym_version": "0.12.1", "env_id": "HalfCheetah-v3"}}
