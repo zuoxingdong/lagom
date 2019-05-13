@@ -127,9 +127,9 @@ class Agent(BaseAgent):
                 eps = eps.clamp(-self.config['agent.target_noise_clip'], self.config['agent.target_noise_clip'])
                 next_actions = torch.clamp(next_actions + eps, -self.max_action, self.max_action)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, next_actions)
-                next_Qs = torch.min(next_Qs1, next_Qs2).squeeze()
+                next_Qs = torch.min(next_Qs1, next_Qs2)
                 targets = rewards + self.config['agent.gamma']*masks*next_Qs
-            critic_loss = F.mse_loss(Qs1.squeeze(), targets.detach()) + F.mse_loss(Qs2.squeeze(), targets.detach())
+            critic_loss = F.mse_loss(Qs1, targets.detach()) + F.mse_loss(Qs2, targets.detach())
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
