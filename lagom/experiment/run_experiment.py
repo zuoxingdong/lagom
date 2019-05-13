@@ -126,6 +126,9 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         
         logdir = log_path / f'{config["ID"]}' / f'{seed}'
         result = run(config, seed, device, logdir)
+        # Release all un-freed GPU memory
+        if use_gpu:
+            torch.cuda.empty_cache()
         return result
     
     if max_workers is None:
