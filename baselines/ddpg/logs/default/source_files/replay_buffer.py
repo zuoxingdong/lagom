@@ -22,12 +22,12 @@ class ReplayBuffer(object):
     def __len__(self):
         return self.size
 
-    def add(self, observation, action, reward, next_observation, done):  # input must be non-batched
+    def add(self, observation, action, reward, next_observation, terminal):  # input must be non-batched
         self.observations[self.pointer] = observation
         self.actions[self.pointer] = action
         self.rewards[self.pointer] = reward
         self.next_observations[self.pointer] = next_observation
-        self.masks[self.pointer] = 1. - done
+        self.masks[self.pointer] = 1. - terminal
         
         self.pointer = (self.pointer+1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
