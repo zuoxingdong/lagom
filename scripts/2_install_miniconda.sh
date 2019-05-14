@@ -28,8 +28,8 @@ conda update -q -y conda
 conda update -y --all
 conda info -a
 
-# Create and activate an environment with latest Python
-conda create -q -y -n $ENV_NAME python=$PYTHON_VERSION cython patchelf ipython numpy
+# Create and activate an environment with latest Python and useful packages
+conda create -q -y -n $ENV_NAME python=$PYTHON_VERSION mkl mkl-include cmake cython cffi typing patchelf msgpack-python setuptools wheel twine cloudpickle pyyaml ipython numpy scipy pandas scikit-image scikit-learn seaborn matplotlib pillow imageio sphinx sphinx_rtd_theme
 conda activate $ENV_NAME
 
 # Append environment variables to .bashrc
