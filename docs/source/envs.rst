@@ -17,11 +17,7 @@ lagom.envs
     :members:
     
 .. autofunction:: make_vec_env
-    
-.. autoclass:: AtariPreprocessing
-    :members:
 
-.. autofunction:: make_atari
 
 Wrappers
 --------------

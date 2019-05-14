@@ -15,7 +15,6 @@ from lagom.envs import flatten
 from lagom.envs import unflatten
 from lagom.envs import make_vec_env
 from lagom.envs import VecEnv
-from lagom.envs import make_atari
 from lagom.envs.wrappers import get_wrapper
 from lagom.envs.wrappers import get_all_wrappers
 from lagom.envs.wrappers import ClipAction
@@ -82,23 +81,6 @@ def test_space_utils():
     assert sample['score'] == _sample['score']
     assert np.allclose(sample['sensors']['position'], _sample['sensors']['position'])
     assert np.allclose(sample['sensors']['velocity'], _sample['sensors']['velocity'])
-    
-    
-@pytest.mark.parametrize('env_id', ['Pong', 'Breakout', 'SpaceInvaders'])
-def test_make_atari(env_id):
-    env = make_atari(env_id)
-    assert env.observation_space.shape == (4, 84, 84)
-    assert np.allclose(env.observation_space.low, 0)
-    assert np.allclose(env.observation_space.high, 255)
-    obs = env.reset()
-    for _ in range(200):
-        obs, reward, done, info = env.step(env.action_space.sample())
-        obs = np.asarray(obs)
-        assert obs.shape == (4, 84, 84)
-        assert obs.max() <= 255
-        assert obs.min() >= 0
-        if done:
-            break
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])

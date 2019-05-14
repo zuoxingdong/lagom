@@ -5,6 +5,3 @@ from .space_utils import unflatten
 from .vec_env import VecEnv
 from .vec_env import VecEnvWrapper
 from .make_vec_env import make_vec_env
-
-from .atari import AtariPreprocessing
-from .atari import make_atari
