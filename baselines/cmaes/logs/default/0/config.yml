@@ -1,14 +1,12 @@
 ID: 0
-cuda: false
-log.dir: logs/default
 log.freq: 10
-checkpoint.freq: 50
+checkpoint.num: 3
 env.standardize_obs: false
 nn.sizes:
 - 64
 - 64
 env.clip_action: true
-agent.std0: 0.5
+agent.std0: 0.6
 train.generations: 1000
 train.popsize: 64
 train.mu0: 0.0
