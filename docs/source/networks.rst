@@ -6,12 +6,6 @@ lagom.networks: Networks
 
 .. autoclass:: Module
     :members:
-    
-.. autoclass:: LayerNormLSTMCell
-    :members:
-    
-.. autoclass:: LayerNormLSTM
-    :members:
 
 .. autofunction:: ortho_init
 
@@ -23,10 +17,21 @@ lagom.networks: Networks
 
 .. autofunction:: make_transposed_cnn
 
-.. autofunction:: make_rnncell
-
 .. autoclass:: MDNHead
     :members:
+
+Recurrent Neural Networks
+-----------------------------
+.. autoclass:: LayerNormLSTMCell
+    :members:
+    
+.. autoclass:: LSTMLayer
+    :members:
+    
+.. autoclass:: StackedLSTM
+    :members:
+    
+.. autofunction:: make_lnlstm
 
 RL components
 -----------------------------    
