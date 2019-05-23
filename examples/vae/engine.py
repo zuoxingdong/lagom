@@ -35,7 +35,7 @@ class Engine(BaseEngine):
             logger('reconstruction_loss', out['re_loss'].item())
             logger('KL_loss', out['KL_loss'].item())
             logger('num_seconds', round(perf_counter() - start_time, 1))
-            if i == 0 or (i+1) % self.config['log.interval'] == 0:
+            if i == 0 or (i+1) % self.config['log.freq'] == 0:
                 logger.dump(keys=None, index=-1, indent=0, border='-'*50)
         mean_loss = np.mean([logger.logs['train_loss']])
         print(f'====> Average loss: {mean_loss}')
@@ -45,7 +45,6 @@ class Engine(BaseEngine):
             z = torch.randn(64, self.config['nn.z_dim']).to(self.model.device)
             re_x = self.model.decode(z).cpu()
             save_image(re_x.view(64, 1, 28, 28), f'{kwargs["logdir"]}/sample_{n}.png')
-        
         return logger
         
     def eval(self, n=None, **kwargs):
@@ -64,11 +63,10 @@ class Engine(BaseEngine):
         # Reconstruct some test images
         data, label = next(iter(self.test_loader))  # get a random batch
         data = data.to(self.model.device)
-        n = min(data.size(0), 8)  # number of images
-        D = data[:n]
+        m = min(data.size(0), 8)  # number of images
+        D = data[:m]
         with torch.no_grad():
             re_x, _, _ = self.model(D)
         compare_img = torch.cat([D.cpu(), re_x.cpu().view(-1, 1, 28, 28)])
-        save_image(compare_img, f'{kwargs["logdir"]}/reconstruction_{n}.png', nrow=n)
-        
+        save_image(compare_img, f'{kwargs["logdir"]}/reconstruction_{n}.png', nrow=m)
         return logger
