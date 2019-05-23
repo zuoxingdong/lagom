@@ -16,5 +16,5 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 
 VAE type | Reconstructed images | Sampled images
 --- | --- | ---
-**VAE** | <img src='asset/vae_reconstruction_99.png' width='100%'> | <img src='asset/vae_sample_99.png' width='100%'>
-**ConvVAE** | <img src='asset/convvae_reconstruction_99.png' width='100%'> | <img src='asset/convvae_sample_99.png' width='100%'>
+**VAE** | <img src='logs/default/0/1770966829/reconstruction_99.png' width='100%'> | <img src='logs/default/0/1770966829/sample_99.png' width='100%'>
+**ConvVAE** | <img src='logs/default/1/1770966829/reconstruction_99.png' width='100%'> | <img src='logs/default/1/1770966829/sample_99.png' width='100%'>
