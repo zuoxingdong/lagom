@@ -17,7 +17,7 @@ from lagom.networks import ortho_init
 from lagom.networks import make_fc
 from lagom.networks import make_cnn
 from lagom.networks import make_transposed_cnn
-from lagom.networks import make_rnncell
+from lagom.networks import make_lnlstm
 from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
 
@@ -90,25 +90,21 @@ class TestMakeBlocks(object):
                                 paddings=[1], 
                                 output_paddings=[1])
     
-    @pytest.mark.parametrize('cell_type', ['RNNCell', 'LSTMCell', 'GRUCell'])
-    def test_make_rnncell(self, cell_type):
-        # Single layer
-        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16])
-        assert isinstance(rnn, nn.ModuleList)
-        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
-        assert len(rnn) == 1
+    @pytest.mark.parametrize('input_size', [1, 10])
+    @pytest.mark.parametrize('hidden_size', [1, 8])
+    @pytest.mark.parametrize('batch_size', [1, 5])
+    @pytest.mark.parametrize('seq_len', [1, 3])
+    def test_make_lnlstm(self, input_size, hidden_size, batch_size, seq_len):
+        rnn = make_lnlstm(input_size, hidden_size)
+        input = torch.randn(seq_len, batch_size, input_size)
+        states = [(torch.randn(batch_size, hidden_size), torch.randn(batch_size, hidden_size))]
+        output, output_states = rnn(input, states)
+        output, output_states = rnn(input, output_states)
         
-        # Multiple layers
-        rnn = make_rnncell(cell_type=cell_type, input_dim=3, hidden_sizes=[16, 32])
-        assert isinstance(rnn, nn.ModuleList)
-        assert all(isinstance(i, nn.RNNCellBase) for i in rnn)
-        assert len(rnn) == 2
-        
-        # Raise exceptions
-        with pytest.raises(ValueError):  # non-defined rnn cell type
-            make_rnncell('randomrnn', 3, [16])
-        with pytest.raises(AssertionError):  # non-list hidden sizes
-            make_rnncell(cell_type, 3, 16)
+        assert output.shape == (seq_len, batch_size, hidden_size)
+        hx, cx = output_states[0]
+        assert hx.shape == (batch_size, hidden_size)
+        assert cx.shape == (batch_size, hidden_size)
 
 
 class TestInit(object):
