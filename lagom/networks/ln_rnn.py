@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import torch
 import torch.nn as nn
 import torch.jit as jit
@@ -19,7 +21,7 @@ class LayerNormLSTMCell(jit.ScriptModule):
 
     @jit.script_method
     def forward(self, input, state):
-        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = state
         igates = self.layernorm_i(torch.mm(input, self.weight_ih.t()))
         hgates = self.layernorm_h(torch.mm(hx, self.weight_hh.t()))
@@ -44,7 +46,7 @@ class LSTMLayer(jit.ScriptModule):
 
     @jit.script_method
     def forward(self, input, state):
-        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        # (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         inputs = input.unbind(0)
         outputs = []
         for i in range(len(inputs)):
@@ -64,9 +66,9 @@ class StackedLSTM(jit.ScriptModule):
 
     @jit.script_method
     def forward(self, input, states):
-        # type: (Tensor, List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, List[Tuple[Tensor, Tensor]]]
+        # (Tensor, List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, List[Tuple[Tensor, Tensor]]]
         # List[LSTMState]: One state per layer
-        output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+        output_states = jit.annotate(List[Tuple[torch.Tensor, torch.Tensor]], [])
         output = input
         # XXX: enumerate https://github.com/pytorch/pytorch/issues/14471
         i = 0
