@@ -9,12 +9,12 @@ from torch.distributions import Transform
 from torch.distributions import TransformedDistribution
 from torch.distributions import constraints
 
+from gym.spaces import flatdim
 from lagom import BaseAgent
 from lagom.transform import describe
 from lagom.utils import pickle_dump
 from lagom.utils import tensorify
 from lagom.utils import numpify
-from lagom.envs import flatdim
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init

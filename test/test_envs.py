@@ -10,9 +10,6 @@ from gym.spaces import Discrete
 from gym.spaces import Tuple
 from gym.spaces import Dict
 
-from lagom.envs import flatdim
-from lagom.envs import flatten
-from lagom.envs import unflatten
 from lagom.envs import make_vec_env
 from lagom.envs import VecEnv
 from lagom.envs.wrappers import get_wrapper
@@ -33,54 +30,6 @@ from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
 from lagom.envs.wrappers import StepInfo
 from lagom.envs.wrappers import VecStepInfo
-
-
-def test_space_utils():
-    # Box
-    box = Box(-1.0, 1.0, shape=[2, 3], dtype=np.float32)
-    sample = box.sample()
-    assert flatdim(box) == 2*3
-    assert flatten(box, sample).shape == (2*3,)
-    assert np.allclose(sample, unflatten(box, flatten(box, sample)))
-
-    x = np.array([[1.0, 1.0], [1.0, 1.0]])
-    box = Box(low=-x, high=x, dtype=np.float32)
-    sample = box.sample()
-    assert flatdim(box) == 2*2
-    assert flatten(box, sample).shape == (2*2,)
-    assert np.allclose(sample, unflatten(box, flatten(box, sample)))
-
-    # Discrete
-    discrete = Discrete(5)
-    sample = discrete.sample()
-    assert flatdim(discrete) == 5
-    assert flatten(discrete, sample).shape == (5,)
-    assert sample == unflatten(discrete, flatten(discrete, sample))
-
-    # Tuple
-    S = Tuple([Discrete(5), 
-               Box(-1.0, 1.0, shape=(2, 3), dtype=np.float32), 
-               Dict({'success': Discrete(2), 'velocity': Box(-1, 1, shape=(1, 3), dtype=np.float32)})])
-    sample = S.sample()
-    assert flatdim(S) == 5+2*3+2+3
-    assert flatten(S, sample).shape == (16,)
-    _sample = unflatten(S, flatten(S, sample))
-    assert sample[0] == _sample[0]
-    assert np.allclose(sample[1], _sample[1])
-    assert sample[2]['success'] == _sample[2]['success']
-    assert np.allclose(sample[2]['velocity'], _sample[2]['velocity'])
-
-    # Dict
-    D0 = Dict({'position': Box(-100, 100, shape=(3,), dtype=np.float32), 
-               'velocity': Box(-1, 1, shape=(4,), dtype=np.float32)})
-    D = Dict({'sensors': D0, 'score': Discrete(100)})
-    sample = D.sample()
-    assert flatdim(D) == 3+4+100
-    assert flatten(D, sample).shape == (107,)
-    _sample = unflatten(D, flatten(D, sample))
-    assert sample['score'] == _sample['score']
-    assert np.allclose(sample['sensors']['position'], _sample['sensors']['position'])
-    assert np.allclose(sample['sensors']['velocity'], _sample['sensors']['velocity'])
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])

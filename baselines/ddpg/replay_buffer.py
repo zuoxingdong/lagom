@@ -1,6 +1,6 @@
 import numpy as np
 
-from lagom.envs import flatdim
+from gym.spaces import flatdim
 from lagom.utils import tensorify
 
 

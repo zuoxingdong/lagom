@@ -1,6 +1,5 @@
 from gym import ObservationWrapper
-
-from lagom.envs import flatten
+from gym.spaces import flatten
 
 
 class FlattenObservation(ObservationWrapper):

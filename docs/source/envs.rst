@@ -4,12 +4,6 @@ lagom.envs
 .. automodule:: lagom.envs
 .. currentmodule:: lagom.envs
 
-.. autofunction:: flatdim
-
-.. autofunction:: flatten
-
-.. autofunction:: unflatten
-
 .. autoclass:: VecEnv
     :members:
     

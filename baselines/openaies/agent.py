@@ -6,12 +6,12 @@ import torch.optim as optim
 
 from gym.spaces import Discrete
 from gym.spaces import Box
+from gym.spaces import flatdim
 
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
 from lagom.utils import tensorify
 from lagom.utils import numpify
-from lagom.envs import flatdim
 from lagom.envs.wrappers import get_wrapper
 from lagom.networks import Module
 from lagom.networks import make_fc
