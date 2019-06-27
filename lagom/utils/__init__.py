@@ -4,6 +4,9 @@ from .seeding import Seeder
 from .dtype import tensorify
 from .dtype import numpify
 
+from .multiprocessing import ProcessMaster
+from .multiprocessing import ProcessWorker
+
 from .colorize import color_str
 
 from .timing import timed

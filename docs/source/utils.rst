@@ -8,11 +8,23 @@ lagom.utils: Utils
 
 .. autoclass:: Seeder
     :members:
-    
+
+Smart data type converter
+-------------------------
 .. autofunction:: tensorify
 
 .. autofunction:: numpify
+
+Use Python multiprocessing library
+----------------------------------
+.. autoclass:: ProcessWorker
+    :members:
+
+.. autoclass:: ProcessMaster
+    :members:
     
+Serialization
+-------------
 .. autofunction:: pickle_dump
 
 .. autofunction:: pickle_load
@@ -21,6 +33,11 @@ lagom.utils: Utils
 
 .. autofunction:: yaml_load
 
+.. autoclass:: CloudpickleWrapper
+    :members:
+
+Misc
+----
 .. autofunction:: color_str
 
 .. autofunction:: timed
@@ -28,6 +45,3 @@ lagom.utils: Utils
 .. autofunction:: timeit
 
 .. autofunction:: ask_yes_or_no
-
-.. autoclass:: CloudpickleWrapper
-    :members:
