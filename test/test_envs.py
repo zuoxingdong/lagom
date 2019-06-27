@@ -9,19 +9,16 @@ from gym.spaces import Box
 from gym.spaces import Discrete
 from gym.spaces import Tuple
 from gym.spaces import Dict
+from gym.wrappers import ClipReward
 
 from lagom.envs import make_vec_env
 from lagom.envs import VecEnv
 from lagom.envs.wrappers import get_wrapper
 from lagom.envs.wrappers import get_all_wrappers
-from lagom.envs.wrappers import ClipAction
-from lagom.envs.wrappers import ClipReward
-from lagom.envs.wrappers import SignClipReward
 from lagom.envs.wrappers import NormalizeAction
 from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
-from lagom.envs.wrappers import ResizeObservation
 from lagom.envs.wrappers import ScaleReward
 from lagom.envs.wrappers import ScaledFloatFrame
 from lagom.envs.wrappers import TimeAwareObservation
@@ -72,56 +69,6 @@ def test_make_vec_env(env_id, num_env, init_seed):
     seeder = Seeder(init_seed)
     assert seeds == seeder(num_env)
 
-    
-def test_clip_action():
-    # mountaincar: action-based rewards
-    env = gym.make('MountainCarContinuous-v0')
-    clipped_env = ClipAction(env)
-
-    env.reset()
-    clipped_env.reset()
-
-    action = [10000.]
-
-    _, reward, _, _ = env.step(action)
-    _, clipped_reward, _, _ = clipped_env.step(action)
-
-    assert abs(clipped_reward) < abs(reward)
-    
-    
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'MountainCar-v0'])
-def test_clip_reward(env_id):
-    env = gym.make(env_id)
-    wrapped_env = ClipReward(env, -0.0005, 0.0002)
-
-    env.reset()
-    wrapped_env.reset()
-
-    action = env.action_space.sample()
-
-    _, reward, _, _ = env.step(action)
-    _, wrapped_reward, _, _ = wrapped_env.step(action)
-
-    assert abs(wrapped_reward) < abs(reward)
-    assert wrapped_reward == -0.0005 or wrapped_reward == 0.0002
-    
-
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'MountainCar-v0', 
-                                    'Pong-v0', 'SpaceInvaders-v0'])
-def test_sign_clip_reward(env_id):
-    env = gym.make(env_id)
-    wrapped_env = SignClipReward(env)
-    
-    env.reset()
-    wrapped_env.reset()
-    
-    for _ in range(1000):
-        action = env.action_space.sample()
-        _, wrapped_reward, done, _ = wrapped_env.step(action)
-        assert wrapped_reward in [-1.0, 0.0, 1.0]
-        if done:
-            break
-    
     
 def test_normalize_action():
     env = gym.make('CartPole-v1')
@@ -221,18 +168,6 @@ def test_gray_scale_observation(env_id, keep_dim):
     else:
         assert len(wrapped_env.observation_space.shape) == 2
         assert len(wrapped_obs.shape) == 2
-    
-    
-@pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
-@pytest.mark.parametrize('size', [16, 32])
-def test_resize_observation(env_id, size):
-    env = gym.make(env_id)
-    env = ResizeObservation(env, size)
-
-    assert env.observation_space.shape[-1] == 3
-    assert env.observation_space.shape[:2] == (size, size)
-    obs = env.reset()
-    assert obs.shape == (size, size, 3)
     
     
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])

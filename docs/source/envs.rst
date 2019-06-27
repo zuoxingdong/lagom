@@ -21,15 +21,6 @@ Wrappers
 .. autofunction:: get_wrapper
 
 .. autofunction:: get_all_wrappers
-
-.. autoclass:: ClipAction
-    :members:
-
-.. autoclass:: ClipReward
-    :members:
-    
-.. autoclass:: SignClipReward
-    :members:
     
 .. autoclass:: FlattenObservation
     :members:
@@ -44,9 +35,6 @@ Wrappers
     :members:
 
 .. autoclass:: GrayScaleObservation
-    :members:
-
-.. autoclass:: ResizeObservation
     :members:
 
 .. autoclass:: ScaleReward

@@ -4,6 +4,7 @@ from itertools import count
 
 import gym
 from gym.spaces import Box
+from gym.wrappers import ClipAction
 
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
@@ -13,7 +14,6 @@ from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
-from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward

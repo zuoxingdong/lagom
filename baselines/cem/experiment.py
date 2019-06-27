@@ -7,6 +7,7 @@ import time
 
 import gym
 from gym.spaces import Box
+from gym.wrappers import ClipAction
 
 import numpy as np
 import torch
@@ -22,7 +23,6 @@ from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import TimeLimit
-from lagom.envs.wrappers import ClipAction
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 
