@@ -10,6 +10,12 @@ This example includes the implementations of the following reinforcement learnin
     - [Deep Deterministic Policy Gradients (DDPG)](ddpg)
     - [Twin Delayed DDPG (TD3)](td3)
     - [Soft Actor-Critic (SAC)](sac)
+    
+# Download loggings for reproducibility
+Because the loggings and checkpoint files are very large, putting them in the repo directly leads to inconveniently slow cloning, so we host the logging files in Dropbox. 
+- [Download](https://www.dropbox.com/s/6xo3d3ipjcbdsi8/all_logs.tar.gz?dl=0) the file
+- Put `all_logs.tar.gz` under the directory `lagom/baselines`
+- Run `python unzip_logs.py`, this will automatically exact all `logs` folders under each algorithm folder. 
 
 # Benchmarks
 
