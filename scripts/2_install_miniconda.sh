@@ -28,7 +28,7 @@ conda update -q -y conda
 conda update -y --all
 conda info -a
 
-# Create and activate an environment with latest Python and useful packages
+# Create and activate an environment with latest Python and useful packages: MKL-optimizations (also numpy/scipy etc.) within Anaconda
 conda create -q -y -n $ENV_NAME python=$PYTHON_VERSION mkl mkl-include cmake cython cffi typing patchelf msgpack-python setuptools wheel twine cloudpickle pyyaml ipython numpy scipy pandas scikit-image scikit-learn seaborn matplotlib pillow imageio sphinx sphinx_rtd_theme
 conda activate $ENV_NAME
 

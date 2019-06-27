@@ -15,7 +15,7 @@ with codecs.open('README.md', encoding='utf-8') as f:
 # Minimal requried dependencies (full dependencies in requirements.txt)
 install_requires = ['numpy', 
                     'scipy', 
-                    'gym', 
+                    'gym>=0.13.0', 
                     'cloudpickle', 
                     'pyyaml', 
                     'colored']
