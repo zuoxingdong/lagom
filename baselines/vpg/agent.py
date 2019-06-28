@@ -116,9 +116,9 @@ class Agent(BaseAgent):
         self.optimizer.zero_grad()
         loss.backward()
         grad_norm = nn.utils.clip_grad_norm_(self.parameters(), self.config['agent.max_grad_norm'])
+        self.optimizer.step()
         if self.config['agent.use_lr_scheduler']:
             self.lr_scheduler.step(self.total_timestep)
-        self.optimizer.step()
         
         self.total_timestep += sum([len(traj) for traj in D])
         out = {}

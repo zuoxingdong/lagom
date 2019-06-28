@@ -94,8 +94,8 @@ class OpenAIES(BaseES):
         grad = (1/self.sigma)*np.mean(np.expand_dims(F, 1)*self.eps, axis=0)
         grad = torch.from_numpy(grad).float()
         self.x.grad = grad
-        self.lr_scheduler.step()
         self.optimizer.step()
+        self.lr_scheduler.step()
         
         self.iter += 1
         self.sigma = self.sigma_scheduler(self.iter)
