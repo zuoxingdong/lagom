@@ -51,12 +51,10 @@ A graphical illustration is coming soon.
     lagom.envs <envs>
     lagom.experiment <experiment>
     lagom.metric <metric>
-    lagom.multiprocessing <multiprocessing>
     lagom.networks <networks>
-    lagom.runner <runner>
     lagom.transform <transform>
-    lagom.vis <vis>
     lagom.utils <utils>
+    lagom.vis <vis>
 
 Indices and tables
 ==================

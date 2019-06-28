@@ -6,6 +6,7 @@ import gym
 from gym.spaces import Box
 from gym.wrappers import ClipAction
 
+from lagom import EpisodeRunner
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
 from lagom.experiment import Config
@@ -17,7 +18,6 @@ from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
 from lagom.envs.wrappers import VecStepInfo
-from lagom.runner import EpisodeRunner
 
 from baselines.ppo.agent import Agent
 from baselines.ppo.engine import Engine

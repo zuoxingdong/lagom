@@ -1,3 +1,5 @@
+from .trajectory import Trajectory
+
 from .returns import returns
 from .returns import bootstrapped_returns
 

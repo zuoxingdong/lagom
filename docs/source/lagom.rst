@@ -20,6 +20,14 @@ Engine
 .. autoclass:: BaseEngine
     :members:
     
+Runner
+----------------------------
+.. autoclass:: BaseRunner
+    :members:
+
+.. autoclass:: EpisodeRunner
+    :members:
+    
 Evolution Strategies
 ----------------------------
 .. autoclass:: BaseES
