@@ -20,7 +20,6 @@ from lagom.envs.wrappers import FlattenObservation
 from lagom.envs.wrappers import FrameStack
 from lagom.envs.wrappers import GrayScaleObservation
 from lagom.envs.wrappers import ScaleReward
-from lagom.envs.wrappers import ScaledFloatFrame
 from lagom.envs.wrappers import TimeAwareObservation
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
@@ -187,18 +186,6 @@ def test_scale_reward(env_id, scale):
     _, wrapped_reward, _, _ = wrapped_env.step(action)
 
     assert wrapped_reward == scale*reward
-    
-    
-@pytest.mark.parametrize('env_id', ['Pong-v0', 'SpaceInvaders-v0'])
-def test_scaled_float_frame(env_id):
-    env = gym.make(env_id)
-    env = ScaledFloatFrame(env)
-    assert np.allclose(env.observation_space.high, 1.0)
-    assert np.allclose(env.observation_space.low, 0.0)
-    obs = env.reset()
-    assert np.alltrue(obs <= 1.0) and np.alltrue(obs >= 0.0)
-    obs, _, _, _ = env.step(env.action_space.sample())
-    assert np.alltrue(obs <= 1.0) and np.alltrue(obs >= 0.0)
     
     
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])

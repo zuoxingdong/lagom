@@ -40,9 +40,6 @@ Wrappers
 .. autoclass:: ScaleReward
     :members:
 
-.. autoclass:: ScaledFloatFrame
-    :members:
-
 .. autoclass:: TimeAwareObservation
     :members:
 
