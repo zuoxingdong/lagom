@@ -13,7 +13,6 @@ from lagom.experiment import Grid
 from lagom.experiment import Sample
 from lagom.experiment import run_experiment
 from lagom.envs import make_vec_env
-from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import VecMonitor
 from lagom.envs.wrappers import VecStandardizeObservation
 from lagom.envs.wrappers import VecStandardizeReward
@@ -57,8 +56,6 @@ config = Config(
 def make_env(config, seed):
     def _make_env():
         env = gym.make(config['env.id'])
-        env = env.env  # strip out gym TimeLimit, TODO: remove until gym update it
-        env = TimeLimit(env, env.spec.max_episode_steps)
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env

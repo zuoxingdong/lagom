@@ -8,7 +8,6 @@ import gym
 
 from lagom import RandomAgent
 from lagom.envs import make_vec_env
-from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import StepInfo
 from lagom.envs.wrappers import VecStepInfo
 from lagom.runner import Trajectory
@@ -50,7 +49,7 @@ def test_returns(num_env, init_seed, T):
           0.6]
     ys = [None, y1, y2, y3, y4, y5, y6]
 
-    make_env = lambda: TimeLimit(SanityEnv())
+    make_env = lambda: gym.wrappers.TimeLimit(SanityEnv())
     env = make_vec_env(make_env, num_env, init_seed)
     env = VecStepInfo(env)
     agent = RandomAgent(None, env, None)

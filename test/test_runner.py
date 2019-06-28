@@ -9,7 +9,6 @@ import gym
 
 from lagom import RandomAgent
 from lagom.envs import make_vec_env
-from lagom.envs.wrappers import TimeLimit
 from lagom.envs.wrappers import VecStepInfo
 from lagom.runner import Trajectory
 from lagom.runner import EpisodeRunner
@@ -20,7 +19,7 @@ from .sanity_env import SanityEnv
 @pytest.mark.parametrize('init_seed', [0, 10])
 @pytest.mark.parametrize('T', [1, 5, 100])
 def test_trajectory(init_seed, T):
-    make_env = lambda: TimeLimit(SanityEnv())
+    make_env = lambda: gym.wrappers.TimeLimit(SanityEnv())
     env = make_vec_env(make_env, 1, init_seed)  # single environment
     env = VecStepInfo(env)
     D = Trajectory()
@@ -76,7 +75,7 @@ def test_trajectory(init_seed, T):
 @pytest.mark.parametrize('T', [1, 5, 100])
 def test_episode_runner(env_id, num_env, init_seed, T):    
     if env_id == 'Sanity':
-        make_env = lambda: TimeLimit(SanityEnv())
+        make_env = lambda: gym.wrappers.TimeLimit(SanityEnv())
     else:
         make_env = lambda: gym.make(env_id)
     env = make_vec_env(make_env, num_env, init_seed)
