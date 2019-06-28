@@ -159,6 +159,7 @@ def test_linear_lr_scheduler(method, N, min_lr, initial_lr):
     lr_scheduler = linear_lr_scheduler(optimizer, N, min_lr)
     assert lr_scheduler.base_lrs[0] == initial_lr
     
+    optimizer.step()
     for i in range(200):
         lr_scheduler.step()
         assert lr_scheduler.get_lr()[0] >= min_lr
