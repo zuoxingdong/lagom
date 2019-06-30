@@ -76,7 +76,7 @@ class Agent(BaseAgent):
         
         action = action_dist.sample()
         out['action'] = action
-        out['raw_action'] = numpify(action, 'float')
+        out['raw_action'] = numpify(action, self.env.action_space.dtype)
         out['action_logprob'] = action_dist.log_prob(action.detach())
         
         V = self.V_head(features)

@@ -56,7 +56,7 @@ class Agent(BaseAgent):
         action_dist = self.action_head(features)
         out['entropy'] = action_dist.entropy()
         action = action_dist.sample()
-        out['raw_action'] = numpify(action, 'float')
+        out['raw_action'] = numpify(action, self.env.action_space.dtype)
         return out
     
     def learn(self, D, **kwargs):
