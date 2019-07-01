@@ -127,9 +127,9 @@ class Agent(BaseAgent):
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         policy_grad_norm = nn.utils.clip_grad_norm_(self.policy.parameters(), self.config['agent.max_grad_norm'])
+        self.policy_optimizer.step()
         if self.config['agent.use_lr_scheduler']:
             self.policy_lr_scheduler.step(self.total_timestep)
-        self.policy_optimizer.step()
         
         clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
         value_loss = torch.max(F.mse_loss(Vs, old_Qs, reduction='none'), 
