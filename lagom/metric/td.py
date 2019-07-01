@@ -1,7 +1,6 @@
 import numpy as np
 
-from .utils import _wrap_Vs
-from .utils import _wrap_last_V
+from lagom.utils import numpify
 
 
 def td0_target(gamma, traj, Vs, last_V):
@@ -19,8 +18,8 @@ def td0_target(gamma, traj, Vs, last_V):
         The state values for terminal states are masked out as zero !
     
     """
-    Vs = _wrap_Vs(Vs)
-    last_V = _wrap_last_V(last_V)
+    Vs = numpify(Vs, np.float32)
+    last_V = numpify(last_V, np.float32)
     
     if traj.reach_terminal:
         Vs = np.append(Vs, 0.0)
@@ -45,8 +44,8 @@ def td0_error(gamma, traj, Vs, last_V):
         The state values for terminal states are masked out as zero !
     
     """
-    Vs = _wrap_Vs(Vs)
-    last_V = _wrap_last_V(last_V)
+    Vs = numpify(Vs, np.float32)
+    last_V = numpify(last_V, np.float32)
     
     if traj.reach_terminal:
         Vs = np.append(Vs, 0.0)

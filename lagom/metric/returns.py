@@ -1,8 +1,7 @@
 import numpy as np
 
 from lagom.transform import geometric_cumsum
-
-from .utils import _wrap_last_V
+from lagom.utils import numpify
 
 
 def returns(gamma, traj):
@@ -23,10 +22,10 @@ def bootstrapped_returns(gamma, traj, last_V):
         The state values for terminal states are masked out as zero !
 
     """
-    last_V = _wrap_last_V(last_V)
+    last_V = numpify(last_V, np.float32).item()
     
     if traj.reach_terminal:
-        out = geometric_cumsum(gamma, traj.rewards + [0.0])
+        out = geometric_cumsum(gamma, np.append(traj.rewards, 0.0))
     else:
-        out = geometric_cumsum(gamma, traj.rewards + [last_V])
+        out = geometric_cumsum(gamma, np.append(traj.rewards, last_V))
     return out[0, :-1].astype(np.float32)
