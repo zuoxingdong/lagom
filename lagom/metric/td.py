@@ -3,7 +3,7 @@ import numpy as np
 from lagom.utils import numpify
 
 
-def td0_target(gamma, traj, Vs, last_V):
+def td0_target(gamma, rewards, Vs, last_V, reach_terminal):
     r"""Calculate TD(0) targets of a batch of episodic transitions. 
     
     Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
@@ -18,18 +18,19 @@ def td0_target(gamma, traj, Vs, last_V):
         The state values for terminal states are masked out as zero !
     
     """
+    rewards = numpify(rewards, np.float32)
     Vs = numpify(Vs, np.float32)
     last_V = numpify(last_V, np.float32)
     
-    if traj.reach_terminal:
+    if reach_terminal:
         Vs = np.append(Vs, 0.0)
     else:
         Vs = np.append(Vs, last_V)
-    out = traj.numpy_rewards + gamma*Vs[1:]
+    out = rewards + gamma*Vs[1:]
     return out.astype(np.float32)
 
 
-def td0_error(gamma, traj, Vs, last_V):
+def td0_error(gamma, rewards, Vs, last_V, reach_terminal):
     r"""Calculate TD(0) errors of a batch of episodic transitions. 
     
     Let :math:`r_1, r_2, \dots, r_T` be a list of rewards and let :math:`V(s_0), V(s_1), \dots, V(s_{T-1}), V(s_{T})`
@@ -44,12 +45,13 @@ def td0_error(gamma, traj, Vs, last_V):
         The state values for terminal states are masked out as zero !
     
     """
+    rewards = numpify(rewards, np.float32)
     Vs = numpify(Vs, np.float32)
     last_V = numpify(last_V, np.float32)
     
-    if traj.reach_terminal:
+    if reach_terminal:
         Vs = np.append(Vs, 0.0)
     else:
         Vs = np.append(Vs, last_V)
-    out = traj.numpy_rewards + gamma*Vs[1:] - Vs[:-1]
+    out = rewards + gamma*Vs[1:] - Vs[:-1]
     return out.astype(np.float32)

@@ -127,9 +127,9 @@ class Agent(BaseAgent):
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         policy_grad_norm = nn.utils.clip_grad_norm_(self.policy.parameters(), self.config['agent.max_grad_norm'])
+        self.policy_optimizer.step()
         if self.config['agent.use_lr_scheduler']:
             self.policy_lr_scheduler.step(self.total_timestep)
-        self.policy_optimizer.step()
         
         clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
         value_loss = torch.max(F.mse_loss(Vs, old_Qs, reduction='none'), 
@@ -161,9 +161,9 @@ class Agent(BaseAgent):
         with torch.no_grad():
             last_observations = tensorify(np.concatenate([traj.last_observation for traj in D], 0), self.device)
             last_Vs = self.value(last_observations).squeeze(-1)
-        Qs = [bootstrapped_returns(self.config['agent.gamma'], traj, last_V) 
+        Qs = [bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
                   for traj, last_V in zip(D, last_Vs)]
-        As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj, V, last_V) 
+        As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
                   for traj, V, last_V in zip(D, Vs, last_Vs)]
         
         # Metrics -> Tensor, device
