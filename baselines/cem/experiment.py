@@ -52,23 +52,25 @@ config = Config(
     })
 
 
-def make_env(config, seed):
+def make_env(config, seed, mode):
+    assert mode in ['train', 'eval']
     def _make_env():
         env = gym.make(config['env.id'])
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
     env = make_vec_env(_make_env, 1, seed)  # single environment
+    if mode == 'train':
+        env = VecMonitor(env)
+        if config['env.standardize_obs']:
+            env = VecStandardizeObservation(env, clip=5.)
     return env
     
     
 def initializer(config, seed, device):
     torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
     global env
-    env = make_env(config, seed)
-    env = VecMonitor(env)
-    if config['env.standardize_obs']:
-        env = VecStandardizeObservation(env, clip=5.)
+    env = make_env(config, seed, 'train')
     global agent
     agent = Agent(config, env, device)
     
@@ -94,7 +96,7 @@ def run(config, seed, device, logdir):
     set_global_seeds(seed)
     
     print('Initializing...')
-    agent = Agent(config, make_env(config, seed), device)
+    agent = Agent(config, make_env(config, seed, 'eval'), device)
     es = CEM([config['train.mu0']]*agent.num_params, config['train.std0'], 
              {'popsize': config['train.popsize'], 
               'seed': seed, 

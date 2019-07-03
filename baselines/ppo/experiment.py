@@ -53,27 +53,28 @@ config = Config(
     })
 
 
-def make_env(config, seed):
+def make_env(config, seed, mode):
+    assert mode in ['train', 'eval']
     def _make_env():
         env = gym.make(config['env.id'])
         if config['env.clip_action'] and isinstance(env.action_space, Box):
             env = ClipAction(env)
         return env
     env = make_vec_env(_make_env, 1, seed)  # single environment
+    if mode == 'train':
+        env = VecMonitor(env)
+        if config['env.standardize_obs']:
+            env = VecStandardizeObservation(env, clip=5.)
+        if config['env.standardize_reward']:
+            env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
+        env = VecStepInfo(env)
     return env
     
 
 def run(config, seed, device, logdir):
     set_global_seeds(seed)
     
-    env = make_env(config, seed)
-    env = VecMonitor(env)
-    if config['env.standardize_obs']:
-        env = VecStandardizeObservation(env, clip=5.)
-    if config['env.standardize_reward']:
-        env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
-    env = VecStepInfo(env)
-    
+    env = make_env(config, seed, 'train')
     agent = Agent(config, env, device)
     runner = EpisodeRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)

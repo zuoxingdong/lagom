@@ -47,25 +47,24 @@ config = Config(
     })
 
 
-def make_env(config, seed):
+def make_env(config, seed, mode):
+    assert mode in ['train', 'eval']
     def _make_env():
         env = gym.make(config['env.id'])
         env = ClipAction(env)
         return env
     env = make_vec_env(_make_env, 1, seed)  # single environment
+    env = VecMonitor(env)
+    if mode == 'train':
+        env = VecStepInfo(env)
     return env
 
 
 def run(config, seed, device, logdir):
     set_global_seeds(seed)
     
-    env = make_env(config, seed)
-    env = VecMonitor(env)
-    env = VecStepInfo(env)
-    
-    eval_env = make_env(config, seed)
-    eval_env = VecMonitor(eval_env)
-    
+    env = make_env(config, seed, 'train')
+    eval_env = make_env(config, seed, 'eval')
     agent = Agent(config, env, device)
     replay = ReplayBuffer(env, config['replay.capacity'], device)
     engine = Engine(config, agent=agent, env=env, eval_env=eval_env, replay=replay, logdir=logdir)
