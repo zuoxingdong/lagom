@@ -9,6 +9,7 @@ from gym.wrappers import TimeLimit
 
 from lagom import RandomAgent
 from lagom import EpisodeRunner
+from lagom.utils import numpify
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import StepInfo
 from lagom.envs.wrappers import VecStepInfo
@@ -19,6 +20,7 @@ from lagom.metric import bootstrapped_returns
 from lagom.metric import td0_target
 from lagom.metric import td0_error
 from lagom.metric import gae
+from lagom.metric import vtrace
 
 from .sanity_env import SanityEnv
 
@@ -385,3 +387,39 @@ def test_gae():
     assert np.allclose(out, [5.84375, 7.6875, 9.375, 10.75, 11.5, 11., 8, 0.])
     out = gae(0.1, 0.2, D.rewards, Vs, 30, D.reach_terminal)
     assert np.allclose(out, [0.206164098, 0.308204915, 0.410245728, 0.5122864, 0.61432, 0.716, 0.8, 0])
+
+
+@pytest.mark.parametrize('gamma', [0.1, 1.0])
+@pytest.mark.parametrize('last_V', [0.3, [0.5]])
+@pytest.mark.parametrize('reach_terminal', [True, False])
+@pytest.mark.parametrize('clip_rho', [0.5, 1.0])
+@pytest.mark.parametrize('clip_pg_rho', [0.3, 1.1])
+def test_vtrace(gamma, last_V, reach_terminal, clip_rho, clip_pg_rho):
+    behavior_logprobs = [1, 2, 3]
+    target_logprobs = [4, 5, 6]
+    Rs = [7, 8, 9]
+    Vs = [10, 11, 12]
+    
+    vs_test, As_test = vtrace(behavior_logprobs, target_logprobs, gamma, Rs, Vs, last_V, reach_terminal, clip_rho, clip_pg_rho)
+    
+    # ground truth calculation
+    behavior_logprobs = numpify(behavior_logprobs, np.float32)
+    target_logprobs = numpify(target_logprobs, np.float32)
+    Rs = numpify(Rs, np.float32)
+    Vs = numpify(Vs, np.float32)
+    last_V = numpify(last_V, np.float32)
+    
+    rhos = np.exp(target_logprobs - behavior_logprobs)
+    clipped_rhos = np.minimum(clip_rho, rhos)
+    cs = np.minimum(1.0, rhos)
+    deltas = clipped_rhos*td0_error(gamma, Rs, Vs, last_V, reach_terminal)
+    
+    vs = np.array([Vs[0] + gamma**0*1*deltas[0] + gamma*cs[0]*deltas[1] + gamma**2*cs[0]*cs[1]*deltas[2], 
+               Vs[1] + gamma**0*1*deltas[1] + gamma*cs[1]*deltas[2], 
+               Vs[2] + gamma**0*1*deltas[2]])
+    vs_next = np.append(vs[1:], (1. - reach_terminal)*last_V)
+    clipped_pg_rhos = np.minimum(clip_pg_rho, rhos)
+    As = clipped_pg_rhos*(Rs + gamma*vs_next - Vs)
+    
+    assert np.allclose(vs, vs_test)
+    assert np.allclose(As, As_test)

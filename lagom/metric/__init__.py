@@ -7,3 +7,5 @@ from .td import td0_target
 from .td import td0_error
 
 from .gae import gae
+
+from .vtrace import vtrace

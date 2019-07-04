@@ -1,6 +1,7 @@
 from functools import partial  # argument-free functions
 
 from lagom.utils import Seeder
+from lagom.utils import CloudpickleWrapper
 
 from .vec_env import VecEnv
 
@@ -37,5 +38,6 @@ def make_vec_env(make_env, num_env, init_seed):
         return env
     
     # Use partial to generate a list of argument-free make_env, each with different seed
-    list_make_env = [partial(f, seed=seed) for seed in seeds]
+    # partial object is not picklable, so wrap it with magical CloudpickleWrapper
+    list_make_env = [CloudpickleWrapper(partial(f, seed=seed)) for seed in seeds]
     return VecEnv(list_make_env)

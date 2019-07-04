@@ -16,3 +16,5 @@ lagom.metric: Metrics
 .. autofunction:: td0_error
 
 .. autofunction:: gae
+
+.. autofunction:: vtrace

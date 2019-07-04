@@ -1,0 +1,26 @@
+ID: 0
+log.freq: 1
+checkpoint.num: 3
+env.id: Hopper-v3
+env.standardize_obs: false
+env.standardize_reward: false
+nn.sizes:
+- 64
+- 64
+agent.lr: 0.0007
+agent.use_lr_scheduler: false
+agent.gamma: 0.99
+agent.standardize_adv: true
+agent.max_grad_norm: 0.5
+agent.entropy_coef: 0.01
+agent.value_coef: 0.5
+agent.clip_rho: 1.0
+agent.clip_pg_rho: 1.0
+agent.num_actors: 2
+env.clip_action: true
+agent.std0: 0.6
+train.timestep: 1000000
+train.timestep_per_iter: 200
+train.batch_size: 64
+eval.freq: 5000
+eval.num_episode: 10
