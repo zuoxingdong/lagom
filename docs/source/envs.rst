@@ -4,6 +4,9 @@ lagom.envs
 .. automodule:: lagom.envs
 .. currentmodule:: lagom.envs
 
+.. autoclass:: RecordEpisodeStatistics
+    :members:
+
 .. autoclass:: VecEnv
     :members:
     

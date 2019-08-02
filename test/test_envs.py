@@ -11,6 +11,7 @@ from gym.spaces import Tuple
 from gym.spaces import Dict
 from gym.wrappers import ClipReward
 
+from lagom.envs import RecordEpisodeStatistics
 from lagom.envs import make_vec_env
 from lagom.envs import VecEnv
 from lagom.envs.wrappers import get_wrapper
@@ -54,6 +55,26 @@ def test_vec_env(env_id, num_env):
     assert isinstance(infos, list) and len(infos) == num_env
     env.close()
     assert env.closed
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
+@pytest.mark.parametrize('deque_size', [2, 5])
+def test_record_episode_statistics(env_id, deque_size):
+    env = gym.make(env_id)
+    env = RecordEpisodeStatistics(env, deque_size)
+
+    for n in range(5):
+        env.reset()
+        assert env.episode_return == 0.0
+        assert env.episode_horizon == 0
+        for t in range(env.spec.max_episode_steps):
+            _, _, done, info = env.step(env.action_space.sample())
+            if done:
+                assert 'episode' in info
+                assert all([item in info['episode'] for item in ['return', 'horizon', 'time']])
+                break
+    assert len(env.return_queue) == deque_size
+    assert len(env.horizon_queue) == deque_size
     
 
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
