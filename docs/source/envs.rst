@@ -6,6 +6,12 @@ lagom.envs
 
 .. autoclass:: RecordEpisodeStatistics
     :members:
+    
+.. autoclass:: NormalizeObservation
+    :members:
+    
+.. autoclass:: NormalizeReward
+    :members:
 
 .. autoclass:: VecEnv
     :members:
