@@ -142,6 +142,16 @@ def test_running_mean_var():
         f = RunningMeanVar(shape=(1,))
         f([0.5])
     
+    # simple case:
+    f = RunningMeanVar(shape=())
+    x = [5.1, 4.3, 1.324]
+    f([x[0]])
+    f([x[1]])
+    f([x[2]])
+    assert np.allclose(np.mean(x), f.mean)
+    assert np.allclose(np.var(x), f.var)
+    
+    # random sampling
     x = np.random.randn(1000)
     xs = np.array_split(x, [1, 200, 500, 600, 900, 950])
     assert np.allclose(np.concatenate(xs), x)

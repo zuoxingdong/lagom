@@ -35,7 +35,7 @@ class RunningMeanVar(object):
         self.shape = shape
         self.mean = np.zeros(shape, dtype=np.float64)
         self.var = np.ones(shape, dtype=np.float64)
-        self.N = 1e-4  # or zero ?
+        self.N = 1e-8  # numerical stability for variance term, and 1e-4 is for std
         
     def __call__(self, x):
         r"""Update the mean and variance given an additional batched data. 
