@@ -9,7 +9,6 @@ from lagom.networks import make_transposed_cnn
 from lagom.networks import ortho_init
 
 
-
 class VAE(Module):
     def __init__(self, config, device, **kwargs):
         super().__init__(**kwargs)
