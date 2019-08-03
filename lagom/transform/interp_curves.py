@@ -41,13 +41,9 @@ def interp_curves(x, y):
             y (list): a batch of y values. 
             num_point (int): number of points to generate from the interpolated line. 
     
-    Returns
-    -------
-    out_x : list
-        interpolated x values (shared for the batch of curves)
-    out_y : list
-        interpolated y values
-        
+    Returns:
+        tuple: a tuple of two lists. A list of interpolated x values (shared for the batch of curves)
+            and followed by a list of interpolated y values. 
     """
     new_x = np.unique(np.hstack(x))
     assert new_x.ndim == 1

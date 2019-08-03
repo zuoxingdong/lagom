@@ -57,10 +57,8 @@ class Seeder(object):
         Args:
             size (int or list): The size of random seeds to sample. 
             
-        Returns
-        -------
-        seeds : list
-            a list of sampled random seeds.
+        Returns:
+            list: a list of sampled random seeds.
         """
         seeds = self.rng.randint(low=0, high=self.max, size=size).tolist()
         

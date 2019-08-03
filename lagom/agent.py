@@ -2,25 +2,19 @@ from abc import ABC
 from abc import abstractmethod
 
 from lagom.networks import Module
-from lagom.envs import VecEnv
 
 
 class BaseAgent(Module, ABC):
     r"""Base class for all agents. 
     
-    The agent could select an action from a given observation and update itself by defining a certain learning
-    mechanism. 
+    The agent could select an action from some data (e.g. observation) and update itself by
+    defining a certain learning mechanism. 
     
     Any agent should subclass this class, e.g. policy-based or value-based. 
     
-    .. note::
-    
-        All agents should by default handle batched data e.g. batched observation returned from :class:`VecEnv`
-        and batched action for each sub-environment of a :class:`VecEnv`. 
-    
     Args:
         config (dict): a dictionary of configurations
-        env (VecEnv): environment object. 
+        env (Env): environment object. 
         device (Device): a PyTorch device
         **kwargs: keyword aguments used to specify the agent
     
@@ -36,27 +30,24 @@ class BaseAgent(Module, ABC):
         self.is_recurrent = None
         
     @abstractmethod
-    def choose_action(self, obs, **kwargs):
-        r"""Returns an (batched) action selected by the agent from received (batched) observation/
+    def choose_action(self, x, **kwargs):
+        r"""Returns the selected action given the data.
         
         .. note::
         
-            Tensor conversion should be handled here instead of in policy or network forward pass.
+            It's recommended to handle all dtype/device conversions between CPU/GPU or Tensor/Numpy here.
         
-        The output is a dictionary containing useful items, e.g. action, action_logprob, state_value
+        The output is a dictionary containing useful items, 
         
         Args:
             obs (object): batched observation returned from the environment. First dimension is treated
                 as batch dimension. 
             **kwargs: keyword arguments to specify action selection.
             
-        Returns
-        -------
-        out : dict
-            a dictionary of action selection output. It should also contain all useful information
-            to be stored during interaction with :class:`BaseRunner`. This allows a generic API of
-            the runner classes for all kinds of agents. Note that everything should be batched even
-            if for scalar loss, i.e. ``scalar_loss -> [scalar_loss]``
+        Returns:
+            dict: a dictionary of action selection output. It contains all useful information (e.g. action, 
+                action_logprob, state_value). This allows the API to be generic and compatible with
+                different kinds of runner and agents. 
         """
         pass
         
@@ -66,22 +57,20 @@ class BaseAgent(Module, ABC):
         
         Args:
             D (list): a list of batched data to train the agent e.g. in policy gradient, this can be 
-                a list of :class:`Trajectory` or :class:`Segment`
+                a list of :class:`Trajectory`.
             **kwargs: keyword arguments to specify learning mechanism
             
-        Returns
-        -------
-        out : dict
-            a dictionary of learning output. This could contain the loss. 
+        Returns:
+            dict: a dictionary of learning output. This could contain the loss and other useful metrics. 
         """
         pass
 
 
 class RandomAgent(BaseAgent):
     r"""A random agent samples action uniformly from action space. """    
-    def choose_action(self, obs, **kwargs):
-        if isinstance(self.env, VecEnv):
-            action = [self.env.action_space.sample() for _ in range(len(self.env))]
+    def choose_action(self, x, **kwargs):
+        if hasattr(self.env, 'num_envs'):
+            action = [self.env.action_space.sample() for _ in range(self.env.num_envs)]
         else:
             action = self.env.action_space.sample()
         out = {'raw_action': action}

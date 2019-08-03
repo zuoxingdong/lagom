@@ -44,17 +44,15 @@ class VecEnv(object):
         Args:
             actions (list): a list of actions, each for one environment. 
             
-        Returns
-        -------
-        observations : list
-            a list of observations, each returned from one environment after executing the given action. 
-        rewards : list
-            a list of scalar rewards, each returned from one environment. 
-        dones : list
-            a list of booleans indicating whether the episode terminates, each returned from one environment. 
-        infos : list
-            a list of dictionaries of additional informations, each returned from one environment. 
-            
+        Returns:
+            tuple: a tuple of (observations, rewards, dones, infos)
+                * observations (list): a list of observations, each returned from one environment 
+                  after executing the given action. 
+                * rewards (list): a list of scalar rewards, each returned from one environment. 
+                * dones (list): a list of booleans indicating whether the episode terminates, each 
+                  returned from one environment. 
+                * infos (list): a list of dictionaries of additional informations, each returned 
+                  from one environment. 
         """
         assert len(actions) == len(self)
         observations = []
@@ -80,10 +78,8 @@ class VecEnv(object):
         
             If :meth:`step_async` is still working, then it will be aborted. 
         
-        Returns
-        -------
-        observations : list
-            a list of initial observations from all environments. 
+        Returns:
+            list: a list of initial observations from all environments. 
         """
         observations = [env.reset() for env in self.list_env]
         return observations
@@ -118,20 +114,16 @@ class VecEnv(object):
     def get_images(self):
         r"""Returns a batched RGB array with shape [N, H, W, C] from all environments. 
         
-        Returns
-        -------
-        imgs : ndarray
-            a batched RGB array with shape [N, H, W, C]
+        Returns:
+            ndarray: a batched RGB array with shape [N, H, W, C]    
         """
         return [env.render(mode='rgb_array') for env in self.list_env]
     
     def get_viewer(self):
         r"""Returns an instantiated :class:`ImageViewer`. 
         
-        Returns
-        -------
-        viewer : ImageViewer
-            an image viewer
+        Returns:
+            ImageViewer: an image viewer
         """
         if self.viewer is None:  # create viewer is not existed
             self.viewer = ImageViewer(max_width=500)  # set a max width here

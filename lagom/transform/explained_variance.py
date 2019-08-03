@@ -42,11 +42,8 @@ def explained_variance(y_true, y_pred, **kwargs):
         y_pred (list): predicted output
         **kwargs: keyword arguments to specify the estimation of the explained variance. 
            
-    Returns
-    -------
-    out : float
-        estimated explained variance
-        
+    Returns:
+        float: estimated explained variance
     """
     y_true = np.squeeze(y_true)
     y_pred = np.squeeze(y_pred)

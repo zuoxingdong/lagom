@@ -70,10 +70,8 @@ class MDNHead(Module):
             std (Tensor): standard deviation of Gaussian mixtures, shape [N, K, D]
             target (Tensor): target tensor, shape [N, D]
 
-        Returns
-        -------
-        loss : Tensor
-            calculated loss
+        Returns:
+            Tensor: calculated loss
         """
         # target shape [N, D] to [N, 1, D]
         target = target.unsqueeze(1)
@@ -105,10 +103,8 @@ class MDNHead(Module):
                 * If :math:`\tau > 1`: increase uncertainty
                 * If :math:`\tau < 1`: decrease uncertainty
         
-        Returns
-        -------
-        x : Tensor
-            sampled data with shape [N, D]
+        Returns:
+            Tensor: sampled data with shape [N, D]
         """
         N, K, D = logit_pi.shape
         pi = F.softmax(logit_pi/tau, dim=1)

@@ -28,11 +28,8 @@ def smooth_filter(x, window_length, polyorder, **kwargs):
         window_length (int): the length of the filter window
         polyorder (int): the order of the polynomial used to fit the samples
         
-    Returns
-    -------
-    out : ndarray
-        smoothed curve data
-    
+    Returns:
+        ndarray: an numpy array of smoothed curve data
     """
     x = np.asarray(x)
     assert x.ndim == 1, 'only a single vector of scalar values is supported'

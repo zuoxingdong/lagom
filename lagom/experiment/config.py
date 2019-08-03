@@ -89,10 +89,8 @@ class Config(object):
         r"""Generate a list of all possible combinations of configurations, including
         grid search and random search. 
         
-        Returns
-        -------
-        list_config : list
-            a list of all possible configurations
+        Returns:
+            list: a list of all possible configurations
         """
         keys_fixed = []
         keys_grid = []

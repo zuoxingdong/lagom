@@ -25,11 +25,8 @@ def rank_transform(x, centered=True):
         centered (bool, optional): if ``True``, then centered the rank transformation 
             to :math:`[-0.5, 0.5]`. Defualt: ``True``
 
-    Returns
-    -------
-    ranks : ndarray
-        ranks of input data
-    
+    Returns:
+        ndarray: an numpy array of ranks of input data
     """
     x = np.asarray(x)
     assert x.ndim == 1, 'must be one dimensional, i.e. a vector of scalar values'

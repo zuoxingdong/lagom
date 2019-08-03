@@ -140,10 +140,8 @@ def vae_loss(re_x, x, mu, logvar, mode='BCE'):
         logvar (Tensor): log-variance of the latent variable
         mode (str): Type of reconstruction loss, supported ['BCE', 'MSE']
         
-    Returns
-    -------
-    out : dict
-        a dictionary of selected output such as loss, reconstruction loss and KL loss. 
+    Returns:
+        dict: a dictionary of selected output such as loss, reconstruction loss and KL loss. 
     """
     assert mode in ['BCE', 'MSE'], f'expected either BCE or MSE, got {mode}'
     

@@ -22,10 +22,8 @@ def make_fc(input_dim, hidden_sizes):
         input_dim (int): input dimension in the first fully connected layer. 
         hidden_sizes (list): a list of hidden sizes, each for one fully connected layer. 
     
-    Returns
-    -------
-    fc : nn.ModuleList
-        A ModuleList of fully connected layers.     
+    Returns:
+        nn.ModuleList: A ModuleList of fully connected layers.     
     """
     assert isinstance(hidden_sizes, list), f'expected list, got {type(hidden_sizes)}'
     
@@ -63,10 +61,8 @@ def make_cnn(input_channel, channels, kernels, strides, paddings):
         strides (list): a list of strides, each for one convolution layer. 
         paddings (list): a list of paddings, each for one convolution layer. 
     
-    Returns
-    -------
-    cnn : nn.ModuleList
-        A ModuleList of 2D convolution layers.    
+    Returns:
+        nn.ModuleList: A ModuleList of 2D convolution layers.
     """
     N = len(channels)
     
@@ -120,10 +116,8 @@ def make_transposed_cnn(input_channel, channels, kernels, strides, paddings, out
         paddings (list): a list of paddings, each for one transposed convolution layer. 
         output_paddings (list): a list of output paddings, each for one transposed convolution layer. 
     
-    Returns
-    -------
-    transposed_cnn : nn.ModuleList
-        A ModuleList of 2D transposed convolution layers.    
+    Returns:
+        nn.ModuleList: A ModuleList of 2D transposed convolution layers.
     """
     N = len(channels)
     

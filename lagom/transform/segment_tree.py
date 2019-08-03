@@ -41,11 +41,8 @@ class SegmentTree(object):
             start (int): start of segment
             end (int): end of segment
             
-        Returns
-        -------
-        out : object
-            result of reduce operation
-        
+        Returns:
+            object: result of reduce operation
         """
         if end is None:
             end = self.capacity
@@ -92,11 +89,8 @@ class SumTree(SegmentTree):
         Args:
             prefixsum (float): prefix sum. 
         
-        Returns
-        -------
-        index : int
-            highest index satisfying the prefixsum constraint
-        
+        Returns:
+            int: highest index satisfying the prefixsum constraint
         """
         assert 0 <= prefixsum <= self.sum() + 1e-5
         index = 1

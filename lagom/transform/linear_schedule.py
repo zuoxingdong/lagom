@@ -42,10 +42,8 @@ class LinearSchedule(object):
         Args:
             x (int): the current timestep. 
             
-        Returns
-        -------
-        out : float
-            current value of the scheduling. 
+        Returns:
+            float: current value of the scheduling. 
         """
         assert isinstance(x, int) and x >= 0, f'expected as a non-negative integer, got {x}'
         

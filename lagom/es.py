@@ -37,10 +37,8 @@ class BaseES(ABC):
     def ask(self):
         r"""Sample a set of new candidate solutions. 
         
-        Returns
-        -------
-        solutions : list
-            sampled candidate solutions
+        Returns:
+            list: a list of sampled candidate solutions
         """
         pass
         

@@ -30,10 +30,8 @@ class BaseEngine(ABC):
             n (int, optional): n-th iteration for training. 
             **kwargs: keyword aguments used for logging. 
         
-        Returns
-        -------
-        out : dict
-            training output
+        Returns:
+            dict: a dictionary of training output    
         """
         pass
         
@@ -53,9 +51,7 @@ class BaseEngine(ABC):
             n (int, optional): n-th iteration for evaluation. 
             **kwargs: keyword aguments used for logging. 
         
-        Returns
-        -------
-        out : dict
-            evluation output
+        Returns:
+            dict: a dictionary of evluation output
         """
         pass

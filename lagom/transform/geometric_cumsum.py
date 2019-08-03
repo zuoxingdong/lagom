@@ -23,11 +23,8 @@ def geometric_cumsum(alpha, x):
         alpha (float): exponential factor between zero and one. 
         x (list): input data
             
-    Returns
-    -------
-    out : ndarray
-        calculated data
-    
+    Returns:
+        ndarray: calculated data
     """
     x = np.asarray(x)
     if x.ndim == 1:

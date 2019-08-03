@@ -19,10 +19,8 @@ def color_str(string, color, attribute=None):
         color (str): color name
         attribute (str, optional): attribute. Default: ``None``
     
-    Returns
-    -------
-    out : str
-        stylized string    
+    Returns:
+        str: stylized string
     """
     styles = colored.fg(color)
     if attribute is not None:

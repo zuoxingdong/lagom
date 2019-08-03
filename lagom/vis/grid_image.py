@@ -70,10 +70,8 @@ class GridImage(object):
         Args:
             **kwargs: keyword aguments used to specify the grid of images. 
             
-        Returns
-        -------
-        img : Image
-            a grid of image with shape [H, W, C] and dtype ``np.uint8``
+        Returns:
+            Image: a grid of image with shape [H, W, C] and dtype ``np.uint8``
         """
         # Total number of images
         N = self.x.shape[0]

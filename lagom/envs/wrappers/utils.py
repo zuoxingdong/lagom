@@ -8,10 +8,8 @@ def get_wrapper(env, name):
         env (Env): environment
         name (str): name of the wrapper
         
-    Returns
-    -------
-    out : env
-        wrapped environment
+    Returns:
+        Env: wrapped environment
     """
     if name == env.__class__.__name__:
         return env
@@ -27,11 +25,8 @@ def get_all_wrappers(env):
     Args:
         env (Env): wrapped environment
     
-    Returns
-    -------
-    out : list
-        list of string names of wrappers
-    
+    Returns:
+        list: a list of string names of wrappers
     """
     out = []
     while env is not env.unwrapped:

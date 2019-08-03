@@ -39,10 +39,8 @@ class ProcessWorker(ABC):
             task_id (int): the task ID.
             task (object): a given task. 
             
-        Returns
-        -------
-        result : object
-            working result. 
+        Returns:
+            object: working result.     
         """
         pass
 
@@ -92,10 +90,8 @@ class ProcessMaster(ABC):
     def make_tasks(self):
         r"""Returns a list of tasks. 
         
-        Returns
-        -------
-        tasks : list
-            a list of tasks
+        Returns:
+            list: a list of tasks
         """
         pass
         
@@ -105,10 +101,8 @@ class ProcessMaster(ABC):
         Args:
             tasks (list): a list of tasks
             
-        Returns
-        -------
-        results : object
-            received results
+        Returns:
+            object: received results
         """
         jobs = [[] for _ in range(self.num_worker)]
         for task_id, task in enumerate(tasks):

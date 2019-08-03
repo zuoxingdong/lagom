@@ -20,11 +20,8 @@ def make_vec_env(make_env, num_env, init_seed):
         num_env (int): number of environments to create. 
         init_seed (int): initial seed for :class:`Seeder` to sample random seeds. 
     
-    Returns
-    -------
-    env : VecEnv
-        created vectorized environment
-    
+    Returns:
+        VecEnv: created vectorized environment
     """
     # Generate different seeds for each environment
     seeder = Seeder(init_seed=init_seed)
