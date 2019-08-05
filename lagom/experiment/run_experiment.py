@@ -134,7 +134,7 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
     if max_workers is None:
         results = [_run(job) for job in jobs]
     else:
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=min(max_workers, len(jobs))) as executor:
             results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
     print(color_str(f'\nExperiment finished. Loggings are stored in {log_path.absolute()}. ', 'cyan', 'bold'))
     return results
