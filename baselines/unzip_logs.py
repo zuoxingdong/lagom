@@ -21,4 +21,3 @@ print('Moving all logs folders...')
 print('Done !')
 shutil.rmtree(all_logs_path)
 print('Clean up all_logs')
-
