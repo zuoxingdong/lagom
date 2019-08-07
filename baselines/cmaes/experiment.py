@@ -115,7 +115,7 @@ def run(config, seed, device, logdir):
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('fbest', es.result.fbest)
             train_logs.append(logger.logs)
-            if generation == 0 or (generation+1)%config['log.freq'] == 0:
+            if generation == 0 or (generation+1) % config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
             if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
                 agent.from_vec(tensorify(es.result.xbest, 'cpu'))

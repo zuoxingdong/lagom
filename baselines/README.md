@@ -22,7 +22,7 @@ Because the loggings and checkpoint files are very large, putting them in the re
 ## ES
 <img src='benchmark_es.png' width='100%'>
 
-## RL
+## Model-free RL
 <img src='benchmark_rl.png' width='100%'>
 
 ## FAQ:

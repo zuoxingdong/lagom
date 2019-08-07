@@ -102,14 +102,14 @@ def run(config, seed, device, logdir):
     print('Initializing...')
     agent = Agent(config, make_env(config, seed, 'eval'), device)
     es = OpenAIES([config['train.mu0']]*agent.num_params, config['train.std0'], 
-              {'popsize': config['train.popsize'], 
-               'seed': seed, 
-               'sigma_scheduler_args': config['train.sigma_scheduler_args'],
-               'lr': config['train.lr'],
-               'lr_decay': config['train.lr_decay'],
-               'min_lr': config['train.min_lr'],
-               'antithetic': config['train.antithetic'],
-               'rank_transform': config['train.rank_transform']})
+                  {'popsize': config['train.popsize'], 
+                   'seed': seed, 
+                   'sigma_scheduler_args': config['train.sigma_scheduler_args'],
+                   'lr': config['train.lr'],
+                   'lr_decay': config['train.lr_decay'],
+                   'min_lr': config['train.min_lr'],
+                   'antithetic': config['train.antithetic'],
+                   'rank_transform': config['train.rank_transform']})
     train_logs = []
     checkpoint_count = 0
     with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
@@ -127,7 +127,7 @@ def run(config, seed, device, logdir):
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('fbest', es.result.fbest)
             train_logs.append(logger.logs)
-            if generation == 0 or (generation+1)%config['log.freq'] == 0:
+            if generation == 0 or (generation+1) % config['log.freq'] == 0:
                 logger.dump(keys=None, index=0, indent=0, border='-'*50)
             if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
                 agent.from_vec(tensorify(es.result.xbest, 'cpu'))
