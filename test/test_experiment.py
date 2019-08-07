@@ -28,7 +28,7 @@ def test_sample():
     sampler = Sample(lambda: np.random.uniform(3, 7))
     for _ in range(100):
         x = sampler()
-        assert x >=3 and x< 7
+        assert x >= 3 and x < 7
         
         
 def test_condition():
@@ -50,7 +50,7 @@ def test_config(num_sample, keep_dict_order):
                      'network.lr': Grid([1e-3, 1e-4]), 
                      'env.id': 'HalfCheetah-v2', 
                      'iter': Grid([10, 20, 30]),
-                     'alpha': Sample(lambda : np.random.uniform(3, 10))}, 
+                     'alpha': Sample(lambda: np.random.uniform(3, 10))}, 
                     num_sample=num_sample, 
                     keep_dict_order=keep_dict_order)
     list_config = config.make_configs()
