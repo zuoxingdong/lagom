@@ -13,11 +13,10 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
+import mock
 sys.path.insert(0, os.path.abspath('../../'))
 
-
 # Exclude some dependencies for Read the Docs to compile with
-import mock
 MOCK_MODULES = ['seaborn', 
                 'matplotlib',
                 'matplotlib.pyplot',
@@ -59,8 +58,9 @@ extensions = [
 ]
 
 # Napoleon settings
-napoleon_include_init_with_doc = True  # show docstring of __init__
-napoleon_include_private_with_doc = True  # show docstring of _method
+napoleon_google_docstring = True
+napoleon_include_init_with_doc = False  # show docstring of __init__
+napoleon_include_private_with_doc = False  # show docstring of _method
 napoleon_include_special_with_doc = True  # show docstring of __method__
 napoleon_use_ivar = True  # show argument dtype with link
 
@@ -176,6 +176,3 @@ texinfo_documents = [
      author, 'lagom', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-# -- Extension configuration -------------------------------------------------

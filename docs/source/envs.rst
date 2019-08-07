@@ -12,6 +12,9 @@ lagom.envs
     
 .. autoclass:: NormalizeReward
     :members:
+    
+.. autoclass:: TimeStepEnv
+    :members:
 
 .. autoclass:: VecEnv
     :members:

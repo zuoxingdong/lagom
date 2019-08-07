@@ -4,9 +4,6 @@ lagom.metric: Metrics
 .. automodule:: lagom.metric
 .. currentmodule:: lagom.metric
 
-.. autoclass:: Trajectory
-    :members:
-
 .. autofunction:: returns
 
 .. autofunction:: bootstrapped_returns
