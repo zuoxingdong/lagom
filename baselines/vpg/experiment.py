@@ -1,23 +1,17 @@
 import os
-from pathlib import Path
 from itertools import count
-
 import gym
-from gym.spaces import Box
-from gym.wrappers import ClipAction
 
-from lagom import EpisodeRunner
+from lagom import StepRunner
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
 from lagom.experiment import Config
 from lagom.experiment import Grid
-from lagom.experiment import Sample
 from lagom.experiment import run_experiment
-from lagom.envs import make_vec_env
-from lagom.envs.wrappers import VecMonitor
-from lagom.envs.wrappers import VecStandardizeObservation
-from lagom.envs.wrappers import VecStandardizeReward
-from lagom.envs.wrappers import VecStepInfo
+from lagom.envs import RecordEpisodeStatistics
+from lagom.envs import NormalizeObservation
+from lagom.envs import NormalizeReward
+from lagom.envs import TimeStepEnv
 
 from baselines.vpg.agent import Agent
 from baselines.vpg.engine import Engine
@@ -28,8 +22,8 @@ config = Config(
      'checkpoint.num': 3,
      
      'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
-     'env.standardize_obs': True,
-     'env.standardize_reward': True,
+     'env.normalize_obs': True,
+     'env.normalize_reward': True,
      
      'nn.sizes': [64, 64],
      
@@ -48,25 +42,24 @@ config = Config(
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration
-     
     })
 
 
 def make_env(config, seed, mode):
     assert mode in ['train', 'eval']
-    def _make_env():
-        env = gym.make(config['env.id'])
-        if config['env.clip_action'] and isinstance(env.action_space, Box):
-            env = ClipAction(env)
-        return env
-    env = make_vec_env(_make_env, 1, seed)  # single environment
+    env = gym.make(config['env.id'])
+    env.seed(seed)
+    env.observation_space.seed(seed)
+    env.action_space.seed(seed)
+    if config['env.clip_action'] and isinstance(env.action_space, gym.spaces.Box):
+        env = gym.wrappers.ClipAction(env)
     if mode == 'train':
-        env = VecMonitor(env)
-        if config['env.standardize_obs']:
-            env = VecStandardizeObservation(env, clip=5.)
-        if config['env.standardize_reward']:
-            env = VecStandardizeReward(env, clip=10., gamma=config['agent.gamma'])
-        env = VecStepInfo(env)
+        env = RecordEpisodeStatistics(env, deque_size=100)
+        if config['env.normalize_obs']:
+            env = NormalizeObservation(env, clip=5.)
+        if config['env.normalize_reward']:
+            env = NormalizeReward(env, clip=10., gamma=config['agent.gamma'])
+    env = TimeStepEnv(env)
     return env
     
 
@@ -75,7 +68,7 @@ def run(config, seed, device, logdir):
     
     env = make_env(config, seed, 'train')
     agent = Agent(config, env, device)
-    runner = EpisodeRunner(reset_on_call=False)
+    runner = StepRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     train_logs = []
     checkpoint_count = 0
