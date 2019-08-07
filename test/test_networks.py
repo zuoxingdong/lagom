@@ -65,11 +65,11 @@ class TestMakeBlocks(object):
         
         # Multiple layers
         transposed_cnn = make_transposed_cnn(input_channel=3, 
-                                     channels=[16, 32, 64], 
-                                     kernels=[4, 3, 3], 
-                                     strides=[2, 1, 1], 
-                                     paddings=[2, 1, 0],
-                                     output_paddings=[3, 1, 0])
+                                             channels=[16, 32, 64], 
+                                             kernels=[4, 3, 3], 
+                                             strides=[2, 1, 1], 
+                                             paddings=[2, 1, 0],
+                                             output_paddings=[3, 1, 0])
         assert len(transposed_cnn) == 3
         
         # Raise Exception

@@ -1,6 +1,4 @@
-from copy import deepcopy
 import pytest
-
 import numpy as np
 import torch
 
@@ -9,12 +7,12 @@ from gym.wrappers import TimeLimit
 
 from lagom import RandomAgent
 from lagom import EpisodeRunner
+from lagom import StepRunner
 from lagom.utils import numpify
 from lagom.envs import make_vec_env
 from lagom.envs.wrappers import StepInfo
 from lagom.envs.wrappers import VecStepInfo
 
-from lagom.metric import Trajectory
 from lagom.metric import returns
 from lagom.metric import bootstrapped_returns
 from lagom.metric import td0_target
@@ -25,62 +23,15 @@ from lagom.metric import vtrace
 from .sanity_env import SanityEnv
 
 
-@pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('T', [1, 5, 100])
-def test_trajectory(init_seed, T):
-    make_env = lambda: TimeLimit(SanityEnv())
-    env = make_vec_env(make_env, 1, init_seed)  # single environment
-    env = VecStepInfo(env)
-    D = Trajectory()
-    assert len(D) == 0
-    assert not D.completed
+@pytest.mark.parametrize('gamma', [0.1, 0.99, 1.0])
+def test_returns(gamma):
+    assert np.allclose(returns(1.0, [1, 2, 3]), [6, 5, 3])
+    assert np.allclose(returns(0.1, [1, 2, 3]), [1.23, 2.3, 3])
+    assert np.allclose(returns(1.0, [1, 2, 3, 4, 5]), [15, 14, 12, 9, 5])
+    assert np.allclose(returns(0.1, [1, 2, 3, 4, 5]), [1.2345, 2.345, 3.45, 4.5, 5])
+    assert np.allclose(returns(1.0, [1, 2, 3, 4, 5, 6, 7, 8]), [36, 35, 33, 30, 26, 21, 15, 8])
+    assert np.allclose(returns(0.1, [1, 2, 3, 4, 5, 6, 7, 8]), [1.2345678, 2.345678, 3.45678, 4.5678, 5.678, 6.78, 7.8, 8])
     
-    observation, _ = env.reset()
-    D.add_observation(observation)
-    for t in range(T):
-        action = [env.action_space.sample()]
-        next_observation, reward, [step_info] = env.step(action)
-        if step_info.last:
-            D.add_observation([step_info['last_observation']])
-        else:
-            D.add_observation(next_observation)
-        D.add_action(action)
-        D.add_reward(reward)
-        D.add_step_info(step_info)
-        observation = next_observation
-        if step_info.last:
-            with pytest.raises(AssertionError):
-                D.add_observation(observation)
-            break
-    assert len(D) > 0
-    assert len(D) <= T
-    assert len(D) + 1 == len(D.observations)
-    assert len(D) + 1 == len(D.numpy_observations)
-    assert len(D) == len(D.actions)
-    assert len(D) == len(D.numpy_actions)
-    assert len(D) == len(D.rewards)
-    assert len(D) == len(D.numpy_rewards)
-    assert len(D) == len(D.numpy_dones)
-    assert len(D) == len(D.numpy_masks)
-    assert np.allclose(np.logical_not(D.numpy_dones), D.numpy_masks)
-    assert len(D) == len(D.step_infos)
-    if len(D) < T:
-        assert step_info.last
-        assert D.completed
-        assert D.reach_terminal
-        assert not D.reach_time_limit
-        assert np.allclose(D.observations[-1], [step_info['last_observation']])
-    if not step_info.last:
-        assert not D.completed
-        assert not D.reach_terminal
-        assert not D.reach_time_limit
-
-
-@pytest.mark.parametrize('num_env', [1])
-@pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('T', [1, 4, 6, 20])
-def test_returns(num_env, init_seed, T):
-    gamma = 0.1
     y1 = [0.1]
     y2 = [0.1 + gamma*0.2, 0.2]
     y3 = [0.1 + gamma*(0.2 + gamma*0.3), 
@@ -101,292 +52,207 @@ def test_returns(num_env, init_seed, T):
           0.4 + gamma*(0.5 + gamma*0.6), 
           0.5 + gamma*0.6, 
           0.6]
-    ys = [None, y1, y2, y3, y4, y5, y6]
+    assert np.allclose(returns(gamma, [0.1]), y1)
+    assert np.allclose(returns(gamma, [0.1, 0.2]), y2)
+    assert np.allclose(returns(gamma, [0.1, 0.2, 0.3]), y3)
+    assert np.allclose(returns(gamma, [0.1, 0.2, 0.3, 0.4]), y4)
+    assert np.allclose(returns(gamma, [0.1, 0.2, 0.3, 0.4, 0.5]), y5)
+    assert np.allclose(returns(gamma, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]), y6)
 
-    make_env = lambda: TimeLimit(SanityEnv())
-    env = make_vec_env(make_env, num_env, init_seed)
-    env = VecStepInfo(env)
-    agent = RandomAgent(None, env, None)
-    runner = EpisodeRunner()
-    D = runner(agent, env, T)
-    for traj in D:
-        Qs = returns(gamma, traj.rewards)
-        assert np.allclose(ys[len(traj)], Qs)
-    
-    # Raw test
-    D = Trajectory()
-    D.dones = [False, False, True]
-    D.rewards = [1, 2, 3]
-    out = returns(1.0, D.rewards)
-    assert np.allclose(out, [6, 5, 3])
-    out = returns(0.1, D.rewards)
-    assert np.allclose(out, [1.23, 2.3, 3])
-    
-    D = Trajectory()
-    D.dones = [False, False, False, False, False]
-    D.rewards = [1, 2, 3, 4, 5]
-    out = returns(1.0, D.rewards)
-    assert np.allclose(out, [15, 14, 12, 9, 5])
-    out = returns(0.1, D.rewards)
-    assert np.allclose(out, [1.2345, 2.345, 3.45, 4.5, 5])
-    
-    D = Trajectory()
-    D.dones = [False, False, False, False, False, False, False, True]
-    D.rewards = [1, 2, 3, 4, 5, 6, 7, 8]
-    out = returns(1.0, D.rewards)
-    assert np.allclose(out, [36, 35, 33, 30, 26, 21, 15, 8])
-    out = returns(0.1, D.rewards)
-    assert np.allclose(out, [1.2345678, 2.345678, 3.45678, 4.5678, 5.678, 6.78, 7.8, 8])
-    
-    
-@pytest.mark.parametrize('gamma', [0.1, 0.5])
-@pytest.mark.parametrize('last_V', [0.0, 2.0])
+
+@pytest.mark.parametrize('gamma', [0.1, 0.99, 1.0])
+@pytest.mark.parametrize('last_V', [-3.0, 0.0, 2.0])
 def test_bootstrapped_returns(gamma, last_V):
-    D = Trajectory()
-    dones = [False, False, False, False, False]
-    infos = [{}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V)), 
+         0.3 + gamma*(0.4 + gamma*last_V), 
+         0.4 + gamma*last_V]
+    reach_terminal = False
+    rewards = [0.1, 0.2, 0.3, 0.4]
+    assert np.allclose(bootstrapped_returns(gamma, rewards, last_V, reach_terminal), y)
+    assert np.allclose(bootstrapped_returns(gamma, rewards, torch.tensor(last_V), reach_terminal), y)
+    
+    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0))), 
+         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0)), 
+         0.3 + gamma*(0.4 + gamma*last_V*0.0), 
+         0.4 + gamma*last_V*0.0]
+    reach_terminal = True
+    rewards = [0.1, 0.2, 0.3, 0.4]
+    assert np.allclose(bootstrapped_returns(gamma, rewards, last_V, reach_terminal), y)
+    assert np.allclose(bootstrapped_returns(gamma, rewards, torch.tensor(last_V), reach_terminal), y)
+    
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V))), 
          0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)), 
          0.4 + gamma*(0.5 + gamma*last_V), 
          0.5 + gamma*last_V]
-    assert np.allclose(out, y)
+    reach_terminal = False
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
+    assert np.allclose(bootstrapped_returns(gamma, rewards, last_V, reach_terminal), y)
+    assert np.allclose(bootstrapped_returns(gamma, rewards, torch.tensor(last_V), reach_terminal), y)
     
-    D = Trajectory()
-    dones = [False, False, False, True]
-    infos = [{}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4]
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
-    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0))), 
-         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V*0.0)), 
-         0.3 + gamma*(0.4 + gamma*last_V*0.0), 
-         0.4 + gamma*last_V*0.0]
-    assert np.allclose(out, y)
-    
-    D.step_infos[-1].done = False
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
-    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V))), 
-         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*last_V)), 
-         0.3 + gamma*(0.4 + gamma*last_V), 
-         0.4 + gamma*last_V]
-    assert np.allclose(out, y)
-    
-    D = Trajectory()
-    dones = [False, False, False, False, True]
-    infos = [{}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
     y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V*0.0)))), 
          0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V*0.0))), 
          0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V*0.0)), 
          0.4 + gamma*(0.5 + gamma*last_V*0.0),
          0.5 + gamma*last_V*0.0]
-    assert np.allclose(out, y)
-    
-    D.step_infos[-1].done = False
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
-    y = [0.1 + gamma*(0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)))), 
-         0.2 + gamma*(0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V))), 
-         0.3 + gamma*(0.4 + gamma*(0.5 + gamma*last_V)), 
-         0.4 + gamma*(0.5 + gamma*last_V),
-         0.5 + gamma*last_V]
-    assert np.allclose(out, y)
-    
-    D = Trajectory()
-    dones = [False, False]
-    infos = [{}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2]
-    out = bootstrapped_returns(gamma, D.rewards, last_V, D.reach_terminal)
-    y = [0.1 + gamma*(0.2 + gamma*last_V), 
-         0.2 + gamma*last_V]
-    assert np.allclose(out, y)
-    
+    reach_terminal = True
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5]
+    assert np.allclose(bootstrapped_returns(gamma, rewards, last_V, reach_terminal), y)
+    assert np.allclose(bootstrapped_returns(gamma, rewards, torch.tensor(last_V), reach_terminal), y)
 
-@pytest.mark.parametrize('gamma', [0.1, 0.5])
-def test_td0_target(gamma):
-    D = Trajectory()
-    dones = [False, False, False, True]
-    infos = [{}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4]
-    Vs = [1, 2, 3, 4]
-    out = td0_target(gamma, D.rewards, Vs, 40, D.reach_terminal)
+
+@pytest.mark.parametrize('gamma', [0.1, 0.99, 1.0])
+@pytest.mark.parametrize('last_V', [-3.0, 0.0, 2.0])
+def test_td0_target(gamma, last_V):
     y = [0.1 + gamma*2, 
          0.2 + gamma*3,
          0.3 + gamma*4, 
-         0.4 + gamma*40*0.0]
-    assert np.allclose(out, y)
+         0.4 + gamma*last_V*0.0]
+    rewards = [0.1, 0.2, 0.3, 0.4]
+    Vs = [1, 2, 3, 4]
+    reach_terminal = True
+    assert np.allclose(td0_target(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_target(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
     
-    D.step_infos[-1].done = False
-    out = td0_target(gamma, D.rewards, Vs, 40, D.reach_terminal)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3,
          0.3 + gamma*4, 
-         0.4 + gamma*40]
-    assert np.allclose(out, y)
-
-    D = Trajectory()
-    dones = [False, False, False, False]
-    infos = [{}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4]
+         0.4 + gamma*last_V]
+    rewards = [0.1, 0.2, 0.3, 0.4]
     Vs = [1, 2, 3, 4]
-    out = td0_target(gamma, D.rewards, Vs, 40, D.reach_terminal)
-    y = [0.1 + gamma*2, 
-         0.2 + gamma*3, 
-         0.3 + gamma*4,
-         0.4 + gamma*40]
-    assert np.allclose(out, y)
+    reach_terminal = False
+    assert np.allclose(td0_target(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_target(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
     
-    D = Trajectory()
-    dones = [False, False, False, False, False, True]
-    infos = [{}, {}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
-    Vs = [1, 2, 3, 4, 5, 6]
-    out = td0_target(gamma, D.rewards, Vs, 60, D.reach_terminal)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3, 
          0.3 + gamma*4, 
          0.4 + gamma*5, 
          0.5 + gamma*6, 
-         0.6 + gamma*60*0.0]
-    assert np.allclose(out, y)
+         0.6 + gamma*last_V*0.0]
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    Vs = [1, 2, 3, 4, 5, 6]
+    reach_terminal = True
+    assert np.allclose(td0_target(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_target(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
     
-    D.step_infos[-1].done = False
-    out = td0_target(gamma, D.rewards, Vs, 60, D.reach_terminal)
     y = [0.1 + gamma*2, 
          0.2 + gamma*3, 
          0.3 + gamma*4, 
          0.4 + gamma*5, 
          0.5 + gamma*6, 
-         0.6 + gamma*60]
-    assert np.allclose(out, y)
-
-
-@pytest.mark.parametrize('gamma', [0.1, 0.5])
-def test_td0_error(gamma):
-    D = Trajectory()
-    dones = [False, False, False, True]
-    infos = [{}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4]
-    Vs = [1, 2, 3, 4]
-    out = td0_error(gamma, D.rewards, Vs, 40, D.reach_terminal)
-    y = [0.1 + gamma*2 - 1, 
-         0.2 + gamma*3 - 2,
-         0.3 + gamma*4 - 3, 
-         0.4 + gamma*40*0.0 - 4]
-    assert np.allclose(out, y)
-    
-    D.step_infos[-1].done = False
-    out = td0_error(gamma, D.rewards, Vs, 40, D.reach_terminal)
-    y = [0.1 + gamma*2 - 1, 
-         0.2 + gamma*3 - 2,
-         0.3 + gamma*4 - 3, 
-         0.4 + gamma*40 - 4]
-    assert np.allclose(out, y)
-
-    D = Trajectory()
-    dones = [False, False, False, True]
-    infos = [{}, {}, {}, {'TimeLimit.truncated': True}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4]
-    Vs = [1, 2, 3, 4]
-    out = td0_error(gamma, D.rewards, Vs, 40, D.reach_terminal)
-    y = [0.1 + gamma*2 - 1, 
-         0.2 + gamma*3 - 2, 
-         0.3 + gamma*4 - 3,
-         0.4 + gamma*40 - 4]
-    assert np.allclose(out, y)
-    
-    D = Trajectory()
-    dones = [False, False, False, False, False, True]
-    infos = [{}, {}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+         0.6 + gamma*last_V]
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
     Vs = [1, 2, 3, 4, 5, 6]
-    out = td0_error(gamma, D.rewards, Vs, 60, D.reach_terminal)
+    reach_terminal = False
+    assert np.allclose(td0_target(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_target(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
+
+
+@pytest.mark.parametrize('gamma', [0.1, 0.99, 1.0])
+@pytest.mark.parametrize('last_V', [-3.0, 0.0, 2.0])
+def test_td0_error(gamma, last_V):
     y = [0.1 + gamma*2 - 1, 
-         0.2 + gamma*3 - 2, 
+         0.2 + gamma*3 - 2,
          0.3 + gamma*4 - 3, 
-         0.4 + gamma*5 - 4, 
-         0.5 + gamma*6 - 5,  
-         0.6 + gamma*60*0.0 - 6]
-    assert np.allclose(out, y)
+         0.4 + gamma*last_V*0.0 - 4]
+    rewards = [0.1, 0.2, 0.3, 0.4]
+    Vs = [1, 2, 3, 4]
+    reach_terminal = True
+    assert np.allclose(td0_error(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_error(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
     
-    D.step_infos[-1].done = False
-    out = td0_error(gamma, D.rewards, Vs, 60, D.reach_terminal)
+    y = [0.1 + gamma*2 - 1, 
+         0.2 + gamma*3 - 2,
+         0.3 + gamma*4 - 3, 
+         0.4 + gamma*last_V - 4]
+    rewards = [0.1, 0.2, 0.3, 0.4]
+    Vs = [1, 2, 3, 4]
+    reach_terminal = False
+    assert np.allclose(td0_error(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_error(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
+    
     y = [0.1 + gamma*2 - 1, 
          0.2 + gamma*3 - 2, 
          0.3 + gamma*4 - 3, 
          0.4 + gamma*5 - 4, 
          0.5 + gamma*6 - 5,  
-         0.6 + gamma*60 - 6]
-    assert np.allclose(out, y)
+         0.6 + gamma*last_V*0.0 - 6]
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    Vs = [1, 2, 3, 4, 5, 6]
+    reach_terminal = True
+    assert np.allclose(td0_error(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_error(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
+    
+    y = [0.1 + gamma*2 - 1, 
+         0.2 + gamma*3 - 2, 
+         0.3 + gamma*4 - 3, 
+         0.4 + gamma*5 - 4, 
+         0.5 + gamma*6 - 5,  
+         0.6 + gamma*last_V - 6]
+    rewards = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    Vs = [1, 2, 3, 4, 5, 6]
+    reach_terminal = False
+    assert np.allclose(td0_error(gamma, rewards, Vs, last_V, reach_terminal), y)
+    assert np.allclose(td0_error(gamma, rewards, torch.tensor(Vs), torch.tensor(last_V), reach_terminal), y)
 
 
 def test_gae():
-    D = Trajectory()
-    dones = [False, False, True]
-    infos = [{}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [1, 2, 3]
+    rewards = [1, 2, 3]
     Vs = [0.1, 1.1, 2.1]
-    out = gae(1.0, 0.5, D.rewards, Vs, 10, D.reach_terminal)
-    assert np.allclose(out, [3.725, 3.45, 0.9])
-    out = gae(0.1, 0.2, D.rewards, Vs, 10, D.reach_terminal)
-    assert np.allclose(out, [1.03256, 1.128, 0.9])
+    assert np.allclose(gae(1.0, 0.5, rewards, Vs, 10, True), 
+                       [3.725, 3.45, 0.9])
+    assert np.allclose(gae(1.0, 0.5, rewards, torch.tensor(Vs), torch.tensor(10), True), 
+                       [3.725, 3.45, 0.9])
+    assert np.allclose(gae(0.1, 0.2, rewards, Vs, 10, True), 
+                       [1.03256, 1.128, 0.9])
+    assert np.allclose(gae(0.1, 0.2, rewards, torch.tensor(Vs), torch.tensor(10), True), 
+                       [1.03256, 1.128, 0.9])
     
-    D = Trajectory()
-    dones = [False, False, True]
-    infos = [{}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [1, 2, 3]
+    rewards = [1, 2, 3]
     Vs = [0.5, 1.5, 2.5]
-    out = gae(1.0, 0.5, D.rewards, Vs, 99, D.reach_terminal)
-    assert np.allclose(out, [3.625, 3.25, 0.5])
-    out = gae(0.1, 0.2, D.rewards, Vs, 99, D.reach_terminal)
-    assert np.allclose(out, [0.6652, 0.76, 0.5])
-
-    D = Trajectory()
-    dones = [False, False, False, False, False]
-    infos = [{}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [1, 2, 3, 4, 5]
+    assert np.allclose(gae(1.0, 0.5, rewards, Vs, 99, True), 
+                       [3.625, 3.25, 0.5])
+    assert np.allclose(gae(1.0, 0.5, rewards, torch.tensor(Vs), torch.tensor(99), True), 
+                       [3.625, 3.25, 0.5])
+    assert np.allclose(gae(0.1, 0.2, rewards, Vs, 99, True), 
+                       [0.6652, 0.76, 0.5])
+    assert np.allclose(gae(0.1, 0.2, rewards, torch.tensor(Vs), torch.tensor(99), True), 
+                       [0.6652, 0.76, 0.5])
+    
+    rewards = [1, 2, 3, 4, 5]
     Vs = [0.5, 1.5, 2.5, 3.5, 4.5]
-    out = gae(1.0, 0.5, D.rewards, Vs, 20, D.reach_terminal)
-    assert np.allclose(out, [6.40625, 8.8125, 11.625, 15.25, 20.5])
-    out = gae(0.1, 0.2, D.rewards, Vs, 20, D.reach_terminal)
-    assert np.allclose(out, [0.665348, 0.7674, 0.87, 1, 2.5])
-    
-    D = Trajectory()
-    dones = [False, False, False, False, False]
-    infos = [{}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [1, 2, 3, 4, 5]
+    assert np.allclose(gae(1.0, 0.5, rewards, Vs, 20, False), 
+                       [6.40625, 8.8125, 11.625, 15.25, 20.5])
+    assert np.allclose(gae(1.0, 0.5, rewards, torch.tensor(Vs), torch.tensor(20), False), 
+                       [6.40625, 8.8125, 11.625, 15.25, 20.5])
+    assert np.allclose(gae(0.1, 0.2, rewards, Vs, 20, False), 
+                       [0.665348, 0.7674, 0.87, 1, 2.5])
+    assert np.allclose(gae(0.1, 0.2, rewards, torch.tensor(Vs), torch.tensor(20), False), 
+                       [0.665348, 0.7674, 0.87, 1, 2.5])
+
+    rewards = [1, 2, 3, 4, 5]
     Vs = [0.1, 1.1, 2.1, 3.1, 4.1]
-    out = gae(1.0, 0.5, D.rewards, Vs, 10, D.reach_terminal)
-    assert np.allclose(out, [5.80625, 7.6125, 9.225, 10.45, 10.9])
-    out = gae(0.1, 0.2, D.rewards, Vs, 10, D.reach_terminal)
-    assert np.allclose(out, [1.03269478, 1.1347393, 1.23696, 1.348, 1.9])
+    assert np.allclose(gae(1.0, 0.5, rewards, Vs, 10, False), 
+                       [5.80625, 7.6125, 9.225, 10.45, 10.9])
+    assert np.allclose(gae(1.0, 0.5, rewards, torch.tensor(Vs), torch.tensor(10), False), 
+                       [5.80625, 7.6125, 9.225, 10.45, 10.9])
+    assert np.allclose(gae(0.1, 0.2, rewards, Vs, 10, False), 
+                       [1.03269478, 1.1347393, 1.23696, 1.348, 1.9])
+    assert np.allclose(gae(0.1, 0.2, rewards, torch.tensor(Vs), torch.tensor(10), False), 
+                       [1.03269478, 1.1347393, 1.23696, 1.348, 1.9])
     
-    D = Trajectory()
-    dones = [False, False, False, False, False, False, False, True]
-    infos = [{}, {}, {}, {}, {}, {}, {}, {}]
-    D.step_infos = [StepInfo(done, info) for done, info in zip(dones, infos)]
-    D.rewards = [1, 2, 3, 4, 5, 6, 7, 8]
+    rewards = [1, 2, 3, 4, 5, 6, 7, 8]
     Vs = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-    out = gae(1.0, 0.5, D.rewards, Vs, 30, D.reach_terminal)
-    assert np.allclose(out, [5.84375, 7.6875, 9.375, 10.75, 11.5, 11., 8, 0.])
-    out = gae(0.1, 0.2, D.rewards, Vs, 30, D.reach_terminal)
-    assert np.allclose(out, [0.206164098, 0.308204915, 0.410245728, 0.5122864, 0.61432, 0.716, 0.8, 0])
+    assert np.allclose(gae(1.0, 0.5, rewards, Vs, 30, True), 
+                       [5.84375, 7.6875, 9.375, 10.75, 11.5, 11., 8, 0.])
+    assert np.allclose(gae(1.0, 0.5, rewards, torch.tensor(Vs), torch.tensor(30), True), 
+                       [5.84375, 7.6875, 9.375, 10.75, 11.5, 11., 8, 0.])
+    assert np.allclose(gae(0.1, 0.2, rewards, Vs, 30, True), 
+                       [0.206164098, 0.308204915, 0.410245728, 0.5122864, 0.61432, 0.716, 0.8, 0])
+    assert np.allclose(gae(0.1, 0.2, rewards, torch.tensor(Vs), torch.tensor(30), True), 
+                       [0.206164098, 0.308204915, 0.410245728, 0.5122864, 0.61432, 0.716, 0.8, 0])
 
 
 @pytest.mark.parametrize('gamma', [0.1, 1.0])
@@ -415,8 +281,8 @@ def test_vtrace(gamma, last_V, reach_terminal, clip_rho, clip_pg_rho):
     deltas = clipped_rhos*td0_error(gamma, Rs, Vs, last_V, reach_terminal)
     
     vs = np.array([Vs[0] + gamma**0*1*deltas[0] + gamma*cs[0]*deltas[1] + gamma**2*cs[0]*cs[1]*deltas[2], 
-               Vs[1] + gamma**0*1*deltas[1] + gamma*cs[1]*deltas[2], 
-               Vs[2] + gamma**0*1*deltas[2]])
+                   Vs[1] + gamma**0*1*deltas[1] + gamma*cs[1]*deltas[2], 
+                   Vs[2] + gamma**0*1*deltas[2]])
     vs_next = np.append(vs[1:], (1. - reach_terminal)*last_V)
     clipped_pg_rhos = np.minimum(clip_pg_rho, rhos)
     As = clipped_pg_rhos*(Rs + gamma*vs_next - Vs)

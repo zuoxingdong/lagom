@@ -166,7 +166,7 @@ def test_pickle_yaml():
 
 def test_timed():
     with timed('red', 'bold'):
-        a = 5
+        print('ok')
 
 
 def naive_primality(integer):
