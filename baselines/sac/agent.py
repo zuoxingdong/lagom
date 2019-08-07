@@ -5,26 +5,23 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Independent
 from torch.distributions import Normal
-from torch.distributions import Transform
 from torch.distributions import TransformedDistribution
+from torch.distributions import Transform
 from torch.distributions import constraints
 
 from gym.spaces import flatdim
 from lagom import BaseAgent
-from lagom.transform import describe
-from lagom.utils import pickle_dump
 from lagom.utils import tensorify
 from lagom.utils import numpify
 from lagom.networks import Module
 from lagom.networks import make_fc
 from lagom.networks import ortho_init
+from lagom.transform import describe
 
 
 # TODO: import from PyTorch when PR merged: https://github.com/pytorch/pytorch/pull/19785
 class TanhTransform(Transform):
-    r"""
-    Transform via the mapping :math:`y = \tanh(x)`.
-    """
+    r"""Transform via the mapping :math:`y = \tanh(x)`."""
     domain = constraints.real
     codomain = constraints.interval(-1.0, 1.0)
     bijective = True
@@ -52,6 +49,7 @@ class TanhTransform(Transform):
 class Actor(Module):
     LOGSTD_MAX = 2
     LOGSTD_MIN = -20
+
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
         self.config = config
@@ -127,7 +125,6 @@ class Agent(BaseAgent):
         self.critic = Critic(config, env, device, **kwargs)
         self.critic_target = Critic(config, env, device, **kwargs)
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic_target.eval()
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
         self.target_entropy = -float(flatdim(env.action_space))
@@ -137,6 +134,7 @@ class Agent(BaseAgent):
         self.optimizer_zero_grad = lambda: [opt.zero_grad() for opt in [self.actor_optimizer, 
                                                                         self.critic_optimizer, 
                                                                         self.log_alpha_optimizer]]
+        self.total_timestep = 0
         
     @property
     def alpha(self):
@@ -147,54 +145,46 @@ class Agent(BaseAgent):
         for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
-    def choose_action(self, obs, **kwargs):
-        obs = tensorify(obs, self.device)
+    def choose_action(self, x, **kwargs):
+        obs = tensorify(x.observation, self.device).unsqueeze(0)
+        with torch.no_grad():
+            if kwargs['mode'] == 'train':
+                action = numpify(self.actor(obs).sample(), 'float')
+            elif kwargs['mode'] == 'eval':
+                action = numpify(torch.tanh(self.actor.mean_forward(obs)), 'float')
         out = {}
-        if kwargs['mode'] == 'train':
-            dist = self.actor(obs)
-            action = dist.rsample()
-            out['action'] = action
-            out['action_logprob'] = dist.log_prob(action)
-        elif kwargs['mode'] == 'stochastic':
-            with torch.no_grad():
-                out['action'] = numpify(self.actor(obs).sample(), 'float')
-        elif kwargs['mode'] == 'eval':
-            with torch.no_grad():
-                out['action'] = numpify(torch.tanh(self.actor.mean_forward(obs)), 'float')
-        else:
-            raise NotImplementedError
+        out['raw_action'] = action.squeeze(0)
         return out
 
     def learn(self, D, **kwargs):
         replay = kwargs['replay']
-        episode_length = kwargs['episode_length']
-        out = {}
-        out['actor_loss'] = []
-        out['critic_loss'] = []
-        out['alpha_loss'] = []
+        T = kwargs['T']
+        list_actor_loss = []
+        list_critic_loss = []
+        list_alpha_loss = []
         Q1_vals = []
         Q2_vals = []
         logprob_vals = []
-        for i in range(episode_length):
+        for i in range(T):
             observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
             
             Qs1, Qs2 = self.critic(observations, actions)
             with torch.no_grad():
-                out_actor = self.choose_action(next_observations, mode='train')
-                next_actions = out_actor['action']
-                next_actions_logprob = out_actor['action_logprob'].unsqueeze(-1)
+                action_dist = self.actor(next_observations)
+                next_actions = action_dist.rsample()
+                next_actions_logprob = action_dist.log_prob(next_actions).unsqueeze(-1)
                 next_Qs1, next_Qs2 = self.critic_target(next_observations, next_actions)
                 next_Qs = torch.min(next_Qs1, next_Qs2) - self.alpha.detach()*next_actions_logprob
-                Q_targets = rewards + self.config['agent.gamma']*masks*next_Qs
-            critic_loss = F.mse_loss(Qs1, Q_targets.detach()) + F.mse_loss(Qs2, Q_targets.detach())
+                targets = rewards + self.config['agent.gamma']*masks*next_Qs
+            critic_loss = F.mse_loss(Qs1, targets.detach()) + F.mse_loss(Qs2, targets.detach())
             self.optimizer_zero_grad()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
             self.critic_optimizer.step()
             
-            out_actor = self.choose_action(observations, mode='train')
-            policy_actions = out_actor['action']
-            policy_actions_logprob = out_actor['action_logprob'].unsqueeze(-1)
+            action_dist = self.actor(observations)
+            policy_actions = action_dist.rsample()
+            policy_actions_logprob = action_dist.log_prob(policy_actions).unsqueeze(-1)
             actor_Qs1, actor_Qs2 = self.critic(observations, policy_actions)
             actor_Qs = torch.min(actor_Qs1, actor_Qs2)
             actor_loss = torch.mean(self.alpha.detach()*policy_actions_logprob - actor_Qs)
@@ -209,25 +199,26 @@ class Agent(BaseAgent):
             self.log_alpha_optimizer.step()
 
             self.polyak_update_target()
-
-            out['critic_loss'].append(critic_loss)
-            out['actor_loss'].append(actor_loss)
-            out['alpha_loss'].append(alpha_loss)
+            list_actor_loss.append(actor_loss)
+            list_critic_loss.append(critic_loss)
+            list_alpha_loss.append(alpha_loss)
             Q1_vals.append(Qs1)
             Q2_vals.append(Qs2)
             logprob_vals.append(policy_actions_logprob)
-        out['actor_loss'] = torch.tensor(out['actor_loss']).mean().item()
+        self.total_timestep += T
+        
+        out = {}
+        out['actor_loss'] = torch.tensor(list_actor_loss).mean(0).item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = torch.tensor(out['critic_loss']).mean().item()
+        out['critic_loss'] = torch.tensor(list_critic_loss).mean(0).item()
         out['critic_grad_norm'] = critic_grad_norm
         describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
         out['Q1'] = describe_it(Q1_vals)
         out['Q2'] = describe_it(Q2_vals)
         out['logprob'] = describe_it(logprob_vals)
-        out['alpha_loss'] = torch.tensor(out['alpha_loss']).mean().item()
+        out['alpha_loss'] = torch.tensor(list_alpha_loss).mean(0).item()
         out['alpha'] = self.alpha.item()
         return out
     
     def checkpoint(self, logdir, num_iter):
         self.save(logdir/f'agent_{num_iter}.pth')
-        # TODO: save normalization moments

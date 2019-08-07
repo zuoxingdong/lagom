@@ -1,5 +1,4 @@
 import numpy as np
-
 from gym.spaces import flatdim
 from lagom.utils import tensorify
 
@@ -22,7 +21,7 @@ class ReplayBuffer(object):
     def __len__(self):
         return self.size
 
-    def add(self, observation, action, reward, next_observation, terminal):  # input must be non-batched
+    def _add(self, observation, action, reward, next_observation, terminal):
         self.observations[self.pointer] = observation
         self.actions[self.pointer] = action
         self.rewards[self.pointer] = reward
@@ -31,6 +30,10 @@ class ReplayBuffer(object):
         
         self.pointer = (self.pointer+1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
+        
+    def add(self, traj):
+        for t in range(1, traj.T+1):
+            self._add(traj[t-1].observation, traj.actions[t-1], traj[t].reward, traj[t].observation, traj[t].terminal())
 
     def sample(self, batch_size):
         idx = np.random.randint(0, self.size, size=batch_size)
