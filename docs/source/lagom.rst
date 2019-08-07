@@ -9,6 +9,17 @@ Agent
 
 .. autoclass:: RandomAgent
     :members:
+    
+Data
+----------------------------
+.. autoclass:: StepType
+    :members:
+    
+.. autoclass:: TimeStep
+    :members:
+    
+.. autoclass:: Trajectory
+    :members:
 
 Logger
 ----------------------------
@@ -26,6 +37,9 @@ Runner
     :members:
 
 .. autoclass:: EpisodeRunner
+    :members:
+    
+.. autoclass:: StepRunner
     :members:
     
 Evolution Strategies

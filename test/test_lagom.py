@@ -3,19 +3,18 @@ import pytest
 import numpy as np
 
 import gym
-from gym.wrappers import TimeLimit
 
-from lagom import RandomAgent
 from lagom import Logger
+from lagom import RandomAgent
+from lagom import StepType
+from lagom import TimeStep
+from lagom import Trajectory
 from lagom import EpisodeRunner
-from lagom.metric import Trajectory
-from lagom.envs import make_vec_env
-from lagom.envs.wrappers import VecStepInfo
+from lagom import StepRunner
+from lagom.envs import TimeStepEnv
 from lagom.utils import pickle_load
 
-from .sanity_env import SanityEnv
 
-    
 def test_logger():
     logger = Logger()
 
@@ -70,57 +69,130 @@ def test_logger():
     assert len(logger.logs) == 0
 
     
-@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
-@pytest.mark.parametrize('num_env', [1, 5])
-def test_random_agent(env_id, num_env):
-    make_env = lambda: gym.make(env_id)
-    env = make_env()
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize('num_envs', [1, 5])
+def test_random_agent(env_id, num_envs):
+    # vanilla environment
+    env = gym.make(env_id)
     agent = RandomAgent(None, env, 'cpu')
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
     assert out['raw_action'] in env.action_space
     del env, agent, out
     
-    env = make_vec_env(make_env, num_env, 0)
+    # vectorized environment
+    env = gym.vector.make(env_id, num_envs)
     agent = RandomAgent(None, env, 'cpu')
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
-    assert len(out['raw_action']) == num_env
-    assert all(action in env.action_space for action in out['raw_action'])
+    assert isinstance(out['raw_action'], list)
+    assert len(out['raw_action']) == env.num_envs
+    assert all([action in env.action_space for action in out['raw_action']])
 
 
-@pytest.mark.parametrize('env_id', ['Sanity', 'CartPole-v1', 'Pendulum-v0', 'Pong-v0'])
-@pytest.mark.parametrize('num_env', [1, 3])
-@pytest.mark.parametrize('init_seed', [0, 10])
-@pytest.mark.parametrize('T', [1, 5, 100])
-def test_episode_runner(env_id, num_env, init_seed, T):    
-    if env_id == 'Sanity':
-        make_env = lambda: TimeLimit(SanityEnv())
-    else:
-        make_env = lambda: gym.make(env_id)
-    env = make_vec_env(make_env, num_env, init_seed)
-    env = VecStepInfo(env)
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+def test_timestep(env_id):
+    env = gym.make(env_id)
+    observation = env.reset()
+    timestep = TimeStep(StepType.FIRST, observation=observation, reward=None, done=None, info=None)
+    assert timestep.first()
+    assert not timestep.mid() and not timestep.last()
+    assert not timestep.time_limit() and not timestep.terminal()
+
+    for t in range(env.spec.max_episode_steps):
+        observation, reward, done, info = env.step(env.action_space.sample())
+        if done:
+            timestep = TimeStep(StepType.LAST, observation=observation, reward=reward, done=done, info=info)
+            assert timestep.last()
+            assert not timestep.first() and not timestep.mid()
+            if 'TimeLimit.truncated' in info:
+                assert timestep.time_limit() and not timestep.terminal()
+            else:
+                assert timestep.terminal() and not timestep.time_limit()
+            break
+        else:
+            timestep = TimeStep(StepType.MID, observation=observation, reward=reward, done=done, info=info)
+            assert timestep.mid()
+            assert not timestep.first() and not timestep.last()
+            assert not timestep.time_limit() and not timestep.terminal()
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+def test_trajectory(env_id):
+    env = gym.make(env_id)
+    env = TimeStepEnv(env)
+    traj = Trajectory()
+    assert len(traj) == 0 and traj.T == 0
+
+    with pytest.raises(AssertionError):
+        traj.add(TimeStep(StepType.MID, 1, 2, True, {}), 0.5)
+
+    timestep = env.reset()
+    traj.add(timestep, None)
+    assert len(traj) == 1 and traj.T == 0
+
+    with pytest.raises(AssertionError):
+        traj.add(TimeStep(StepType.MID, 1, 2, True, {}), None)
+
+    while not timestep.last():
+        action = env.action_space.sample()
+        timestep = env.step(action)
+        traj.add(timestep, action)
+        if not timestep.last():
+            assert len(traj) == traj.T + 1
+            assert not traj.finished
+    with pytest.raises(AssertionError):
+        traj.add(timestep, 5.3)
+    assert traj.finished
+    assert traj.reach_time_limit == traj[-1].time_limit()
+    assert traj.reach_terminal == traj[-1].terminal()
+    assert np.asarray(traj.observations).shape == (traj.T + 1, *env.observation_space.shape)
+    assert len(traj.actions) == traj.T
+    assert len(traj.rewards) == traj.T
+    assert len(traj.dones) == traj.T
+    assert len(traj.infos) == traj.T
+    if traj.reach_time_limit:
+        assert len(traj.get_infos('TimeLimit.truncated')) == 1
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize('N', [1, 5, 10])
+def test_episode_runner(env_id, N):
+    env = gym.make(env_id)
+    env = TimeStepEnv(env)
     agent = RandomAgent(None, env, None)
     runner = EpisodeRunner()
-    
-    if num_env > 1:
-        with pytest.raises(AssertionError):
-            D = runner(agent, env, T)
-    else:
-        with pytest.raises(AssertionError):
-            runner(agent, env.env, T)  # must be VecStepInfo
-        D = runner(agent, env, T)
-        for traj in D:
-            assert isinstance(traj, Trajectory)
-            assert len(traj) <= env.spec.max_episode_steps
-            assert traj.numpy_observations.shape == (len(traj) + 1, *env.observation_space.shape)
-            if isinstance(env.action_space, gym.spaces.Discrete):
-                assert traj.numpy_actions.shape == (len(traj),)
-            else:
-                assert traj.numpy_actions.shape == (len(traj), *env.action_space.shape)
-            assert traj.numpy_rewards.shape == (len(traj),)
-            assert traj.numpy_dones.shape == (len(traj), )
-            assert traj.numpy_masks.shape == (len(traj), )
-            assert len(traj.step_infos) == len(traj)
-            if traj.completed:
-                assert np.allclose(traj.observations[-1], traj.step_infos[-1]['last_observation'])
+    D = runner(agent, env, N)
+    assert len(D) == N
+    assert all([isinstance(d, Trajectory) for d in D])
+    assert all([traj.finished for traj in D])
+    assert all([traj[0].first() for traj in D])
+    assert all([traj[-1].last() for traj in D])
+    for traj in D:
+        for timestep in traj[1:-1]:
+            assert timestep.mid()
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize('T', [1, 100, 500])
+def test_step_runner(env_id, T):
+    env = gym.make(env_id)
+    env = TimeStepEnv(env)
+    agent = RandomAgent(None, env, None)
+
+    runner = StepRunner(reset_on_call=True)
+    D = runner(agent, env, T)
+    assert runner.observation is None
+    assert all([isinstance(traj, Trajectory) for traj in D])
+    assert all([traj[0].first() for traj in D])
+    assert all([traj[-1].last() for traj in D[:-1]])
+
+    runner = StepRunner(reset_on_call=False)
+    D = runner(agent, env, 1)
+    assert D[0][0].first()
+    assert len(D[0]) == 2
+    assert np.allclose(D[0][-1].observation, runner.observation)
+    D2 = runner(agent, env, 3)
+    assert np.allclose(D2[-1][-1].observation, runner.observation)
+    assert np.allclose(D[0][-1].observation, D2[0][0].observation)
+    assert D2[0][0].first() and D2[0][0].reward is None
