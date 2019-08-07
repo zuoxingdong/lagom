@@ -14,6 +14,7 @@ from gym.wrappers import ClipReward
 from lagom.envs import RecordEpisodeStatistics
 from lagom.envs import NormalizeObservation
 from lagom.envs import NormalizeReward
+from lagom.envs import TimeStepEnv
 from lagom.envs import make_vec_env
 from lagom.envs import VecEnv
 from lagom.envs.wrappers import get_wrapper
@@ -119,8 +120,8 @@ def test_normalize_reward(env_id, gamma):
     wrapped_env.seed(0)
 
     for n in range(10):
-        obs = env.reset()
-        wrapped_obs = wrapped_env.reset()
+        env.reset()
+        wrapped_env.reset()
         G = 0.0
         for t in range(env.spec.max_episode_steps):
             action = env.action_space.sample()
@@ -140,6 +141,38 @@ def test_normalize_reward(env_id, gamma):
 
             assert np.allclose(wrapped_env.reward_moments.mean, mean, atol=1e-4)
             assert np.allclose(wrapped_env.reward_moments.var, var, atol=1e-3)
+            
+            
+@pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
+def test_timestep_env(env_id):
+    env = gym.make(env_id)
+    wrapped_env = TimeStepEnv(gym.make(env_id))
+
+    env.seed(0)
+    wrapped_env.seed(0)
+
+    obs = env.reset()
+    timestep = wrapped_env.reset()
+    assert timestep.first()
+    assert np.allclose(timestep.observation, obs)
+
+    for t in range(env.spec.max_episode_steps):
+        action = env.action_space.sample()
+        obs, reward, done, info = env.step(action)
+        timestep = wrapped_env.step(action)
+        assert np.allclose(timestep.observation, obs)
+        assert timestep.reward == reward
+        assert timestep.done == done
+        assert timestep.info == info
+        if done:
+            assert timestep.last()
+            if 'TimeLimit.truncated' in info and info['TimeLimit.truncated']:
+                assert timestep.time_limit()
+            else:
+                assert timestep.terminal()
+            break
+        else:
+            assert timestep.mid()
     
 
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
@@ -243,7 +276,7 @@ def test_gray_scale_observation(env_id, keep_dim):
     env = gym.make(env_id)
     wrapped_env = GrayScaleObservation(env, keep_dim=keep_dim)
 
-    obs = env.reset()
+    env.reset()
     wrapped_obs = wrapped_env.reset()
 
     assert env.observation_space.shape[:2] == wrapped_env.observation_space.shape[:2]
