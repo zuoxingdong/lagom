@@ -7,8 +7,8 @@ This example includes the implementations of the following reinforcement learnin
 - RL
     - [Vanilla Policy Gradient (VPG)](vpg)
     - [Proximal Policy Optimization (PPO)](ppo)
-    - [Deep Deterministic Policy Gradients (DDPG)](ddpg)
-    - [Twin Delayed DDPG (TD3)](td3)
+    - [Deep Deterministic Policy Gradients (DDPG)](ddpg_td3)
+    - [Twin Delayed DDPG (TD3)](ddpg_td3)
     - [Soft Actor-Critic (SAC)](sac)
     
 # Download loggings for reproducibility
