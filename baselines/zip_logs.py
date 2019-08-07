@@ -23,4 +23,3 @@ with tarfile.open('all_logs.tar.gz', 'x:gz') as tar:
 print('Done !')
 shutil.rmtree(all_logs_path)
 print('Clean up all_logs folder')
-
