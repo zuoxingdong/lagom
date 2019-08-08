@@ -13,6 +13,4 @@ python experiment.py
 One could modify [experiment.py](./experiment.py) to quickly set up different configurations. 
 
 # Results
-
-## MLP policy
-<img src='logs/default/result.png' width='100%'>
+<img src='https://i.imgur.com/1dIlh9O.png' width='100%'>

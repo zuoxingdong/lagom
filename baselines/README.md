@@ -20,7 +20,7 @@ Because the loggings and checkpoint files are very large, putting them in the re
 # Benchmarks
 
 ## ES
-<img src='benchmark_es.png' width='100%'>
+<img src='https://i.imgur.com/fJyy9EH.png' width='100%'>
 
 ## Model-free RL
 <img src='benchmark_rl.png' width='100%'>
