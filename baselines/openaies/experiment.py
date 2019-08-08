@@ -1,29 +1,20 @@
-import os
-from pathlib import Path
-from itertools import count
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool
 import time
-
-import gym
-from gym.spaces import Box
-from gym.wrappers import ClipAction
 
 import numpy as np
 import torch
+import gym
 from lagom import Logger
+from lagom import EpisodeRunner
 from lagom.transform import describe
-from lagom.utils import CloudpickleWrapper  # VERY IMPORTANT
+from lagom.utils import CloudpickleWrapper
 from lagom.utils import pickle_dump
 from lagom.utils import tensorify
 from lagom.utils import set_global_seeds
 from lagom.experiment import Config
 from lagom.experiment import Grid
-from lagom.experiment import Sample
 from lagom.experiment import run_experiment
-from lagom.envs import make_vec_env
-from lagom.envs.wrappers import VecMonitor
-from lagom.envs.wrappers import VecStandardizeObservation
+from lagom.envs import TimeStepEnv
 
 from baselines.openaies.openaies import OpenAIES
 from baselines.openaies.agent import Agent
@@ -33,8 +24,7 @@ config = Config(
     {'log.freq': 10, 
      'checkpoint.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
-     'env.standardize_obs': False,
+     'env.id': Grid(['Acrobot-v1', 'BipedalWalker-v2', 'Pendulum-v0', 'LunarLanderContinuous-v2']), 
      
      'nn.sizes': [64, 64],
      
@@ -42,62 +32,49 @@ config = Config(
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.6,  # initial std
      
-     'train.generations': int(1e3),  # total number of ES generations
-     'train.popsize': 64,
+     'train.generations': 500,  # total number of ES generations
+     'train.popsize': 32,
+     'train.worker_chunksize': 4,  # must be divisible by popsize
      'train.mu0': 0.0,
      'train.std0': 1.0,
      'train.lr': 1e-2,
      'train.lr_decay': 1.0,
      'train.min_lr': 1e-6,
-     'train.sigma_scheduler_args': [1.0, 0.01, 450, 0],
+     'train.sigma_scheduler_args': [1.0, 0.01, 400, 0],
      'train.antithetic': False,
      'train.rank_transform': True
-     
     })
 
 
 def make_env(config, seed, mode):
     assert mode in ['train', 'eval']
-    def _make_env():
-        env = gym.make(config['env.id'])
-        if config['env.clip_action'] and isinstance(env.action_space, Box):
-            env = ClipAction(env)
-        return env
-    env = make_vec_env(_make_env, 1, seed)  # single environment
-    if mode == 'train':
-        env = VecMonitor(env)
-        if config['env.standardize_obs']:
-            env = VecStandardizeObservation(env, clip=5.)
+    env = gym.make(config['env.id'])
+    env.seed(seed)
+    env.observation_space.seed(seed)
+    env.action_space.seed(seed)
+    if config['env.clip_action'] and isinstance(env.action_space, gym.spaces.Box):
+        env = gym.wrappers.ClipAction(env)  # TODO: use tanh to squash policy output when RescaleAction wrapper merged in gym
+    env = TimeStepEnv(env)
     return env
-    
-    
-def initializer(config, seed, device):
+
+
+def fitness(data):
     torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
-    global env
+    config, seed, device, param = data
     env = make_env(config, seed, 'train')
-    global agent
     agent = Agent(config, env, device)
-    
-    
-def fitness(param):
     agent.from_vec(tensorify(param, 'cpu'))
-    R = []
-    H = []
+    runner = EpisodeRunner()
     with torch.no_grad():
-        for i in range(10):
-            observation = env.reset()
-            for t in range(env.spec.max_episode_steps):
-                action = agent.choose_action(observation)['raw_action']
-                observation, reward, done, info = env.step(action)
-                if done[0]:
-                    R.append(info[0]['episode']['return'])
-                    H.append(info[0]['episode']['horizon'])
-                    break
-    return np.mean(R), np.mean(H)
-    
+        D = runner(agent, env, 10)
+    R = np.mean([sum(traj.rewards) for traj in D])
+    H = np.mean([traj.T for traj in D])
+    return R, H
+
 
 def run(config, seed, device, logdir):
     set_global_seeds(seed)
+    torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
     
     print('Initializing...')
     agent = Agent(config, make_env(config, seed, 'eval'), device)
@@ -112,17 +89,18 @@ def run(config, seed, device, logdir):
                    'rank_transform': config['train.rank_transform']})
     train_logs = []
     checkpoint_count = 0
-    with ProcessPoolExecutor(max_workers=config['train.popsize'], initializer=initializer, initargs=(config, seed, device)) as executor:
+    with Pool(processes=config['train.popsize']//config['train.worker_chunksize']) as pool:
         print('Finish initialization. Training starts...')
         for generation in range(config['train.generations']):
-            start_time = time.perf_counter()
+            t0 = time.perf_counter()
             solutions = es.ask()
-            out = list(executor.map(fitness, solutions, chunksize=2))
+            data = [(config, seed, device, solution) for solution in solutions]
+            out = pool.map(CloudpickleWrapper(fitness), data, chunksize=config['train.worker_chunksize'])
             Rs, Hs = zip(*out)
             es.tell(solutions, [-R for R in Rs])
             logger = Logger()
             logger('generation', generation+1)
-            logger('num_seconds', round(time.perf_counter() - start_time, 1))
+            logger('num_seconds', round(time.perf_counter() - t0, 1))
             logger('Returns', describe(Rs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
             logger('fbest', es.result.fbest)
@@ -135,14 +113,14 @@ def run(config, seed, device, logdir):
                 checkpoint_count += 1
     pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
     return None
-    
+
 
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
                    seeds=[1770966829, 1500925526, 2054191100], 
                    log_dir='logs/default',
-                   max_workers=None,  # no parallelization 
+                   max_workers=7,  # tune to fulfill computation power
                    chunksize=1, 
                    use_gpu=False,
                    gpu_ids=None)
