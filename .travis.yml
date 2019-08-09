@@ -21,7 +21,7 @@ install:
     - bash 3_setup_envs.sh
     - cd ..
     - pip install -q mock
-    - conda install -q -y pytorch-nightly-cpu -c pytorch
+    - conda install -q -y pytorch torchvision cpuonly -c pytorch
     # Install current project
     - pip install -e .
 script:
