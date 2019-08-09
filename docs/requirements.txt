@@ -1,11 +1,7 @@
 torch==1.2.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 sphinx-rtd-theme
-numpy
-scipy
 gym
-pandas
 seaborn
-matplotlib
 scikit-image
 scikit-learn
 imageio
