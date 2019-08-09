@@ -55,5 +55,5 @@ for name in ['torch', 'torch-nightly']:
     except pkg_resources.DistributionNotFound:
         pass
 assert pkg is not None, 'PyTorch is not correctly installed.'
-version_msg = 'PyTorch of version above 1.0.0 expected'
-assert LooseVersion(re.search(r'\d+[.]\d+[.]\d+', pkg.version)[0]) >= LooseVersion('1.0.0'), version_msg
+version_msg = 'PyTorch of version above 1.2.0 expected'
+assert LooseVersion(re.search(r'\d+[.]\d+[.]\d+', pkg.version)[0]) >= LooseVersion('1.2.0'), version_msg
