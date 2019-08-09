@@ -110,7 +110,7 @@ class Agent(BaseAgent):
         logprobs = action_dist.log_prob(old_actions).squeeze()
         entropies = action_dist.entropy().squeeze()
         Vs = self.value(observations).squeeze()
-        assert all([x.ndimension() == 1 for x in [logprobs, entropies, Vs]])
+        assert all([x.ndim == 1 for x in [logprobs, entropies, Vs]])
         
         ratio = torch.exp(logprobs - old_logprobs)
         eps = self.config['agent.clip_range']
@@ -163,7 +163,7 @@ class Agent(BaseAgent):
         Qs, As = map(lambda x: tensorify(np.concatenate(x).copy(), self.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-4)
-        assert all([x.ndimension() == 1 for x in [logprobs, entropies, Vs, Qs, As]])
+        assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])
         
         dataset = Dataset(D, logprobs, entropies, Vs, Qs, As)
         dataloader = DataLoader(dataset, self.config['train.batch_size'], shuffle=True)

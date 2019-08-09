@@ -92,7 +92,7 @@ class Agent(BaseAgent):
         Qs, As = map(lambda x: tensorify(np.concatenate(x).copy(), self.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-4)
-        assert all([x.ndimension() == 1 for x in [logprobs, entropies, Vs, Qs, As]])
+        assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])
         
         # Loss
         policy_loss = -logprobs*As.detach()
