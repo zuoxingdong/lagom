@@ -21,7 +21,7 @@ config = Config(
     {'log.freq': 10,
      'checkpoint.num': 3,
      
-     'env.id': 'Hopper-v3', ###Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']),
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
@@ -82,8 +82,8 @@ def run(config, seed, device, logdir):
 if __name__ == '__main__':
     run_experiment(run=run, 
                    config=config, 
-                   seeds=[4153361530], ###[4153361530, 3503522377, 2876994566, 172236777, 3949341511], 
-                   log_dir='logs/default2',
+                   seeds=[4153361530, 3503522377, 2876994566, 172236777, 3949341511], 
+                   log_dir='logs/default',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 
                    use_gpu=True,  # GPU much faster, note that performance differs between CPU/GPU
