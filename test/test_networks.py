@@ -5,6 +5,10 @@ import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pad_sequence
+from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import pack_padded_sequence
+from torch.nn.utils.rnn import pad_packed_sequence
 import torch.optim as optim
 
 from torch.distributions import Categorical
@@ -105,6 +109,30 @@ class TestMakeBlocks(object):
         hx, cx = output_states[0]
         assert hx.shape == (batch_size, hidden_size)
         assert cx.shape == (batch_size, hidden_size)
+        
+        # use case: PackedSequence
+        x1 = torch.randn(3, input_size)
+        x2 = torch.randn(1, input_size)
+        x3 = torch.randn(4, input_size)
+        x = pad_sequence([x1, x2, x3])
+        lengths = [x1.shape[0], x2.shape[0], x3.shape[0]]
+        x = pack_padded_sequence(x, lengths, enforce_sorted=False)
+        assert x.data.shape == (sum(lengths), input_size)
+        h = torch.zeros(3, hidden_size)
+        c = torch.zeros_like(h)
+        out, [(h, c)] = rnn(x, [(h, c)])
+        assert isinstance(out, PackedSequence)
+        assert out.data.shape == (sum(lengths), hidden_size)
+        assert torch.equal(out.batch_sizes, torch.tensor([3, 2, 2, 1]))
+        assert torch.equal(out.sorted_indices, torch.tensor([2, 0, 1]))
+        assert torch.equal(out.unsorted_indices, torch.tensor([1, 2, 0]))
+        o, l = pad_packed_sequence(out)
+        assert torch.is_tensor(o)
+        assert o.shape == (4, 3, hidden_size)
+        assert torch.equal(l, torch.tensor([3, 1, 4]))
+        assert torch.allclose(o[3:, 0, ...], torch.tensor(0.0))
+        assert torch.allclose(o[1:, 1, ...], torch.tensor(0.0))
+        assert torch.allclose(o[4:, 2, ...], torch.tensor(0.0))
 
 
 class TestInit(object):
