@@ -3,6 +3,7 @@ from typing import List, Tuple
 import torch
 from torch import Tensor
 import torch.nn as nn
+from torch.nn.utils.rnn import PackedSequence
 import torch.jit as jit
 
 
@@ -45,8 +46,22 @@ class LSTMLayer(jit.ScriptModule):
 
         self.cell = cell(*cell_args)
 
-    @jit.script_method
-    def forward(self, input, state):
+    @jit.export
+    def forward_packed(self, input, state):
+        # type: (PackedSequence, Tuple[Tensor, Tensor]) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]
+        data, batch_sizes, sorted_indices, unsorted_indices = input
+        state = (state[0].index_select(0, sorted_indices), state[1].index_select(0, sorted_indices))
+        outputs = []
+        for batch_size, x in zip(batch_sizes, data.split(batch_sizes.numpy().tolist(), dim=0)):
+            assert batch_size == x.shape[0]
+            state = (state[0][:batch_size, ...], state[1][:batch_size, ...])
+            out, state = self.cell(x, state)
+            outputs += [out]
+        outputs = PackedSequence(torch.cat(outputs, 0), batch_sizes, sorted_indices, unsorted_indices)
+        return outputs, state
+
+    @jit.export
+    def forward_tensor(self, input, state):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         inputs = input.unbind(0)
         outputs = []
@@ -54,6 +69,13 @@ class LSTMLayer(jit.ScriptModule):
             out, state = self.cell(inputs[i], state)
             outputs += [out]
         return torch.stack(outputs), state
+
+    @jit.ignore
+    def forward(self, input, state):
+        if isinstance(input, PackedSequence):
+            return self.forward_packed(input, state)
+        else:
+            return self.forward_tensor(input, state)
 
 
 class StackedLSTM(jit.ScriptModule):
@@ -65,8 +87,23 @@ class StackedLSTM(jit.ScriptModule):
         self.layers = nn.ModuleList([layer(*first_layer_args)] + [layer(*other_layer_args) 
                                                                   for _ in range(num_layers - 1)])
 
-    @jit.script_method
-    def forward(self, input, states):
+    @jit.export
+    def forward_packed(self, input, states):
+        # type: (PackedSequence, List[Tuple[Tensor, Tensor]]) -> Tuple[PackedSequence, List[Tuple[Tensor, Tensor]]]
+        # List[LSTMState]: One state per layer
+        output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
+        output = input
+        # XXX: enumerate https://github.com/pytorch/pytorch/issues/14471
+        i = 0
+        for rnn_layer in self.layers:
+            state = states[i]
+            output, out_state = rnn_layer(output, state)
+            output_states += [out_state]
+            i += 1
+        return output, output_states
+        
+    @jit.export
+    def forward_tensor(self, input, states):
         # type: (Tensor, List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, List[Tuple[Tensor, Tensor]]]
         # List[LSTMState]: One state per layer
         output_states = jit.annotate(List[Tuple[Tensor, Tensor]], [])
@@ -79,6 +116,13 @@ class StackedLSTM(jit.ScriptModule):
             output_states += [out_state]
             i += 1
         return output, output_states
+    
+    @jit.ignore
+    def forward(self, input, states):
+        if isinstance(input, PackedSequence):
+            return self.forward_packed(input, states)
+        else:
+            return self.forward_tensor(input, states)
 
 
 def make_lnlstm(input_size, hidden_size, num_layers=1):
