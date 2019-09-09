@@ -10,7 +10,7 @@ from lagom.utils import pickle_dump
 from lagom.utils import tensorify
 from lagom.utils import numpify
 from lagom.networks import Module
-from lagom.networks import make_fc
+from lagom.networks import make_lnlstm
 from lagom.networks import ortho_init
 from lagom.networks import CategoricalHead
 from lagom.networks import DiagGaussianHead
@@ -21,32 +21,27 @@ from lagom.transform import explained_variance as ev
 from lagom.transform import describe
 
 
-class MLP(Module):
+class FeatureNet(Module):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
         self.device = device
         
-        self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
-        for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
-        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
+        self.lstm = make_lnlstm(spaces.flatdim(env.observation_space), config['rnn.size'], num_layers=1)
         
         self.to(self.device)
         
-    def forward(self, x):
-        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
-            x = layer_norm(F.relu(layer(x)))
-        return x
+    def forward(self, x, states):
+        return self.lstm(x, states)
 
 
 class Agent(BaseAgent):
     def __init__(self, config, env, device, **kwargs):
         super().__init__(config, env, device, **kwargs)
         
-        feature_dim = config['nn.sizes'][-1]
-        self.feature_network = MLP(config, env, device, **kwargs)
+        feature_dim = config['rnn.size']
+        self.feature_network = FeatureNet(config, env, device, **kwargs)
         if isinstance(env.action_space, spaces.Discrete):
             self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
@@ -59,10 +54,23 @@ class Agent(BaseAgent):
         self.optimizer = optim.Adam(self.parameters(), lr=config['agent.lr'])
         if config['agent.use_lr_scheduler']:
             self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
+            
+        self.state = None
+        
+    def reset(self, batch_size):
+        h = torch.zeros(batch_size, self.config['rnn.size']).to(self.device)
+        c = torch.zeros_like(h)
+        return h, c
         
     def choose_action(self, x, **kwargs):
+        if x.first():
+            self.state = self.reset(1)
         obs = tensorify(x.observation, self.device).unsqueeze(0)
-        features = self.feature_network(obs)
+        obs = obs.unsqueeze(0)  # add seq_dim
+        features, [next_state] = self.feature_network(obs, [self.state])
+        if 'last_info' not in kwargs:
+            self.state = next_state
+        features = features.squeeze(0)  # squeeze seq_dim
         action_dist = self.action_head(features)
         V = self.V_head(features)
         action = action_dist.sample()

@@ -14,5 +14,4 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 
 # Results
 
-## MLP policy
-<img src='https://i.imgur.com/VLS1QP8.png' width='100%'>>
+<img src='https://i.imgur.com/QepuqnZ.png' width='100%'>>

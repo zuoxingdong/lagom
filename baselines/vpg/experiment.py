@@ -14,6 +14,7 @@ from lagom.envs import NormalizeReward
 from lagom.envs import TimeStepEnv
 
 from baselines.vpg.agent import Agent
+from baselines.vpg.agent_lstm import Agent as LSTMAgent
 from baselines.vpg.engine import Engine
 
 
@@ -21,10 +22,12 @@ config = Config(
     {'log.freq': 10, 
      'checkpoint.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3', 'Swimmer-v3']), 
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']), 
      'env.normalize_obs': True,
      'env.normalize_reward': True,
      
+     'use_lstm': Grid([True, False]),
+     'rnn.size': 128,
      'nn.sizes': [64, 64],
      
      'agent.lr': 1e-3,
@@ -67,7 +70,10 @@ def run(config, seed, device, logdir):
     set_global_seeds(seed)
     
     env = make_env(config, seed, 'train')
-    agent = Agent(config, env, device)
+    if config['use_lstm']:
+        agent = LSTMAgent(config, env, device)
+    else:
+        agent = Agent(config, env, device)
     runner = StepRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     train_logs = []
