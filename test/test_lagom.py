@@ -143,6 +143,13 @@ def test_trajectory(env_id):
             assert not traj.finished
     with pytest.raises(AssertionError):
         traj.add(timestep, 5.3)
+    
+    traj.extra_info = {'last_V': 2.4, 'last_action': 1.3}
+    traj.extra_info = {**traj.extra_info, 'last_Q': 5.4}
+    assert 'last_V' in traj.extra_info and traj.extra_info['last_V'] == 2.4
+    assert 'last_action' in traj.extra_info and traj.extra_info['last_action'] == 1.3
+    assert 'last_Q' in traj.extra_info and traj.extra_info['last_Q'] == 5.4
+    
     assert traj.finished
     assert traj.reach_time_limit == traj[-1].time_limit()
     assert traj.reach_terminal == traj[-1].terminal()
@@ -171,6 +178,7 @@ def test_episode_runner(env_id, N):
     for traj in D:
         for timestep in traj[1:-1]:
             assert timestep.mid()
+    assert all(['last_info' in traj.extra_info and 'raw_action' in traj.extra_info['last_info'] for traj in D])
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
@@ -186,13 +194,16 @@ def test_step_runner(env_id, T):
     assert all([isinstance(traj, Trajectory) for traj in D])
     assert all([traj[0].first() for traj in D])
     assert all([traj[-1].last() for traj in D[:-1]])
+    assert all(['last_info' in traj.extra_info and 'raw_action' in traj.extra_info['last_info'] for traj in D])
 
     runner = StepRunner(reset_on_call=False)
     D = runner(agent, env, 1)
     assert D[0][0].first()
     assert len(D[0]) == 2
     assert np.allclose(D[0][-1].observation, runner.observation)
+    assert all(['last_info' in traj.extra_info and 'raw_action' in traj.extra_info['last_info'] for traj in D])
     D2 = runner(agent, env, 3)
     assert np.allclose(D2[-1][-1].observation, runner.observation)
     assert np.allclose(D[0][-1].observation, D2[0][0].observation)
     assert D2[0][0].first() and D2[0][0].reward is None
+    assert all(['last_info' in traj.extra_info and 'raw_action' in traj.extra_info['last_info'] for traj in D2])

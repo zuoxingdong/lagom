@@ -49,6 +49,7 @@ class Trajectory(object):
     def __init__(self):
         self.timesteps = []
         self._actions = []
+        self._extra_info = {}
         
     def __len__(self):
         return len(self.timesteps)
@@ -116,6 +117,14 @@ class Trajectory(object):
     
     def get_infos(self, key):
         return [timestep.info[key] for timestep in self.timesteps[1:] if key in timestep.info]
+    
+    @property
+    def extra_info(self):
+        return self._extra_info
+    
+    @extra_info.setter
+    def extra_info(self, info):
+        self._extra_info = info
     
     def __repr__(self):
         return f'Trajectory(T: {self.T}, Finished: {self.finished}, Reach time limit: {self.reach_time_limit}, Reach terminal: {self.reach_terminal})'

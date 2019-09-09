@@ -40,6 +40,7 @@ class EpisodeRunner(BaseRunner):
                 timestep = env.step(action)
                 timestep.info = {**timestep.info, **out_agent}
                 traj.add(timestep, action)
+            traj.extra_info['last_info'] = agent.choose_action(timestep, last_info=True, **kwargs)
             D.append(traj)
         return D
 
@@ -65,11 +66,13 @@ class StepRunner(BaseRunner):
             timestep.info = {**timestep.info, **out_agent}
             traj.add(timestep, action)
             if timestep.last():
+                traj.extra_info['last_info'] = agent.choose_action(timestep, last_info=True, **kwargs)
                 D.append(traj)
                 traj = Trajectory()
                 timestep = env.reset()
                 traj.add(timestep, None)
         if traj.T > 0:
+            traj.extra_info['last_info'] = agent.choose_action(timestep, last_info=True, **kwargs)
             D.append(traj)
         if not self.reset_on_call:
             self.observation = timestep.observation
