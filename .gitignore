@@ -1,16 +1,19 @@
-# Caches from Python
+# Caches from Python: Byte-compiled, DLL files
 *.pyc
 *.py~
+*$py.class
 .cache
 __pycache__/
 .pytest_cache
 
-# Setuptools distribution and build folders.
+# Distribution and packaging: setuptools
 /dist
 /build
-
-# Python egg metadata, regenerated from source files by setuptools.
+/eggs
+.eggs/
 *.egg-info/
+*.egg
+MANIFEST
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
