@@ -9,6 +9,9 @@ from .multiprocessing import ProcessWorker
 
 from .colorize import color_str
 
+from .conditioner import IntervalConditioner
+from .conditioner import NConditioner
+
 from .timing import timed
 from .timing import timeit
 

@@ -45,3 +45,9 @@ Misc
 .. autofunction:: timeit
 
 .. autofunction:: ask_yes_or_no
+
+.. autoclass:: IntervalConditioner
+    :members:
+    
+.. autoclass:: NConditioner
+    :members:

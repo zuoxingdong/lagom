@@ -5,6 +5,8 @@ import numpy as np
 import torch
 
 from lagom.utils import color_str
+from lagom.utils import IntervalConditioner
+from lagom.utils import NConditioner
 from lagom.utils import Seeder
 from lagom.utils import tensorify
 from lagom.utils import numpify
@@ -21,7 +23,93 @@ def test_color_str():
     assert color_str('lagom', 'green', 'bold') == '\x1b[38;5;2m\x1b[1mlagom\x1b[0m'
     assert color_str('lagom', 'white') == '\x1b[38;5;15mlagom\x1b[0m'
 
-    
+
+def test_conditioner():
+    cond = IntervalConditioner(interval=4, mode='accumulative')
+    assert cond.counter == 0
+    assert cond(0)
+    assert cond.counter == 0
+    assert not cond(2)
+    assert not cond(3)
+    assert cond(4)
+    assert cond.counter == 1
+    assert not cond(5)
+    assert cond(9)
+    assert cond.counter == 2
+    assert cond(12)
+    assert cond.counter == 3
+    del cond
+
+    cond = IntervalConditioner(interval=4, mode='incremental')
+    assert cond.counter == 0
+    assert cond.total_n == 0
+    assert cond(0)
+    assert cond.counter == 0
+    assert cond.total_n == 0
+    assert not cond(3)
+    assert cond.counter == 0
+    assert cond.total_n == 3
+    assert cond(1)
+    assert cond.counter == 1
+    assert cond.total_n == 4
+    assert cond(4)
+    assert cond.counter == 2
+    assert cond.total_n == 8
+    assert not cond(1)
+    assert cond.counter == 2
+    assert cond.total_n == 9
+    del cond
+
+    cond = NConditioner(max_n=10, num_conditions=3, mode='accumulative')
+    assert cond.counter == 0
+    assert cond(0)
+    assert cond.counter == 0
+    assert not cond(2)
+    assert not cond(3)
+    assert cond(4)
+    assert cond.counter == 1
+    assert not cond(5)
+    assert cond.counter == 1
+    assert cond(8)
+    assert cond.counter == 2
+    assert not cond(9)
+    assert cond.counter == 2
+    assert cond(10)
+    assert cond.counter == 3
+    assert not cond(15)
+    assert cond.counter == 3
+    assert not cond(20)
+    assert cond.counter == 3
+    del cond
+
+    cond = NConditioner(max_n=10, num_conditions=3, mode='incremental')
+    assert cond.counter == 0
+    assert cond(0)
+    assert cond.counter == 0
+    assert not cond(2)
+    assert cond.counter == 0
+    assert cond.total_n == 2
+    assert not cond(1)
+    assert cond.counter == 0
+    assert cond.total_n == 3
+    assert cond(2)
+    assert cond.counter == 1
+    assert cond.total_n == 5
+    assert not cond(1)
+    assert cond.counter == 1
+    assert cond.total_n == 6
+    assert cond(2)
+    assert cond.counter == 2
+    assert cond.total_n == 8
+    assert cond(3)
+    assert cond.counter == 3
+    assert cond.total_n == 11
+    assert not cond(5)
+    assert cond.counter == 3
+    assert cond.total_n == 11
+    del cond
+
+
 def test_seeder():
     seeder = Seeder(init_seed=0)
 
