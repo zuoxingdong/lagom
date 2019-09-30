@@ -44,9 +44,10 @@ def read_xy(log_folder, file_name, get_x, get_y, smooth_out=False, smooth_kws=No
                 smooth_kws = {'window_length': 51, 'polyorder': 3}
             ys = [smooth_filter(y, **smooth_kws) for y in ys]
         
-        idx = np.arange(0, new_x.size, step=point_step)
-        new_x = new_x[idx, ...]
-        ys = [y[idx, ...] for y in ys]
+        if point_step > 1:
+            idx = np.arange(0, new_x.size, step=point_step)
+            new_x = new_x[idx, ...]
+            ys = [y[idx, ...] for y in ys]
 
         df = pd.DataFrame({'x': np.tile(new_x, len(ys)), 'y': np.hstack(ys)})
         config = yaml_load(id_folder / 'config.yml')
