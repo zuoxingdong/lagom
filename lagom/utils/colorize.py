@@ -7,11 +7,6 @@ def color_str(string, color, bold=False):
     Example::
     
         >>> print(color_str('lagom', 'green', bold=True))
-
-    See `colorama`_ documentation for more details. 
-    
-    .. colorama:
-        https://pypi.org/project/colorama/
         
     Args:
         string (str): input string
