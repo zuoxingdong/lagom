@@ -1,31 +1,31 @@
-import colored
-from colored import stylize
+from colorama import Fore, Style
 
 
-def color_str(string, color, attribute=None):
-    r"""Returns stylized string with color and attribute for printing. 
+def color_str(string, color, bold=False):
+    r"""Returns stylized string with coloring and bolding for printing.
     
     Example::
     
-        >>> print(color_str('lagom', 'green', attribute='bold'))
+        >>> print(color_str('lagom', 'green', bold=True))
+
+    See `colorama`_ documentation for more details. 
     
-    See `colored`_ documentation for more details. 
-    
-    .. _colored:
-        https://pypi.org/project/colored
-    
+    .. colorama:
+        https://pypi.org/project/colorama/
+        
     Args:
         string (str): input string
         color (str): color name
-        attribute (str, optional): attribute. Default: ``None``
+        bold (bool, optional): if ``True``, then the string is bolded. Default: ``False``
     
     Returns:
-        str: stylized string
-    """
-    styles = colored.fg(color)
-    if attribute is not None:
-        styles += colored.attr(attribute)
-        
-    out = stylize(string, styles)
+        out: stylized string
     
+    """
+    colors = {'red': Fore.RED, 'green': Fore.GREEN, 'blue': Fore.BLUE, 'cyan': Fore.CYAN, 
+              'magenta': Fore.MAGENTA, 'black': Fore.BLACK, 'white': Fore.WHITE}
+    style = colors[color]
+    if bold:
+        style += Style.BRIGHT
+    out = style + string + Style.RESET_ALL
     return out

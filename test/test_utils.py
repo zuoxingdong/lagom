@@ -20,8 +20,8 @@ from lagom.utils import ProcessWorker
 
 
 def test_color_str():
-    assert color_str('lagom', 'green', 'bold') == '\x1b[38;5;2m\x1b[1mlagom\x1b[0m'
-    assert color_str('lagom', 'white') == '\x1b[38;5;15mlagom\x1b[0m'
+    assert color_str('lagom', 'green', bold=True) == '\x1b[32m\x1b[1mlagom\x1b[0m'
+    assert color_str('lagom', 'white') == '\x1b[37mlagom\x1b[0m'
 
 
 def test_conditioner():

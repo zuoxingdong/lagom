@@ -9,12 +9,12 @@ from .colorize import color_str
 
 
 @contextmanager
-def timed(color='green', attribute='bold'):
+def timed(color='green', bold=False):
     r"""A decorator to print the total time of executing a body function. 
     
     Args:
         color (str, optional): color name. Default: 'green'
-        attribute (str, optional): attribute. Default: 'bold'
+        bold (bool, optional): if ``True``, then the verbose is bolded. Default: ``False``
     """
     t = perf_counter()
     yield
@@ -22,10 +22,10 @@ def timed(color='green', attribute='bold'):
     timestamp = datetime.now().isoformat(' ', 'seconds')
     print(color_str(string=f'\nTotal time: {total_time} at {timestamp}', 
                     color=color, 
-                    attribute=attribute))
+                    bold=bold))
     
     
-def timeit(_func=None, *, color='green', attribute='bold'):
+def timeit(_func=None, *, color='green', bold=False):
     def decorator_timeit(f):
         r"""Print the runtime of the decorated function. """
         @functools.wraps(f)
@@ -36,7 +36,7 @@ def timeit(_func=None, *, color='green', attribute='bold'):
             timestamp = datetime.now().isoformat(' ', 'seconds')
             print(color_str(string=f'\nTotal time: {total_time} at {timestamp}', 
                             color=color, 
-                            attribute=attribute))
+                            bold=bold))
             return out
         return wrapper_timeit
     if _func is None:

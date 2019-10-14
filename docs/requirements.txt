@@ -8,6 +8,6 @@ imageio
 pyglet
 cloudpickle
 pyyaml
-colored
+colorama
 opencv-python
 lz4

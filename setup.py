@@ -17,7 +17,7 @@ install_requires = ['numpy',
                     'gym>=0.14.0', 
                     'cloudpickle', 
                     'pyyaml', 
-                    'colored']
+                    'colorama']
 tests_require = ['pytest', 
                  'flake8', 
                  'sphinx', 

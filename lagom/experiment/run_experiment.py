@@ -15,7 +15,7 @@ from lagom.utils import color_str
 from lagom.utils import CloudpickleWrapper
 
 
-@timeit(color='green', attribute='bold')
+@timeit(color='green', bold=True)
 def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gpu=False, gpu_ids=None):
     r"""A convenient function to parallelize the experiment (master-worker pipeline). 
     
@@ -136,5 +136,5 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
     else:
         with ProcessPoolExecutor(max_workers=min(max_workers, len(jobs))) as executor:
             results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
-    print(color_str(f'\nExperiment finished. Loggings are stored in {log_path.absolute()}. ', 'cyan', 'bold'))
+    print(color_str(f'\nExperiment finished. Loggings are stored in {log_path.absolute()}. ', 'cyan', bold=True))
     return results
