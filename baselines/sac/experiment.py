@@ -10,7 +10,9 @@ from lagom.experiment import Grid
 from lagom.experiment import run_experiment
 from lagom.envs import RecordEpisodeStatistics
 from lagom.envs import TimeStepEnv
-from lagom.envs.wrappers import NormalizeAction
+
+# TODO: replace it with official gym wrapper
+from .normalize_action import NormalizeAction
 
 from baselines.sac.agent import Agent
 from baselines.sac.engine import Engine

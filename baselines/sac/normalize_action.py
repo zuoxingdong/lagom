@@ -3,6 +3,7 @@ from gym import spaces
 import numpy as np
 
 
+# TODO: remove it after new wrapper merged into gym officially
 class NormalizeAction(gym.ActionWrapper):
     r"""Rescale the continuous action space of the environment from [-1, 1]. """
     def __init__(self, env):

@@ -10,8 +10,6 @@ from lagom import EpisodeRunner
 from lagom import StepRunner
 from lagom.utils import numpify
 from lagom.envs import make_vec_env
-from lagom.envs.wrappers import StepInfo
-from lagom.envs.wrappers import VecStepInfo
 
 from lagom.metric import returns
 from lagom.metric import bootstrapped_returns
