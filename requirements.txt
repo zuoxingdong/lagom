@@ -1,16 +1,16 @@
-# Update: 2019-10-14
+# Update: 2019-11-11
 
 # Common
-jupyterlab>=1.1.4
+jupyterlab>=1.2.2
 colorama>=0.4.1
 
 # Testing, PEP8 code quality
-pytest>=5.2.1
-flake8>=3.7.8
+pytest>=5.2.2
+flake8>=3.7.9
 
 # Image, Video
 opencv-python>=4.1.1.26
 
 # RL
-gym>=0.15.3
+gym>=0.15.3, <0.15.4
 cma>=2.7.0
