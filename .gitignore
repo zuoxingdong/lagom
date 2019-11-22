@@ -21,3 +21,7 @@ MANIFEST
 # Read the Docs
 /docs/build/
 
+# Misc
+mjkey.txt  # MuJoCo License
+.DS_Store  # Mac
+
