@@ -180,54 +180,84 @@ def test_tensorify():
 
 
 def test_numpify():
-    # tensor
-    x = torch.tensor(2.43)
-    y = numpify(x, np.float32)
+    # Tensor
+    x = torch.randn(5)
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    del x, y
+
+    x = torch.randn(5, 4)
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    del x, y
+
+    x = torch.randn(5, 4)
+    y = numpify(x, dtype=np.float16)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    assert y.dtype == np.float16
+    del x, y
+
+    # Array
+    x = np.random.randn(5)
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    del x, y
+
+    x = np.random.randn(5, 4)
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    del x, y
+
+    x = np.random.randn(5, 4)
+    y = numpify(x, dtype=np.float16)
+    assert isinstance(y, np.ndarray)
+    assert x.shape == y.shape
+    assert y.dtype == np.float16
+    del x, y
+
+    # List
+    x = [1, 2, 3, 4]
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     assert np.allclose(x, y)
     del x, y
 
-    x = torch.randn(10)
-    y = numpify(x, np.float32)
+    x = [[1.2, 2.3], [3.4, 4.5]]
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     assert np.allclose(x, y)
     del x, y
 
-    x = torch.randn(10, 20, 30)
-    y = numpify(x, np.float32)
+    # Tuple
+    x = (1, 2, 3, 4)
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     assert np.allclose(x, y)
     del x, y
 
-    # ndarray
-    x = np.array(2.43)
-    y = numpify(x, np.float32)
+    x = ((1.2, 2.3), (3.4, 4.5))
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     assert np.allclose(x, y)
     del x, y
 
-    x = np.random.randn(10)
-    y = numpify(x, np.float32)
-    assert np.allclose(x, y)
+    # Scalar
+    x = 1
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     del x, y
 
-    x = np.random.randn(10, 20, 30)
-    y = numpify(x, np.float32)
-    assert np.allclose(x, y)
+    # Bool
+    x = True
+    y = numpify(x)
+    assert isinstance(y, np.ndarray)
     del x, y
 
-    # raw list
-    x = [2.43]
-    y = numpify(x, np.float32)
-    assert np.allclose(x, y)
-    del x, y
-
-    x = [1, 2, 3, 4, 5, 6]
-    y = numpify(x, np.float32)
-    assert np.allclose(x, y)
-    del x, y
-
-    x = [[1, 2], [3, 4], [5, 6]]
-    y = numpify(x, np.float32)
-    assert np.allclose(x, y)
-    del x, y
-    
 
 def test_pickle_yaml():
     a = {'one': 1, 'two': [2, 3]}

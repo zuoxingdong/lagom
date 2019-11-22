@@ -13,10 +13,11 @@ def tensorify(x, device):
         return torch.from_numpy(np.asarray(x)).float().to(device)
     
     
-def numpify(x, dtype):
+def numpify(x, dtype=None):
     if torch.is_tensor(x):
-        return x.detach().cpu().numpy().astype(dtype)
-    elif isinstance(x, np.ndarray):
-        return x.astype(dtype)
+        x = x.detach().cpu().numpy()
     else:
-        return np.asarray(x, dtype=dtype)
+        x = np.asarray(x)
+    if dtype is not None:
+        x = x.astype(dtype)
+    return x
