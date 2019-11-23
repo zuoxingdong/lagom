@@ -3,22 +3,20 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical
+from torch.distributions import Normal
 
 from lagom.networks import Module
 from lagom.networks import ortho_init
 
-from torch.distributions import Categorical
-from torch.distributions import Normal
-
 
 class MDNHead(Module):
-    def __init__(self, in_features, out_features, num_density, device, **kwargs):
+    def __init__(self, in_features, out_features, num_density, **kwargs):
         super().__init__(**kwargs)
         
         self.in_features = in_features
         self.out_features = out_features
         self.num_density = num_density
-        self.device = device
         
         self.pi_head = nn.Linear(in_features, out_features*num_density)
         ortho_init(self.pi_head, weight_scale=0.01, constant_bias=0.0)
@@ -26,8 +24,6 @@ class MDNHead(Module):
         ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         self.logvar_head = nn.Linear(in_features, out_features*num_density)
         ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
-        
-        self.to(self.device)
         
     def forward(self, x):
         logit_pi = self.pi_head(x).view(-1, self.num_density, self.out_features)
