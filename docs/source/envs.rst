@@ -15,11 +15,3 @@ lagom.envs
     
 .. autoclass:: TimeStepEnv
     :members:
-
-.. autoclass:: VecEnv
-    :members:
-    
-.. autoclass:: VecEnvWrapper
-    :members:
-    
-.. autofunction:: make_vec_env

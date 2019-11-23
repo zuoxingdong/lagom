@@ -237,3 +237,36 @@ class VecEnvWrapper(VecEnv):
     
     def __repr__(self):
         return f'<{self.__class__.__name__}, {self.env}>'
+
+    
+    
+    
+    
+    
+    
+@pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
+@pytest.mark.parametrize('num_env', [1, 3, 5])
+def test_vec_env(env_id, num_env):
+    def make_env():
+        return gym.make(env_id)
+    base_env = make_env()
+    list_make_env = [make_env for _ in range(num_env)]
+    env = VecEnv(list_make_env)
+    assert isinstance(env, VecEnv)
+    assert len(env) == num_env
+    assert len(list(env)) == num_env
+    assert env.observation_space == base_env.observation_space
+    assert env.action_space == base_env.action_space
+    assert env.reward_range == base_env.reward_range
+    assert env.spec.id == base_env.spec.id
+    obs = env.reset()
+    assert isinstance(obs, list) and len(obs) == num_env
+    assert all([x in env.observation_space for x in obs])
+    actions = [env.action_space.sample() for _ in range(num_env)]
+    observations, rewards, dones, infos = env.step(actions)
+    assert isinstance(observations, list) and len(observations) == num_env
+    assert isinstance(rewards, list) and len(rewards) == num_env
+    assert isinstance(dones, list) and len(dones) == num_env
+    assert isinstance(infos, list) and len(infos) == num_env
+    env.close()
+    assert env.closed

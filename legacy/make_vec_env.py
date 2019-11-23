@@ -38,3 +38,19 @@ def make_vec_env(make_env, num_env, init_seed):
     # partial object is not picklable, so wrap it with magical CloudpickleWrapper
     list_make_env = [CloudpickleWrapper(partial(f, seed=seed)) for seed in seeds]
     return VecEnv(list_make_env)
+
+
+
+
+
+@pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
+@pytest.mark.parametrize('num_env', [1, 3, 5])
+@pytest.mark.parametrize('init_seed', [0, 10])
+def test_make_vec_env(env_id, num_env, init_seed):
+    def make_env():
+        return gym.make(env_id)
+    env = make_vec_env(make_env, num_env, init_seed)
+    assert isinstance(env, VecEnv)
+    seeds = [x.keywords['seed'] for x in env.list_make_env]
+    seeder = Seeder(init_seed)
+    assert seeds == seeder(num_env)

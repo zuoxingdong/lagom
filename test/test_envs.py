@@ -1,49 +1,11 @@
+import pytest
 import numpy as np
 
-import pytest
-
-from lagom.utils import Seeder
-
 import gym
-from gym.spaces import Box
-from gym.spaces import Discrete
-from gym.spaces import Tuple
-from gym.spaces import Dict
-
 from lagom.envs import RecordEpisodeStatistics
 from lagom.envs import NormalizeObservation
 from lagom.envs import NormalizeReward
 from lagom.envs import TimeStepEnv
-from lagom.envs import make_vec_env
-from lagom.envs import VecEnv
-
-
-@pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
-@pytest.mark.parametrize('num_env', [1, 3, 5])
-def test_vec_env(env_id, num_env):
-    def make_env():
-        return gym.make(env_id)
-    base_env = make_env()
-    list_make_env = [make_env for _ in range(num_env)]
-    env = VecEnv(list_make_env)
-    assert isinstance(env, VecEnv)
-    assert len(env) == num_env
-    assert len(list(env)) == num_env
-    assert env.observation_space == base_env.observation_space
-    assert env.action_space == base_env.action_space
-    assert env.reward_range == base_env.reward_range
-    assert env.spec.id == base_env.spec.id
-    obs = env.reset()
-    assert isinstance(obs, list) and len(obs) == num_env
-    assert all([x in env.observation_space for x in obs])
-    actions = [env.action_space.sample() for _ in range(num_env)]
-    observations, rewards, dones, infos = env.step(actions)
-    assert isinstance(observations, list) and len(observations) == num_env
-    assert isinstance(rewards, list) and len(rewards) == num_env
-    assert isinstance(dones, list) and len(dones) == num_env
-    assert isinstance(infos, list) and len(infos) == num_env
-    env.close()
-    assert env.closed
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
@@ -159,16 +121,3 @@ def test_timestep_env(env_id):
             break
         else:
             assert timestep.mid()
-    
-
-@pytest.mark.parametrize('env_id', ['CartPole-v0', 'Pendulum-v0'])
-@pytest.mark.parametrize('num_env', [1, 3, 5])
-@pytest.mark.parametrize('init_seed', [0, 10])
-def test_make_vec_env(env_id, num_env, init_seed):
-    def make_env():
-        return gym.make(env_id)
-    env = make_vec_env(make_env, num_env, init_seed)
-    assert isinstance(env, VecEnv)
-    seeds = [x.keywords['seed'] for x in env.list_make_env]
-    seeder = Seeder(init_seed)
-    assert seeds == seeder(num_env)
