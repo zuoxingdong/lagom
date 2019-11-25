@@ -25,88 +25,83 @@ def test_color_str():
 
 
 def test_conditioner():
+    cond = IntervalConditioner(interval=1, mode='accumulative')
+    for i in range(100):
+        assert cond(i)
+    del cond
+
     cond = IntervalConditioner(interval=4, mode='accumulative')
-    assert cond.counter == 0
+    # [0, 4, 8, 12, ...]
     assert cond(0)
-    assert cond.counter == 0
     assert not cond(2)
     assert not cond(3)
     assert cond(4)
-    assert cond.counter == 1
-    assert not cond(5)
+    assert not cond(6)
     assert cond(9)
-    assert cond.counter == 2
+    assert not cond(11)
     assert cond(12)
-    assert cond.counter == 3
+    del cond
+
+    cond = IntervalConditioner(interval=1, mode='incremental')
+    for i in range(100):
+        assert cond(i)
     del cond
 
     cond = IntervalConditioner(interval=4, mode='incremental')
-    assert cond.counter == 0
-    assert cond.total_n == 0
+    # [0, 4, 8, 12, ...]
     assert cond(0)
-    assert cond.counter == 0
     assert cond.total_n == 0
     assert not cond(3)
-    assert cond.counter == 0
     assert cond.total_n == 3
     assert cond(1)
-    assert cond.counter == 1
     assert cond.total_n == 4
-    assert cond(4)
-    assert cond.counter == 2
-    assert cond.total_n == 8
     assert not cond(1)
-    assert cond.counter == 2
+    assert cond.total_n == 5
+    assert cond(4)
     assert cond.total_n == 9
+    assert not cond(1)
+    assert cond.total_n == 10
+    assert cond(5)
+    assert cond.total_n == 15
+    del cond
+
+    cond = NConditioner(max_n=10, num_conditions=1, mode='accumulative')
+    assert cond(0)
+    for i in range(1, 100):
+        assert not cond(i)
     del cond
 
     cond = NConditioner(max_n=10, num_conditions=3, mode='accumulative')
-    assert cond.counter == 0
+    # [0, 4, 7]
     assert cond(0)
-    assert cond.counter == 0
+    assert not cond(1)
     assert not cond(2)
-    assert not cond(3)
-    assert cond(4)
-    assert cond.counter == 1
-    assert not cond(5)
-    assert cond.counter == 1
-    assert cond(8)
-    assert cond.counter == 2
-    assert not cond(9)
-    assert cond.counter == 2
-    assert cond(10)
-    assert cond.counter == 3
-    assert not cond(15)
-    assert cond.counter == 3
-    assert not cond(20)
-    assert cond.counter == 3
+    assert cond(6)
+    assert cond(7)
+    assert not cond(8)
+    assert not cond(80)
+    del cond
+
+    cond = NConditioner(max_n=10, num_conditions=1, mode='incremental')
+    assert cond(0)
+    for i in range(1, 100):
+        assert not cond(i)
     del cond
 
     cond = NConditioner(max_n=10, num_conditions=3, mode='incremental')
-    assert cond.counter == 0
+    # [0, 4, 7]
     assert cond(0)
-    assert cond.counter == 0
+    assert cond.total_n == 0
     assert not cond(2)
-    assert cond.counter == 0
     assert cond.total_n == 2
     assert not cond(1)
-    assert cond.counter == 0
     assert cond.total_n == 3
     assert cond(2)
-    assert cond.counter == 1
     assert cond.total_n == 5
-    assert not cond(1)
-    assert cond.counter == 1
-    assert cond.total_n == 6
-    assert cond(2)
-    assert cond.counter == 2
-    assert cond.total_n == 8
-    assert cond(3)
-    assert cond.counter == 3
-    assert cond.total_n == 11
-    assert not cond(5)
-    assert cond.counter == 3
-    assert cond.total_n == 11
+    assert cond(8)
+    assert cond.total_n == 13
+    assert not cond(20)
+    assert cond.total_n == 13
     del cond
 
 

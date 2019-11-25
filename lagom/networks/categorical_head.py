@@ -19,23 +19,19 @@ class CategoricalHead(Module):
     Args:
         feature_dim (int): number of input features
         num_action (int): number of discrete actions
-        device (torch.device): PyTorch device
         **kwargs: keyword arguments for more specifications.
     
     """
-    def __init__(self, feature_dim, num_action, device, **kwargs):
+    def __init__(self, feature_dim, num_action, **kwargs):
         super().__init__(**kwargs)
         
         self.feature_dim = feature_dim
         self.num_action = num_action
-        self.device = device
         
         self.action_head = nn.Linear(self.feature_dim, self.num_action)
         # weight_scale=0.01 -> uniformly distributed
         ortho_init(self.action_head, weight_scale=0.01, constant_bias=0.0)
-        
-        self.to(self.device)
-        
+
     def forward(self, x):
         action_score = self.action_head(x)
         action_prob = F.softmax(action_score, dim=-1)

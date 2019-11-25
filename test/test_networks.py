@@ -198,11 +198,10 @@ def test_linear_lr_scheduler(method, N, min_lr, initial_lr):
 @pytest.mark.parametrize('batch_size', [1, 16, 32])
 @pytest.mark.parametrize('num_action', [1, 4, 10])
 def test_categorical_head(feature_dim, batch_size, num_action):
-    action_head = CategoricalHead(feature_dim, num_action, torch.device('cpu'))
+    action_head = CategoricalHead(feature_dim, num_action)
     assert isinstance(action_head, Module)
     assert action_head.feature_dim == feature_dim
     assert action_head.num_action == num_action
-    assert action_head.device.type == 'cpu'
     dist = action_head(torch.randn(batch_size, feature_dim))
     assert isinstance(dist, Categorical)
     assert dist.batch_shape == (batch_size,)
@@ -216,14 +215,12 @@ def test_categorical_head(feature_dim, batch_size, num_action):
 @pytest.mark.parametrize('action_dim', [1, 4])
 @pytest.mark.parametrize('std0', [0.21, 0.5, 1.0])
 def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
-    device = torch.device('cpu')
     with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, -0.5)
+        DiagGaussianHead(feature_dim, action_dim, -0.5)
     
     def _basic_check(action_head):
         assert action_head.feature_dim == feature_dim
         assert action_head.action_dim == action_dim
-        assert action_head.device.type == 'cpu'
         assert action_head.std0 == std0
         assert isinstance(action_head.mean_head, nn.Linear)
         assert isinstance(action_head.logstd_head, nn.Parameter)
@@ -235,7 +232,7 @@ def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
         action = action_dist.sample()
         assert action.shape == (batch_size, action_dim)
     
-    action_head = DiagGaussianHead(feature_dim, action_dim, device, std0)    
+    action_head = DiagGaussianHead(feature_dim, action_dim, std0)    
     _basic_check(action_head)
     action_dist = action_head(torch.randn(batch_size, feature_dim))
     _dist_check(action_dist)

@@ -34,25 +34,21 @@ class DiagGaussianHead(Module):
     Args:
         feature_dim (int): number of input features
         action_dim (int): flat dimension of actions
-        device (torch.device): PyTorch device
         std0 (float): initial standard deviation
         **kwargs: keyword arguments for more specifications.
     
     """
-    def __init__(self, feature_dim, action_dim, device, std0, **kwargs):
+    def __init__(self, feature_dim, action_dim, std0, **kwargs):
         super().__init__(**kwargs)
         assert std0 > 0
         self.feature_dim = feature_dim
         self.action_dim = action_dim
-        self.device = device
         self.std0 = std0
         
         self.mean_head = nn.Linear(self.feature_dim, self.action_dim)
         # 0.01 -> almost zeros initially
         ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         self.logstd_head = nn.Parameter(torch.full((self.action_dim,), math.log(std0)))
-        
-        self.to(self.device)
         
     def forward(self, x):
         mean = self.mean_head(x)

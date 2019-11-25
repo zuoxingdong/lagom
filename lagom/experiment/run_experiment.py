@@ -16,7 +16,7 @@ from lagom.utils import CloudpickleWrapper
 
 
 @timeit(color='green', bold=True)
-def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gpu=False, gpu_ids=None):
+def run_experiment(run, configurator, seeds, log_dir, max_workers, chunksize=1, use_gpu=False, gpu_ids=None):
     r"""A convenient function to parallelize the experiment (master-worker pipeline). 
     
     It is implemented by using `concurrent.futures.ProcessPoolExecutor`
@@ -51,9 +51,8 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
                 - 567
                 
     Args:
-        run (function): a function that defines an algorithm, it must take the 
-            arguments `(config, seed, device, logdir)`
-        config (Config): a :class:`Config` object defining all configuration settings
+        run (function): a function that defines an algorithm, it must take the arguments `run(config)`.
+        configurator (Configurator): a :class:`Configurator` object defining all configuration settings
         seeds (list): a list of random seeds
         log_dir (str): a string to indicate the path to store loggings.
         max_workers (int): argument for ProcessPoolExecutor. if `None`, then all experiments run serially.
@@ -63,40 +62,46 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
             GPU device defined in the list. 
     
     """
-    configs = config.make_configs()
+    configs = configurator.make_configs()
+    
+    def prepare_logdir(run, seeds, log_path, configs):
+        log_path.mkdir(parents=True)
+        pickle_dump(configs, log_path / 'configs', ext='.pkl')
+        # Save source files
+        source_path = Path(log_path / 'source_files/')
+        source_path.mkdir(parents=True)
+        [copyfile(s, source_path / s.name) for s in Path(inspect.getsourcefile(run)).parent.glob('*.py')]
+        # Create subfolders for each ID and subsubfolders for each random seed
+        for config in configs:
+            ID = config['ID']
+            for seed in seeds:
+                p = log_path / f'{ID}' / f'{seed}'
+                p.mkdir(parents=True)
+            yaml_dump(obj=dict(config), f=log_path / f'{ID}' / 'config', ext='.yml')
     
     # create logging dir
     log_path = Path(log_dir)
     if not log_path.exists():
-        log_path.mkdir(parents=True)
+        prepare_logdir(run, seeds, log_path, configs)
     else:
-        msg = f"Logging directory '{log_path.absolute()}' already existed, do you want to clean it ?"
-        answer = ask_yes_or_no(msg)
-        if answer:
-            rmtree(log_path)
-            log_path.mkdir(parents=True)
-        else:  # back up
-            old_log_path = log_path.with_name('old_' + log_path.name)
-            log_path.rename(old_log_path)
-            log_path.mkdir(parents=True)
-            print(f"The old logging directory is renamed to '{old_log_path.absolute()}'. ")
-            input('Please, press Enter to continue\n>>> ')
+        print(f"Logging directory '{log_path.absolute()}' already existed.")
+        resumable = len(list(log_path.rglob('resume_checkpoint.tar'))) > 0
+        if resumable:
+            answer_resume = ask_yes_or_no('Found existing checkpoints, do you want to resume the experiment ?')
+            if answer_resume:
+                print('Experiment is resuming...')
+        if (not resumable) or (resumable and not answer_resume):  # ask about cleanup
+            answer_cleanup = ask_yes_or_no('Do you want to clean it up ?')
+            if answer_cleanup:
+                rmtree(log_path)
+            else:
+                old_log_path = log_path.with_name('old_' + log_path.name)
+                log_path.rename(old_log_path)
+                print(f"The old logging directory is renamed to '{old_log_path.absolute()}'. ")
+                input('Please, press Enter to continue\n>>> ')
+            
+            prepare_logdir(run, seeds, log_path, configs)
 
-    # save source files
-    source_path = Path(log_path / 'source_files/')
-    source_path.mkdir(parents=True)
-    [copyfile(s, source_path / s.name) for s in Path(inspect.getsourcefile(run)).parent.glob('*.py')]
-    
-    # Create subfolders for each ID and subsubfolders for each random seed
-    for config in configs:
-        ID = config['ID']
-        for seed in seeds:
-            p = log_path / f'{ID}' / f'{seed}'
-            p.mkdir(parents=True)
-        yaml_dump(obj=config, f=log_path / f'{ID}' / 'config', ext='.yml')
-        
-    pickle_dump(configs, log_path / 'configs', ext='.pkl')
-    
     # Create unique id for each job
     jobs = list(enumerate(product(configs, seeds)))
     
@@ -124,14 +129,17 @@ def run_experiment(run, config, seeds, log_dir, max_workers, chunksize=1, use_gp
         [print(f'# {key}: {value}') for key, value in config.items()]
         print('#'*50)
         
-        logdir = log_path / f'{config["ID"]}' / f'{seed}'
-        result = run(config, seed, device, logdir)
+        config.seed = seed
+        config.device = device
+        config.logdir = log_path / f'{config["ID"]}' / f'{seed}'
+        config.resume_checkpointer = config.logdir / 'resume_checkpoint.tar'
+        result = run(config)
         # Release all un-freed GPU memory
         if use_gpu:
             torch.cuda.empty_cache()
         return result
     
-    if max_workers is None:
+    if max_workers is None:  # no multiprocessing
         results = [_run(job) for job in jobs]
     else:
         with ProcessPoolExecutor(max_workers=min(max_workers, len(jobs))) as executor:

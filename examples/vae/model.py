@@ -10,10 +10,9 @@ from lagom.networks import ortho_init
 
 
 class VAE(Module):
-    def __init__(self, config, device, **kwargs):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
-        self.device = device
         
         self.encoder = make_fc(784, [400])
         for layer in self.encoder:
@@ -29,9 +28,6 @@ class VAE(Module):
             ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.x_head = nn.Linear(400, 784)
         ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
-        
-        self.to(device)
-        self.total_iter = 0
 
     def encode(self, x):
         for layer in self.encoder:
@@ -60,10 +56,9 @@ class VAE(Module):
 
         
 class ConvVAE(Module):
-    def __init__(self, config, device, **kwargs):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
-        self.device = device
         
         self.encoder = make_cnn(input_channel=1, 
                                 channels=[64, 64, 64], 
@@ -90,9 +85,6 @@ class ConvVAE(Module):
             ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.x_head = nn.Linear(9216, 784)
         ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
-        
-        self.to(device)
-        self.total_iter = 0
         
     def encode(self, x):
         for layer in self.encoder:

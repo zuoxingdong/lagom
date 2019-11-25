@@ -1,13 +1,16 @@
 import os
-from itertools import count
 import gym
 
+import lagom
 from lagom import StepRunner
 from lagom.utils import pickle_dump
 from lagom.utils import set_global_seeds
+from lagom.utils import NConditioner
 from lagom.experiment import Config
+from lagom.experiment import Configurator
 from lagom.experiment import Grid
 from lagom.experiment import run_experiment
+from lagom.experiment import checkpointer
 from lagom.envs import RecordEpisodeStatistics
 from lagom.envs import NormalizeObservation
 from lagom.envs import NormalizeReward
@@ -18,15 +21,15 @@ from baselines.vpg.agent_lstm import Agent as LSTMAgent
 from baselines.vpg.engine import Engine
 
 
-config = Config(
+configurator = Configurator(
     {'log.freq': 10, 
-     'checkpoint.num': 3,
+     'checkpoint.inference.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']), 
+     'env.id': Grid(['HalfCheetah-v3']), #, 'Hopper-v3', 'Walker2d-v3']), 
      'env.normalize_obs': True,
      'env.normalize_reward': True,
      
-     'use_lstm': Grid([True, False]),
+     'use_lstm': False, #Grid([True, False]),
      'rnn.size': 128,
      'nn.sizes': [64, 64],
      
@@ -45,15 +48,16 @@ config = Config(
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration
-    })
+    },
+    num_sample=1)
 
 
-def make_env(config, seed, mode):
+def make_env(config, mode):
     assert mode in ['train', 'eval']
     env = gym.make(config['env.id'])
-    env.seed(seed)
-    env.observation_space.seed(seed)
-    env.action_space.seed(seed)
+    env.seed(config.seed)
+    env.observation_space.seed(config.seed)
+    env.action_space.seed(config.seed)
     if config['env.clip_action'] and isinstance(env.action_space, gym.spaces.Box):
         env = gym.wrappers.ClipAction(env)
     if mode == 'train':
@@ -66,36 +70,46 @@ def make_env(config, seed, mode):
     return env
     
 
-def run(config, seed, device, logdir):
-    set_global_seeds(seed)
+def run(config):
+    set_global_seeds(config.seed)
     
-    env = make_env(config, seed, 'train')
+    env = make_env(config, 'train')
     if config['use_lstm']:
-        agent = LSTMAgent(config, env, device)
+        agent = LSTMAgent(config, env)
     else:
-        agent = Agent(config, env, device)
+        agent = Agent(config, env)
     runner = StepRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
-    train_logs = []
-    checkpoint_count = 0
-    for i in count():
-        if agent.total_timestep >= config['train.timestep']:
-            break
-        train_logger = engine.train(i)
-        train_logs.append(train_logger.logs)
-        if i == 0 or (i+1) % config['log.freq'] == 0:
-            train_logger.dump(keys=None, index=0, indent=0, border='-'*50)
-        if agent.total_timestep >= int(config['train.timestep']*(checkpoint_count/(config['checkpoint.num'] - 1))):
-            agent.checkpoint(logdir, i + 1)
-            checkpoint_count += 1
-    pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
-    return None
     
+    cond_save = NConditioner(max_n=config['train.timestep'], num_conditions=config['checkpoint.inference.num'], mode='accumulative')
+    train_logs = []
+    iteration = 0
+    if config.resume_checkpointer.exists():
+        out = checkpointer('load', config, env=env, agent=agent, optimizer=agent.optimizer, runner=runner, train_logs=train_logs, iteration=iteration)
+        env = out['env']
+        runner = out['runner']
+        train_logs = out['train_logs']
+        iteration = out['iteration']
+        agent.env = env
+        engine.env = env
+        engine.runner = runner
+
+    while agent.total_timestep < config['train.timestep']:
+        train_logger = engine.train(iteration)
+        train_logs.append(train_logger.logs)
+        if cond_save(int(agent.total_timestep)):
+            agent.checkpoint(config.logdir, iteration+1)
+        pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+        checkpointer('save', config, env=env, agent=agent, optimizer=agent.optimizer, runner=runner, train_logs=train_logs, iteration=iteration+1)
+        iteration += 1
+    agent.checkpoint(config.logdir, iteration+1)
+    return None
+
 
 if __name__ == '__main__':
     run_experiment(run=run, 
-                   config=config, 
-                   seeds=[1770966829, 1500925526, 2054191100], 
+                   configurator=configurator, 
+                   seeds=lagom.SEEDS[:3],
                    log_dir='logs/default',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 

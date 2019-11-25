@@ -19,7 +19,12 @@ Config
 .. autoclass:: Config
     :members:
 
-Run experiment
+.. autoclass:: Configurator
+    :members:
+
+Experiment
 --------------
+
+.. autofunction:: checkpointer
 
 .. autofunction:: run_experiment

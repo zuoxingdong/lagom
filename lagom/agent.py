@@ -13,18 +13,16 @@ class BaseAgent(Module, ABC):
     Any agent should subclass this class, e.g. policy-based or value-based. 
     
     Args:
-        config (dict): a dictionary of configurations
+        config (Config): a dictionary of configurations
         env (Env): environment object. 
-        device (Device): a PyTorch device
         **kwargs: keyword aguments used to specify the agent
     
     """
-    def __init__(self, config, env, device, **kwargs):
+    def __init__(self, config, env, **kwargs):
         super(Module, self).__init__(**kwargs)
         
         self.config = config
         self.env = env
-        self.device = device
         
         self.info = {}
         self.is_recurrent = None
@@ -69,10 +67,7 @@ class BaseAgent(Module, ABC):
 class RandomAgent(BaseAgent):
     r"""A random agent samples action uniformly from action space. """    
     def choose_action(self, x, **kwargs):
-        if hasattr(self.env, 'num_envs'):
-            action = [self.env.action_space.sample() for _ in range(self.env.num_envs)]
-        else:
-            action = self.env.action_space.sample()
+        action = self.env.action_space.sample()
         out = {'raw_action': action}
         return out  
 

@@ -3,23 +3,21 @@ class IntervalConditioner(object):
         self.interval = interval
         assert mode in ['accumulative', 'incremental']
         self.mode = mode
+        
         self.counter = 0
         if mode == 'incremental':
             self.total_n = 0
         
     def __call__(self, n):
         assert n >= 0
-        if n == 0:
-            return True
-        else:
-            if self.mode == 'accumulative':
-                check = n >= (self.counter+1)*self.interval
-            elif self.mode == 'incremental':
-                self.total_n += n
-                check = self.total_n >= (self.counter+1)*self.interval
-            if check:
-                self.counter += 1
-            return check
+        if self.mode == 'accumulative':
+            check = n >= self.counter*self.interval
+        elif self.mode == 'incremental':
+            self.total_n += n
+            check = self.total_n >= self.counter*self.interval
+        if check:
+            self.counter += 1
+        return check
 
 
 class NConditioner(IntervalConditioner):

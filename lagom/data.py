@@ -96,6 +96,19 @@ class Trajectory(object):
         self.timesteps.append(timestep)
 
     @property
+    def transitions(self):
+        assert self.T > 0
+        out = []
+        for t in range(self.T):
+            observation = self.timesteps[t].observation
+            action = self.actions[t]
+            next_observation = self.timesteps[t+1].observation
+            reward = self.timesteps[t+1].reward
+            done = self.timesteps[t+1].done
+            out.append([observation, action, next_observation, reward, done])
+        return out
+        
+    @property
     def observations(self):
         return [timestep.observation for timestep in self.timesteps]
     
