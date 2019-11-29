@@ -7,7 +7,6 @@ import torch.optim as optim
 import gym.spaces as spaces
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
-from lagom.utils import tensorify
 from lagom.utils import numpify
 from lagom.networks import Module
 from lagom.networks import make_lnlstm
@@ -22,50 +21,46 @@ from lagom.transform import describe
 
 
 class FeatureNet(Module):
-    def __init__(self, config, env, device, **kwargs):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
         self.lstm = make_lnlstm(spaces.flatdim(env.observation_space), config['rnn.size'], num_layers=1)
-        
-        self.to(self.device)
         
     def forward(self, x, states):
         return self.lstm(x, states)
 
 
 class Agent(BaseAgent):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(config, env, device, **kwargs)
+    def __init__(self, config, env, **kwargs):
+        super().__init__(config, env, **kwargs)
         
         feature_dim = config['rnn.size']
-        self.feature_network = FeatureNet(config, env, device, **kwargs)
+        self.feature_network = FeatureNet(config, env, **kwargs)
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
+            self.action_head = CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), device, config['agent.std0'], **kwargs)
+            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
         self.V_head = nn.Linear(feature_dim, 1)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
-        self.V_head = self.V_head.to(device)  # reproducible between CPU/GPU, ortho_init behaves differently
         
-        self.total_timestep = 0
         self.optimizer = optim.Adam(self.parameters(), lr=config['agent.lr'])
         if config['agent.use_lr_scheduler']:
             self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
-            
+
+        self.register_buffer('total_timestep', torch.tensor(0))
         self.state = None
         
     def reset(self, batch_size):
-        h = torch.zeros(batch_size, self.config['rnn.size']).to(self.device)
+        h = torch.zeros(batch_size, self.config['rnn.size']).to(self.config.device)
         c = torch.zeros_like(h)
         return h, c
         
     def choose_action(self, x, **kwargs):
         if x.first():
             self.state = self.reset(1)
-        obs = tensorify(x.observation, self.device).unsqueeze(0)
+        obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         obs = obs.unsqueeze(0)  # add seq_dim
         features, [next_state] = self.feature_network(obs, [self.state])
         if 'last_info' not in kwargs:
@@ -95,7 +90,7 @@ class Agent(BaseAgent):
         
         # Metrics -> Tensor, device
         logprobs, entropies, Vs = map(lambda x: torch.cat(x).squeeze(), [logprobs, entropies, Vs])
-        Qs, As = map(lambda x: tensorify(np.concatenate(x).copy(), self.device), [Qs, As])
+        Qs, As = map(lambda x: torch.as_tensor(np.concatenate(x)).float().to(self.config.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-4)
         assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])

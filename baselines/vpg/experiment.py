@@ -1,6 +1,10 @@
 import os
 import gym
 
+##
+import numpy as np
+##
+
 import lagom
 from lagom import StepRunner
 from lagom.utils import pickle_dump
@@ -25,18 +29,18 @@ configurator = Configurator(
     {'log.freq': 10, 
      'checkpoint.inference.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3']), #, 'Hopper-v3', 'Walker2d-v3']), 
+     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']), 
      'env.normalize_obs': True,
      'env.normalize_reward': True,
      
-     'use_lstm': False, #Grid([True, False]),
+     'use_lstm': Grid([True, False]),
      'rnn.size': 128,
      'nn.sizes': [64, 64],
      
-     'agent.lr': 1e-3,
+     'agent.lr': 1e-3, 
      'agent.use_lr_scheduler': False,
-     'agent.gamma': 0.99,
-     'agent.gae_lambda': 0.97,
+     'agent.gamma': 0.995, 
+     'agent.gae_lambda': 0.98, 
      'agent.standardize_adv': True,  # standardize advantage estimates
      'agent.max_grad_norm': 0.5,  # grad clipping by norm
      'agent.entropy_coef': 0.01,
@@ -44,7 +48,7 @@ configurator = Configurator(
      
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.6,  # initial std
+     'agent.std0': 0.5,  # initial std
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration
@@ -110,7 +114,7 @@ if __name__ == '__main__':
     run_experiment(run=run, 
                    configurator=configurator, 
                    seeds=lagom.SEEDS[:3],
-                   log_dir='logs/default',
+                   log_dir='logs/baseline',
                    max_workers=os.cpu_count(), 
                    chunksize=1, 
                    use_gpu=False,  # CPU a bit faster
