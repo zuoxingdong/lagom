@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import gym.spaces as spaces
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
-from lagom.utils import tensorify
 from lagom.utils import numpify
 from lagom.networks import Module
 from lagom.networks import make_fc
@@ -15,15 +14,13 @@ from lagom.networks import DiagGaussianHead
 
 
 class MLP(Module):
-    def __init__(self, config, env, device, **kwargs):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
         self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
-        self.to(self.device)
         
     def forward(self, x):
         for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
@@ -32,19 +29,20 @@ class MLP(Module):
 
 
 class Agent(BaseAgent):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(config, env, device, **kwargs)
+    def __init__(self, config, env, **kwargs):
+        super().__init__(config, env, **kwargs)
         
-        self.feature_network = MLP(config, env, device, **kwargs)
+        self.feature_network = MLP(config, env, **kwargs)
         feature_dim = config['nn.sizes'][-1]
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
+            self.action_head = CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), device, config['agent.std0'], **kwargs)
-        self.total_timestep = 0
+            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), 0.5, **kwargs)
+
+        self.register_buffer('total_timestep', torch.tensor(0))
         
     def choose_action(self, x, **kwargs):
-        obs = tensorify(x.observation, self.device).unsqueeze(0)
+        obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         features = self.feature_network(obs)
         action_dist = self.action_head(features)
         action = action_dist.sample()
