@@ -8,7 +8,6 @@ import gym.spaces as spaces
 
 from lagom import BaseAgent
 from lagom.utils import pickle_dump
-from lagom.utils import tensorify
 from lagom.utils import numpify
 from lagom.networks import Module
 from lagom.networks import make_fc
@@ -26,11 +25,10 @@ from baselines.ppo.dataset import Dataset
 
 
 class Actor(Module):
-    def __init__(self, config, env, device, **kwargs):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
         self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
@@ -38,12 +36,10 @@ class Actor(Module):
         
         feature_dim = config['nn.sizes'][-1]
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = CategoricalHead(feature_dim, env.action_space.n, device, **kwargs)
+            self.action_head = CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), device, config['agent.std0'], **kwargs)
-        
-        self.to(self.device)
-        
+            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
+
     def forward(self, x):
         for layer in self.feature_layers:
             x = torch.tanh(layer(x))
@@ -52,11 +48,10 @@ class Actor(Module):
 
 
 class Critic(Module):
-    def __init__(self, config, env, device, **kwargs):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
         self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
@@ -65,9 +60,7 @@ class Critic(Module):
         feature_dim = config['nn.sizes'][-1]
         self.V_head = nn.Linear(feature_dim, 1)
         ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
-        
-        self.to(self.device)
-        
+
     def forward(self, x):
         for layer in self.feature_layers:
             x = F.relu(layer(x))
@@ -76,20 +69,21 @@ class Critic(Module):
 
 
 class Agent(BaseAgent):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(config, env, device, **kwargs)
+    def __init__(self, config, env, **kwargs):
+        super().__init__(config, env, **kwargs)
         
-        self.policy = Actor(config, env, device, **kwargs)
-        self.value = Critic(config, env, device, **kwargs)
-        
-        self.total_timestep = 0
+        self.policy = Actor(config, env, **kwargs)
+        self.value = Critic(config, env, **kwargs)
+
         self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=config['agent.policy_lr'])
         self.value_optimizer = optim.Adam(self.value.parameters(), lr=config['agent.value_lr'])
         if config['agent.use_lr_scheduler']:
             self.policy_lr_scheduler = linear_lr_scheduler(self.policy_optimizer, config['train.timestep'], min_lr=1e-8)
         
+        self.register_buffer('total_timestep', torch.tensor(0))
+        
     def choose_action(self, x, **kwargs):
-        obs = tensorify(x.observation, self.device).unsqueeze(0)
+        obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         action_dist = self.policy(obs)
         V = self.value(obs)
         action = action_dist.sample()
@@ -103,7 +97,7 @@ class Agent(BaseAgent):
         return out
     
     def learn_one_update(self, data):
-        data = [d.detach().to(self.device) for d in data]
+        data = [d.to(self.config.device) for d in data]
         observations, old_actions, old_logprobs, old_entropies, old_Vs, old_Qs, old_As = data
         
         action_dist = self.policy(observations)
@@ -132,6 +126,7 @@ class Agent(BaseAgent):
         
         self.value_optimizer.zero_grad()
         value_loss.backward()
+        # TODO: try without value clip grad
         value_grad_norm = nn.utils.clip_grad_norm_(self.value.parameters(), self.config['agent.max_grad_norm'])
         self.value_optimizer.step()
         
@@ -150,9 +145,7 @@ class Agent(BaseAgent):
         logprobs = [torch.cat(traj.get_infos('action_logprob')) for traj in D]
         entropies = [torch.cat(traj.get_infos('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_infos('V')) for traj in D]
-        with torch.no_grad():
-            last_observations = tensorify([traj[-1].observation for traj in D], self.device)
-            last_Vs = self.value(last_observations).squeeze(-1)
+        last_Vs = [traj.extra_info['last_info']['V'] for traj in D]
         Qs = [bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
               for traj, last_V in zip(D, last_Vs)]
         As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
@@ -160,7 +153,7 @@ class Agent(BaseAgent):
         
         # Metrics -> Tensor, device
         logprobs, entropies, Vs = map(lambda x: torch.cat(x).squeeze(), [logprobs, entropies, Vs])
-        Qs, As = map(lambda x: tensorify(np.concatenate(x).copy(), self.device), [Qs, As])
+        Qs, As = map(lambda x: torch.as_tensor(np.concatenate(x)).float().to(self.config.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-4)
         assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])
