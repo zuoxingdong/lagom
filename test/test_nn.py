@@ -15,15 +15,15 @@ from torch.distributions import Categorical
 from torch.distributions import Normal
 from torch.distributions import Independent
 
-from lagom.networks import Module
-from lagom.networks import linear_lr_scheduler
-from lagom.networks import ortho_init
-from lagom.networks import make_fc
-from lagom.networks import make_cnn
-from lagom.networks import make_transposed_cnn
-from lagom.networks import make_lnlstm
-from lagom.networks import CategoricalHead
-from lagom.networks import DiagGaussianHead
+from lagom.nn import Module
+from lagom.nn import linear_lr_scheduler
+from lagom.nn import ortho_init
+from lagom.nn import make_fc
+from lagom.nn import make_cnn
+from lagom.nn import make_transposed_cnn
+from lagom.nn import make_lnlstm
+from lagom.nn import CategoricalHead
+from lagom.nn import DiagGaussianHead
 
 
 class TestMakeBlocks(object):

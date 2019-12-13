@@ -1,8 +1,8 @@
-lagom.networks: Networks
+lagom.nn: Neural Network Modules
 ===================================
 
-.. automodule:: lagom.networks
-.. currentmodule:: lagom.networks
+.. automodule:: lagom.nn
+.. currentmodule:: lagom.nn
 
 .. autoclass:: Module
     :members:

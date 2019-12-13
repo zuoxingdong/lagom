@@ -6,8 +6,8 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 from torch.distributions import Normal
 
-from lagom.networks import Module
-from lagom.networks import ortho_init
+from lagom.nn import Module
+from lagom.nn import ortho_init
 
 
 class MDNHead(Module):
