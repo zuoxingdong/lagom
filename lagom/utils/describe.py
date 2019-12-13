@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+import torch
 
 
 @dataclass
@@ -26,6 +27,8 @@ class Describe:
 
 
 def describe(x, axis=-1, repr_indent=0, repr_prefix=None):
+    if torch.is_tensor(x):
+        x = x.tolist()
     if x is None or np.size(x) == 0:
         return None
     x = np.asarray(x)

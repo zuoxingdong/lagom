@@ -17,6 +17,7 @@ from lagom.utils import yaml_dump
 from lagom.utils import timed
 from lagom.utils import ProcessMaster
 from lagom.utils import ProcessWorker
+from lagom.utils import explained_variance
 
 
 def test_color_str():
@@ -321,3 +322,12 @@ def test_process_master_worker(num_worker):
     results = master()
     assert results == [True, True, False, True, False, False, True]
     check(master)
+
+
+def test_explained_variance():
+    assert np.isclose(explained_variance(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8]), 0.9571734666824341)
+    assert np.isclose(explained_variance(y_true=[[3, -0.5, 2, 7]], y_pred=[[2.5, 0.0, 2, 8]]), 0.9571734666824341)
+    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]]), 
+                      0.9838709533214569)
+    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]]), 
+                      0.6704022586345673)

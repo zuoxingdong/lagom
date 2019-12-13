@@ -4,7 +4,6 @@ import pytest
 
 from lagom.transform import interp_curves
 from lagom.transform import geometric_cumsum
-from lagom.transform import explained_variance
 from lagom.transform import LinearSchedule
 from lagom.transform import rank_transform
 from lagom.transform import PolyakAverage
@@ -38,15 +37,6 @@ def test_geometric_cumsum():
     assert np.allclose(geometric_cumsum(0.1, [1, 2, 3]), [1.23, 2.3, 3])
     assert np.allclose(geometric_cumsum(0.1, [[1, 2, 3, 4], [5, 6, 7, 8]]), 
                        [[1.234, 2.34, 3.4, 4], [5.678, 6.78, 7.8, 8]])
-
-
-def test_explained_variance():
-    assert np.isclose(explained_variance(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8]), 0.9571734666824341)
-    assert np.isclose(explained_variance(y_true=[[3, -0.5, 2, 7]], y_pred=[[2.5, 0.0, 2, 8]]), 0.9571734666824341)
-    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]]), 
-                      0.9838709533214569)
-    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]]), 
-                      0.6704022586345673)
 
 
 def test_linear_schedule():

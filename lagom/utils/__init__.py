@@ -1,8 +1,13 @@
 from .seeding import set_global_seeds
 from .seeding import Seeder
 
+from .describe import Describe
+from .describe import describe
+
 from .dtype import tensorify
 from .dtype import numpify
+
+from .explained_variance import explained_variance
 
 from .multiprocessing import ProcessMaster
 from .multiprocessing import ProcessWorker
