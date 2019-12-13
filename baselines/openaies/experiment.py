@@ -27,10 +27,10 @@ configurator = lagom.Configurator(
      'train.worker_chunksize': 4,  # must be divisible by popsize
      'train.mu0': 0.0,
      'train.std0': 1.0,
-     'train.lr': 1e-2,
+     'train.lr': 3e-1,
      'train.lr_decay': 1.0,
      'train.min_lr': 1e-6,
-     'train.sigma_scheduler_args': [1.0, 0.01, 400, 0],
+     'train.sigma_scheduler_args': [1.0, 0.001, 300, 0],
      'train.antithetic': False,
      'train.rank_transform': True
     }, 
