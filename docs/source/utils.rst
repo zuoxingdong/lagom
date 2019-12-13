@@ -40,6 +40,12 @@ Misc
 ----
 .. autofunction:: color_str
 
+.. autoclass:: Describe
+
+.. autofunction:: describe
+
+.. autofunction:: explained_variance
+
 .. autofunction:: timed
 
 .. autofunction:: timeit

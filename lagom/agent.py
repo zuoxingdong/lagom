@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
-from lagom.networks import Module
+from lagom.nn import Module
 
 
 class BaseAgent(Module, ABC):
