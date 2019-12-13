@@ -50,8 +50,8 @@ A graphical illustration is coming soon.
     lagom
     lagom.envs <envs>
     lagom.experiment <experiment>
-    lagom.metric <metric>
-    lagom.networks <networks>
+    lagom.rl <rl>
+    lagom.nn <nn>
     lagom.transform <transform>
     lagom.utils <utils>
     lagom.vis <vis>
