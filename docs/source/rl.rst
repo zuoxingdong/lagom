@@ -1,8 +1,8 @@
-lagom.metric: Metrics
+lagom.rl: RL Metrics
 ===================================
 
-.. automodule:: lagom.metric
-.. currentmodule:: lagom.metric
+.. automodule:: lagom.rl
+.. currentmodule:: lagom.rl
 
 .. autofunction:: returns
 
