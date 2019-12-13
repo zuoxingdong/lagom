@@ -5,40 +5,29 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import gym.spaces as spaces
-
-from lagom import BaseAgent
-from lagom.utils import pickle_dump
-from lagom.utils import numpify
-from lagom.networks import Module
-from lagom.networks import make_fc
-from lagom.networks import ortho_init
-from lagom.networks import CategoricalHead
-from lagom.networks import DiagGaussianHead
-from lagom.networks import linear_lr_scheduler
-from lagom.metric import bootstrapped_returns
-from lagom.metric import gae
-from lagom.transform import explained_variance as ev
-from lagom.transform import describe
+import lagom
+import lagom.utils as utils
+import lagom.rl as rl
 
 from torch.utils.data import DataLoader
 from baselines.ppo.dataset import Dataset
 
 
-class Actor(Module):
+class Actor(lagom.nn.Module):
     def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
         
-        self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
         
         feature_dim = config['nn.sizes'][-1]
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = CategoricalHead(feature_dim, env.action_space.n, **kwargs)
+            self.action_head = lagom.nn.CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
+            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
 
     def forward(self, x):
         for layer in self.feature_layers:
@@ -47,19 +36,19 @@ class Actor(Module):
         return action_dist
 
 
-class Critic(Module):
+class Critic(lagom.nn.Module):
     def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
         
-        self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         
         feature_dim = config['nn.sizes'][-1]
         self.V_head = nn.Linear(feature_dim, 1)
-        ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
+        lagom.nn.ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
 
     def forward(self, x):
         for layer in self.feature_layers:
@@ -68,7 +57,7 @@ class Critic(Module):
         return V
 
 
-class Agent(BaseAgent):
+class Agent(lagom.BaseAgent):
     def __init__(self, config, env, **kwargs):
         super().__init__(config, env, **kwargs)
         
@@ -78,7 +67,7 @@ class Agent(BaseAgent):
         self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=config['agent.policy_lr'])
         self.value_optimizer = optim.Adam(self.value.parameters(), lr=config['agent.value_lr'])
         if config['agent.use_lr_scheduler']:
-            self.policy_lr_scheduler = linear_lr_scheduler(self.policy_optimizer, config['train.timestep'], min_lr=1e-8)
+            self.policy_lr_scheduler = lagom.nn.linear_lr_scheduler(self.policy_optimizer, config['train.timestep'], min_lr=1e-8)
         
         self.register_buffer('total_timestep', torch.tensor(0))
         
@@ -92,7 +81,7 @@ class Agent(BaseAgent):
         out['V'] = V
         out['entropy'] = action_dist.entropy()
         out['action'] = action
-        out['raw_action'] = numpify(action, self.env.action_space.dtype).squeeze(0)
+        out['raw_action'] = utils.numpify(action.squeeze(0), self.env.action_space.dtype)
         out['action_logprob'] = action_dist.log_prob(action.detach())
         return out
     
@@ -136,7 +125,7 @@ class Agent(BaseAgent):
         out['policy_loss'] = policy_loss.item()
         out['policy_entropy'] = entropies.mean().item()
         out['value_loss'] = value_loss.item()
-        out['explained_variance'] = ev(y_true=numpify(old_Qs, 'float'), y_pred=numpify(Vs, 'float'))
+        out['explained_variance'] = utils.explained_variance(y_true=old_Qs.tolist(), y_pred=Vs.tolist())
         out['approx_kl'] = (old_logprobs - logprobs).mean(0).item()
         out['clip_frac'] = ((ratio < 1.0 - eps) | (ratio > 1.0 + eps)).float().mean(0).item()
         return out
@@ -146,9 +135,9 @@ class Agent(BaseAgent):
         entropies = [torch.cat(traj.get_infos('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_infos('V')) for traj in D]
         last_Vs = [traj.extra_info['last_info']['V'] for traj in D]
-        Qs = [bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
+        Qs = [rl.bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
               for traj, last_V in zip(D, last_Vs)]
-        As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
+        As = [rl.gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
               for traj, V, last_V in zip(D, Vs, last_Vs)]
         
         # Metrics -> Tensor, device
@@ -181,4 +170,4 @@ class Agent(BaseAgent):
         self.save(logdir/f'agent_{num_iter}.pth')
         if self.config['env.normalize_obs']:
             moments = (self.env.obs_moments.mean, self.env.obs_moments.var)
-            pickle_dump(obj=moments, f=logdir/f'obs_moments_{num_iter}', ext='.pth')
+            utils.pickle_dump(obj=moments, f=logdir/f'obs_moments_{num_iter}', ext='.pth')

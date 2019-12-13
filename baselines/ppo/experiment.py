@@ -1,30 +1,17 @@
-import os
 import gym
 
 import lagom
-from lagom import StepRunner
-from lagom.utils import pickle_dump
-from lagom.utils import set_global_seeds
-from lagom.utils import NConditioner
-from lagom.experiment import Config
-from lagom.experiment import Configurator
-from lagom.experiment import Grid
-from lagom.experiment import run_experiment
-from lagom.experiment import checkpointer
-from lagom.envs import RecordEpisodeStatistics
-from lagom.envs import NormalizeObservation
-from lagom.envs import NormalizeReward
-from lagom.envs import TimeStepEnv
+import lagom.utils as utils
 
 from baselines.ppo.agent import Agent
 from baselines.ppo.engine import Engine
 
 
-configurator = Configurator(
+configurator = lagom.Configurator(
     {'log.freq': 10, 
      'checkpoint.inference.num': 3,
      
-     'env.id': Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']),
+     'env.id': lagom.Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']),
      'env.normalize_obs': True,
      'env.normalize_reward': True,
      
@@ -60,32 +47,28 @@ def make_env(config, mode):
     if config['env.clip_action'] and isinstance(env.action_space, gym.spaces.Box):
         env = gym.wrappers.ClipAction(env)
     if mode == 'train':
-        env = RecordEpisodeStatistics(env, deque_size=100)
+        env = lagom.envs.RecordEpisodeStatistics(env, deque_size=100)
         if config['env.normalize_obs']:
-            env = NormalizeObservation(env, clip=5.)
+            env = lagom.envs.NormalizeObservation(env, clip=5.)
         if config['env.normalize_reward']:
-            env = NormalizeReward(env, clip=10., gamma=config['agent.gamma'])
-    env = TimeStepEnv(env)
+            env = lagom.envs.NormalizeReward(env, clip=10., gamma=config['agent.gamma'])
+    env = lagom.envs.TimeStepEnv(env)
     return env
     
 
 def run(config):
-    set_global_seeds(config.seed)
+    lagom.set_global_seeds(config.seed)
     
     env = make_env(config, 'train')
     agent = Agent(config, env)
-    runner = StepRunner(reset_on_call=False)
+    runner = lagom.StepRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     
-    cond_save = NConditioner(max_n=config['train.timestep'], num_conditions=config['checkpoint.inference.num'], mode='accumulative')
+    cond_save = utils.NConditioner(max_n=config['train.timestep'], num_conditions=config['checkpoint.inference.num'], mode='accumulative')
     train_logs = []
     iteration = 0
     if config.resume_checkpointer.exists():
-        out = checkpointer('load', config, env=env, agent=agent, policy_optimizer=agent.policy_optimizer, value_optimizer=agent.value_optimizer, runner=runner, train_logs=train_logs, iteration=iteration)
-        env = out['env']
-        runner = out['runner']
-        train_logs = out['train_logs']
-        iteration = out['iteration']
+        env, runner, train_logs, iteration = lagom.checkpointer('load', config, state_obj=[agent, agent.policy_optimizer, agent.value_optimizer])
         agent.env = env
         engine.env = env
         engine.runner = runner
@@ -95,19 +78,19 @@ def run(config):
         train_logs.append(train_logger.logs)
         if cond_save(int(agent.total_timestep)):
             agent.checkpoint(config.logdir, iteration+1)
-        pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
-        checkpointer('save', config, env=env, agent=agent, policy_optimizer=agent.policy_optimizer, value_optimizer=agent.value_optimizer, runner=runner, train_logs=train_logs, iteration=iteration+1)
+        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+        lagom.checkpointer('save', config, obj=[env, runner, train_logs, iteration+1], state_obj=[agent, agent.policy_optimizer, agent.value_optimizer])
         iteration += 1
     agent.checkpoint(config.logdir, iteration+1)
     return None
     
 
 if __name__ == '__main__':
-    run_experiment(run=run,
-                   configurator=configurator,
-                   seeds=lagom.SEEDS[:3],
-                   log_dir='logs/default',
-                   max_workers=os.cpu_count(),
-                   chunksize=1,
-                   use_gpu=False,  # CPU a bit faster
-                   gpu_ids=None)
+    lagom.run_experiment(run=run,
+                         configurator=configurator,
+                         seeds=lagom.SEEDS[:3],
+                         log_dir='logs/default',
+                         max_workers=None,
+                         chunksize=1,
+                         use_gpu=False,  # CPU a bit faster
+                         gpu_ids=None)
