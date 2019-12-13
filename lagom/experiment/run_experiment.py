@@ -55,7 +55,8 @@ def run_experiment(run, configurator, seeds, log_dir, max_workers, chunksize=1, 
         configurator (Configurator): a :class:`Configurator` object defining all configuration settings
         seeds (list): a list of random seeds
         log_dir (str): a string to indicate the path to store loggings.
-        max_workers (int): argument for ProcessPoolExecutor. if `None`, then all experiments run serially.
+        max_workers (int): argument for ProcessPoolExecutor. If `None`, then it uses CPU counts.
+            If `-1`, then all experiments run serially.
         chunksize (int): argument for Executor.map()
         use_gpu (bool): if `True`, then use CUDA. Otherwise, use CPU.
         gpu_ids (list): if `None`, then use all available GPUs. Otherwise, only use the
@@ -139,9 +140,11 @@ def run_experiment(run, configurator, seeds, log_dir, max_workers, chunksize=1, 
             torch.cuda.empty_cache()
         return result
     
-    if max_workers is None:  # no multiprocessing
+    if max_workers == -1:  # no multiprocessing
         results = [_run(job) for job in jobs]
     else:
+        if max_workers is None:
+            max_workers = os.cpu_count()
         with ProcessPoolExecutor(max_workers=min(max_workers, len(jobs))) as executor:
             results = list(executor.map(CloudpickleWrapper(_run), jobs, chunksize=chunksize))
     print(color_str(f'\nExperiment finished. Loggings are stored in {log_path.absolute()}. ', 'cyan', bold=True))

@@ -164,7 +164,7 @@ def test_checkpointer():
     config.logdir = Path('./')
     config.resume_checkpointer = config.logdir / 'resume_checkpoint.tar'
 
-    checkpointer('save', config, net1=net1, net2=net2, optimizer_out=optimizer_out, loss=loss, logs=logs)
+    checkpointer('save', config, obj=[loss, logs], state_obj=[net1, net2, optimizer_out])
     assert config.resume_checkpointer.exists()
 
     # Change some values before loading
@@ -177,21 +177,21 @@ def test_checkpointer():
     assert torch.allclose(net1.fc.weight, torch.tensor(0.0))
     assert torch.allclose(net2.fc.weight, torch.tensor(0.0))
 
-    out = checkpointer('load', config, net1=net1, net2=net2, optimizer_out=optimizer_out, loss=loss, logs=logs)
-    assert list(out.keys()) == ['loss', 'logs']
+    _loss, _logs = checkpointer('load', config, state_obj=[net1, net2, optimizer_out])
 
     # Check if loading works
     assert not torch.allclose(net1.fc.weight, torch.tensor(0.0))
     assert not torch.allclose(net2.fc.weight, torch.tensor(0.0))
-    out['loss'] = 12.5
-    out['logs'] = [1, 2, 3, 4]
+    assert optimizer_out.state_dict()['param_groups'][0]['lr'] == 7e-4
+    _loss = 12.5
+    _logs = [1, 2, 3, 4]
     
     # remove the checkpoint file
     config.resume_checkpointer.unlink()
 
 
 @pytest.mark.parametrize('num_sample', [1, 5])
-@pytest.mark.parametrize('max_workers', [None, 1, 5, 100])
+@pytest.mark.parametrize('max_workers', [-1, None, 1, 5, 100])
 @pytest.mark.parametrize('chunksize', [1, 7, 40])
 def test_run_experiment(num_sample, max_workers, chunksize):
     def run(config):
