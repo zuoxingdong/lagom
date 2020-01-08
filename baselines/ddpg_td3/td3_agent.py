@@ -4,31 +4,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from gym.spaces import flatdim
-from lagom import BaseAgent
-from lagom.utils import tensorify
-from lagom.utils import numpify
-from lagom.networks import Module
-from lagom.networks import make_fc
-from lagom.networks import ortho_init
-from lagom.transform import describe
+import gym.spaces as spaces
+import lagom
+import lagom.utils as utils
+import lagom.rl as rl
 
 
-class Actor(Module):
-    def __init__(self, config, env, device, **kwargs):
+class Actor(lagom.nn.Module):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
-        self.feature_layers = make_fc(flatdim(env.observation_space), [400, 300])
-        self.action_head = nn.Linear(300, flatdim(env.action_space))
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), [400, 300])
+        self.action_head = nn.Linear(300, spaces.flatdim(env.action_space))
         
+        # TODO: use Rescale wrappers in gym instead
         assert np.unique(env.action_space.high).size == 1
         assert -np.unique(env.action_space.low).item() == np.unique(env.action_space.high).item()
         self.max_action = env.action_space.high[0]
-        
-        self.to(self.device)
         
     def forward(self, x):
         for layer in self.feature_layers:
@@ -37,22 +31,20 @@ class Actor(Module):
         return x
 
 
-class Critic(Module):
-    def __init__(self, config, env, device, **kwargs):
+class Critic(lagom.nn.Module):
+    def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
-        self.device = device
         
+        obs_dim = spaces.flatdim(env.observation_space)
+        action_dim = spaces.flatdim(env.action_space)
         # Q1
-        self.first_feature_layers = make_fc(flatdim(env.observation_space) + flatdim(env.action_space), [400, 300])
+        self.first_feature_layers = lagom.nn.make_fc(obs_dim + action_dim, [400, 300])
         self.first_Q_head = nn.Linear(300, 1)
-        
         # Q2
-        self.second_feature_layers = make_fc(flatdim(env.observation_space) + flatdim(env.action_space), [400, 300])
+        self.second_feature_layers = lagom.nn.make_fc(obs_dim + action_dim, [400, 300])
         self.second_Q_head = nn.Linear(300, 1)
-        
-        self.to(self.device)
         
     def Q1(self, x, action):
         x = torch.cat([x, action], dim=-1)
@@ -72,22 +64,23 @@ class Critic(Module):
         return self.Q1(x, action), self.Q2(x, action)
     
     
-class Agent(BaseAgent):
-    def __init__(self, config, env, device, **kwargs):
-        super().__init__(config, env, device, **kwargs)
+class Agent(lagom.BaseAgent):
+    def __init__(self, config, env, **kwargs):
+        super().__init__(config, env, **kwargs)
         
-        self.actor = Actor(config, env, device, **kwargs)
-        self.actor_target = Actor(config, env, device, **kwargs)
+        self.actor = Actor(config, env, **kwargs)
+        self.actor_target = Actor(config, env, **kwargs)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=config['agent.actor.lr'])
         
-        self.critic = Critic(config, env, device, **kwargs)
-        self.critic_target = Critic(config, env, device, **kwargs)
+        self.critic = Critic(config, env, **kwargs)
+        self.critic_target = Critic(config, env, **kwargs)
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
+        self.register_buffer('total_timestep', torch.tensor(0))
+        # TODO: remove it after using Rescale wrapper on action space
         self.max_action = env.action_space.high[0]
-        self.total_timestep = 0
         
     def polyak_update_target(self):
         p = self.config['agent.polyak']
@@ -97,9 +90,9 @@ class Agent(BaseAgent):
             target_param.data.copy_(p*target_param.data + (1 - p)*param.data)
 
     def choose_action(self, x, **kwargs):
-        obs = tensorify(x.observation, self.device).unsqueeze(0)
+        obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         with torch.no_grad():
-            action = numpify(self.actor(obs).squeeze(0), 'float')
+            action = utils.numpify(self.actor(obs).squeeze(0), 'float')
         if kwargs['mode'] == 'train':
             eps = np.random.normal(0.0, self.config['agent.action_noise'], size=action.shape)
             action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
@@ -110,12 +103,10 @@ class Agent(BaseAgent):
     def learn(self, D, **kwargs):
         replay = kwargs['replay']
         T = kwargs['T']
-        list_actor_loss = []
-        list_critic_loss = []
-        Q1_vals = []
-        Q2_vals = []
+        list_actor_loss, list_critic_loss, Q1_vals, Q2_vals = [], [], [], []
         for i in range(T):
-            observations, actions, rewards, next_observations, masks = replay.sample(self.config['replay.batch_size'])
+            samples = replay.sample(self.config['replay.batch_size'])
+            observations, actions, next_observations, rewards, masks = map(lambda x: torch.as_tensor(x).to(self.config.device), samples)
             
             Qs1, Qs2 = self.critic(observations, actions)
             with torch.no_grad():
@@ -149,13 +140,13 @@ class Agent(BaseAgent):
         self.total_timestep += T
         
         out = {}
-        out['actor_loss'] = torch.tensor(list_actor_loss).mean(0).item()
+        out['actor_loss'] = torch.as_tensor(list_actor_loss).mean(0).item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = torch.tensor(list_critic_loss).mean(0).item()
+        out['critic_loss'] = torch.as_tensor(list_critic_loss).mean(0).item()
         out['critic_grad_norm'] = critic_grad_norm
         describe_it = lambda x: describe(numpify(torch.cat(x), 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
-        out['Q1'] = describe_it(Q1_vals)
-        out['Q2'] = describe_it(Q2_vals)
+        out['Q1'] = utils.describe(torch.cat(Q1_vals).squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['Q2'] = utils.describe(torch.cat(Q2_vals).squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
         return out
     
     def checkpoint(self, logdir, num_iter):
