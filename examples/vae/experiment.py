@@ -1,28 +1,19 @@
-import os
-
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
 
 import lagom
-from lagom.utils import set_global_seeds
-from lagom.utils import pickle_dump
-from lagom.experiment import Grid
-from lagom.experiment import Config
-from lagom.experiment import Configurator
-from lagom.experiment import checkpointer
-from lagom.experiment import run_experiment
+import lagom.utils as utils
 
 from engine import Engine
-from model import VAE
-from model import ConvVAE
+from model import VAE, ConvVAE
 
 
-configurator = Configurator(
+configurator = lagom.Configurator(
     {'log.freq': 100, 
      
-     'nn.type': Grid(['VAE', 'ConvVAE']),
+     'nn.type': lagom.Grid(['VAE', 'ConvVAE']),
      'nn.z_dim': 8,
      
      'lr': 1e-3,
@@ -44,7 +35,7 @@ def make_dataset(config, train):
 
 
 def run(config):
-    set_global_seeds(config.seed)
+    lagom.set_global_seeds(config.seed)
 
     train_loader = make_dataset(config, train=True)
     test_loader = make_dataset(config, train=False)
@@ -62,28 +53,25 @@ def run(config):
     train_logs, eval_logs = [], []
     start_epoch = 0
     if config.resume_checkpointer.exists():
-        out = checkpointer('load', config, model=model, optimizer=optimizer, train_logs=train_logs, eval_logs=eval_logs, start_epoch=start_epoch)
-        train_logs = out['train_logs']
-        eval_logs = out['eval_logs']
-        start_epoch = out['start_epoch']
-    
+        train_logs, eval_logs, start_epoch = lagom.checkpointer('load', config, state_obj=[model, optimizer])
+
     for epoch in range(start_epoch, config['train.num_epoch']):
         train_logger = engine.train(epoch)
         train_logs.append(train_logger.logs)
         eval_logger = engine.eval(epoch)
         eval_logs.append(eval_logger.logs)
-        pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
-        pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
-        checkpointer('save', config, model=model, optimizer=optimizer, train_logs=train_logs, eval_logs=eval_logs, start_epoch=epoch+1)
+        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+        utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
+        lagom.checkpointer('save', config, obj=[train_logs, eval_logs, epoch+1], state_obj=[model, optimizer])
     return None
 
 
 if __name__ == '__main__':
-    run_experiment(run=run, 
-                   configurator=configurator, 
-                   seeds=lagom.SEEDS[:1],
-                   log_dir='logs/default',
-                   max_workers=os.cpu_count(),
-                   chunksize=1, 
-                   use_gpu=False,  # GPU much faster
-                   gpu_ids=None)
+    lagom.run_experiment(run=run, 
+                         configurator=configurator, 
+                         seeds=lagom.SEEDS[:1],
+                         log_dir='logs/default',
+                         max_workers=None,
+                         chunksize=1, 
+                         use_gpu=False,  # GPU much faster
+                         gpu_ids=None)

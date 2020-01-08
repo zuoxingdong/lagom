@@ -1,22 +1,21 @@
 import time
 import numpy as np
 
-from lagom import Logger
-from lagom import BaseEngine
-from lagom.utils import IntervalConditioner
-
 import torch
 from torchvision.utils import save_image
+
+import lagom
+import lagom.utils as utils
 
 from model import vae_loss
 
 
-class Engine(BaseEngine):
+class Engine(lagom.BaseEngine):
     def train(self, n=None, **kwargs):
         self.model.train()
         
-        logger = Logger()
-        cond = IntervalConditioner(interval=self.config['log.freq'], mode='accumulative')
+        logger = lagom.Logger()
+        cond = utils.IntervalConditioner(interval=self.config['log.freq'], mode='accumulative')
         for i, (data, label) in enumerate(self.train_loader):
             t0 = time.perf_counter()
             data = data.to(self.config.device)
@@ -49,7 +48,7 @@ class Engine(BaseEngine):
     def eval(self, n=None, **kwargs):
         self.model.eval()
         
-        logger = Logger()
+        logger = lagom.Logger()
         for i, (data, label) in enumerate(self.test_loader):
             data = data.to(self.config.device)
             with torch.no_grad():
