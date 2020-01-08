@@ -5,30 +5,20 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import gym.spaces as spaces
-from lagom import BaseAgent
-from lagom.utils import pickle_dump
-from lagom.utils import numpify
-from lagom.networks import Module
-from lagom.networks import make_fc
-from lagom.networks import ortho_init
-from lagom.networks import CategoricalHead
-from lagom.networks import DiagGaussianHead
-from lagom.networks import linear_lr_scheduler
-from lagom.metric import bootstrapped_returns
-from lagom.metric import gae
-from lagom.transform import explained_variance as ev
-from lagom.transform import describe
+import lagom
+import lagom.utils as utils
+import lagom.rl as rl
 
 
-class MLP(Module):
+class MLP(lagom.nn.Module):
     def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
         
-        self.feature_layers = make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
         for layer in self.feature_layers:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['nn.sizes']])
 
     def forward(self, x):
@@ -37,22 +27,22 @@ class MLP(Module):
         return x
 
 
-class Agent(BaseAgent):
+class Agent(lagom.BaseAgent):
     def __init__(self, config, env, **kwargs):
         super().__init__(config, env, **kwargs)
         
         feature_dim = config['nn.sizes'][-1]
         self.feature_network = MLP(config, env, **kwargs)
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = CategoricalHead(feature_dim, env.action_space.n, **kwargs)
+            self.action_head = lagom.nn.CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
+            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
         self.V_head = nn.Linear(feature_dim, 1)
-        ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
+        lagom.nn.ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
 
         self.optimizer = optim.Adam(self.parameters(), lr=config['agent.lr'])
         if config['agent.use_lr_scheduler']:
-            self.lr_scheduler = linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
+            self.lr_scheduler = lagom.nn.linear_lr_scheduler(self.optimizer, config['train.timestep'], min_lr=1e-8)
             
         self.register_buffer('total_timestep', torch.tensor(0))
         
@@ -67,7 +57,7 @@ class Agent(BaseAgent):
         out['V'] = V
         out['entropy'] = action_dist.entropy()
         out['action'] = action
-        out['raw_action'] = numpify(action, self.env.action_space.dtype).squeeze(0)
+        out['raw_action'] = utils.numpify(action.squeeze(0), self.env.action_space.dtype)
         out['action_logprob'] = action_dist.log_prob(action.detach())
         return out
     
@@ -76,9 +66,9 @@ class Agent(BaseAgent):
         entropies = [torch.cat(traj.get_infos('entropy')) for traj in D]
         Vs = [torch.cat(traj.get_infos('V')) for traj in D]
         last_Vs = [traj.extra_info['last_info']['V'] for traj in D]
-        Qs = [bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
+        Qs = [rl.bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
               for traj, last_V in zip(D, last_Vs)]
-        As = [gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
+        As = [rl.gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
               for traj, V, last_V in zip(D, Vs, last_Vs)]
         
         # Metrics -> Tensor, device
@@ -88,7 +78,6 @@ class Agent(BaseAgent):
             As = (As - As.mean())/(As.std() + 1e-4)    
         assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])
         
-        # Loss
         policy_loss = -logprobs*As.detach()
         entropy_loss = -entropies
         value_loss = F.mse_loss(Vs, Qs, reduction='none')
@@ -112,12 +101,12 @@ class Agent(BaseAgent):
         out['entropy_loss'] = entropy_loss.mean().item()
         out['policy_entropy'] = -out['entropy_loss']
         out['value_loss'] = value_loss.mean().item()
-        out['V'] = describe(numpify(Vs, 'float').squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
-        out['explained_variance'] = ev(y_true=numpify(Qs, 'float'), y_pred=numpify(Vs, 'float'))
+        out['V'] = utils.describe(Vs.squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['explained_variance'] = utils.explained_variance(y_true=Qs.tolist(), y_pred=Vs.tolist())
         return out
     
     def checkpoint(self, logdir, num_iter):
         self.save(logdir/f'agent_{num_iter}.pth')
         if self.config['env.normalize_obs']:
             moments = (self.env.obs_moments.mean, self.env.obs_moments.var)
-            pickle_dump(obj=moments, f=logdir/f'obs_moments_{num_iter}', ext='.pth')
+            utils.pickle_dump(obj=moments, f=logdir/f'obs_moments_{num_iter}', ext='.pth')
