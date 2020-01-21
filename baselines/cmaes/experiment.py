@@ -4,6 +4,7 @@ import time
 import numpy as np
 import torch
 import gym
+import gym.wrappers
 import lagom
 import lagom.utils as utils
 
