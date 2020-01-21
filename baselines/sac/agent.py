@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 import torch
 import torch.nn as nn
@@ -121,9 +122,8 @@ class Agent(lagom.BaseAgent):
         return out
 
     def learn(self, D, **kwargs):
-        replay = kwargs['replay']
-        T = kwargs['T']
-        list_actor_loss, list_critic_loss, list_alpha_loss, Q1_vals, Q2_vals, logprob_vals = [], [], [], [], [], []
+        replay, T = map(kwargs.get, ['replay', 'T'])
+        out = defaultdict(list)
         for i in range(T):
             samples = replay.sample(self.config['replay.batch_size'])
             observations, actions, next_observations, rewards, masks = map(lambda x: torch.as_tensor(x).to(self.config.device), samples)
@@ -158,24 +158,23 @@ class Agent(lagom.BaseAgent):
             self.log_alpha_optimizer.step()
 
             self.polyak_update_target()
-            list_actor_loss.append(actor_loss)
-            list_critic_loss.append(critic_loss)
-            list_alpha_loss.append(alpha_loss)
-            Q1_vals.append(Qs1)
-            Q2_vals.append(Qs2)
-            logprob_vals.append(policy_actions_logprob)
+            out['actor_loss'].append(actor_loss)
+            out['critic_loss'].append(critic_loss)
+            out['alpha_loss'].append(alpha_loss)
+            out['Q1'].append(Qs1)
+            out['Q2'].append(Qs2)
+            out['logprob'].append(policy_actions_logprob)
         self.total_timestep += T
         
-        out = {}
-        out['actor_loss'] = torch.as_tensor(list_actor_loss).mean(0).item()
+        out['actor_loss'] = torch.as_tensor(out['actor_loss']).mean(0).item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = torch.as_tensor(list_critic_loss).mean(0).item()
+        out['critic_loss'] = torch.as_tensor(out['critic_loss']).mean(0).item()
         out['critic_grad_norm'] = critic_grad_norm
         describe_it = lambda x: utils.describe(torch.cat(x).squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
-        out['Q1'] = describe_it(Q1_vals)
-        out['Q2'] = describe_it(Q2_vals)
-        out['logprob'] = describe_it(logprob_vals)
-        out['alpha_loss'] = torch.as_tensor(list_alpha_loss).mean(0).item()
+        out['Q1'] = describe_it(out['Q1'])
+        out['Q2'] = describe_it(out['Q2'])
+        out['logprob'] = describe_it(out['logprob'])
+        out['alpha_loss'] = torch.as_tensor(out['alpha_loss']).mean(0).item()
         out['alpha'] = self.alpha.item()
         return out
     

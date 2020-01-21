@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,7 +8,6 @@ import torch.optim as optim
 import gym.spaces as spaces
 import lagom
 import lagom.utils as utils
-import lagom.rl as rl
 
 
 class Actor(lagom.nn.Module):
@@ -18,16 +18,11 @@ class Actor(lagom.nn.Module):
         
         self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), [400, 300])
         self.action_head = nn.Linear(300, spaces.flatdim(env.action_space))
-        
-        # TODO: use Rescale wrappers in gym instead
-        assert np.unique(env.action_space.high).size == 1
-        assert -np.unique(env.action_space.low).item() == np.unique(env.action_space.high).item()
-        self.max_action = env.action_space.high[0]
 
     def forward(self, x):
         for layer in self.feature_layers:
             x = F.relu(layer(x))
-        x = self.max_action*torch.tanh(self.action_head(x))
+        x = torch.tanh(self.action_head(x))
         return x
 
 
@@ -37,12 +32,13 @@ class Critic(lagom.nn.Module):
         self.config = config
         self.env = env
         
-        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space) + spaces.flatdim(env.action_space), [400, 300])
+        obs_action_dim = spaces.flatdim(env.observation_space) + spaces.flatdim(env.action_space)
+        self.Q_layers = lagom.nn.make_fc(obs_action_dim, [400, 300])
         self.Q_head = nn.Linear(300, 1)
         
     def forward(self, x, action):
         x = torch.cat([x, action], dim=-1)
-        for layer in self.feature_layers:
+        for layer in self.Q_layers:
             x = F.relu(layer(x))
         x = self.Q_head(x)
         return x
@@ -62,8 +58,9 @@ class Agent(lagom.BaseAgent):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config['agent.critic.lr'])
         
+        self.zero_grad_all = lambda: [opt.zero_grad() for opt in [self.actor_optimizer, self.critic_optimizer]]
         self.register_buffer('total_timestep', torch.tensor(0))
-        
+
     def polyak_update_target(self):
         p = self.config['agent.polyak']
         for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
@@ -77,15 +74,14 @@ class Agent(lagom.BaseAgent):
             action = utils.numpify(self.actor(obs).squeeze(0), 'float')
         if kwargs['mode'] == 'train':
             eps = np.random.normal(0.0, self.config['agent.action_noise'], size=action.shape)
-            action = np.clip(action + eps, self.env.action_space.low, self.env.action_space.high)
+            action = np.clip(action + eps, -1.0, 1.0)
         out = {}
         out['raw_action'] = action
         return out
 
     def learn(self, D, **kwargs):
-        replay = kwargs['replay']
-        T = kwargs['T']
-        list_actor_loss, list_critic_loss, Q_vals = [], [], []
+        replay, T = map(kwargs.get, ['replay', 'T'])
+        out = defaultdict(list)
         for i in range(T):
             samples = replay.sample(self.config['replay.batch_size'])
             observations, actions, next_observations, rewards, masks = map(lambda x: torch.as_tensor(x).to(self.config.device), samples)
@@ -95,32 +91,28 @@ class Agent(lagom.BaseAgent):
                 next_Qs = self.critic_target(next_observations, self.actor_target(next_observations))
                 targets = rewards + self.config['agent.gamma']*masks*next_Qs    
             critic_loss = F.mse_loss(Qs, targets.detach())
-            self.actor_optimizer.zero_grad()
-            self.critic_optimizer.zero_grad()
+            self.zero_grad_all()
             critic_loss.backward()
             critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
             self.critic_optimizer.step()
             
             actor_loss = -self.critic(observations, self.actor(observations)).mean()
-            self.actor_optimizer.zero_grad()
-            self.critic_optimizer.zero_grad()
+            self.zero_grad_all()
             actor_loss.backward()
             actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
             self.actor_optimizer.step()
             
             self.polyak_update_target()
-            
-            list_actor_loss.append(actor_loss)
-            list_critic_loss.append(critic_loss)
-            Q_vals.append(Qs)
+            out['actor_loss'].append(actor_loss)
+            out['critic_loss'].append(critic_loss)
+            out['Q'].append(Qs)
         self.total_timestep += T
         
-        out = {}
-        out['actor_loss'] = torch.as_tensor(list_actor_loss).mean(0).item()
+        out['actor_loss'] = torch.as_tensor(out['actor_loss']).mean(0).item()
         out['actor_grad_norm'] = actor_grad_norm
-        out['critic_loss'] = torch.as_tensor(list_critic_loss).mean(0).item()
+        out['critic_loss'] = torch.as_tensor(out['critic_loss']).mean(0).item()
         out['critic_grad_norm'] = critic_grad_norm
-        out['Q'] = utils.describe(torch.cat(Q_vals).squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
+        out['Q'] = utils.describe(torch.cat(out['Q']).squeeze(), axis=-1, repr_indent=1, repr_prefix='\n')
         return out
     
     def checkpoint(self, logdir, num_iter):

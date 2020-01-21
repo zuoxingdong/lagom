@@ -1,11 +1,11 @@
 import gym
+import gym.wrappers
 
 import lagom
 import lagom.utils as utils
 
-from baselines.ddpg_td3.ddpg_agent import Agent as DDPGAgent
-from baselines.ddpg_td3.td3_agent import Agent as TD3Agent
-from baselines.ddpg_td3.engine import Engine
+from baselines.ddpg.agent import Agent
+from baselines.ddpg.engine import Engine
 
 
 configurator = lagom.Configurator(
@@ -23,12 +23,6 @@ configurator = lagom.Configurator(
      'agent.action_noise': 0.1,
      'agent.max_grad_norm': 1e5,  # grad clipping by norm
      
-     # TD3 hyperparams
-     'agent.use_td3': lagom.Grid([True, False]),
-     'agent.target_noise': 0.2,
-     'agent.target_noise_clip': 0.5,
-     'agent.policy_delay': 2,
-     
      'replay.capacity': int(1e6), 
      'replay.init_trial': 10,  # number of random rollouts initially
      'replay.batch_size': 100,
@@ -45,6 +39,7 @@ def make_env(config, mode):
     env.seed(config.seed)
     env.observation_space.seed(config.seed)
     env.action_space.seed(config.seed)
+    env = gym.wrappers.RescaleAction(env, -1.0, 1.0)
     if mode == 'eval':
         env = lagom.envs.RecordEpisodeStatistics(env, deque_size=100)
     env = lagom.envs.TimeStepEnv(env)
@@ -56,10 +51,7 @@ def run(config):
     
     env = make_env(config, 'train')
     eval_env = make_env(config, 'eval')
-    if config['agent.use_td3']:
-        agent = TD3Agent(config, env)
-    else:
-        agent = DDPGAgent(config, env)
+    agent = Agent(config, env)
     runner = lagom.EpisodeRunner()
     replay = lagom.UniformTransitionBuffer(env, config['replay.capacity'])
     engine = Engine(config, agent=agent)
@@ -86,8 +78,8 @@ def run(config):
         lagom.checkpointer('save', config, obj=[env, eval_env, runner, train_logs, eval_logs, iteration+1], state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer])
         iteration += 1
     agent.checkpoint(config.logdir, iteration+1)    
-    return None  
-    
+    return None
+
 
 if __name__ == '__main__':
     lagom.run_experiment(run=run, 
