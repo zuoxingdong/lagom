@@ -3,7 +3,7 @@ This example includes the implementations of the following reinforcement learnin
 - ES
     - [Cross Entropy Method (CEM)](cem)
     - [Covariance Matrix Adaptation Evolution Strategy (CMA-ES)](cmaes)
-    - [OpenAI-ES](openaies)
+
 - RL
     - [Vanilla Policy Gradient (VPG)](vpg)
     - [Proximal Policy Optimization (PPO)](ppo)
