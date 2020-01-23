@@ -11,7 +11,8 @@ from baselines.vpg.engine import Engine
 
 configurator = lagom.Configurator(
     {'log.freq': 10, 
-     'checkpoint.inference.num': 3,
+     'checkpoint.agent.num': 3,
+     'checkpoint.resume.num': 5,
      
      'env.id': lagom.Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']), 
      'env.normalize_obs': True,
@@ -20,9 +21,7 @@ configurator = lagom.Configurator(
      'use_lstm': lagom.Grid([True, False]),
      'rnn.size': 128,
      'nn.sizes': [64, 64],
-     
-     'agent.lr': 1e-3, 
-     'agent.use_lr_scheduler': False,
+     'agent.lr': 1e-3,
      'agent.gamma': 0.995, 
      'agent.gae_lambda': 0.98, 
      'agent.standardize_adv': True,  # standardize advantage estimates
@@ -69,7 +68,9 @@ def run(config):
     runner = lagom.StepRunner(reset_on_call=False)
     engine = Engine(config, agent=agent, env=env, runner=runner)
     
-    cond_save = utils.NConditioner(max_n=config['train.timestep'], num_conditions=config['checkpoint.inference.num'], mode='accumulative')
+    cond_agent = utils.Conditioner(stop=config['train.timestep'], step=config['train.timestep']//config['checkpoint.agent.num'])
+    cond_resume = utils.Conditioner(stop=config['train.timestep'], step=config['train.timestep']//config['checkpoint.resume.num'])
+    cond_log = utils.Conditioner(step=config['log.freq'])
     train_logs = []
     iteration = 0
     if config.resume_checkpointer.exists():
@@ -79,12 +80,13 @@ def run(config):
         engine.runner = runner
 
     while agent.total_timestep < config['train.timestep']:
-        train_logger = engine.train(iteration)
+        train_logger = engine.train(iteration, cond_log=cond_log)
         train_logs.append(train_logger.logs)
-        if cond_save(int(agent.total_timestep)):
+        if cond_agent(int(agent.total_timestep)):
             agent.checkpoint(config.logdir, iteration+1)
-        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
-        lagom.checkpointer('save', config, obj=[env, runner, train_logs, iteration+1], state_obj=[agent, agent.optimizer])
+        if cond_resume(int(agent.total_timestep)):
+            utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+            lagom.checkpointer('save', config, obj=[env, runner, train_logs, iteration+1], state_obj=[agent, agent.optimizer])
         iteration += 1
     agent.checkpoint(config.logdir, iteration+1)
     return None
