@@ -16,7 +16,6 @@ from torch.distributions import Normal
 from torch.distributions import Independent
 
 from lagom.nn import Module
-from lagom.nn import linear_lr_scheduler
 from lagom.nn import ortho_init
 from lagom.nn import make_fc
 from lagom.nn import make_cnn
@@ -172,28 +171,6 @@ class TestInit(object):
         assert np.allclose(a.bias_ih.detach().numpy(), 10.)
 
 
-@pytest.mark.parametrize('method', ['Adam', 'RMSprop', 'Adamax'])
-@pytest.mark.parametrize('N', [1, 10, 50, 100])
-@pytest.mark.parametrize('min_lr', [3e-4, 6e-5])
-@pytest.mark.parametrize('initial_lr', [1e-3, 7e-4])
-def test_linear_lr_scheduler(method, N, min_lr, initial_lr):
-    net = nn.Linear(30, 16)
-    if method == 'Adam':
-        optimizer = optim.Adam(net.parameters(), lr=initial_lr)
-    elif method == 'RMSprop':
-        optimizer = optim.RMSprop(net.parameters(), lr=initial_lr)
-    elif method == 'Adamax':
-        optimizer = optim.Adamax(net.parameters(), lr=initial_lr)
-    lr_scheduler = linear_lr_scheduler(optimizer, N, min_lr)
-    assert lr_scheduler.base_lrs[0] == initial_lr
-    
-    optimizer.step()
-    for i in range(200):
-        lr_scheduler.step()
-        assert lr_scheduler.get_lr()[0] >= min_lr
-    assert lr_scheduler.get_lr()[0] == min_lr       
-    
-    
 @pytest.mark.parametrize('feature_dim', [5, 10, 30])
 @pytest.mark.parametrize('batch_size', [1, 16, 32])
 @pytest.mark.parametrize('num_action', [1, 4, 10])

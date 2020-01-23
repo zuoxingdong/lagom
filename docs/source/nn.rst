@@ -8,8 +8,6 @@ lagom.nn: Neural Network Modules
     :members:
 
 .. autofunction:: ortho_init
-
-.. autofunction:: linear_lr_scheduler
     
 .. autofunction:: make_fc
 
