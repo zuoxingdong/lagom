@@ -66,8 +66,6 @@ class Agent(lagom.BaseAgent):
 
         self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=config['agent.policy_lr'])
         self.value_optimizer = optim.Adam(self.value.parameters(), lr=config['agent.value_lr'])
-        if config['agent.use_lr_scheduler']:
-            self.policy_lr_scheduler = lagom.nn.linear_lr_scheduler(self.policy_optimizer, config['train.timestep'], min_lr=1e-8)
         
         self.register_buffer('total_timestep', torch.tensor(0))
         
@@ -105,8 +103,6 @@ class Agent(lagom.BaseAgent):
         policy_loss.backward()
         policy_grad_norm = nn.utils.clip_grad_norm_(self.policy.parameters(), self.config['agent.max_grad_norm'])
         self.policy_optimizer.step()
-        if self.config['agent.use_lr_scheduler']:
-            self.policy_lr_scheduler.step(self.total_timestep)
         
         clipped_Vs = old_Vs + torch.clamp(Vs - old_Vs, -eps, eps)
         value_loss = torch.max(F.mse_loss(Vs, old_Qs, reduction='none'), 
@@ -131,18 +127,17 @@ class Agent(lagom.BaseAgent):
         return out
         
     def learn(self, D, **kwargs):
-        logprobs = [torch.cat(traj.get_infos('action_logprob')) for traj in D]
-        entropies = [torch.cat(traj.get_infos('entropy')) for traj in D]
-        Vs = [torch.cat(traj.get_infos('V')) for traj in D]
+        get_info = lambda key: [torch.cat(traj.get_infos(key)) for traj in D]
+        logprobs, entropies, Vs = map(get_info, ['action_logprob', 'entropy', 'V'])
         last_Vs = [traj.extra_info['last_info']['V'] for traj in D]
         Qs = [rl.bootstrapped_returns(self.config['agent.gamma'], traj.rewards, last_V, traj.reach_terminal)
               for traj, last_V in zip(D, last_Vs)]
         As = [rl.gae(self.config['agent.gamma'], self.config['agent.gae_lambda'], traj.rewards, V, last_V, traj.reach_terminal)
               for traj, V, last_V in zip(D, Vs, last_Vs)]
         
-        # Metrics -> Tensor, device
+        # Handle dtype, device
         logprobs, entropies, Vs = map(lambda x: torch.cat(x).squeeze(), [logprobs, entropies, Vs])
-        Qs, As = map(lambda x: torch.as_tensor(np.concatenate(x)).float().to(self.config.device), [Qs, As])
+        Qs, As = map(lambda x: torch.as_tensor(np.concatenate(x)).float().squeeze().to(self.config.device), [Qs, As])
         if self.config['agent.standardize_adv']:
             As = (As - As.mean())/(As.std() + 1e-4)
         assert all([x.ndim == 1 for x in [logprobs, entropies, Vs, Qs, As]])
@@ -154,8 +149,6 @@ class Agent(lagom.BaseAgent):
 
         self.total_timestep += sum([traj.T for traj in D])
         out = {}
-        if self.config['agent.use_lr_scheduler']:
-            out['current_lr'] = self.policy_lr_scheduler.get_lr()
         out['policy_grad_norm'] = np.mean([item['policy_grad_norm'] for item in logs])
         out['value_grad_norm'] = np.mean([item['value_grad_norm'] for item in logs])
         out['policy_loss'] = np.mean([item['policy_loss'] for item in logs])
