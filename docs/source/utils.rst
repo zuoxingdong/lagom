@@ -52,8 +52,5 @@ Misc
 
 .. autofunction:: ask_yes_or_no
 
-.. autoclass:: IntervalConditioner
-    :members:
-    
-.. autoclass:: NConditioner
+.. autoclass:: Conditioner
     :members:
