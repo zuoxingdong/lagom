@@ -104,6 +104,7 @@ def run(config):
                 utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
                 lagom.checkpointer('save', config, obj=[env, es, cond_agent, cond_resume, cond_log, train_logs, generation+1], state_obj=[agent])
             generation += 1
+        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
         agent.from_vec(torch.as_tensor(es.result.xbest).float())
         agent.checkpoint(config.logdir, generation+1)
     return None
