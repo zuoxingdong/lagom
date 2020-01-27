@@ -12,7 +12,7 @@ from baselines.vpg.engine import Engine
 configurator = lagom.Configurator(
     {'log.freq': 10, 
      'checkpoint.agent.num': 3,
-     'checkpoint.resume.num': 5,
+     'checkpoint.resume.num': 3,
      
      'env.id': lagom.Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']), 
      'env.normalize_obs': True,
@@ -88,6 +88,7 @@ def run(config):
             utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
             lagom.checkpointer('save', config, obj=[env, runner, train_logs, iteration+1], state_obj=[agent, agent.optimizer])
         iteration += 1
+    utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
     agent.checkpoint(config.logdir, iteration+1)
     return None
 

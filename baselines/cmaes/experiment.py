@@ -14,7 +14,7 @@ from baselines.cmaes.agent import Agent
 configurator = lagom.Configurator(
     {'log.freq': 10, 
      'checkpoint.agent.num': 3,
-     'checkpoint.resume.num': 5,
+     'checkpoint.resume.num': 3,
      
      'env.id': lagom.Grid(['CartPole-v1', 'Pendulum-v0']),
      'nn.sizes': [32, 32],
