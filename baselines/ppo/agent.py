@@ -19,19 +19,20 @@ class Actor(lagom.nn.Module):
         self.config = config
         self.env = env
         
-        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['agent.policy.sizes'])
         for layer in self.feature_layers:
-            lagom.nn.ortho_init(layer, nonlinearity='tanh', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+        self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['agent.policy.sizes']])
         
-        feature_dim = config['nn.sizes'][-1]
+        feature_dim = config['agent.policy.sizes'][-1]
         if isinstance(env.action_space, spaces.Discrete):
             self.action_head = lagom.nn.CategoricalHead(feature_dim, env.action_space.n, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
             self.action_head = lagom.nn.DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
 
     def forward(self, x):
-        for layer in self.feature_layers:
-            x = torch.tanh(layer(x))
+        for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
+            x = F.gelu(layer_norm(layer(x)))
         action_dist = self.action_head(x)
         return action_dist
 
@@ -42,11 +43,11 @@ class Critic(lagom.nn.Module):
         self.config = config
         self.env = env
         
-        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['nn.sizes'])
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['agent.value.sizes'])
         for layer in self.feature_layers:
             lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         
-        feature_dim = config['nn.sizes'][-1]
+        feature_dim = config['agent.value.sizes'][-1]
         self.V_head = nn.Linear(feature_dim, 1)
         lagom.nn.ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
 
@@ -64,8 +65,8 @@ class Agent(lagom.BaseAgent):
         self.policy = Actor(config, env, **kwargs)
         self.value = Critic(config, env, **kwargs)
 
-        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=config['agent.policy_lr'])
-        self.value_optimizer = optim.Adam(self.value.parameters(), lr=config['agent.value_lr'])
+        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=config['agent.policy.lr'])
+        self.value_optimizer = optim.Adam(self.value.parameters(), lr=config['agent.value.lr'])
         
         self.register_buffer('total_timestep', torch.tensor(0))
         
@@ -111,7 +112,6 @@ class Agent(lagom.BaseAgent):
         
         self.value_optimizer.zero_grad()
         value_loss.backward()
-        # TODO: try without value clip grad
         value_grad_norm = nn.utils.clip_grad_norm_(self.value.parameters(), self.config['agent.max_grad_norm'])
         self.value_optimizer.step()
         
