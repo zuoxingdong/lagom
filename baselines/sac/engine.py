@@ -9,7 +9,7 @@ class Engine(lagom.BaseEngine):
     def train(self, n=None, **kwargs):
         self.agent.train()
         t0 = time.perf_counter()
-        env, runner, replay = map(kwargs.get, ['env', 'runner', 'replay'])
+        env, runner, replay, cond_log = map(kwargs.get, ['env', 'runner', 'replay', 'cond_log'])
         
         if n < self.config['replay.init_trial']:
             [traj] = runner(lagom.RandomAgent(self.config, env), env, 1)
@@ -26,7 +26,7 @@ class Engine(lagom.BaseEngine):
         logger('episode_return', sum(traj.rewards))
         logger('episode_horizon', traj.T)
         logger('accumulated_trained_timesteps', int(self.agent.total_timestep))
-        if n % self.config['log.freq'] == 0:
+        if cond_log(n):
             logger.dump(keys=None, index=-1, indent=0, border='-'*50)
         return logger
 

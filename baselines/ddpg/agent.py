@@ -16,8 +16,8 @@ class Actor(lagom.nn.Module):
         self.config = config
         self.env = env
         
-        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), [400, 300])
-        self.action_head = nn.Linear(300, spaces.flatdim(env.action_space))
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['agent.actor.sizes'])
+        self.action_head = nn.Linear(config['agent.actor.sizes'][-1], spaces.flatdim(env.action_space))
 
     def forward(self, x):
         for layer in self.feature_layers:
@@ -33,8 +33,8 @@ class Critic(lagom.nn.Module):
         self.env = env
         
         obs_action_dim = spaces.flatdim(env.observation_space) + spaces.flatdim(env.action_space)
-        self.Q_layers = lagom.nn.make_fc(obs_action_dim, [400, 300])
-        self.Q_head = nn.Linear(300, 1)
+        self.Q_layers = lagom.nn.make_fc(obs_action_dim, config['agent.critic.sizes'])
+        self.Q_head = nn.Linear(config['agent.critic.sizes'][-1], 1)
         
     def forward(self, x, action):
         x = torch.cat([x, action], dim=-1)
@@ -71,12 +71,12 @@ class Agent(lagom.BaseAgent):
     def choose_action(self, x, **kwargs):
         obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         with torch.no_grad():
-            action = utils.numpify(self.actor(obs).squeeze(0), 'float')
-        if kwargs['mode'] == 'train':
-            eps = np.random.normal(0.0, self.config['agent.action_noise'], size=action.shape)
-            action = np.clip(action + eps, -1.0, 1.0)
+            action = self.actor(obs)
+            if kwargs['mode'] == 'train':
+                eps = self.config['agent.action_noise']*torch.randn_like(action)
+                action = torch.clamp(action + eps, -1.0, 1.0)
         out = {}
-        out['raw_action'] = action
+        out['raw_action'] = utils.numpify(action.squeeze(0), 'float')
         return out
 
     def learn(self, D, **kwargs):
@@ -93,13 +93,13 @@ class Agent(lagom.BaseAgent):
             critic_loss = F.mse_loss(Qs, targets.detach())
             self.zero_grad_all()
             critic_loss.backward()
-            critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
+            critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), torch.finfo(torch.float32).max)
             self.critic_optimizer.step()
             
             actor_loss = -self.critic(observations, self.actor(observations)).mean()
             self.zero_grad_all()
             actor_loss.backward()
-            actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
+            actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), torch.finfo(torch.float32).max)
             self.actor_optimizer.step()
             
             self.polyak_update_target()

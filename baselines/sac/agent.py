@@ -18,16 +18,16 @@ from tanh_transform import TanhTransform
 
 class Actor(lagom.nn.Module):
     LOGSTD_MAX = 2
-    LOGSTD_MIN = -20
+    LOGSTD_MIN = -20  # TODO: try -10, suggested by arXiv 1910.01741
 
     def __init__(self, config, env, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.env = env
         
-        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), [256, 256])
-        self.mean_head = nn.Linear(256, spaces.flatdim(env.action_space))
-        self.logstd_head = nn.Linear(256, spaces.flatdim(env.action_space))
+        self.feature_layers = lagom.nn.make_fc(spaces.flatdim(env.observation_space), config['agent.actor.sizes'])
+        self.mean_head = nn.Linear(config['agent.actor.sizes'][-1], spaces.flatdim(env.action_space))
+        self.logstd_head = nn.Linear(config['agent.actor.sizes'][-1], spaces.flatdim(env.action_space))
 
     def forward(self, x):
         for layer in self.feature_layers:
@@ -56,11 +56,11 @@ class Critic(lagom.nn.Module):
         
         obs_action_dim = spaces.flatdim(env.observation_space) + spaces.flatdim(env.action_space)
         # Q1
-        self.Q1_layers = lagom.nn.make_fc(obs_action_dim, [256, 256])
-        self.Q1_head = nn.Linear(256, 1)
+        self.Q1_layers = lagom.nn.make_fc(obs_action_dim, config['agent.critic.sizes'])
+        self.Q1_head = nn.Linear(config['agent.critic.sizes'][-1], 1)
         # Q2
-        self.Q2_layers = lagom.nn.make_fc(obs_action_dim, [256, 256])
-        self.Q2_head = nn.Linear(256, 1)
+        self.Q2_layers = lagom.nn.make_fc(obs_action_dim, config['agent.critic.sizes'])
+        self.Q2_head = nn.Linear(config['agent.critic.sizes'][-1], 1)
 
     def Q1(self, x, action):
         x = torch.cat([x, action], dim=-1)
@@ -114,11 +114,11 @@ class Agent(lagom.BaseAgent):
         obs = torch.as_tensor(x.observation).float().to(self.config.device).unsqueeze(0)
         with torch.no_grad():
             if kwargs['mode'] == 'train':
-                action = utils.numpify(self.actor(obs).sample(), 'float')
+                action = self.actor(obs).sample()
             elif kwargs['mode'] == 'eval':
-                action = utils.numpify(self.actor.mean_forward(obs), 'float')
+                action = self.actor.mean_forward(obs)
         out = {}
-        out['raw_action'] = action.squeeze(0)
+        out['raw_action'] = utils.numpify(action.squeeze(0), 'float')
         return out
 
     def learn(self, D, **kwargs):
@@ -127,6 +127,7 @@ class Agent(lagom.BaseAgent):
         for i in range(T):
             samples = replay.sample(self.config['replay.batch_size'])
             observations, actions, next_observations, rewards, masks = map(lambda x: torch.as_tensor(x).to(self.config.device), samples)
+
             Qs1, Qs2 = self.critic(observations, actions)
             with torch.no_grad():
                 action_dist = self.actor(next_observations)
@@ -138,7 +139,7 @@ class Agent(lagom.BaseAgent):
             critic_loss = F.mse_loss(Qs1, targets.detach()) + F.mse_loss(Qs2, targets.detach())
             self.zero_grad_all()
             critic_loss.backward()
-            critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), self.config['agent.max_grad_norm'])
+            critic_grad_norm = nn.utils.clip_grad_norm_(self.critic.parameters(), torch.finfo(torch.float32).max)
             self.critic_optimizer.step()
             
             action_dist = self.actor(observations)
@@ -149,7 +150,7 @@ class Agent(lagom.BaseAgent):
             actor_loss = torch.mean(self.alpha.detach()*policy_actions_logprob - actor_Qs)
             self.zero_grad_all()
             actor_loss.backward()
-            actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), self.config['agent.max_grad_norm'])
+            actor_grad_norm = nn.utils.clip_grad_norm_(self.actor.parameters(), torch.finfo(torch.float32).max)
             self.actor_optimizer.step()
             
             alpha_loss = torch.mean(self.log_alpha*(-policy_actions_logprob - self.target_entropy).detach())

@@ -10,18 +10,18 @@ from baselines.td3.engine import Engine
 
 configurator = lagom.Configurator(
     {'log.freq': 10,
-     'checkpoint.inference.num': 3,
+     'checkpoint.agent.num': 3,
+     'checkpoint.resume.num': 1,##########2,(2 with 15 hours)
      
      'env.id': lagom.Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']),
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
-     'agent.actor.lr': 1e-3, 
-     'agent.actor.use_lr_scheduler': False,
-     'agent.critic.lr': 1e-3,
-     'agent.critic.use_lr_scheduler': False,
+     'agent.actor.sizes': [256, 256],
+     'agent.actor.lr': 3e-4,
+     'agent.critic.sizes': [256, 256],
+     'agent.critic.lr': 3e-4,
      'agent.action_noise': 0.1,
-     'agent.max_grad_norm': 1e5,  # grad clipping by norm
      
      # TD3 hyperparams
      'agent.target_noise': 0.2,
@@ -30,7 +30,7 @@ configurator = lagom.Configurator(
      
      'replay.capacity': int(1e6), 
      'replay.init_trial': 10,  # number of random rollouts initially
-     'replay.batch_size': 100,
+     'replay.batch_size': 256,
      
      'train.timestep': int(1e6),  # total number of training (environment) timesteps
      'eval.num': 200
@@ -61,8 +61,10 @@ def run(config):
     replay = lagom.UniformTransitionBuffer(env, config['replay.capacity'])
     engine = Engine(config, agent=agent)
     
-    cond_save = utils.NConditioner(max_n=config['train.timestep'], num_conditions=config['checkpoint.inference.num'], mode='accumulative')
-    cond_eval = utils.NConditioner(max_n=config['train.timestep'], num_conditions=config['eval.num'], mode='accumulative')
+    cond_agent = utils.Conditioner(stop=config['train.timestep'], step=config['train.timestep']//config['checkpoint.agent.num'])
+    cond_resume = utils.Conditioner(stop=config['train.timestep'], step=config['train.timestep']//config['checkpoint.resume.num'])
+    cond_log = utils.Conditioner(step=config['log.freq'])
+    cond_eval = utils.Conditioner(stop=config['train.timestep'], step=config['train.timestep']//config['eval.num'])
     train_logs, eval_logs = [], []
     iteration = 0
     if config.resume_checkpointer.exists():
@@ -71,18 +73,21 @@ def run(config):
         agent.env = env
 
     while agent.total_timestep < config['train.timestep']:
-        train_logger = engine.train(iteration, env=env, runner=runner, replay=replay)
+        train_logger = engine.train(iteration, env=env, runner=runner, replay=replay, cond_log=cond_log)
         train_logs.append(train_logger.logs)
-        if cond_save(int(agent.total_timestep)):
-            agent.checkpoint(config.logdir, iteration+1)
         if cond_eval(int(agent.total_timestep)):
             eval_logger = engine.eval(iteration, eval_env=eval_env, runner=runner)
             eval_logs.append(eval_logger.logs)
-        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
-        utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
-        lagom.checkpointer('save', config, obj=[env, eval_env, runner, train_logs, eval_logs, iteration+1], state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer])
+        if cond_agent(int(agent.total_timestep)):
+            agent.checkpoint(config.logdir, iteration+1)
+        if cond_resume(int(agent.total_timestep)):
+            utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+            utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
+            lagom.checkpointer('save', config, obj=[env, eval_env, runner, train_logs, eval_logs, iteration+1], state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer])
         iteration += 1
-    agent.checkpoint(config.logdir, iteration+1)    
+    utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+    utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
+    agent.checkpoint(config.logdir, iteration+1)
     return None
 
 
