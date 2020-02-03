@@ -7,42 +7,40 @@ This example includes the implementations of the following reinforcement learnin
 - RL
     - [Vanilla Policy Gradient (VPG)](vpg)
     - [Proximal Policy Optimization (PPO)](ppo)
-    - [Deep Deterministic Policy Gradients (DDPG)](ddpg_td3)
-    - [Twin Delayed DDPG (TD3)](ddpg_td3)
+    - [Deep Deterministic Policy Gradients (DDPG)](ddpg)
+    - [Twin Delayed DDPG (TD3)](td3)
     - [Soft Actor-Critic (SAC)](sac)
     
-# Download loggings for reproducibility
-Because the loggings and checkpoint files are very large, putting them in the repo directly leads to inconveniently slow cloning, so we host the logging files in Dropbox. 
-- [Download](https://www.dropbox.com/s/6xo3d3ipjcbdsi8/all_logs.tar.gz?dl=0) the file
-- Put `all_logs.tar.gz` under the directory `lagom/baselines`
-- Run `python unzip_logs.py`, this will automatically exact all `logs` folders under each algorithm folder. 
+# Wrapping loggings for reproducibility
+- Run `python zip_logs.py` to wrap the `logs` folders of all algorithms as `all_logs.tar.gz`
+- Run `python unzip_logs.py` to automatically extract all `logs` folders to each algorithm folder. 
+
+Note: The files of loggings and checkpoints are very large, they can slow down the cloning, thus we exclude them from the repo. 
 
 # Benchmarks
 
 ## ES
-<img src='https://i.imgur.com/fJyy9EH.png' width='100%'>
+<img src='https://i.imgur.com/2aLq7Pr.png' width='100%'>
 
 ## Model-free RL
-<img src='benchmark_rl.png' width='100%'>
+<img src='https://i.imgur.com/nvl36RF.png' width='100%'>
 
 ## FAQ:
 - How to train with [dm_control](https://github.com/deepmind/dm_control) environments?
-    - Modify `experiment.py`: use [dm2gym](https://github.com/zuoxingdong/dm2gym) wrapper, e.g.
+    - Install [dm2gym](https://github.com/zuoxingdong/dm2gym) wrapper.
+    - Modify `experiment.py`: change `env.id`, e.g.
     ```python
-    from gym.wrappers import FlattenDictWrapper
-    from dm_control import suite
-    from dm2gym import DMControlEnv
+    import gym
+    import gym.wrappers
 
-    config = Config(
+    configurator = lagom.Configurator(
         ...
-        'env.id': Grid([('cheetah', 'run'), ('hopper', 'hop'), ('walker', 'run'), ('fish', 'upright')]),
+        'env.id': lagom.Grid(['dm2gym:CheetahRun-v0', 'dm2gym:HopperHop-v0']),
         ...
         )
 
-    def make_env(config, seed):
-        domain_name, task_name = config['env.id']
-        env = suite.load(domain_name, task_name, environment_kwargs=dict(flat_observation=True))
-        env = DMControlEnv(env)
-        env = FlattenDictWrapper(env, ['observations'])
+    def make_env(config, mode):
+        env = gym.make(config['env.id'])
+        env = gym.wrappers.FlattenObservation(env)
         ...
     ```

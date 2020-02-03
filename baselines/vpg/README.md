@@ -14,4 +14,4 @@ One could modify [experiment.py](./experiment.py) to quickly set up different co
 
 # Results
 
-<img src='https://i.imgur.com/QepuqnZ.png' width='100%'>>
+<img src='https://i.imgur.com/cmB3bJz.png' width='100%'>>
