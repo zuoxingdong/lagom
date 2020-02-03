@@ -19,9 +19,9 @@ configurator = lagom.Configurator(
      'env.id': lagom.Grid(['CartPole-v1', 'Pendulum-v0']),
      'nn.sizes': [32, 32],
      
-     'train.generations': 300,  # total number of ES generations
-     'train.popsize': 32,
-     'train.worker_chunksize': 4,  # must be divisible by popsize
+     'train.generations': 1000,  # total number of ES generations
+     'train.popsize': 64,
+     'train.worker_chunksize': 8,  # must be divisible by popsize
      'train.mu0': 0.0,
      'train.std0': 1.0,
     }, 
