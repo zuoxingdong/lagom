@@ -23,6 +23,7 @@ from lagom.nn import make_transposed_cnn
 from lagom.nn import make_lnlstm
 from lagom.nn import CategoricalHead
 from lagom.nn import DiagGaussianHead
+from lagom.nn import bound_logvar
 
 
 class TestMakeBlocks(object):
@@ -214,3 +215,13 @@ def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
     action_dist = action_head(torch.randn(batch_size, feature_dim))
     _dist_check(action_dist)
     assert torch.allclose(action_dist.base_dist.stddev, torch.tensor(std0))
+
+
+@pytest.mark.parametrize('min_var', [1e-8, 1e-4, 1e-2, 1, 2])
+@pytest.mark.parametrize('max_var', [3, 5, 10])
+def test_bound_logvar(min_var, max_var):
+    logvar = torch.linspace(-100, 100, steps=1000)
+    logvar = bound_logvar(logvar, min_var, max_var)
+    var = torch.exp(logvar)
+    assert np.allclose(var.min(), min_var)
+    assert np.allclose(var.max(), max_var)

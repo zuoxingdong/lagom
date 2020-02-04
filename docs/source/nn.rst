@@ -7,6 +7,8 @@ lagom.nn: Neural Network Modules
 .. autoclass:: Module
     :members:
 
+.. autofunction:: bound_logvar
+
 .. autofunction:: ortho_init
     
 .. autofunction:: make_fc
