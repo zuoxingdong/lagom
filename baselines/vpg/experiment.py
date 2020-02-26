@@ -32,6 +32,8 @@ configurator = lagom.Configurator(
      # only for continuous control
      'env.clip_action': True,  # clip action within valid bound before step()
      'agent.std0': 0.5,  # initial std
+     'agent.min_var': 1e-8,
+     'agent.max_var': 50,
      
      'train.timestep': int(1e6),  # total number of training (environmental) timesteps
      'train.timestep_per_iter': 1000,  # number of timesteps per iteration

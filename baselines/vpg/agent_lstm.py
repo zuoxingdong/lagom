@@ -27,11 +27,13 @@ class Agent(lagom.BaseAgent):
         super().__init__(config, env, **kwargs)
         
         feature_dim = config['rnn.size']
+        action_dim = spaces.flatdim(env.action_space)
         self.feature_network = LSTM(config, env, **kwargs)
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = lagom.nn.CategoricalHead(feature_dim, env.action_space.n, **kwargs)
+            self.action_head = lagom.nn.CategoricalHead(feature_dim, action_dim, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
+            kws = dict(std0=config['agent.std0'], min_var=config['agent.min_var'], max_var=config['agent.max_var'])
+            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, action_dim, **kws, **kwargs)
         self.V_head = nn.Linear(feature_dim, 1)
         lagom.nn.ortho_init(self.V_head, weight_scale=1.0, constant_bias=0.0)
         

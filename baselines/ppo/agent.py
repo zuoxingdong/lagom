@@ -25,10 +25,12 @@ class Actor(lagom.nn.Module):
         self.layer_norms = nn.ModuleList([nn.LayerNorm(hidden_size) for hidden_size in config['agent.policy.sizes']])
         
         feature_dim = config['agent.policy.sizes'][-1]
+        action_dim = spaces.flatdim(env.action_space)
         if isinstance(env.action_space, spaces.Discrete):
-            self.action_head = lagom.nn.CategoricalHead(feature_dim, env.action_space.n, **kwargs)
+            self.action_head = lagom.nn.CategoricalHead(feature_dim, action_dim, **kwargs)
         elif isinstance(env.action_space, spaces.Box):
-            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, spaces.flatdim(env.action_space), config['agent.std0'], **kwargs)
+            kws = dict(std0=config['agent.std0'], min_var=config['agent.min_var'], max_var=config['agent.max_var'])
+            self.action_head = lagom.nn.DiagGaussianHead(feature_dim, action_dim, **kws, **kwargs)
 
     def forward(self, x):
         for layer, layer_norm in zip(self.feature_layers, self.layer_norms):
