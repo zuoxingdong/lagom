@@ -5,7 +5,7 @@ from torch.nn.utils import parameters_to_vector
 
 
 class Module(nn.Module):
-    r"""Wrap PyTorch nn.module to provide more helper functions. """
+    r"""Wrap PyTorch nn.Module to provide more helper functions. """
     def __init__(self, **kwargs):
         super().__init__()
         

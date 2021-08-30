@@ -5,8 +5,7 @@ import numpy as np
 import torch
 
 from lagom.utils import color_str
-from lagom.utils import IntervalConditioner
-from lagom.utils import NConditioner
+from lagom.utils import Conditioner
 from lagom.utils import Seeder
 from lagom.utils import tensorify
 from lagom.utils import numpify
@@ -17,6 +16,7 @@ from lagom.utils import yaml_dump
 from lagom.utils import timed
 from lagom.utils import ProcessMaster
 from lagom.utils import ProcessWorker
+from lagom.utils import explained_variance
 
 
 def test_color_str():
@@ -25,88 +25,37 @@ def test_color_str():
 
 
 def test_conditioner():
-    cond = IntervalConditioner(interval=4, mode='accumulative')
-    assert cond.counter == 0
-    assert cond(0)
-    assert cond.counter == 0
-    assert not cond(2)
-    assert not cond(3)
-    assert cond(4)
-    assert cond.counter == 1
-    assert not cond(5)
-    assert cond(9)
-    assert cond.counter == 2
-    assert cond(12)
-    assert cond.counter == 3
+    # Interval-based
+    cond = Conditioner()
+    for i in range(100):
+        assert cond(i)
     del cond
-
-    cond = IntervalConditioner(interval=4, mode='incremental')
-    assert cond.counter == 0
-    assert cond.total_n == 0
-    assert cond(0)
-    assert cond.counter == 0
-    assert cond.total_n == 0
-    assert not cond(3)
-    assert cond.counter == 0
-    assert cond.total_n == 3
-    assert cond(1)
-    assert cond.counter == 1
-    assert cond.total_n == 4
-    assert cond(4)
-    assert cond.counter == 2
-    assert cond.total_n == 8
-    assert not cond(1)
-    assert cond.counter == 2
-    assert cond.total_n == 9
+    
+    cond = Conditioner(step=4)
+    # [0, 4, 8, 12, ...]
+    for i in range(14):
+        if i in [0, 4, 8, 12]:
+            assert cond(i)
+        else:
+            assert not cond(i)
     del cond
-
-    cond = NConditioner(max_n=10, num_conditions=3, mode='accumulative')
-    assert cond.counter == 0
-    assert cond(0)
-    assert cond.counter == 0
-    assert not cond(2)
-    assert not cond(3)
-    assert cond(4)
-    assert cond.counter == 1
-    assert not cond(5)
-    assert cond.counter == 1
-    assert cond(8)
-    assert cond.counter == 2
-    assert not cond(9)
-    assert cond.counter == 2
-    assert cond(10)
-    assert cond.counter == 3
-    assert not cond(15)
-    assert cond.counter == 3
-    assert not cond(20)
-    assert cond.counter == 3
+    
+    # Control how many conditions
+    cond = Conditioner(stop=10, step=1)
+    for i in range(100):
+        if i <= 10:
+            assert cond(i)
+        else:
+            assert not cond(i)
     del cond
-
-    cond = NConditioner(max_n=10, num_conditions=3, mode='incremental')
-    assert cond.counter == 0
-    assert cond(0)
-    assert cond.counter == 0
-    assert not cond(2)
-    assert cond.counter == 0
-    assert cond.total_n == 2
-    assert not cond(1)
-    assert cond.counter == 0
-    assert cond.total_n == 3
-    assert cond(2)
-    assert cond.counter == 1
-    assert cond.total_n == 5
-    assert not cond(1)
-    assert cond.counter == 1
-    assert cond.total_n == 6
-    assert cond(2)
-    assert cond.counter == 2
-    assert cond.total_n == 8
-    assert cond(3)
-    assert cond.counter == 3
-    assert cond.total_n == 11
-    assert not cond(5)
-    assert cond.counter == 3
-    assert cond.total_n == 11
+    
+    cond = Conditioner(stop=10, step=3)
+    # [0, 3, 6, 9]
+    for i in range(10):
+        if i in [0, 3, 6, 9]:
+            assert cond(i)
+        else:
+            assert not cond(i)
     del cond
 
 
@@ -326,3 +275,12 @@ def test_process_master_worker(num_worker):
     results = master()
     assert results == [True, True, False, True, False, False, True]
     check(master)
+
+
+def test_explained_variance():
+    assert np.isclose(explained_variance(y_true=[3, -0.5, 2, 7], y_pred=[2.5, 0.0, 2, 8]), 0.9571734666824341)
+    assert np.isclose(explained_variance(y_true=[[3, -0.5, 2, 7]], y_pred=[[2.5, 0.0, 2, 8]]), 0.9571734666824341)
+    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 1], [7, -6]], y_pred=[[0, 2], [-1, 2], [8, -5]]), 
+                      0.9838709533214569)
+    assert np.isclose(explained_variance(y_true=[[0.5, 1], [-1, 10], [7, -6]], y_pred=[[0, 2], [-1, 0.00005], [8, -5]]), 
+                      0.6704022586345673)

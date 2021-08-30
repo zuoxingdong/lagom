@@ -2,13 +2,18 @@ from pathlib import Path
 from shutil import rmtree
 
 import numpy as np
-
 import pytest
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 from lagom.experiment import Grid
 from lagom.experiment import Sample
 from lagom.experiment import Condition
 from lagom.experiment import Config
+from lagom.experiment import Configurator
+from lagom.experiment import checkpointer
 from lagom.experiment import run_experiment
 
 
@@ -37,11 +42,41 @@ def test_condition():
     assert condition({'one': 10}) == -1
 
 
+def test_config():
+    def check(config):
+        assert isinstance(config, Config)
+        assert isinstance(config, dict)
+        assert 'one' in config
+        assert config['one'] == 1
+        assert 'two' in config
+        assert config['two'] == 2
+        assert config.seed == 123 and config._seed == 123
+        assert config.logdir == 'path' and config._logdir == 'path'
+        assert config.device == 'cpu' and config._device == 'cpu'
+    
+    config = Config(one=1, two=2)
+    config.seed = 123
+    config.logdir = 'path'
+    config.device = 'cpu'
+    check(config)
+
+    config = Config([['one', 1], ['two', 2]])
+    config.seed = 123
+    config.logdir = 'path'
+    config.device = 'cpu'
+    check(config)
+
+    config = Config({'one': 1, 'two': 2})
+    config.seed = 123
+    config.logdir = 'path'
+    config.device = 'cpu'
+    check(config)
+
+
 @pytest.mark.parametrize('num_sample', [1, 5, 10])
-@pytest.mark.parametrize('keep_dict_order', [True, False])
-def test_config(num_sample, keep_dict_order):
+def test_configurator(num_sample):
     with pytest.raises(AssertionError):
-        Config([1, 2, 3])
+        Configurator([1, 2, 3])
         
     config = Config({'log.dir': 'some path',
                      'beta': Condition(lambda x: 'small' if x['alpha'] < 5 else 'large'),
@@ -50,18 +85,18 @@ def test_config(num_sample, keep_dict_order):
                      'network.lr': Grid([1e-3, 1e-4]), 
                      'env.id': 'HalfCheetah-v2', 
                      'iter': Grid([10, 20, 30]),
-                     'alpha': Sample(lambda: np.random.uniform(3, 10))}, 
-                    num_sample=num_sample, 
-                    keep_dict_order=keep_dict_order)
-    list_config = config.make_configs()
+                     'alpha': Sample(lambda: np.random.uniform(3, 10))})
+    configurator = Configurator(config, num_sample=num_sample)
+    list_config = configurator.make_configs()
     
     assert len(list_config) == 2*3*num_sample
     for ID in range(2*3*num_sample):
         assert list_config[ID]['ID'] == ID
         
     for x in list_config:
-        assert len(x.keys()) == len(config.items.keys()) + 1  # added one more 'ID'
-        for key in config.items.keys():
+        assert isinstance(x, Config)
+        assert len(x.keys()) == len(configurator.config.keys()) + 1  # added one more 'ID'
+        for key in configurator.config.keys():
             assert key in x
         assert x['log.dir'] == 'some path'
         if x['alpha'] < 5:
@@ -75,13 +110,8 @@ def test_config(num_sample, keep_dict_order):
         assert x['iter'] in [10, 20, 30]
         assert x['alpha'] >= 3 and x['alpha'] < 10
         
-        if keep_dict_order:
-            assert list(x.keys()) == ['ID'] + list(config.items.keys())
-        else:
-            assert list(x.keys()) != ['ID'] + list(config.items.keys())
-            assert list(x.keys()) == ['ID', 'log.dir', 'beta', 'network.type', 'network.hidden_size', 
-                                      'env.id', 'network.lr', 'iter', 'alpha']
-    
+        assert list(x.keys()) == ['ID'] + list(configurator.config.keys())
+
     # test for non-random sampling
     config = Config({'log.dir': 'some path',
                      'network.type': 'MLP', 
@@ -89,10 +119,9 @@ def test_config(num_sample, keep_dict_order):
                      'network.lr': Grid([1e-3, 1e-4]), 
                      'env.id': 'HalfCheetah-v2', 
                      'iter': Grid([10, 20, 30]),
-                     'alpha': 0.1}, 
-                    num_sample=num_sample, 
-                    keep_dict_order=keep_dict_order)
-    list_config = config.make_configs()
+                     'alpha': 0.1})
+    configurator = Configurator(config, num_sample=num_sample)
+    list_config = configurator.make_configs()
     assert len(list_config) == 2*3*1  # no matter how many num_sample, without repetition
     for ID in range(2*3*1):
         assert list_config[ID]['ID'] == ID
@@ -104,32 +133,79 @@ def test_config(num_sample, keep_dict_order):
                      'network.lr': 1e-3, 
                      'env.id': 'HalfCheetah-v2', 
                      'iter': 20,
-                     'alpha': 0.1}, 
-                    num_sample=num_sample, 
-                    keep_dict_order=keep_dict_order)
-    list_config = config.make_configs()
+                     'alpha': 0.1})
+    configurator = Configurator(config, num_sample=num_sample)
+    list_config = configurator.make_configs()
     assert len(list_config) == 1  # no matter how many num_sample, without repetition
     for ID in range(1):
         assert list_config[ID]['ID'] == ID
 
 
+def test_checkpointer():
+    class Net(nn.Module):
+        def __init__(self, lr):
+            super().__init__()
+            self.fc = nn.Linear(3, 4)
+            self.optimizer = optim.Adam(self.parameters(), lr=lr)
+            self.register_buffer('total_step', torch.tensor(0))
+
+        def forward(self, x):
+            pass
+
+    net1 = Net(lr=1e-3)
+    net2 = Net(lr=5e-3)
+    optimizer_out = optim.AdamW([*net1.parameters(), *net2.parameters()], lr=7e-4)
+    loss = 12.5
+    logs = [1, 2, 3, 4]
+
+    config = Config({'nn.size': [64, 64], 'env.id': 'CartPole-v1'})
+    config.seed = 0
+    config.device = torch.device('cpu')
+    config.logdir = Path('./')
+    config.resume_checkpointer = config.logdir / 'resume_checkpoint.tar'
+
+    checkpointer('save', config, obj=[loss, logs], state_obj=[net1, net2, optimizer_out])
+    assert config.resume_checkpointer.exists()
+
+    # Change some values before loading
+    with torch.no_grad():
+        net1.fc.weight.zero_()
+        net2.fc.weight.zero_()
+    loss = 0.1
+    logs = []
+
+    assert torch.allclose(net1.fc.weight, torch.tensor(0.0))
+    assert torch.allclose(net2.fc.weight, torch.tensor(0.0))
+
+    _loss, _logs = checkpointer('load', config, state_obj=[net1, net2, optimizer_out])
+
+    # Check if loading works
+    assert not torch.allclose(net1.fc.weight, torch.tensor(0.0))
+    assert not torch.allclose(net2.fc.weight, torch.tensor(0.0))
+    assert optimizer_out.state_dict()['param_groups'][0]['lr'] == 7e-4
+    _loss = 12.5
+    _logs = [1, 2, 3, 4]
+    
+    # remove the checkpoint file
+    config.resume_checkpointer.unlink()
+
+
 @pytest.mark.parametrize('num_sample', [1, 5])
-@pytest.mark.parametrize('max_workers', [None, 1, 5, 100])
+@pytest.mark.parametrize('max_workers', [-1, None, 1, 5, 100])
 @pytest.mark.parametrize('chunksize', [1, 7, 40])
 def test_run_experiment(num_sample, max_workers, chunksize):
-    def run(config, seed, device, logdir):
-        return config['ID'], seed, device, logdir
+    def run(config):
+        return config['ID'], config.seed, config.device, config.logdir, config.resume_checkpointer
     
     config = Config({'network.lr': Grid([1e-3, 5e-3]), 
                      'network.size': [32, 16],
-                     'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, 
-                    num_sample=num_sample, 
-                    keep_dict_order=True)
+                     'env.id': Grid(['CartPole-v1', 'Ant-v2'])})
+    configurator = Configurator(config, num_sample=num_sample)
     seeds = [1, 2, 3]
     log_dir = './some_path'
-    run_experiment(run, config, seeds, log_dir, max_workers, chunksize, use_gpu=False, gpu_ids=None)
+    run_experiment(run, configurator, seeds, log_dir, max_workers, chunksize, use_gpu=False, gpu_ids=None)
  
-    p = Path('./some_path')
+    p = Path(log_dir)
     assert p.exists()
     assert (p / 'configs.pkl').exists()
     assert (p / 'source_files').exists() and (p / 'source_files').is_dir()

@@ -20,6 +20,11 @@ Data
     
 .. autoclass:: Trajectory
     :members:
+    
+Data Buffer
+----------------------------
+.. autoclass:: UniformTransitionBuffer
+    :members:
 
 Logger
 ----------------------------

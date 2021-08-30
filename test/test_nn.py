@@ -15,15 +15,15 @@ from torch.distributions import Categorical
 from torch.distributions import Normal
 from torch.distributions import Independent
 
-from lagom.networks import Module
-from lagom.networks import linear_lr_scheduler
-from lagom.networks import ortho_init
-from lagom.networks import make_fc
-from lagom.networks import make_cnn
-from lagom.networks import make_transposed_cnn
-from lagom.networks import make_lnlstm
-from lagom.networks import CategoricalHead
-from lagom.networks import DiagGaussianHead
+from lagom.nn import Module
+from lagom.nn import ortho_init
+from lagom.nn import make_fc
+from lagom.nn import make_cnn
+from lagom.nn import make_transposed_cnn
+from lagom.nn import make_lnlstm
+from lagom.nn import CategoricalHead
+from lagom.nn import DiagGaussianHead
+from lagom.nn import bound_logvar
 
 
 class TestMakeBlocks(object):
@@ -172,37 +172,14 @@ class TestInit(object):
         assert np.allclose(a.bias_ih.detach().numpy(), 10.)
 
 
-@pytest.mark.parametrize('method', ['Adam', 'RMSprop', 'Adamax'])
-@pytest.mark.parametrize('N', [1, 10, 50, 100])
-@pytest.mark.parametrize('min_lr', [3e-4, 6e-5])
-@pytest.mark.parametrize('initial_lr', [1e-3, 7e-4])
-def test_linear_lr_scheduler(method, N, min_lr, initial_lr):
-    net = nn.Linear(30, 16)
-    if method == 'Adam':
-        optimizer = optim.Adam(net.parameters(), lr=initial_lr)
-    elif method == 'RMSprop':
-        optimizer = optim.RMSprop(net.parameters(), lr=initial_lr)
-    elif method == 'Adamax':
-        optimizer = optim.Adamax(net.parameters(), lr=initial_lr)
-    lr_scheduler = linear_lr_scheduler(optimizer, N, min_lr)
-    assert lr_scheduler.base_lrs[0] == initial_lr
-    
-    optimizer.step()
-    for i in range(200):
-        lr_scheduler.step()
-        assert lr_scheduler.get_lr()[0] >= min_lr
-    assert lr_scheduler.get_lr()[0] == min_lr       
-    
-    
 @pytest.mark.parametrize('feature_dim', [5, 10, 30])
 @pytest.mark.parametrize('batch_size', [1, 16, 32])
 @pytest.mark.parametrize('num_action', [1, 4, 10])
 def test_categorical_head(feature_dim, batch_size, num_action):
-    action_head = CategoricalHead(feature_dim, num_action, torch.device('cpu'))
+    action_head = CategoricalHead(feature_dim, num_action)
     assert isinstance(action_head, Module)
     assert action_head.feature_dim == feature_dim
     assert action_head.num_action == num_action
-    assert action_head.device.type == 'cpu'
     dist = action_head(torch.randn(batch_size, feature_dim))
     assert isinstance(dist, Categorical)
     assert dist.batch_shape == (batch_size,)
@@ -214,29 +191,69 @@ def test_categorical_head(feature_dim, batch_size, num_action):
 @pytest.mark.parametrize('batch_size', [1, 32])
 @pytest.mark.parametrize('feature_dim', [5, 20])
 @pytest.mark.parametrize('action_dim', [1, 4])
-@pytest.mark.parametrize('std0', [0.21, 0.5, 1.0])
-def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0):
-    device = torch.device('cpu')
+@pytest.mark.parametrize('std0', [0.21, 1.0, 3.2, 5.4])
+@pytest.mark.parametrize('min_var', [1e-8, 1e-4, 1e-2, 1, 2])
+@pytest.mark.parametrize('max_var', [3, 5, 10])
+def test_diag_gaussian_head(batch_size, feature_dim, action_dim, std0, min_var, max_var):
     with pytest.raises(AssertionError):
-        DiagGaussianHead(feature_dim, action_dim, device, -0.5)
-    
+        DiagGaussianHead(feature_dim, action_dim, std_mode=-0.5)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='independent', std0=None)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='independent', std0=0.0)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='dependent', std0=0.1)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='dependent', min_var=None, max_var=max_var)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='dependent', min_var=min_var, max_var=None)
+    with pytest.raises(AssertionError):
+        DiagGaussianHead(feature_dim, action_dim, std_mode='dependent', min_var=2, max_var=1)
+        
     def _basic_check(action_head):
         assert action_head.feature_dim == feature_dim
         assert action_head.action_dim == action_dim
-        assert action_head.device.type == 'cpu'
-        assert action_head.std0 == std0
+        assert action_head.min_var == min_var
+        assert action_head.max_var == max_var
         assert isinstance(action_head.mean_head, nn.Linear)
-        assert isinstance(action_head.logstd_head, nn.Parameter)
-        
+        if action_head.std_mode == 'independent':
+            assert isinstance(action_head.logvar_head, nn.Parameter)
+            assert action_head.std0 == std0
+        elif action_head.std_mode == 'dependent':
+            assert isinstance(action_head.logvar_head, nn.Linear)
+            assert action_head.std0 is None
+            
     def _dist_check(action_dist):
         assert isinstance(action_dist, Independent)
         assert isinstance(action_dist.base_dist, Normal)
         assert action_dist.batch_shape == (batch_size,)
+        assert torch.all(action_dist.variance > min_var)
+        assert torch.all(action_dist.variance < max_var)
         action = action_dist.sample()
         assert action.shape == (batch_size, action_dim)
-    
-    action_head = DiagGaussianHead(feature_dim, action_dim, device, std0)    
+        
+    # state-independent std
+    action_head = DiagGaussianHead(feature_dim, action_dim, std_mode='independent', std0=std0, min_var=min_var, max_var=max_var)
     _basic_check(action_head)
     action_dist = action_head(torch.randn(batch_size, feature_dim))
     _dist_check(action_dist)
-    assert torch.allclose(action_dist.base_dist.stddev, torch.tensor(std0))
+    std0 = torch.exp(0.5*bound_logvar(torch.tensor(std0**2).log(), min_var, max_var))
+    assert torch.allclose(action_dist.base_dist.stddev, std0)
+    
+    # state-dependent std
+    action_head = DiagGaussianHead(feature_dim, action_dim, std_mode='dependent', std0=None, min_var=min_var, max_var=max_var)
+    _basic_check(action_head)
+    action_dist = action_head(torch.randn(batch_size, feature_dim))
+    _dist_check(action_dist)
+    action_dist = action_head(150.0*torch.randn(batch_size, feature_dim))
+    _dist_check(action_dist)
+
+
+@pytest.mark.parametrize('min_var', [1e-8, 1e-4, 1e-2, 1, 2])
+@pytest.mark.parametrize('max_var', [3, 5, 10])
+def test_bound_logvar(min_var, max_var):
+    logvar = torch.linspace(-100, 100, steps=1000)
+    logvar = bound_logvar(logvar, min_var, max_var)
+    var = torch.exp(logvar)
+    assert np.allclose(var.min(), min_var)
+    assert np.allclose(var.max(), max_var)

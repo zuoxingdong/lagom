@@ -2,36 +2,28 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from lagom.networks import Module
-from lagom.networks import make_fc
-from lagom.networks import make_cnn
-from lagom.networks import make_transposed_cnn
-from lagom.networks import ortho_init
+import lagom
 
 
-class VAE(Module):
-    def __init__(self, config, device, **kwargs):
+class VAE(lagom.nn.Module):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
-        self.device = device
         
-        self.encoder = make_fc(784, [400])
+        self.encoder = lagom.nn.make_fc(784, [400])
         for layer in self.encoder:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
             
         self.mean_head = nn.Linear(400, config['nn.z_dim'])
-        ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
+        lagom.nn.ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         self.logvar_head = nn.Linear(400, config['nn.z_dim'])
-        ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
+        lagom.nn.ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
         
-        self.decoder = make_fc(config['nn.z_dim'], [400])
+        self.decoder = lagom.nn.make_fc(config['nn.z_dim'], [400])
         for layer in self.decoder:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.x_head = nn.Linear(400, 784)
-        ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
-        
-        self.to(device)
-        self.total_iter = 0
+        lagom.nn.ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
 
     def encode(self, x):
         for layer in self.encoder:
@@ -59,40 +51,36 @@ class VAE(Module):
         return re_x, mu, logvar
 
         
-class ConvVAE(Module):
-    def __init__(self, config, device, **kwargs):
+class ConvVAE(lagom.nn.Module):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
-        self.device = device
         
-        self.encoder = make_cnn(input_channel=1, 
-                                channels=[64, 64, 64], 
-                                kernels=[4, 4, 4], 
-                                strides=[2, 2, 1], 
-                                paddings=[0, 0, 0])
+        self.encoder = lagom.nn.make_cnn(input_channel=1, 
+                                         channels=[64, 64, 64], 
+                                         kernels=[4, 4, 4], 
+                                         strides=[2, 2, 1], 
+                                         paddings=[0, 0, 0])
         for layer in self.encoder:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         
         self.mean_head = nn.Linear(256, config['nn.z_dim'])
-        ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
+        lagom.nn.ortho_init(self.mean_head, weight_scale=0.01, constant_bias=0.0)
         self.logvar_head = nn.Linear(256, config['nn.z_dim'])
-        ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
+        lagom.nn.ortho_init(self.logvar_head, weight_scale=0.01, constant_bias=0.0)
         
         self.decoder_fc = nn.Linear(config['nn.z_dim'], 256)
-        ortho_init(self.decoder_fc, nonlinearity='relu', constant_bias=0.0)
-        self.decoder = make_transposed_cnn(input_channel=64, 
-                                           channels=[64, 64, 64], 
-                                           kernels=[4, 4, 4], 
-                                           strides=[2, 1, 1], 
-                                           paddings=[0, 0, 0], 
-                                           output_paddings=[0, 0, 0])
+        lagom.nn.ortho_init(self.decoder_fc, nonlinearity='relu', constant_bias=0.0)
+        self.decoder = lagom.nn.make_transposed_cnn(input_channel=64, 
+                                                    channels=[64, 64, 64], 
+                                                    kernels=[4, 4, 4], 
+                                                    strides=[2, 1, 1], 
+                                                    paddings=[0, 0, 0], 
+                                                    output_paddings=[0, 0, 0])
         for layer in self.decoder:
-            ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
+            lagom.nn.ortho_init(layer, nonlinearity='relu', constant_bias=0.0)
         self.x_head = nn.Linear(9216, 784)
-        ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
-        
-        self.to(device)
-        self.total_iter = 0
+        lagom.nn.ortho_init(self.x_head, nonlinearity='sigmoid', constant_bias=0.0)
         
     def encode(self, x):
         for layer in self.encoder:

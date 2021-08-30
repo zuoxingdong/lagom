@@ -13,4 +13,4 @@ python experiment.py
 One could modify [experiment.py](./experiment.py) to quickly set up different configurations. 
 
 # Results
-<img src='https://i.imgur.com/feJGx8u.png' width='100%'>
+<img src='https://i.imgur.com/hnwAh6M.png' width='100%'>

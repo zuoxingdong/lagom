@@ -18,7 +18,7 @@ def color_str(string, color, bold=False):
     
     """
     colors = {'red': Fore.RED, 'green': Fore.GREEN, 'blue': Fore.BLUE, 'cyan': Fore.CYAN, 
-              'magenta': Fore.MAGENTA, 'black': Fore.BLACK, 'white': Fore.WHITE}
+              'magenta': Fore.MAGENTA, 'yellow': Fore.YELLOW, 'black': Fore.BLACK, 'white': Fore.WHITE}
     style = colors[color]
     if bold:
         style += Style.BRIGHT

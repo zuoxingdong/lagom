@@ -2,20 +2,23 @@ from itertools import product
 
 
 class Grid(list):
-    r"""A grid search over a list of values. """
+    r"""Wrap a list of values to support a grid search. """
     def __init__(self, values):
         super().__init__(values)
 
 
 class Sample(object):
+    r"""Wrap a function to support a random search. """
     def __init__(self, f):
+        assert callable(f)
         self.f = f
-        
+
     def __call__(self):
         return self.f()
-    
-    
+
+
 class Condition(object):
+    r"""Conditional hyperparameter. """
     def __init__(self, f):
         assert callable(f)
         self.f = f
@@ -24,7 +27,36 @@ class Condition(object):
         return self.f(config)
 
 
-class Config(object):
+class Config(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def seed(self):
+        return self._seed
+    
+    @seed.setter
+    def seed(self, seed):
+        self._seed = seed
+
+    @property
+    def logdir(self):
+        return self._logdir
+    
+    @logdir.setter
+    def logdir(self, logdir):
+        self._logdir = logdir
+        
+    @property
+    def device(self):
+        return self._device
+    
+    @device.setter
+    def device(self, device):
+        self._device = device
+
+
+class Configurator(object):
     r"""Defines a set of configurations for the experiment. 
     
     The configuration includes the following possible items:
@@ -55,35 +87,35 @@ class Config(object):
     .. warning::
     
         The random seeds should not be set here. Instead, it should be handled by
-        :class:`BaseExperimentMaster` and :class:`BaseExperimentWorker`.
+        :func:`run_experiment`.
     
     Example::
     
-        >>> config = Config({'log.dir': 'some path', 'network.lr': Grid([1e-3, 5e-3]), 'env.id': Grid(['CartPole-v1', 'Ant-v2'])}, num_sample=1, keep_dict_order=False)
+        >>> config = Config({'env.id': Grid(['CartPole-v1', 'Ant-v2']), 'agent.lr': Grid([1e-3, 5e-3]), 'agent.size': [64, 64]})
+        >>> configurator = Configurator(config, num_sample=1)
         >>> import pandas as pd
-        >>> print(pd.DataFrame(config.make_configs()))
-               ID       env.id    log.dir  network.lr
-            0   0  CartPole-v1  some path       0.001
-            1   1       Ant-v2  some path       0.001
-            2   2  CartPole-v1  some path       0.005
-            3   3       Ant-v2  some path       0.005
-    
+        >>> print(pd.DataFrame(configurator.make_configs()))
+           ID       env.id  agent.lr agent.size
+        0   0  CartPole-v1     0.001   [64, 64]
+        1   1  CartPole-v1     0.005   [64, 64]
+        2   2       Ant-v2     0.001   [64, 64]
+        3   3       Ant-v2     0.005   [64, 64]
+
     Args:
-        items (dict): a dictionary of all configuration items. 
+        config (Config): a dictionary of all configuration items. 
         num_sample (int): number of samples for random configuration items. 
             If grid search is also provided, then the grid will be repeated :attr:`num_sample`
             of times. 
-        keep_dict_order (bool): if ``True``, then each generated configuration has the same
-            key ordering with :attr:`items`. 
-            
+
     .. _numerically unstable:
             http://cs231n.github.io/neural-networks-3/#hyper
     """
-    def __init__(self, items, num_sample=1, keep_dict_order=False):
-        assert isinstance(items, dict), f'dict type expected, got {type(items)}'
-        self.items = items
+    def __init__(self, config, num_sample=1):
+        if isinstance(config, dict) and not isinstance(config, Config):
+            config = Config(config)
+        assert isinstance(config, Config), f'expected type: Config, got {type(config)}'
+        self.config = config
         self.num_sample = num_sample
-        self.keep_dict_order = keep_dict_order
         
     def make_configs(self):
         r"""Generate a list of all possible combinations of configurations, including
@@ -95,34 +127,32 @@ class Config(object):
         keys_fixed = []
         keys_grid = []
         keys_sample = []
-        for key in self.items.keys():
-            x = self.items[key]
-            if isinstance(x, Grid):
+        for key, value in self.config.items():
+            if isinstance(value, Grid):
                 keys_grid.append(key)
-            elif isinstance(x, Sample):
+            elif isinstance(value, Sample):
                 keys_sample.append(key)
             else:
                 keys_fixed.append(key)
-        if len(keys_sample) == 0:  # if no random search defined, set num_sample=1 to avoid repetition
-            self.num_sample = 1
-                
-        product_grid = list(product(*[self.items[key] for key in keys_grid]))  # len >= 1, [()]
+        
+        if len(keys_grid) == 0:
+            all_grids = [{}]
+        else:
+            all_grids = product(*[self.config[key] for key in keys_grid])
+            all_grids = [dict(zip(keys_grid, item)) for item in all_grids]
+        if len(keys_sample) == 0:
+            all_samples = [{}]
+        else:
+            all_samples = [{key: self.config[key]() for key in keys_sample} for _ in range(self.num_sample)]
+        fixed_dict = {key: self.config[key] for key in keys_fixed}
+        
         list_config = []
-        for n in range(len(product_grid)*self.num_sample):
-            x = {'ID': n}
-            x = {**x, **{key: self.items[key] for key in keys_fixed}}
-            
-            for idx, key in enumerate(keys_grid):
-                x[key] = product_grid[n % len(product_grid)][idx]
-            for key in keys_sample:
-                x[key] = self.items[key]()
-                
-            if self.keep_dict_order:
-                x = {**{'ID': x['ID']}, **{key: x[key] for key in self.items.keys()}}
-                
+        for n, (grid_dict, sample_dict) in enumerate(product(all_grids, all_samples)):
+            x = {**grid_dict, **sample_dict, **fixed_dict}
+            x = {'ID': n, **{key: x[key] for key in self.config.keys()}}
+            x = Config(x)
             for key, value in x.items():
                 if isinstance(value, Condition):
                     x[key] = value(x)
-                
             list_config.append(x)
         return list_config

@@ -10,12 +10,12 @@ from lagom import EpisodeRunner
 from lagom import StepRunner
 from lagom.utils import numpify
 
-from lagom.metric import returns
-from lagom.metric import bootstrapped_returns
-from lagom.metric import td0_target
-from lagom.metric import td0_error
-from lagom.metric import gae
-from lagom.metric import vtrace
+from lagom.rl import returns
+from lagom.rl import bootstrapped_returns
+from lagom.rl import td0_target
+from lagom.rl import td0_error
+from lagom.rl import gae
+from lagom.rl import vtrace
 
 from .sanity_env import SanityEnv
 

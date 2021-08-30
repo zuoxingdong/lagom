@@ -1,16 +1,15 @@
 from collections import namedtuple
 
 import numpy as np
-
 import torch
 import torch.optim as optim
 
-from lagom import BaseES
+import lagom
 from lagom.transform import rank_transform
 from lagom.transform import LinearSchedule
 
 
-class OpenAIES(BaseES):
+class OpenAIES(lagom.BaseES):
     r"""Implements OpenAI evolution strategies.
     
     .. note::

@@ -40,14 +40,17 @@ Misc
 ----
 .. autofunction:: color_str
 
+.. autoclass:: Describe
+
+.. autofunction:: describe
+
+.. autofunction:: explained_variance
+
 .. autofunction:: timed
 
 .. autofunction:: timeit
 
 .. autofunction:: ask_yes_or_no
 
-.. autoclass:: IntervalConditioner
-    :members:
-    
-.. autoclass:: NConditioner
+.. autoclass:: Conditioner
     :members:

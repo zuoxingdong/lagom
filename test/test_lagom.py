@@ -74,7 +74,7 @@ def test_logger():
 def test_random_agent(env_id, num_envs):
     # vanilla environment
     env = gym.make(env_id)
-    agent = RandomAgent(None, env, 'cpu')
+    agent = RandomAgent(None, env)
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
     assert out['raw_action'] in env.action_space
@@ -82,12 +82,13 @@ def test_random_agent(env_id, num_envs):
     
     # vectorized environment
     env = gym.vector.make(env_id, num_envs)
-    agent = RandomAgent(None, env, 'cpu')
+    agent = RandomAgent(None, env)
     out = agent.choose_action(env.reset())
     assert isinstance(out, dict)
-    assert isinstance(out['raw_action'], list)
+    assert isinstance(out['raw_action'], tuple)
     assert len(out['raw_action']) == env.num_envs
-    assert all([action in env.action_space for action in out['raw_action']])
+    assert out['raw_action'] in env.action_space
+    assert all([action in env.single_action_space for action in out['raw_action']])
 
 
 @pytest.mark.parametrize('env_id', ['CartPole-v1', 'Pendulum-v0'])
@@ -158,6 +159,17 @@ def test_trajectory(env_id):
     assert len(traj.rewards) == traj.T
     assert len(traj.dones) == traj.T
     assert len(traj.infos) == traj.T
+    
+    transitions = traj.transitions
+    assert len(transitions) == traj.T
+    for t in range(traj.T):
+        observation, action, next_observation, reward, done = transitions[t]
+        assert np.allclose(observation, traj[t].observation)
+        assert np.allclose(action, traj.actions[t])
+        assert np.allclose(next_observation, traj[t+1].observation)
+        assert np.allclose(reward, traj[t+1].reward)
+        assert np.allclose(done, traj[t+1].done)
+    
     if traj.reach_time_limit:
         assert len(traj.get_infos('TimeLimit.truncated')) == 1
 
@@ -167,7 +179,7 @@ def test_trajectory(env_id):
 def test_episode_runner(env_id, N):
     env = gym.make(env_id)
     env = TimeStepEnv(env)
-    agent = RandomAgent(None, env, None)
+    agent = RandomAgent(None, env)
     runner = EpisodeRunner()
     D = runner(agent, env, N)
     assert len(D) == N
@@ -186,7 +198,7 @@ def test_episode_runner(env_id, N):
 def test_step_runner(env_id, T):
     env = gym.make(env_id)
     env = TimeStepEnv(env)
-    agent = RandomAgent(None, env, None)
+    agent = RandomAgent(None, env)
 
     runner = StepRunner(reset_on_call=True)
     D = runner(agent, env, T)

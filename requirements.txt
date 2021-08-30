@@ -1,15 +1,15 @@
-# Update: 2019-11-11
+# Update: 2020-02-03
 
 # Common
-jupyterlab>=1.2.2
-colorama>=0.4.1
+jupyterlab>=1.2.6
+colorama>=0.4.3
 
 # Testing, PEP8 code quality
-pytest>=5.2.2
+pytest>=5.3.5
 flake8>=3.7.9
 
 # Image, Video
-opencv-python>=4.1.1.26
+opencv-python>=4.2.0.32
 
 # RL
 gym>=0.15.3, <0.15.4

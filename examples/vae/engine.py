@@ -1,25 +1,25 @@
-from time import perf_counter
-
+import time
 import numpy as np
-
-from lagom import Logger
-from lagom import BaseEngine
-from lagom.utils import color_str
 
 import torch
 from torchvision.utils import save_image
 
+import lagom
+import lagom.utils as utils
+
 from model import vae_loss
 
 
-class Engine(BaseEngine):
+class Engine(lagom.BaseEngine):
     def train(self, n=None, **kwargs):
         self.model.train()
         
-        logger = Logger()
+        logger = lagom.Logger()
+        cond = utils.IntervalConditioner(interval=self.config['log.freq'], mode='accumulative')
         for i, (data, label) in enumerate(self.train_loader):
-            start_time = perf_counter()
-            data = data.to(self.model.device)
+            t0 = time.perf_counter()
+            data = data.to(self.config.device)
+            
             re_x, mu, logvar = self.model(data)
             out = vae_loss(re_x, data, mu, logvar, 'BCE')
             loss = out['loss']
@@ -28,31 +28,29 @@ class Engine(BaseEngine):
             self.optimizer.step()
             
             logger('epoch', n)
-            self.model.total_iter += 1
-            logger('iteration', self.model.total_iter)
-            logger('mini-batch', i)
-            logger('train_loss', out['loss'].item())
+            logger('num_seconds', round(time.perf_counter() - t0, 1))
+            logger('iteration', i)
+            logger('total_loss', out['loss'].item())
             logger('reconstruction_loss', out['re_loss'].item())
             logger('KL_loss', out['KL_loss'].item())
-            logger('num_seconds', round(perf_counter() - start_time, 1))
-            if i == 0 or (i+1) % self.config['log.freq'] == 0:
+            if cond(i):
                 logger.dump(keys=None, index=-1, indent=0, border='-'*50)
-        mean_loss = np.mean([logger.logs['train_loss']])
+        mean_loss = np.mean([logger.logs['total_loss']])
         print(f'====> Average loss: {mean_loss}')
         
         # Use decoder to sample images from standard Gaussian noise
         with torch.no_grad():  # fast, disable grad
-            z = torch.randn(64, self.config['nn.z_dim']).to(self.model.device)
+            z = torch.randn(64, self.config['nn.z_dim']).to(self.config.device)
             re_x = self.model.decode(z).cpu()
-            save_image(re_x.view(64, 1, 28, 28), f'{kwargs["logdir"]}/sample_{n}.png')
+            save_image(re_x.view(64, 1, 28, 28), self.config.logdir / f'sample_{n}.png')
         return logger
         
     def eval(self, n=None, **kwargs):
         self.model.eval()
         
-        logger = Logger()
+        logger = lagom.Logger()
         for i, (data, label) in enumerate(self.test_loader):
-            data = data.to(self.model.device)
+            data = data.to(self.config.device)
             with torch.no_grad():
                 re_x, mu, logvar = self.model(data)
                 out = vae_loss(re_x, data, mu, logvar, 'BCE')
@@ -62,11 +60,11 @@ class Engine(BaseEngine):
         
         # Reconstruct some test images
         data, label = next(iter(self.test_loader))  # get a random batch
-        data = data.to(self.model.device)
-        m = min(data.size(0), 8)  # number of images
-        D = data[:m]
+        num_img = min(data.size(0), 8)  # number of images
+        data = data[:num_img]
+        data = data.to(self.config.device)
         with torch.no_grad():
-            re_x, _, _ = self.model(D)
-        compare_img = torch.cat([D.cpu(), re_x.cpu().view(-1, 1, 28, 28)])
-        save_image(compare_img, f'{kwargs["logdir"]}/reconstruction_{n}.png', nrow=m)
+            re_x, _, _ = self.model(data)
+        compare_img = torch.cat([data, re_x.view(-1, 1, 28, 28)]).cpu()
+        save_image(compare_img, self.config.logdir / f'reconstruction_{n}.png', nrow=num_img)
         return logger

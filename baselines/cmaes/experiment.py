@@ -4,61 +4,48 @@ import time
 import numpy as np
 import torch
 import gym
-from lagom import Logger
-from lagom import EpisodeRunner
-from lagom.transform import describe
-from lagom.utils import CloudpickleWrapper
-from lagom.utils import pickle_dump
-from lagom.utils import tensorify
-from lagom.utils import set_global_seeds
-from lagom.experiment import Config
-from lagom.experiment import Grid
-from lagom.experiment import run_experiment
-from lagom.envs import TimeStepEnv
+import gym.wrappers
+import lagom
+import lagom.utils as utils
 
-from lagom import CMAES
 from baselines.cmaes.agent import Agent
 
 
-config = Config(
+configurator = lagom.Configurator(
     {'log.freq': 10, 
-     'checkpoint.num': 3,
+     'checkpoint.agent.num': 3,
+     'checkpoint.resume.num': 3,
      
-     'env.id': Grid(['Acrobot-v1', 'BipedalWalker-v2', 'Pendulum-v0', 'LunarLanderContinuous-v2']), 
+     'env.id': lagom.Grid(['CartPole-v1', 'Pendulum-v0']),
+     'nn.sizes': [32, 32],
      
-     'nn.sizes': [64, 64],
-     
-     # only for continuous control
-     'env.clip_action': True,  # clip action within valid bound before step()
-     'agent.std0': 0.6,  # initial std
-     
-     'train.generations': 500,  # total number of ES generations
-     'train.popsize': 32,
-     'train.worker_chunksize': 4,  # must be divisible by popsize
+     'train.generations': 1000,  # total number of ES generations
+     'train.popsize': 64,
+     'train.worker_chunksize': 8,  # must be divisible by popsize
      'train.mu0': 0.0,
      'train.std0': 1.0,
-    })
+    }, 
+    num_sample=1)
 
 
-def make_env(config, seed, mode):
+def make_env(config, mode):
     assert mode in ['train', 'eval']
     env = gym.make(config['env.id'])
-    env.seed(seed)
-    env.observation_space.seed(seed)
-    env.action_space.seed(seed)
-    if config['env.clip_action'] and isinstance(env.action_space, gym.spaces.Box):
+    env.seed(config.seed)
+    env.observation_space.seed(config.seed)
+    env.action_space.seed(config.seed)
+    if isinstance(env.action_space, gym.spaces.Box):
         env = gym.wrappers.ClipAction(env)  # TODO: use tanh to squash policy output when RescaleAction wrapper merged in gym
-    env = TimeStepEnv(env)
+    env = lagom.envs.TimeStepEnv(env)
     return env
 
 
 def fitness(data):
-    torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
-    config, seed, device, param = data
-    env = make_env(config, seed, 'train')
-    agent = Agent(config, env, device)
-    agent.from_vec(tensorify(param, 'cpu'))
-    runner = EpisodeRunner()
+    config, param = data
+    env = make_env(config, 'eval')
+    agent = Agent(config, env)
+    agent.from_vec(torch.as_tensor(param).float())
+    runner = lagom.EpisodeRunner()
     with torch.no_grad():
         D = runner(agent, env, 10)
     R = np.mean([sum(traj.rewards) for traj in D])
@@ -66,49 +53,65 @@ def fitness(data):
     return R, H
 
 
-def run(config, seed, device, logdir):
-    set_global_seeds(seed)
+def run(config):
+    lagom.set_global_seeds(config.seed)
     torch.set_num_threads(1)  # VERY IMPORTANT TO AVOID GETTING STUCK
     
     print('Initializing...')
-    agent = Agent(config, make_env(config, seed, 'eval'), device)
-    es = CMAES([config['train.mu0']]*agent.num_params, config['train.std0'], 
-               {'popsize': config['train.popsize'], 
-                'seed': seed})
+    env = make_env(config, 'eval')
+    agent = Agent(config, env)
+    es = lagom.CMAES([config['train.mu0']]*agent.num_params, config['train.std0'], 
+                     {'popsize': config['train.popsize'], 
+                      'seed': config.seed})
+    
+    cond_agent = utils.Conditioner(stop=config['train.generations'], step=config['train.generations']//config['checkpoint.agent.num'])
+    cond_resume = utils.Conditioner(stop=config['train.generations'], step=config['train.generations']//config['checkpoint.resume.num'])
+    cond_log = utils.Conditioner(step=config['log.freq'])
     train_logs = []
-    checkpoint_count = 0
+    generation = 0
+    if config.resume_checkpointer.exists():
+        env, es, cond_agent, cond_resume, cond_log, train_logs, generation = lagom.checkpointer('load', config, state_obj=[agent])
+        agent.env = env
+
     with Pool(processes=config['train.popsize']//config['train.worker_chunksize']) as pool:
         print('Finish initialization. Training starts...')
-        for generation in range(config['train.generations']):
+        while generation < config['train.generations']:
             t0 = time.perf_counter()
             solutions = es.ask()
-            data = [(config, seed, device, solution) for solution in solutions]
-            out = pool.map(CloudpickleWrapper(fitness), data, chunksize=config['train.worker_chunksize'])
+            data = [(config, solution) for solution in solutions]
+            out = pool.map(utils.CloudpickleWrapper(fitness), data, chunksize=config['train.worker_chunksize'])
             Rs, Hs = zip(*out)
             es.tell(solutions, [-R for R in Rs])
-            logger = Logger()
+            
+            logger = lagom.Logger()
             logger('generation', generation+1)
             logger('num_seconds', round(time.perf_counter() - t0, 1))
-            logger('Returns', describe(Rs, axis=-1, repr_indent=1, repr_prefix='\n'))
-            logger('Horizons', describe(Hs, axis=-1, repr_indent=1, repr_prefix='\n'))
+            describe_it = lambda x: utils.describe(x, axis=-1, repr_indent=1, repr_prefix='\n')
+            logger('Returns', describe_it(Rs))
+            logger('Horizons', describe_it(Hs))
             logger('fbest', es.result.fbest)
             train_logs.append(logger.logs)
-            if generation == 0 or (generation+1) % config['log.freq'] == 0:
-                logger.dump(keys=None, index=0, indent=0, border='-'*50)
-            if (generation+1) >= int(config['train.generations']*(checkpoint_count/(config['checkpoint.num'] - 1))):
-                agent.from_vec(tensorify(es.result.xbest, 'cpu'))
-                agent.checkpoint(logdir, generation+1)
-                checkpoint_count += 1
-    pickle_dump(obj=train_logs, f=logdir/'train_logs', ext='.pkl')
+            if cond_log(generation):
+                logger.dump(keys=None, index=-1, indent=0, border='-'*50)
+            if cond_agent(generation):
+                agent.from_vec(torch.as_tensor(es.result.xbest).float())
+                agent.checkpoint(config.logdir, generation+1)
+            if cond_resume(generation):
+                utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+                lagom.checkpointer('save', config, obj=[env, es, cond_agent, cond_resume, cond_log, train_logs, generation+1], state_obj=[agent])
+            generation += 1
+        utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
+        agent.from_vec(torch.as_tensor(es.result.xbest).float())
+        agent.checkpoint(config.logdir, generation+1)
     return None
 
 
 if __name__ == '__main__':
-    run_experiment(run=run, 
-                   config=config, 
-                   seeds=[1770966829, 1500925526, 2054191100], 
-                   log_dir='logs/default',
-                   max_workers=12,  # tune to fulfill computation power
-                   chunksize=1, 
-                   use_gpu=False,
-                   gpu_ids=None)
+    lagom.run_experiment(run=run, 
+                         configurator=configurator, 
+                         seeds=lagom.SEEDS[:3],
+                         log_dir='logs/default',
+                         max_workers=8,  # fulfill CPU: total cores / processes
+                         chunksize=1, 
+                         use_gpu=False,
+                         gpu_ids=None)

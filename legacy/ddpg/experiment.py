@@ -4,28 +4,28 @@ import gym.wrappers
 import lagom
 import lagom.utils as utils
 
-from baselines.sac.agent import Agent
-from baselines.sac.engine import Engine
+from baselines.ddpg.agent import Agent
+from baselines.ddpg.engine import Engine
 
 
 configurator = lagom.Configurator(
     {'log.freq': 10,
      'checkpoint.agent.num': 3,
-     'checkpoint.resume.num': 1,########2,
+     'checkpoint.resume.num': 3,
      
      'env.id': lagom.Grid(['HalfCheetah-v3', 'Hopper-v3', 'Walker2d-v3']),
      
      'agent.gamma': 0.99,
      'agent.polyak': 0.995,  # polyak averaging coefficient for targets update
-     'agent.actor.sizes': [256, 256],
-     'agent.actor.lr': 3e-4,
-     'agent.critic.sizes': [256, 256],
-     'agent.critic.lr': 3e-4,
-     'agent.initial_temperature': 1.0,
+     'agent.actor.sizes': [400, 300],
+     'agent.actor.lr': 1e-3, 
+     'agent.critic.sizes': [400, 300],
+     'agent.critic.lr': 1e-3,
+     'agent.action_noise': 0.1,
      
      'replay.capacity': int(1e6), 
      'replay.init_trial': 10,  # number of random rollouts initially
-     'replay.batch_size': 256,
+     'replay.batch_size': 100,
      
      'train.timestep': int(1e6),  # total number of training (environment) timesteps
      'eval.num': 200
@@ -63,10 +63,10 @@ def run(config):
     train_logs, eval_logs = [], []
     iteration = 0
     if config.resume_checkpointer.exists():
-        out = lagom.checkpointer('load', config, state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer, agent.log_alpha_optimizer])
+        out = lagom.checkpointer('load', config, state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer])
         env, eval_env, runner, train_logs, eval_logs, iteration = out
         agent.env = env
-    
+
     while agent.total_timestep < config['train.timestep']:
         train_logger = engine.train(iteration, env=env, runner=runner, replay=replay, cond_log=cond_log)
         train_logs.append(train_logger.logs)
@@ -78,7 +78,7 @@ def run(config):
         if cond_resume(int(agent.total_timestep)):
             utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
             utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
-            lagom.checkpointer('save', config, obj=[env, eval_env, runner, train_logs, eval_logs, iteration+1], state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer, agent.log_alpha_optimizer])
+            lagom.checkpointer('save', config, obj=[env, eval_env, runner, train_logs, eval_logs, iteration+1], state_obj=[agent, agent.actor_optimizer, agent.critic_optimizer])
         iteration += 1
     utils.pickle_dump(obj=train_logs, f=config.logdir/'train_logs', ext='.pkl')
     utils.pickle_dump(obj=eval_logs, f=config.logdir/'eval_logs', ext='.pkl')
